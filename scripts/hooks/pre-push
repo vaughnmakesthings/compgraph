@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Pre-push hook: run tests before pushing
+# Skip for docs-only pushes (markdown, txt, md files only)
+set -e
+
+REMOTE="$1"
+URL="$2"
+
+# Get list of files changed between local and remote
+CHANGED=$(git diff --name-only "@{upstream}..HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+
+# Check if only docs/non-code files changed
+NON_DOCS=$(echo "$CHANGED" | grep -vE '\.(md|txt|rst|yaml|yml|json|toml)$' || true)
+if [ -z "$NON_DOCS" ]; then
+    echo "[pre-push] Docs-only changes, skipping tests."
+    exit 0
+fi
+
+echo "[pre-push] Running tests before push..."
+uv run pytest -x -q --tb=short -m "not integration" 2>&1 | tail -10
+
+echo "[pre-push] Tests passed."

@@ -1,0 +1,32 @@
+language: en-US
+reviews:
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "src/compgraph/db/models.py"
+      instructions: |
+        Enforce append-only data model. No UPDATE or DELETE on historical tables.
+        All PKs must be UUIDs. All timestamps must be timezone-aware.
+    - path: "src/compgraph/scrapers/**"
+      instructions: |
+        Each scraper adapter must be isolated — one failing must not block others.
+        Check for hardcoded page sizes, missing error handling, rate limit compliance.
+    - path: "src/compgraph/enrichment/**"
+      instructions: |
+        Enforce 2-pass LLM pattern (Haiku for fast extraction, Sonnet for ambiguous).
+        Check for proper structured output usage and cost awareness.
+    - path: "alembic/**"
+      instructions: |
+        Only manage public schema. Never touch auth, storage, realtime, extensions schemas.
+        Verify SSL require in connection args.
+    - path: "src/compgraph/**"
+      instructions: |
+        All database operations must be async. No sync SQLAlchemy calls.
+        No mutable operations on posting_snapshots or posting_enrichments (append-only).
+chat:
+  auto_reply: true

@@ -8,7 +8,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-
 from compgraph.preflight import (
     CheckResult,
     CheckStatus,
@@ -29,7 +28,6 @@ from compgraph.preflight import (
     parse_env_file,
     write_diagnostics,
 )
-
 
 # ---------------------------------------------------------------------------
 # TestCheckResult
@@ -770,7 +768,8 @@ class TestUtilities:
     def test_parse_env_file(self, tmp_path: Path):
         env_file = tmp_path / ".env"
         env_file.write_text(
-            "# comment\nKEY1=value1\nKEY2=\"quoted value\"\nKEY3='single quoted'\n\nKEY4=no_quotes\n"
+            '# comment\nKEY1=value1\nKEY2="quoted value"\n'
+            "KEY3='single quoted'\n\nKEY4=no_quotes\n"
         )
         env = parse_env_file(env_file)
         assert env["KEY1"] == "value1"

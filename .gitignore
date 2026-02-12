@@ -27,3 +27,8 @@ Thumbs.db
 .locks/
 .diagnostics/
 
+work/
+*.log
+htmlcov/
+.coverage
+

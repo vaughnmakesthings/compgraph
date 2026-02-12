@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read f; if [ -n \"$f\" ] && echo \"$f\" | grep -q '\\.py$'; then cd \"$CLAUDE_PROJECT_DIR\" && uv run ruff check --fix \"$f\" 2>/dev/null && uv run ruff format \"$f\" 2>/dev/null; fi; exit 0; }",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read f; if [ -n \"$f\" ] && echo \"$f\" | grep -qE '\\.py$'; then base=$(basename \"$f\" .py); if [ \"$base\" != \"__init__\" ] && [ \"$base\" != \"conftest\" ]; then cd \"$CLAUDE_PROJECT_DIR\" && uv run pytest -x -q --tb=line -k \"$base\" -m \"not integration\" 2>/dev/null | tail -5; fi; fi; exit 0; }",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json,sys; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); import os; name=os.path.basename(p); sys.exit(2 if (name=='.env' or p.endswith('/.env') or '.git/' in p or 'credentials' in name) else 0)\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | { read cmd; if echo \"$cmd\" | grep -q -- '--autogenerate'; then grep -q 'include_name' \"$CLAUDE_PROJECT_DIR/alembic/env.py\" 2>/dev/null || { echo 'BLOCKED: include_name schema filter missing from alembic/env.py. Autogenerate without it will corrupt Supabase-managed schemas (auth, storage, realtime). See failure-patterns.md PF-3.' >&2; exit 2; }; fi; exit 0; }",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Awaiting input\" with title \"Claude Code\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

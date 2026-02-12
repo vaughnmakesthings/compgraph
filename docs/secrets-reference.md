@@ -1,0 +1,42 @@
+# 1Password / Secrets Reference
+
+All secrets managed via 1Password. Never hardcode.
+
+| Env Var | 1Password Reference | Used By |
+|---------|-------------------|---------|
+| `DATABASE_URL` | `op://DEV/SUPABASE_COMPGRAPH_DBPW/password` (embedded in connection string) | SQLAlchemy async engine (session mode pooler) |
+| `DATABASE_URL_DIRECT` | `op://DEV/SUPABASE_COMPGRAPH_DBPW/password` (embedded in connection string) | Alembic migrations (direct connection) |
+| `ANTHROPIC_API_KEY` | `op://DEV/ANTHROPIC_API_KEY/credential` | LLM enrichment (Haiku + Sonnet) |
+| `SUPABASE_URL` | `op://DEV/COMPGRAPH_SUPABASE/url` | Supabase client (if used directly) |
+| `SUPABASE_KEY` | `op://DEV/COMPGRAPH_SUPABASE/anon-key` | Supabase client (if used directly) |
+| `SUPABASE_ACCESS_TOKEN` | 1Password: `SUPABASE_ACCESS_TOKEN` | Supabase MCP server (`.mcp.json`), Management API |
+
+> **Note:** `SUPABASE_ACCESS_TOKEN` is configured in 1Password. Update remaining references above with actual vault paths once connection strings are generated. Project ID: `tkvxyxwfosworwqxesnz`, DB host: `db.tkvxyxwfosworwqxesnz.supabase.co`.
+
+### Proxy Provider (when selected)
+
+| Env Var | 1Password Reference | Used By |
+|---------|-------------------|---------|
+| `PROXY_USERNAME` | `op://DEV/{PROVIDER}_PROXY/username` | Residential proxy rotation |
+| `PROXY_PASSWORD` | `op://DEV/{PROVIDER}_PROXY/credential` | Residential proxy rotation |
+
+### Usage
+
+```bash
+# Local: load secrets and run
+eval $(op signin)
+op run --env-file=.env -- uv run compgraph
+
+# Or populate .env from template (gitignored)
+op inject -i .env.example -o .env
+
+# Run migrations with secrets
+op run --env-file=.env -- uv run alembic upgrade head
+
+# Run tests (DATABASE_URL has fallback in conftest.py)
+uv run pytest
+```
+
+For GitHub Actions, use `1password/load-secrets-action@v2` with `OP_SERVICE_ACCOUNT_TOKEN` repo secret.
+
+**Debugging**: `launchctl setenv` for system-wide env vars. Verify with `env | grep OP_`. MCP servers need env vars inherited from parent process.

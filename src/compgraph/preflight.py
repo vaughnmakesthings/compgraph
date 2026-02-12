@@ -19,8 +19,8 @@ import subprocess
 import sys
 import tomllib
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -33,14 +33,14 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-class CheckStatus(str, Enum):
-    PASS = "pass"
+class CheckStatus(StrEnum):
+    PASS = "pass"  # noqa: S105
     FAIL = "fail"
     WARN = "warn"
     SKIP = "skip"
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     CRITICAL = "critical"
     WARNING = "warning"
     INFO = "info"
@@ -408,7 +408,7 @@ def check_api_keys(project_root: Path) -> list[CheckResult]:
         return results
 
     env = parse_env_file(env_path)
-    example_env = parse_env_file(example_path) if example_path.exists() else {}
+    _ = parse_env_file(example_path) if example_path.exists() else {}
 
     # Resolve any 1Password references
     resolved_env = {}
@@ -616,9 +616,7 @@ def check_git_state(project_root: Path, expected_branch: str | None = None) -> C
     """Check git repository state."""
     # Is this a git repo?
     try:
-        result = _run_cmd(
-            ["git", "rev-parse", "--is-inside-work-tree"], cwd=project_root
-        )
+        result = _run_cmd(["git", "rev-parse", "--is-inside-work-tree"], cwd=project_root)
         if result.returncode != 0:
             return CheckResult(
                 name="git_state",
@@ -657,7 +655,9 @@ def check_git_state(project_root: Path, expected_branch: str | None = None) -> C
             name="git_state",
             status=CheckStatus.WARN,
             severity=Severity.WARNING,
-            message=f"Working tree has {len(dirty_files)} uncommitted change(s) on '{current_branch}'",
+            message=(
+                f"Working tree has {len(dirty_files)} uncommitted change(s) on '{current_branch}'"
+            ),
             details={
                 "branch": current_branch,
                 "dirty_count": str(len(dirty_files)),
@@ -673,9 +673,7 @@ def check_git_state(project_root: Path, expected_branch: str | None = None) -> C
     )
 
 
-def check_process_lock(
-    project_root: Path, task_name: str | None = None
-) -> CheckResult:
+def check_process_lock(project_root: Path, task_name: str | None = None) -> CheckResult:
     """Check and acquire a process lock for a named task."""
     if not task_name:
         return CheckResult(
@@ -920,7 +918,7 @@ class PreflightRunner:
 
     def run_all(self) -> PreflightReport:
         report = PreflightReport(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             platform=platform.system().lower(),
             python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             project_root=str(self.project_root),
@@ -976,17 +974,13 @@ def format_human(report: PreflightReport, use_color: bool = True) -> str:
         result_msg = "PASSED"
         if report.warning_count:
             result_msg += f" ({report.warning_count} warning(s))"
-        lines.append(
-            _color(CheckStatus.PASS, f"Result: {result_msg}", use_color)
-        )
+        lines.append(_color(CheckStatus.PASS, f"Result: {result_msg}", use_color))
     else:
         result_msg = f"FAILED ({report.critical_count} critical"
         if report.warning_count:
             result_msg += f", {report.warning_count} warning(s)"
         result_msg += ")"
-        lines.append(
-            _color(CheckStatus.FAIL, f"Result: {result_msg}", use_color)
-        )
+        lines.append(_color(CheckStatus.FAIL, f"Result: {result_msg}", use_color))
 
     return "\n".join(lines)
 
@@ -1016,7 +1010,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="CompGraph environment preflight validation",
     )
     parser.add_argument("--fix", action="store_true", help="Auto-remediate fixable issues")
-    parser.add_argument("--json", action="store_true", dest="json_output", help="Output JSON report")
+    parser.add_argument(
+        "--json", action="store_true", dest="json_output", help="Output JSON report"
+    )
     parser.add_argument(
         "--checks",
         type=str,

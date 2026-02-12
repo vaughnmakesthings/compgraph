@@ -86,7 +86,9 @@ class Posting(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     external_job_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     fingerprint_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     times_reposted: Mapped[int] = mapped_column(Integer, default=0)
@@ -119,9 +121,7 @@ class PostingSnapshot(Base):
 
     posting: Mapped["Posting"] = relationship(back_populates="snapshots")
 
-    __table_args__ = (
-        Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),
-    )
+    __table_args__ = (Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),)
 
 
 class PostingEnrichment(Base):
@@ -180,8 +180,12 @@ class PostingBrandMention(Base):
     entity_name: Mapped[str] = mapped_column(String(255), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    resolved_brand_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("brands.id"), nullable=True)
-    resolved_retailer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("retailers.id"), nullable=True)
+    resolved_brand_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("brands.id"), nullable=True
+    )
+    resolved_retailer_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("retailers.id"), nullable=True
+    )
 
     posting: Mapped["Posting"] = relationship(back_populates="brand_mentions")
 
@@ -204,9 +208,7 @@ class AggDailyVelocity(Base):
     closed_postings: Mapped[int] = mapped_column(Integer, default=0)
     net_change: Mapped[int] = mapped_column(Integer, default=0)
 
-    __table_args__ = (
-        Index("ix_velocity_date_company", "date", "company_id"),
-    )
+    __table_args__ = (Index("ix_velocity_date_company", "date", "company_id"),)
 
 
 class AggBrandTimeline(Base):
@@ -223,9 +225,7 @@ class AggBrandTimeline(Base):
     peak_active_postings: Mapped[int] = mapped_column(Integer, default=0)
     peak_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    __table_args__ = (
-        Index("ix_brand_timeline_company_brand", "company_id", "brand_id"),
-    )
+    __table_args__ = (Index("ix_brand_timeline_company_brand", "company_id", "brand_id"),)
 
 
 class AggPayBenchmarks(Base):

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(uv sync:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://test:test@localhost:5432/test\" uv run python:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://test:test@localhost:5432/test\" uv run alembic revision:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://test:test@localhost:5432/test\" uv run alembic:*)",
+      "Bash(echo:*)",
+      "Bash(/usr/bin/find:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://test:test@localhost:5432/test\" timeout 3 uv run:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keyscan:*)",
+      "Bash(~/.ssh/known_hosts)",
+      "Bash(brew install:*)",
+      "Bash(sshpass:*)",
+      "Bash(gh auth status:*)",
+      "mcp__plugin_github_github__create_repository",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial scaffold: FastAPI + SQLAlchemy models + Alembic config\n\nProject structure for CompGraph competitive intelligence platform.\n13 SQLAlchemy models \\(dimension, fact, aggregation, auth tables\\),\nasync FastAPI app with health endpoint, Alembic migration setup,\npydantic-settings config. Binds to 0.0.0.0:8000 for LAN dev server.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

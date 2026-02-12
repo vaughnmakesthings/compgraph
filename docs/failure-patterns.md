@@ -1,0 +1,225 @@
+# Failure Pattern Catalog
+
+Observed and anticipated failure modes from pipeline development, E2E runs, and architecture analysis. Add new patterns as they're discovered. Each entry has: trigger, symptoms, blast radius, and mitigation status.
+
+---
+
+## Scraper Failures
+
+### SF-1: iCIMS Portal Structure Variation
+
+**Trigger**: iCIMS portals are configured differently per company. Page sizes vary (BDS=50, MarketSource=20). Available metadata fields differ. Companies can run Classic (server-rendered) or Modern Career Sites (React SPA) — the latter requires Playwright, not plain HTTP.
+
+**Blast radius**: One company's scraper fails silently — returns 0 or partial postings. Other companies unaffected (per-company isolation).
+
+**Symptoms**: Empty `posting_snapshots` for a specific company on a given day. Or unusually low count compared to prior days.
+
+**Mitigation**: Use JSON-LD extraction (survives redesigns) over CSS selectors. Parse "Page X of Y" dynamically — never hardcode page size. Detect portal type on first scrape. Add assertion: if today's count is <50% of yesterday's, flag as potential failure. See `docs/references/icims-scraping.md` §1, §5.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### SF-1b: iCIMS Portal Decommissioning
+
+**Trigger**: A target company migrates from iCIMS Classic to Modern Career Sites, BrassRing, or another ATS without notice. MarketSource (`applyatmarketsource-msc.icims.com`) may already be decommissioned — conflicting reports (Feb 2026).
+
+**Blast radius**: Entire company's data collection stops. HTTP 410 (Gone) on all pages. No fallback without discovering the new URL.
+
+**Symptoms**: All detail page fetches return 410. Search pages return empty or redirect. `posting_snapshots` drops to 0 for that company.
+
+**Mitigation**: Monitor for HTTP 410 responses — iCIMS returns 410 (not 404) for expired/decommissioned content. Maintain alternative URL candidates per company. Alert on 0-posting days. Verify MarketSource portal status before building adapter. See `docs/references/icims-scraping.md` §5.
+
+**Status**: Anticipated. MarketSource status conflicting — **verify before implementation.** See `docs/references/icims-scraping.md` → UC-3 for validation steps.
+
+---
+
+### SF-2: Workday CXS API Schema Change
+
+**Trigger**: Workday updates their CXS API response format (field names, pagination, nesting).
+
+**Blast radius**: 2020 Companies scraper breaks entirely. Returns malformed data or errors.
+
+**Symptoms**: JSON parse errors, missing expected fields, empty results despite postings existing on the site.
+
+**Mitigation**: Schema validation on CXS response before processing. Compare response structure against expected shape. Alert on structural changes.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### SF-3: Rate Limiting / IP Block
+
+**Trigger**: Too many requests too fast, or residential proxy flagged.
+
+**Blast radius**: Per-company. Proxy rotation should isolate companies from each other.
+
+**Symptoms**: 429 responses, 403 blocks, CAPTCHAs, empty responses.
+
+**Mitigation**: Randomized delays (2-8s), proxy rotation, user-agent rotation, 2-hour scrape window. Retry with backoff (3 attempts). Skip company after 3 consecutive failures.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+## Enrichment Failures
+
+### EF-1: Haiku Section Misclassification
+
+**Trigger**: Pass 1 (Haiku) incorrectly classifies boilerplate as role-specific content, or vice versa.
+
+**Blast radius**: Moderate. Downstream entity extraction (Pass 2) gets noisy input. Pay data extraction may capture boilerplate numbers. Role archetype may be wrong.
+
+**Symptoms**: `content_boilerplate` contains job-specific details. `content_role_specific` contains EEO language or company description.
+
+**Mitigation**: Include clear examples in the system prompt. Add `reasoning` field before classification fields. Post-enrichment spot checks.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### EF-2: Entity Extraction Hallucination
+
+**Trigger**: Pass 2 (Sonnet) extracts brand/retailer names not present in the text, or misclassifies entity type.
+
+**Blast radius**: `posting_brand_mentions` contains phantom entities. Brand/retailer tables grow with incorrect entries. Aggregation tables show false relationships.
+
+**Symptoms**: Brands appearing in `agg_brand_timeline` that don't match any real relationship. Confidence scores may be low but still above threshold.
+
+**Mitigation**: System prompt: "Only extract entities that appear verbatim in the text." Confidence threshold for entity creation (e.g., >0.7 for auto-create, 0.4-0.7 for manual review, <0.4 discard). Spot checks during data collection period.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### EF-3: Structured Output Validation Failure
+
+**Trigger**: Anthropic SDK's `messages.parse()` returns data that violates Pydantic constraints (`ge`/`le` validators, enum values).
+
+**Blast radius**: Per-posting. One enrichment fails, others continue.
+
+**Symptoms**: `ValidationError` on Pydantic model. Known SDK behavior: constraints in field descriptions are hints, not enforced by grammar.
+
+**Mitigation**: Catch `ValidationError`, retry once (LLM non-determinism may fix). After 2 failures, skip posting and log for manual review. Use `Literal` types for enum fields (more reliable than `ge`/`le`).
+
+**Status**: Anticipated. Known Anthropic SDK behavior documented in their GitHub issues.
+
+---
+
+### EF-4: Pay Data Extraction Noise
+
+**Trigger**: Postings mention dollar amounts in non-compensation context (e.g., "manage $1M budget", "save customers $500").
+
+**Blast radius**: `pay_min`/`pay_max` contain wrong values. `agg_pay_benchmarks` skewed.
+
+**Symptoms**: Outlier pay values. `pay_min` > `pay_max`. Unreasonable hourly rates (e.g., $1000/hr).
+
+**Mitigation**: Constrain extraction to compensation section only (after Pass 1 segmentation). Add sanity checks: hourly $8-$100, salary $20K-$300K. Flag outliers for manual review.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+## Aggregation Failures
+
+### AF-1: Stale Aggregation After Partial Enrichment
+
+**Trigger**: Enrichment processes only 60% of postings (some failed). Aggregation runs on incomplete data.
+
+**Blast radius**: Dashboard shows artificially low numbers. `agg_daily_velocity` undercounts.
+
+**Symptoms**: Sudden drop in active postings that doesn't match reality. Drop correlates with enrichment failure logs.
+
+**Mitigation**: Track enrichment completion rate. If <90% processed, flag aggregation as "partial" — still run but annotate. Display data quality indicator in API responses.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+## Pipeline Failures
+
+### PF-1: Supabase Connection Pool Exhaustion
+
+**Trigger**: Too many concurrent database connections from parallel scraper/enrichment tasks.
+
+**Blast radius**: All pipeline stages fail. Connection timeouts cascade.
+
+**Symptoms**: `asyncpg.exceptions.TooManyConnectionsError`, connection timeouts, "remaining connection slots are reserved" errors.
+
+**Mitigation**: SQLAlchemy pool config: `pool_size=5, max_overflow=5, pool_recycle=300, pool_pre_ping=True`. Supabase free tier: **15 connections** (not 60). Budget: Alembic=1, app=10, background jobs=share app pool. Avoid `NullPool` for app traffic (26x latency penalty). See `docs/references/supabase-alembic-migrations.md` §3.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### PF-1a: Database Password Breaks URL Parsing
+
+**Trigger**: Supabase-generated passwords containing `@`, `/`, `#`, or `?` characters embedded directly in a `postgresql+asyncpg://user:pass@host` connection string.
+
+**Blast radius**: All database connections fail. SQLAlchemy parses the `@` in the password as the user:password@host delimiter, producing a malformed hostname.
+
+**Symptoms**: `socket.gaierror` with a hostname containing password fragments (e.g., host becomes `cek3wvf-vtm@aws-0-...`). URL parsing silently succeeds but produces wrong components.
+
+**Mitigation**: Store password in a separate `DATABASE_PASSWORD` env var. Construct URLs in `config.py` using `urllib.parse.quote_plus()`. Never embed raw passwords in URLs.
+
+**Status**: **Observed and fixed.** Hit during initial setup (Feb 12 2026). Fixed by separating `DATABASE_PASSWORD` from URL construction in `config.py`.
+
+---
+
+### PF-1b: Supabase Direct Connection IPv6-Only Resolution
+
+**Trigger**: Using `db.[PROJECT].supabase.co` (direct connection) on a network without IPv6 support.
+
+**Blast radius**: All direct connections fail — Alembic migrations, any code using `DATABASE_URL_DIRECT`.
+
+**Symptoms**: `socket.gaierror: [Errno 8] nodename nor servname provided, or not known`. DNS resolves but asyncpg can't connect.
+
+**Mitigation**: Use session mode pooler (`aws-0-[REGION].pooler.supabase.com:5432`) for all connections. Session mode is asyncpg-safe (unlike transaction mode on port 6543). Direct URL is only needed if you require IPv6-only features or have IPv6 network support.
+
+**Status**: **Observed.** Hit during initial setup (Feb 12 2026). Resolved by using pooler for both app and Alembic.
+
+---
+
+### PF-2: Supavisor Transaction Mode Breaks asyncpg
+
+**Trigger**: Using Supabase's default pooled connection (port 6543, transaction mode) with asyncpg.
+
+**Blast radius**: All database operations fail with cryptic errors. Both app and migration paths affected.
+
+**Symptoms**: `DuplicatePreparedStatementError`, prepared statement cache errors. Logs show errors on connection reuse.
+
+**Mitigation**: Use two connection strings: `DATABASE_URL` (session mode pooler, port 5432) for app, `DATABASE_URL_DIRECT` (direct, port 5432 on `db.[PROJECT].supabase.co`) for Alembic. Never use port 6543 with asyncpg. See `docs/references/supabase-alembic-migrations.md` §1.
+
+**Status**: Anticipated. Documented in Supabase GitHub issues #35684, #39227.
+
+---
+
+### PF-3: Alembic Autogenerate Touches Supabase-Managed Schemas
+
+**Trigger**: Running `alembic revision --autogenerate` without schema filtering. Alembic detects `auth`, `storage`, `realtime`, `extensions` schemas and generates migrations for them.
+
+**Blast radius**: Critical. Generated migrations change object ownership from Supabase service accounts. After applying, those schemas become permanently inaccessible (April 2025 lockout).
+
+**Symptoms**: Migration file contains `CREATE TABLE auth.*`, `ALTER TABLE storage.*`, or similar. After running, Supabase dashboard shows permission errors on auth/storage features.
+
+**Mitigation**: Add `include_name` filter to `alembic/env.py` — only manage `public` schema. Currently missing from our env.py. See `docs/references/supabase-alembic-migrations.md` §2.
+
+**Status**: **Mitigated.** `include_name` filter added to `alembic/env.py`. PreToolUse hook in `.claude/settings.json` blocks `--autogenerate` if filter is ever removed. Documented in Supabase GitHub discussion #34270 (100+ comments).
+
+---
+
+## Template for New Patterns
+
+```markdown
+### XX-N: Short Name
+
+**Trigger**: What causes this failure.
+
+**Blast radius**: What breaks, how far does damage spread.
+
+**Symptoms**: What you observe when this happens.
+
+**Mitigation**: How to prevent or recover. Status: designed / implemented / observed.
+
+**Observed**: Date, context, details.
+```
