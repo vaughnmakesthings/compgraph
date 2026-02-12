@@ -64,7 +64,19 @@ uv run pytest                                    # Run tests
 
 ## Deployment
 
-Dev server runs on a Linux server on the local network. Binds to `0.0.0.0:8000` by default (configurable via `HOST`/`PORT` env vars). Access from any machine on the LAN at `http://<linux-server-ip>:8000`.
+Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.168.1.69` on the local network.
+
+- **SSH**: `ssh compgraph-dev` (alias in `~/.ssh/config`, uses 1Password SSH agent)
+- **Repo**: `/opt/compgraph` (cloned via HTTPS, credentials in `/root/.git-credentials`)
+- **Service**: `systemctl {start|stop|restart|status} compgraph`
+- **Logs**: `journalctl -u compgraph -f`
+- **Health**: `http://192.168.1.69:8000/health`
+- **Secrets**: `.env` at `/opt/compgraph/.env` (populated from 1Password, `chmod 600`)
+
+To deploy latest code:
+```bash
+ssh compgraph-dev "cd /opt/compgraph && git pull && source /root/.local/bin/env && uv sync && systemctl restart compgraph"
+```
 
 ## Conventions
 
