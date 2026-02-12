@@ -4,6 +4,29 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-12 (Session 3) — Dev Environment + Supabase Migrations
+
+### Completed
+- **Dev environment hardened** — Git hooks (pre-commit, pre-push), CI workflow (lint, typecheck, test, security), ruff rules, mypy config, pytest-cov with 50% threshold, CodeRabbit review config.
+- **GitHub org migration** — Repo transferred to `vaughnmakesthings/compgraph` org, SSH remote configured, branch protection set via web UI.
+- **Supabase migrations** — Alembic autogenerate connected to live Supabase (Postgres 17). Initial migration created all 13 tables. Migration applied successfully.
+- **Seed data** — 4 target companies seeded: Advantage Solutions (Workday), Acosta Group (Workday), BDS Connected Solutions (iCIMS), MarketSource (iCIMS).
+- **Custom skills** — Created worktree, pr, cleanup, merge-guardian, parallel-pipeline skills.
+- **CLAUDE.md expanded** — Architecture overview, CI merge discipline, orchestrator process management, skills & artifacts sections.
+- **Bug fix** — conftest.py seed data used wrong field name (`ats_type` → `ats_platform`) and was missing required `career_site_url`.
+
+### Decisions
+- SSH for git push (HTTPS via 1Password plugin too fragile with org tokens).
+- CodeRabbit + Codecov + Snyk for CI. Skipped Gemini Code Assist, Cursor Bug Bot, CircleCI.
+- GitHub Issues with milestones (M1-M7) for roadmap tracking.
+
+### Blocked / Next
+- **iCIMS scraper** — First scraper adapter (MarketSource + BDS). Primary implementation target.
+- **Workday scraper** — Second priority (Advantage + Acosta).
+- **CI secrets** — CODECOV_TOKEN and SNYK_TOKEN need adding to repo secrets.
+
+---
+
 ## 2026-02-12 (Session 2) — Agent Crew Assembly + Context Management
 
 ### Completed

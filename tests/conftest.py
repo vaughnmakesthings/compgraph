@@ -107,10 +107,30 @@ async def seeded_db(async_session: AsyncSession) -> AsyncSession:
     from compgraph.db.models import Company
 
     companies = [
-        Company(name="Advantage Solutions", slug="advantage", ats_type="workday"),
-        Company(name="Acosta Group", slug="acosta", ats_type="workday"),
-        Company(name="BDS Connected Solutions", slug="bds", ats_type="icims"),
-        Company(name="MarketSource", slug="marketsource", ats_type="icims"),
+        Company(
+            name="Advantage Solutions",
+            slug="advantage",
+            ats_platform="workday",
+            career_site_url="https://careers.advantagesolutions.net",
+        ),
+        Company(
+            name="Acosta Group",
+            slug="acosta",
+            ats_platform="workday",
+            career_site_url="https://careers.acosta.com",
+        ),
+        Company(
+            name="BDS Connected Solutions",
+            slug="bds",
+            ats_platform="icims",
+            career_site_url="https://bdsconnected.com/careers",
+        ),
+        Company(
+            name="MarketSource",
+            slug="marketsource",
+            ats_platform="icims",
+            career_site_url="https://www.marketsource.com/careers",
+        ),
     ]
     async_session.add_all(companies)
     await async_session.flush()

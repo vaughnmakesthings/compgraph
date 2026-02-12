@@ -2,7 +2,7 @@
 
 ## Current State (2026-02-12)
 
-**Scaffold complete.** FastAPI app, all 13 SQLAlchemy models, Alembic config, health endpoint, agent crew, hooks. No migrations generated yet (need Supabase connection). Scraper, enrichment, and aggregation packages are placeholders.
+**Foundation ready.** All 13 tables live on Supabase (Postgres 17). 4 target companies seeded. Dev environment hardened (hooks, CI, coverage, mypy). Repo at `vaughnmakesthings/compgraph` with branch protection. Next: first scraper adapter (iCIMS).
 
 See `docs/changelog.md` for session-by-session history.
 
@@ -17,8 +17,8 @@ Goal: All four scrapers running, writing raw snapshots to the database.
 | Project scaffold | FastAPI + SQLAlchemy models + Alembic + config | Done |
 | Agent crew | 4 project agents + hooks + voltagent integration | Done |
 | Context management | docs/ structure, context packs, tiered loading | Done |
-| Supabase setup | Database provisioning, connection config, .env | Not started |
-| Alembic migrations | Generate from models, run against Supabase | Blocked (need DB) |
+| Supabase setup | Database provisioning, connection config, .env | Done |
+| Alembic migrations | Generate from models, run against Supabase | Done |
 | iCIMS scraper | MarketSource + BDS adapter (HTML parsing) | Not started |
 | Workday scraper | 2020 Companies adapter (CXS API, JSON) | Not started |
 | T-ROC scraper | Inspect site, determine ATS, build adapter | Not started |
