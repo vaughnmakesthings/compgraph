@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 compgraph = "compgraph.__main__:main"
+preflight = "compgraph.preflight:main"
 
 [project.optional-dependencies]
 dev = [
