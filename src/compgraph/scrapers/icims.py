@@ -134,10 +134,28 @@ def parse_html_fallback(html: str) -> dict[str, str | int | None] | None:
     if not title and not description:
         return None
 
+    # Extract location from common iCIMS location elements
+    location = ""
+    loc_el = soup.select_one(
+        ".iCIMS_JobHeaderData .iCIMS_JobHeaderField:-soup-contains('Location'),"
+        " .header-location, .iCIMS_InfoField_Job:-soup-contains('Location')"
+    )
+    if loc_el:
+        # Get sibling or child text that contains the actual location value
+        value_el = loc_el.find_next_sibling() or loc_el
+        location = value_el.get_text(strip=True)
+    if not location:
+        # Fallback: look for common location patterns in meta tags
+        meta_loc = soup.find("meta", attrs={"name": "location"}) or soup.find(
+            "meta", attrs={"property": "og:location"}
+        )
+        if meta_loc:
+            location = meta_loc.get("content", "")  # type: ignore[assignment]
+
     return {
         "title": title or "",
         "description": description or "",
-        "location": "",
+        "location": location,
         "job_id": job_id,
     }
 
@@ -230,6 +248,7 @@ async def persist_posting(
     raw: dict[str, str | int | None],
     company_id: uuid.UUID,
     base_url: str,
+    url_path: str | None = None,
 ) -> bool:
     external_job_id = raw.get("job_id")
     if not external_job_id:
@@ -268,7 +287,9 @@ async def persist_posting(
     last_hash = snap_result.scalar_one_or_none()
     content_changed = last_hash is not None and last_hash != full_text_hash
 
-    url = raw.get("url") or f"{base_url}/jobs/{external_job_id}/job"
+    url = raw.get("url") or (
+        f"{base_url}{url_path}" if url_path else f"{base_url}/jobs/{external_job_id}/job"
+    )
 
     snapshot_date = datetime.now(UTC).date()
     stmt = pg_insert(PostingSnapshot).values(
@@ -352,7 +373,11 @@ class ICIMSAdapter:
                     try:
                         async with session.begin_nested():
                             persisted = await persist_posting(
-                                session, detail, company.id, company.career_site_url
+                                session,
+                                detail,
+                                company.id,
+                                company.career_site_url,
+                                url_path=entry.get("url_path"),
                             )
                         if persisted:
                             result.snapshots_created += 1

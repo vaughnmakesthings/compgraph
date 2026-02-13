@@ -112,6 +112,18 @@ class TestParseHtmlFallback:
         assert "field experience" in data["description"]
         assert data["job_id"] == "48000"
 
+    def test_extracts_location_from_meta(self) -> None:
+        html = (FIXTURES / "icims_detail_no_jsonld.html").read_text()
+        data = parse_html_fallback(html)
+        assert data is not None
+        assert data["location"] == "Dallas, TX"
+
+    def test_returns_empty_location_when_absent(self) -> None:
+        html = '<html><body><h1>Test Job</h1><div class="iCIMS_JobContent">desc</div></body></html>'
+        data = parse_html_fallback(html)
+        assert data is not None
+        assert data["location"] == ""
+
     def test_returns_none_on_empty_page(self) -> None:
         html = "<html><body></body></html>"
         data = parse_html_fallback(html)
@@ -311,6 +323,44 @@ class TestPersistPosting:
         }
         result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
         assert result is False
+
+    @pytest.mark.asyncio
+    async def test_url_path_used_for_fallback_url(self) -> None:
+        """When raw has no url, url_path from listing entry is used to build a valid URL."""
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(
+            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+        )
+
+        raw: dict[str, str | int | None] = {
+            "title": "Test Job",
+            "description": "desc",
+            "location": "",
+            "job_id": "48000",
+        }
+
+        result = await persist_posting(
+            mock_session,
+            raw,
+            uuid.uuid4(),
+            "https://test.icims.com",
+            url_path="/jobs/48000/senior-field-tech/job",
+        )
+        assert result is True
+        # Verify the snapshot upsert (3rd execute call) used the url_path
+        snapshot_call = mock_session.execute.call_args_list[2]
+        stmt = snapshot_call[0][0]
+        # The compiled parameters should contain the correct URL
+        compiled = stmt.compile(
+            compile_kwargs={"literal_binds": True},
+        )
+        assert "/jobs/48000/senior-field-tech/job" in str(compiled)
 
     @pytest.mark.asyncio
     async def test_content_changed_flag(self) -> None:

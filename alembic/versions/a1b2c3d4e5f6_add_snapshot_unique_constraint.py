@@ -42,6 +42,24 @@ def upgrade() -> None:
         "posting_snapshots",
         ["posting_id", "snapshot_date"],
     )
+    # Remove any existing duplicate postings before adding the unique constraint.
+    # Keeps the row with the earliest first_seen_at for each (company_id, external_job_id).
+    op.execute(
+        sa.text("""
+            DELETE FROM postings
+            WHERE id IN (
+                SELECT id FROM (
+                    SELECT id,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY company_id, external_job_id
+                               ORDER BY first_seen_at ASC
+                           ) AS rn
+                    FROM postings
+                ) ranked
+                WHERE rn > 1
+            )
+        """)
+    )
     op.create_unique_constraint(
         "uq_postings_company_external",
         "postings",
