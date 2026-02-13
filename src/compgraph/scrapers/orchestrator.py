@@ -193,7 +193,7 @@ class PipelineOrchestrator:
                 raise
             finally:
                 if result is not None:
-                    await self._finalize_scrape_run(scrape_run, result)
+                    await asyncio.shield(self._finalize_scrape_run(scrape_run, result))
 
             return result
 
