@@ -262,7 +262,7 @@ async def persist_posting(
             times_reposted=0,
         )
         .on_conflict_do_update(
-            index_elements=["fingerprint_hash"],
+            index_elements=["company_id", "external_job_id"],
             set_={
                 "last_seen_at": now,
                 "is_active": True,
@@ -341,9 +341,14 @@ class WorkdayAdapter:
                 result.finished_at = datetime.now(UTC)
                 return result
 
+        failed_details = len(external_paths) - len(details)
+        if failed_details:
+            result.errors.append(f"{failed_details} of {len(external_paths)} detail fetches failed")
+
         for sp in search_postings:
             detail = details.get(sp.external_path)
             if detail is None:
+                result.errors.append(f"Detail fetch failed for {sp.external_path}")
                 continue
 
             first_seen: datetime | None = None
