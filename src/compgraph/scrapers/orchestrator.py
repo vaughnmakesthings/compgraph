@@ -12,7 +12,7 @@ from enum import StrEnum
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from compgraph.db.models import Company, ScrapeRun
+from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
 from compgraph.db.session import async_session_factory
 from compgraph.scrapers.base import ScrapeResult
 from compgraph.scrapers.registry import get_adapter
@@ -190,7 +190,7 @@ class PipelineOrchestrator:
                 scrape_run = ScrapeRun(
                     company_id=company.id,
                     started_at=datetime.now(UTC),
-                    status="pending",
+                    status=ScrapeRunStatus.PENDING,
                 )
                 session.add(scrape_run)
                 await session.commit()
@@ -207,16 +207,16 @@ class PipelineOrchestrator:
             return
         try:
             async with async_session_factory() as session:
-                await session.merge(scrape_run)
-                scrape_run.completed_at = datetime.now(UTC)
-                scrape_run.jobs_found = result.postings_found
-                scrape_run.snapshots_created = result.snapshots_created
-                scrape_run.pages_scraped = result.pages_scraped
+                merged = await session.merge(scrape_run)
+                merged.completed_at = datetime.now(UTC)
+                merged.jobs_found = result.postings_found
+                merged.snapshots_created = result.snapshots_created
+                merged.pages_scraped = result.pages_scraped
                 if result.success:
-                    scrape_run.status = "completed"
+                    merged.status = ScrapeRunStatus.COMPLETED
                 else:
-                    scrape_run.status = "failed"
-                    scrape_run.errors = {"errors": result.errors}
+                    merged.status = ScrapeRunStatus.FAILED
+                    merged.errors = {"errors": result.errors}
                 await session.commit()
         except Exception:
             logger.exception("Failed to finalize ScrapeRun for %s", result.company_slug)

@@ -45,7 +45,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_scrape_runs_company_started",
         "scrape_runs",
-        ["company_id", "started_at"],
+        ["company_id", sa.text("started_at DESC")],
         unique=False,
     )
 

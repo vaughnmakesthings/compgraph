@@ -4,19 +4,18 @@
 set -euo pipefail
 
 ISSUE="${1:?Usage: process-issue.sh <issue-number>}"
+[[ "$ISSUE" =~ ^[0-9]+$ ]] || { echo "ERROR: Issue number must be numeric" >&2; exit 1; }
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 WORKTREE="${PROJECT_DIR}/../compgraph-issue-${ISSUE}"
-LOG_DIR="/tmp/compgraph-pipeline"
+LOG_DIR=$(mktemp -d "/tmp/compgraph-pipeline-${ISSUE}-XXXXXX")
 RETRY_MAX=3
-
-mkdir -p "$LOG_DIR"
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 fail() { log "FATAL: $*"; exit 1; }
 
 # Circuit breaker: track consecutive failures per phase
 check_circuit() {
-  local phase="$1" rf="/tmp/compgraph-cb-${ISSUE}-${phase}"
+  local phase="$1" rf="${LOG_DIR}/cb-${phase}"
   local count
   count=$(cat "$rf" 2>/dev/null || echo 0)
   if [ "$count" -ge "$RETRY_MAX" ]; then
@@ -28,11 +27,11 @@ check_circuit() {
 
 reset_circuit() {
   local phase="$1"
-  rm -f "/tmp/compgraph-cb-${ISSUE}-${phase}"
+  rm -f "${LOG_DIR}/cb-${phase}"
 }
 
 cleanup_circuits() {
-  rm -f /tmp/compgraph-cb-"${ISSUE}"-*
+  rm -f "${LOG_DIR}"/cb-*
 }
 trap cleanup_circuits EXIT
 
@@ -57,6 +56,9 @@ reset_circuit "setup"
 log "[1/3] Worktree ready."
 
 # Phase 2: Implement
+# SECURITY: Issue body is interpolated into the prompt below. A malicious issue
+# could inject prompt instructions. Mitigate by restricting allowedTools and
+# reviewing agent output before merging.
 log "[2/3] Implementing changes..."
 check_circuit "impl"
 claude -p "$(cat <<EOF

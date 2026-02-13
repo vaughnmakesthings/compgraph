@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from compgraph.db.models import Company, ScrapeRun
+from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
 
 
 class TestScrapeRunModel:
@@ -13,11 +13,11 @@ class TestScrapeRunModel:
         run = ScrapeRun(
             company_id=company_id,
             started_at=started,
-            status="pending",
+            status=ScrapeRunStatus.PENDING,
         )
 
         assert run.company_id == company_id
-        assert run.status == "pending"
+        assert run.status == ScrapeRunStatus.PENDING
         assert run.started_at == started
         assert run.errors is None
         assert run.completed_at is None
@@ -32,14 +32,14 @@ class TestScrapeRunModel:
             company_id=company_id,
             started_at=started,
             completed_at=completed,
-            status="failed",
+            status=ScrapeRunStatus.FAILED,
             pages_scraped=5,
             jobs_found=42,
             snapshots_created=38,
             errors=errors_payload,
         )
 
-        assert run.status == "failed"
+        assert run.status == ScrapeRunStatus.FAILED
         assert run.pages_scraped == 5
         assert run.jobs_found == 42
         assert run.snapshots_created == 38
@@ -50,16 +50,16 @@ class TestScrapeRunModel:
         run = ScrapeRun(
             company_id=uuid.uuid4(),
             started_at=datetime.now(UTC),
-            status="pending",
+            status=ScrapeRunStatus.PENDING,
         )
-        assert run.status == "pending"
+        assert run.status == ScrapeRunStatus.PENDING
 
-        run.status = "completed"
+        run.status = ScrapeRunStatus.COMPLETED
         run.completed_at = datetime.now(UTC)
         run.jobs_found = 25
         run.snapshots_created = 25
 
-        assert run.status == "completed"
+        assert run.status == ScrapeRunStatus.COMPLETED
         assert run.completed_at is not None
         assert run.jobs_found == 25
 
@@ -67,15 +67,15 @@ class TestScrapeRunModel:
         run = ScrapeRun(
             company_id=uuid.uuid4(),
             started_at=datetime.now(UTC),
-            status="pending",
+            status=ScrapeRunStatus.PENDING,
         )
-        assert run.status == "pending"
+        assert run.status == ScrapeRunStatus.PENDING
 
-        run.status = "failed"
+        run.status = ScrapeRunStatus.FAILED
         run.completed_at = datetime.now(UTC)
         run.errors = {"errors": ["Connection refused"]}
 
-        assert run.status == "failed"
+        assert run.status == ScrapeRunStatus.FAILED
         assert run.errors is not None
         assert "Connection refused" in run.errors["errors"]
 
@@ -89,7 +89,7 @@ class TestScrapeRunModel:
         run = ScrapeRun(
             company_id=company.id,
             started_at=datetime.now(UTC),
-            status="pending",
+            status=ScrapeRunStatus.PENDING,
         )
 
         assert run.company_id == company.id
@@ -105,10 +105,15 @@ class TestScrapeRunModel:
         run = ScrapeRun(
             company_id=uuid.uuid4(),
             started_at=datetime.now(UTC),
-            status="failed",
+            status=ScrapeRunStatus.FAILED,
             errors=errors_payload,
         )
         assert run.errors["metadata"]["attempt"] == 3
+
+    def test_status_enum_values(self):
+        assert ScrapeRunStatus.PENDING == "pending"
+        assert ScrapeRunStatus.COMPLETED == "completed"
+        assert ScrapeRunStatus.FAILED == "failed"
 
 
 class TestScrapeResultPagesScraped:

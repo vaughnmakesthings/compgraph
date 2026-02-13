@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import date, datetime
 
@@ -80,6 +81,12 @@ class Market(Base):
 # ---------------------------------------------------------------------------
 
 
+class ScrapeRunStatus(enum.StrEnum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class ScrapeRun(Base):
     __tablename__ = "scrape_runs"
 
@@ -87,7 +94,7 @@ class ScrapeRun(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=ScrapeRunStatus.PENDING)
     pages_scraped: Mapped[int] = mapped_column(Integer, default=0)
     jobs_found: Mapped[int] = mapped_column(Integer, default=0)
     snapshots_created: Mapped[int] = mapped_column(Integer, default=0)
@@ -96,7 +103,7 @@ class ScrapeRun(Base):
 
     company: Mapped["Company"] = relationship(back_populates="scrape_runs")
 
-    __table_args__ = (Index("ix_scrape_runs_company_started", "company_id", "started_at"),)
+    __table_args__ = (Index("ix_scrape_runs_company_started", "company_id", started_at.desc()),)
 
 
 class Posting(Base):
