@@ -63,10 +63,13 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
         if isinstance(data, dict) and "@graph" in data:
             data = data["@graph"]
         if isinstance(data, list):
-            data = next((d for d in data if d.get("@type") == "JobPosting"), None)
+            data = next(
+                (d for d in data if isinstance(d, dict) and d.get("@type") == "JobPosting"),
+                None,
+            )
             if not data:
                 continue
-        if data.get("@type") != "JobPosting":
+        if not isinstance(data, dict) or data.get("@type") != "JobPosting":
             continue
 
         location_data = data.get("jobLocation", {})
@@ -236,45 +239,41 @@ async def persist_posting(
     full_text = str(raw.get("description", ""))
     full_text_hash = hashlib.sha256(full_text.encode()).hexdigest()
 
-    result = await session.execute(
-        select(Posting).where(
-            Posting.company_id == company_id,
-            Posting.external_job_id == str(external_job_id),
-        )
-    )
-    posting = result.scalar_one_or_none()
-
     now = datetime.now(UTC)
 
-    if posting is None:
-        posting = Posting(
+    posting_result = await session.execute(
+        pg_insert(Posting)
+        .values(
+            id=uuid.uuid4(),
             company_id=company_id,
             external_job_id=str(external_job_id),
             first_seen_at=now,
             last_seen_at=now,
             is_active=True,
         )
-        session.add(posting)
-        await session.flush()
-        content_changed = False
-    else:
-        posting.last_seen_at = now
-
-        snap_result = await session.execute(
-            select(PostingSnapshot.full_text_hash)
-            .where(PostingSnapshot.posting_id == posting.id)
-            .order_by(PostingSnapshot.created_at.desc())
-            .limit(1)
+        .on_conflict_do_update(
+            index_elements=["company_id", "external_job_id"],
+            set_={"last_seen_at": now},
         )
-        last_hash = snap_result.scalar_one_or_none()
-        content_changed = last_hash is not None and last_hash != full_text_hash
+        .returning(Posting.id)
+    )
+    posting_id = posting_result.scalar_one()
+
+    snap_result = await session.execute(
+        select(PostingSnapshot.full_text_hash)
+        .where(PostingSnapshot.posting_id == posting_id)
+        .order_by(PostingSnapshot.created_at.desc())
+        .limit(1)
+    )
+    last_hash = snap_result.scalar_one_or_none()
+    content_changed = last_hash is not None and last_hash != full_text_hash
 
     url = raw.get("url") or f"{base_url}/jobs/{external_job_id}/job"
 
     snapshot_date = datetime.now(UTC).date()
     stmt = pg_insert(PostingSnapshot).values(
         id=uuid.uuid4(),
-        posting_id=posting.id,
+        posting_id=posting_id,
         snapshot_date=snapshot_date,
         title_raw=str(raw.get("title", "")),
         location_raw=str(raw.get("location", "")),

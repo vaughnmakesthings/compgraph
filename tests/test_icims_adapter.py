@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -42,6 +41,16 @@ class TestParseJsonLd:
 
     def test_returns_none_on_malformed_json(self) -> None:
         html = '<script type="application/ld+json">{broken json</script>'
+        data = parse_json_ld(html)
+        assert data is None
+
+    def test_returns_none_on_scalar_json_ld(self) -> None:
+        html = '<script type="application/ld+json">"just a string"</script>'
+        data = parse_json_ld(html)
+        assert data is None
+
+    def test_returns_none_on_numeric_json_ld(self) -> None:
+        html = '<script type="application/ld+json">42</script>'
         data = parse_json_ld(html)
         assert data is None
 
@@ -241,11 +250,16 @@ class TestICIMSFetcher:
 class TestPersistPosting:
     @pytest.mark.asyncio
     async def test_new_posting_creates_posting_and_snapshot(self) -> None:
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.execute = AsyncMock(
+            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+        )
 
         company_id = uuid.uuid4()
         raw: dict[str, str | int | None] = {
@@ -258,23 +272,20 @@ class TestPersistPosting:
 
         result = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
         assert result is True
-        assert mock_session.add.call_count == 1
-        assert mock_session.execute.call_count == 2
+        # 3 executes: posting upsert, snapshot hash lookup, snapshot upsert
+        assert mock_session.execute.call_count == 3
 
     @pytest.mark.asyncio
     async def test_existing_posting_updates_last_seen_and_adds_snapshot(self) -> None:
-        existing_posting = MagicMock()
-        existing_posting.id = uuid.uuid4()
-        existing_posting.last_seen_at = datetime(2026, 2, 12, tzinfo=UTC)
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
 
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = existing_posting
-        mock_snapshot_result = MagicMock()
-        mock_snapshot_result.scalar_one_or_none.return_value = None
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
         mock_session.execute = AsyncMock(
-            side_effect=[mock_result, mock_snapshot_result, MagicMock()],
+            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()],
         )
 
         raw: dict[str, str | int | None] = {
@@ -292,7 +303,6 @@ class TestPersistPosting:
     @pytest.mark.asyncio
     async def test_returns_false_when_no_job_id(self) -> None:
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
         raw: dict[str, str | int | None] = {
             "title": "Test",
             "description": "desc",
@@ -304,17 +314,16 @@ class TestPersistPosting:
 
     @pytest.mark.asyncio
     async def test_content_changed_flag(self) -> None:
-        existing_posting = MagicMock()
-        existing_posting.id = uuid.uuid4()
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = "oldhash123"
 
-        last_hash = MagicMock()
-        last_hash.scalar_one_or_none.return_value = "oldhash123"
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = existing_posting
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
-        mock_session.execute = AsyncMock(side_effect=[mock_result, last_hash, MagicMock()])
+        mock_session.execute = AsyncMock(
+            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+        )
 
         raw: dict[str, str | int | None] = {
             "title": "Sales Rep",
@@ -330,32 +339,31 @@ class TestPersistPosting:
 
     @pytest.mark.asyncio
     async def test_same_job_twice_same_day_uses_upsert(self) -> None:
-        """Second call for same job finds existing posting and issues upsert snapshot."""
-        existing_posting = MagicMock()
-        existing_posting.id = uuid.uuid4()
-        existing_posting.last_seen_at = datetime(2026, 2, 13, tzinfo=UTC)
+        """Second call for same job hits ON CONFLICT on posting upsert."""
+        posting_id = uuid.uuid4()
 
-        # First call: no existing posting (new insert)
-        new_result = MagicMock()
-        new_result.scalar_one_or_none.return_value = None
+        # Both calls return the same posting_id via ON CONFLICT DO UPDATE
+        posting_result_1 = MagicMock()
+        posting_result_1.scalar_one.return_value = posting_id
+        snapshot_hash_1 = MagicMock()
+        snapshot_hash_1.scalar_one_or_none.return_value = None
 
-        # Second call: existing posting found + snapshot hash lookup
-        existing_result = MagicMock()
-        existing_result.scalar_one_or_none.return_value = existing_posting
-        snapshot_hash_result = MagicMock()
-        snapshot_hash_result.scalar_one_or_none.return_value = (
+        posting_result_2 = MagicMock()
+        posting_result_2.scalar_one.return_value = posting_id
+        snapshot_hash_2 = MagicMock()
+        snapshot_hash_2.scalar_one_or_none.return_value = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         )
 
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
         mock_session.execute = AsyncMock(
             side_effect=[
-                new_result,  # 1st call: SELECT posting (not found)
-                MagicMock(),  # 1st call: INSERT snapshot (upsert)
-                existing_result,  # 2nd call: SELECT posting (found)
-                snapshot_hash_result,  # 2nd call: SELECT latest hash
-                MagicMock(),  # 2nd call: INSERT snapshot (upsert)
+                posting_result_1,  # 1st call: posting upsert (insert)
+                snapshot_hash_1,  # 1st call: snapshot hash lookup (none)
+                MagicMock(),  # 1st call: snapshot upsert
+                posting_result_2,  # 2nd call: posting upsert (on conflict update)
+                snapshot_hash_2,  # 2nd call: snapshot hash lookup (found)
+                MagicMock(),  # 2nd call: snapshot upsert (on conflict)
             ]
         )
 
@@ -374,9 +382,8 @@ class TestPersistPosting:
         result2 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
         assert result2 is True
 
-        assert mock_session.execute.call_count == 5
-        # Only the first call adds a new Posting; second call updates existing
-        assert mock_session.add.call_count == 1
+        # 3 executes per call x 2 calls = 6
+        assert mock_session.execute.call_count == 6
 
 
 class TestICIMSAdapter:
@@ -401,12 +408,25 @@ class TestICIMSAdapter:
                 return _make_response(200, listing_html)
             return _make_response(200, detail_html)
 
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
         mock_session = AsyncMock()
-        mock_session.add = MagicMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_session.execute = AsyncMock(return_value=mock_result)
+        # Each persist_posting call: posting upsert, snapshot hash, snapshot upsert
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+            ]
+        )
 
         adapter = _ICIMSAdapter()
 
