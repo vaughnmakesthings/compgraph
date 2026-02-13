@@ -312,9 +312,23 @@ async def persist_posting(
 class WorkdayAdapter:
     async def scrape(self, company: Company, session: AsyncSession) -> ScrapeResult:
         result = ScrapeResult(company_id=company.id, company_slug=company.slug)
+
+        if not company.career_site_url:
+            result.errors.append(f"Missing career_site_url for {company.slug}")
+            result.finished_at = datetime.now(UTC)
+            return result
+
         config = company.scraper_config or {}
-        tenant = config.get("tenant", company.slug)
-        site = config.get("site", "External_Careers")
+        tenant = config.get("tenant") or company.slug
+        site = config.get("site") or "External_Careers"
+
+        if not tenant or not site:
+            result.errors.append(
+                f"Invalid scraper_config for {company.slug}: tenant={tenant!r}, site={site!r}"
+            )
+            result.finished_at = datetime.now(UTC)
+            return result
+
         base_url = company.career_site_url.rstrip("/")
 
         fetcher = WorkdayFetcher(base_url=base_url, tenant=tenant, site=site)
