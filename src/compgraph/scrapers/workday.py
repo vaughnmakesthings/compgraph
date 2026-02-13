@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -92,8 +93,12 @@ def _build_search_url(base_url: str, tenant: str, site: str) -> str:
     return f"{base_url}/wday/cxs/{tenant}/{site}/jobs"
 
 
+_EXTERNAL_PATH_PREFIX = re.compile(r"^(?:[a-z]{2}-[A-Z]{2}/)?job/")
+
+
 def _build_detail_url(base_url: str, tenant: str, site: str, external_path: str) -> str:
-    return f"{base_url}/wday/cxs/{tenant}/{site}/job/{external_path}"
+    cleaned = _EXTERNAL_PATH_PREFIX.sub("", external_path.lstrip("/"))
+    return f"{base_url}/wday/cxs/{tenant}/{site}/job/{cleaned}"
 
 
 def _hash_text(text: str) -> str:
