@@ -227,11 +227,11 @@ class WorkdayFetcher:
                 finally:
                     await asyncio.sleep(self.detail_delay)
 
-        for path in external_paths:
-            try:
-                await _fetch_one(path)
-            except CircuitBreakerOpen:
-                logger.error("Aborting detail batch due to circuit breaker")
+        tasks = [_fetch_one(path) for path in external_paths]
+        gather_results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in gather_results:
+            if isinstance(result, CircuitBreakerOpen):
+                logger.error("Detail batch hit circuit breaker")
                 break
 
         if errors:
