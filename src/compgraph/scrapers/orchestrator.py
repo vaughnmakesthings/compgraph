@@ -180,9 +180,21 @@ class PipelineOrchestrator:
         async with self.semaphore:
             scrape_run = await self._create_scrape_run(company)
 
-            result = await self._scrape_with_retries(company)
+            result: ScrapeResult | None = None
+            try:
+                result = await self._scrape_with_retries(company)
+            except BaseException as exc:
+                result = ScrapeResult(
+                    company_id=company.id,
+                    company_slug=company.slug,
+                    errors=[f"Unexpected exception: {exc!r}"],
+                    finished_at=datetime.now(UTC),
+                )
+                raise
+            finally:
+                if result is not None:
+                    await self._finalize_scrape_run(scrape_run, result)
 
-            await self._finalize_scrape_run(scrape_run, result)
             return result
 
     async def _create_scrape_run(self, company: Company) -> ScrapeRun | None:
