@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
@@ -196,8 +197,20 @@ class PipelineOrchestrator:
                 await session.commit()
                 await session.refresh(scrape_run)
                 return scrape_run
+        except (IntegrityError, OperationalError) as exc:
+            logger.error(
+                "Database integrity/connection error creating ScrapeRun for %s: %r",
+                company.slug,
+                exc,
+            )
+            return None
         except Exception:
-            logger.exception("Failed to create ScrapeRun for %s", company.slug)
+            logger.warning(
+                "Non-critical failure creating ScrapeRun for %s, "
+                "scrape will proceed without tracking",
+                company.slug,
+                exc_info=True,
+            )
             return None
 
     async def _finalize_scrape_run(
@@ -207,19 +220,36 @@ class PipelineOrchestrator:
             return
         try:
             async with async_session_factory() as session:
-                merged = await session.merge(scrape_run)
-                merged.completed_at = datetime.now(UTC)
-                merged.jobs_found = result.postings_found
-                merged.snapshots_created = result.snapshots_created
-                merged.pages_scraped = result.pages_scraped
+                refreshed = await session.get(ScrapeRun, scrape_run.id)
+                if refreshed is None:
+                    logger.error(
+                        "ScrapeRun %s not found in DB during finalization for %s",
+                        scrape_run.id,
+                        result.company_slug,
+                    )
+                    return
+                refreshed.completed_at = datetime.now(UTC)
+                refreshed.jobs_found = result.postings_found
+                refreshed.snapshots_created = result.snapshots_created
+                refreshed.pages_scraped = result.pages_scraped
                 if result.success:
-                    merged.status = ScrapeRunStatus.COMPLETED
+                    refreshed.status = ScrapeRunStatus.COMPLETED
                 else:
-                    merged.status = ScrapeRunStatus.FAILED
-                    merged.errors = {"errors": result.errors}
+                    refreshed.status = ScrapeRunStatus.FAILED
+                    refreshed.errors = {"errors": result.errors}
                 await session.commit()
+        except (IntegrityError, OperationalError) as exc:
+            logger.error(
+                "Database error finalizing ScrapeRun for %s: %r",
+                result.company_slug,
+                exc,
+            )
         except Exception:
-            logger.exception("Failed to finalize ScrapeRun for %s", result.company_slug)
+            logger.warning(
+                "Non-critical failure finalizing ScrapeRun for %s",
+                result.company_slug,
+                exc_info=True,
+            )
 
     async def _scrape_with_retries(self, company: Company) -> ScrapeResult:
         for attempt in range(1, self.max_retries + 1):
