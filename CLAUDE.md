@@ -140,6 +140,28 @@ All hooks MUST have a fallback/escape condition. If an external tool call fails 
 - Do not improvise if a skill or resource is missing — ask the user or pull the latest from main before proceeding.
 - If a background agent has not produced output in 10 minutes, consider it stale and report to the user.
 
+## CodeSight (Semantic Code Search)
+
+The project is indexed with CodeSight MCP for semantic search across code and docs.
+
+```bash
+# Re-index after significant changes (incremental, ~2s)
+# Use mcp__codesight__index_codebase with project_path and project_name="compgraph"
+```
+
+**Two-stage retrieval pattern:**
+1. `search_code(query, project="compgraph")` — returns metadata only (~40 tokens/result)
+2. `get_chunk_code(chunk_ids, include_context=True)` — expands relevant results with full source
+
+**Useful filters:**
+- `symbol_type="function"|"class"|"method"` — narrow to code symbols
+- `file_pattern="src/compgraph/scrapers/"` — scope to directory
+- `file_pattern="docs/"` — search design docs, research, and plans
+
+**Indexed content:** All Python source, tests, and docs (design.md, product-spec, plans/, references/, failure-patterns, etc.). Research findings and architecture decisions are searchable alongside implementation code.
+
+**When to use:** Prefer CodeSight over speculative file reads when exploring unfamiliar areas or when subagents need targeted context without loading entire files.
+
 ## Context Loading
 
 Read `docs/changelog.md` (latest entry only) for session continuity. Load context packs from `docs/context-packs.md` based on task type. Never load all of `docs/design.md` at once (~5.5K tokens).
