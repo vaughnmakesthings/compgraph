@@ -1,7 +1,7 @@
 """add posting and snapshot unique constraints
 
 Revision ID: a7908299a887
-Revises: a1b2c3d4e5f6
+Revises: 046d37447ab0
 Create Date: 2026-02-13 13:30:00.000000
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a7908299a887"
-down_revision: str | None = "a1b2c3d4e5f6"
+down_revision: str | None = "046d37447ab0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
