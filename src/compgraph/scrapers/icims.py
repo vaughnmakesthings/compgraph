@@ -44,7 +44,7 @@ def parse_listing_page(html: str) -> list[dict[str, str]]:
 
 def has_next_page(html: str) -> bool:
     soup = BeautifulSoup(html, "html.parser")
-    next_link = soup.find("a", string=re.compile(r"Next", re.IGNORECASE))
+    next_link = soup.find("a", string=re.compile(r"Next", re.IGNORECASE))  # type: ignore[call-overload]
     if next_link:
         return True
     next_link = soup.select_one('a.iCIMS_PagingNext, a[title="Next"]')
@@ -111,7 +111,7 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
     return None
 
 
-def parse_html_fallback(html: str) -> dict[str, str | None] | None:
+def parse_html_fallback(html: str) -> dict[str, str | int | None] | None:
     soup = BeautifulSoup(html, "html.parser")
 
     title_el = soup.select_one("h1, .iCIMS_Header")
