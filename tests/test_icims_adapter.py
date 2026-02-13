@@ -304,3 +304,109 @@ class TestPersistPosting:
         result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
         assert result is True
         assert mock_session.add.called
+
+
+class TestICIMSAdapter:
+    @pytest.mark.asyncio
+    async def test_scrape_returns_scrape_result(self) -> None:
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.base import ScrapeResult as _ScrapeResult
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        listing_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+        detail_html = (FIXTURES / "icims_detail_with_jsonld.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = None
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            if "search" in url:
+                return _make_response(200, listing_html)
+            return _make_response(200, detail_html)
+
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert isinstance(result, _ScrapeResult)
+        assert result.company_id == company.id
+        assert result.company_slug == "bds"
+        assert result.postings_found == 2
+        assert result.snapshots_created == 2
+        assert result.success is True
+
+    @pytest.mark.asyncio
+    async def test_scrape_empty_listings(self) -> None:
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        empty_html = (FIXTURES / "icims_listing_empty.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = None
+
+        mock_session = AsyncMock()
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(return_value=_make_response(200, empty_html))
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.success
+        assert result.postings_found == 0
+        assert result.snapshots_created == 0
+
+    @pytest.mark.asyncio
+    async def test_scrape_uses_company_config(self) -> None:
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        empty_html = (FIXTURES / "icims_listing_empty.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "marketsource"
+        company.career_site_url = "https://applyatmarketsource-msc.icims.com"
+        company.scraper_config = {"delay_min": 1.0, "delay_max": 3.0, "max_concurrency": 3}
+
+        mock_session = AsyncMock()
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(return_value=_make_response(200, empty_html))
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.success

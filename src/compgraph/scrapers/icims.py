@@ -8,13 +8,15 @@ import random
 import re
 import uuid
 from datetime import UTC, date, datetime
+from typing import ClassVar
 
 import httpx
 from bs4 import BeautifulSoup
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from compgraph.db.models import Posting, PostingSnapshot
+from compgraph.db.models import Company, Posting, PostingSnapshot
+from compgraph.scrapers.base import ScrapeResult
 
 logger = logging.getLogger(__name__)
 
@@ -282,3 +284,79 @@ async def persist_posting(
     session.add(snapshot)
 
     return True
+
+
+class ICIMSAdapter:
+    DEFAULT_HEADERS: ClassVar[dict[str, str]] = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+
+    async def scrape(self, company: Company, session: AsyncSession) -> ScrapeResult:
+        result = ScrapeResult(
+            company_id=company.id,
+            company_slug=company.slug,
+        )
+
+        config = company.scraper_config or {}
+        delay_min = config.get("delay_min", 2.0)
+        delay_max = config.get("delay_max", 8.0)
+        max_concurrency = config.get("max_concurrency", 5)
+
+        try:
+            async with httpx.AsyncClient(
+                headers=self.DEFAULT_HEADERS,
+                timeout=30.0,
+                follow_redirects=True,
+            ) as client:
+                fetcher = ICIMSFetcher(
+                    client=client,
+                    base_url=company.career_site_url,
+                    delay_min=delay_min,
+                    delay_max=delay_max,
+                    max_concurrency=max_concurrency,
+                )
+
+                job_entries = await fetcher.fetch_all_listings()
+                result.postings_found = len(job_entries)
+
+                if not job_entries:
+                    logger.info("No jobs found for %s", company.slug)
+                    result.finished_at = datetime.now(UTC)
+                    return result
+
+                for entry in job_entries:
+                    if fetcher.circuit_open:
+                        result.errors.append(
+                            f"Circuit breaker open after {fetcher.consecutive_failures} failures"
+                        )
+                        break
+
+                    detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
+                    if detail is None:
+                        continue
+
+                    try:
+                        persisted = await persist_posting(
+                            session, detail, company.id, company.career_site_url
+                        )
+                        if persisted:
+                            result.snapshots_created += 1
+                    except Exception as exc:
+                        logger.warning(
+                            "Failed to persist job %s for %s: %r",
+                            entry["job_id"],
+                            company.slug,
+                            exc,
+                        )
+
+                await session.commit()
+
+        except Exception as exc:
+            result.errors.append(f"Scrape failed: {exc!r}")
+            logger.exception("Scrape failed for %s: %r", company.slug, exc)
+
+        result.finished_at = datetime.now(UTC)
+        return result
