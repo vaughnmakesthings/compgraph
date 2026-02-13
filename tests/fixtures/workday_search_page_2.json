@@ -1,0 +1,21 @@
+{
+  "total": 25,
+  "jobPostings": [
+    {
+      "title": "Account Executive - Best Buy",
+      "externalPath": "Account-Executive-Best-Buy/R12350",
+      "locationsText": "Seattle, WA",
+      "postedOn": "Posted 1 Day Ago",
+      "bulletFields": ["Full time"],
+      "timeType": "Full time"
+    },
+    {
+      "title": "Retail Training Coordinator",
+      "externalPath": "Retail-Training-Coordinator/R12351",
+      "locationsText": "Denver, CO",
+      "postedOn": "Posted 7 Days Ago",
+      "bulletFields": ["Full time", "$55,000 - $65,000 per year"],
+      "timeType": "Full time"
+    }
+  ]
+}

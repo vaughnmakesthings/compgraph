@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import date, datetime
 
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -39,6 +41,7 @@ class Company(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     postings: Mapped[list["Posting"]] = relationship(back_populates="company")
+    scrape_runs: Mapped[list["ScrapeRun"]] = relationship(back_populates="company")
 
 
 class Brand(Base):
@@ -79,6 +82,31 @@ class Market(Base):
 # ---------------------------------------------------------------------------
 
 
+class ScrapeRunStatus(enum.StrEnum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class ScrapeRun(Base):
+    __tablename__ = "scrape_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=ScrapeRunStatus.PENDING)
+    pages_scraped: Mapped[int] = mapped_column(Integer, default=0)
+    jobs_found: Mapped[int] = mapped_column(Integer, default=0)
+    snapshots_created: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    company: Mapped["Company"] = relationship(back_populates="scrape_runs")
+
+    __table_args__ = (Index("ix_scrape_runs_company_started", "company_id", started_at.desc()),)
+
+
 class Posting(Base):
     __tablename__ = "postings"
 
@@ -100,6 +128,7 @@ class Posting(Base):
     brand_mentions: Mapped[list["PostingBrandMention"]] = relationship(back_populates="posting")
 
     __table_args__ = (
+        UniqueConstraint("company_id", "external_job_id", name="uq_postings_company_external"),
         Index("ix_postings_fingerprint_hash", "fingerprint_hash"),
         Index("ix_postings_brand_active", "company_id", "is_active"),
     )
@@ -121,7 +150,10 @@ class PostingSnapshot(Base):
 
     posting: Mapped["Posting"] = relationship(back_populates="snapshots")
 
-    __table_args__ = (Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),)
+    __table_args__ = (
+        Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),
+        UniqueConstraint("posting_id", "snapshot_date", name="uq_snapshots_posting_date"),
+    )
 
 
 class PostingEnrichment(Base):

@@ -31,6 +31,7 @@ class ScrapeResult:
     company_slug: str
     postings_found: int = 0
     snapshots_created: int = 0
+    pages_scraped: int = 0
     errors: list[str] = field(default_factory=list)
     started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     finished_at: datetime | None = None

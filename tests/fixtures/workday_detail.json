@@ -1,0 +1,16 @@
+{
+  "jobPostingInfo": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "title": "Retail Sales Specialist - Samsung",
+    "jobDescription": "<div><h2>About the Role</h2><p>We are seeking a Retail Sales Specialist to represent Samsung products in major retail locations. You will be responsible for driving sales, providing product demonstrations, and delivering exceptional customer experiences.</p><h3>Responsibilities</h3><ul><li>Drive sales of Samsung products in assigned retail locations</li><li>Conduct product demonstrations and training sessions</li><li>Build relationships with store management and associates</li><li>Report weekly sales metrics and competitive intelligence</li></ul><h3>Qualifications</h3><ul><li>2+ years retail sales experience</li><li>Knowledge of consumer electronics preferred</li><li>Excellent communication and presentation skills</li><li>Ability to travel within assigned territory</li></ul><h3>Compensation</h3><p>$18.00 - $22.00 per hour plus commission</p></div>",
+    "location": "New York, NY",
+    "startDate": "2026-02-10T00:00:00Z",
+    "timeType": "Full time",
+    "jobReqId": "REQ_099113",
+    "country": "US",
+    "externalUrl": "https://advantage.wd1.myworkdayjobs.com/en-US/External_Careers/job/Retail-Sales-Specialist-Samsung/R12345",
+    "additionalLocations": ["Brooklyn, NY", "Jersey City, NJ"],
+    "remote": false,
+    "jobFamilyGroup": "Sales"
+  }
+}
