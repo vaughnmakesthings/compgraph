@@ -10,8 +10,6 @@ WORKTREE="${PROJECT_DIR}/../compgraph-issue-${ISSUE}"
 LOG_DIR=$(mktemp -d "/tmp/compgraph-pipeline-${ISSUE}-XXXXXX")
 RETRY_MAX=3
 
-mkdir -p "$LOG_DIR"
-
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 fail() { log "FATAL: $*"; exit 1; }
 

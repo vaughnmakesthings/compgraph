@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import date, datetime
 
@@ -40,6 +41,7 @@ class Company(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     postings: Mapped[list["Posting"]] = relationship(back_populates="company")
+    scrape_runs: Mapped[list["ScrapeRun"]] = relationship(back_populates="company")
 
 
 class Brand(Base):
@@ -78,6 +80,31 @@ class Market(Base):
 # ---------------------------------------------------------------------------
 # Fact tables
 # ---------------------------------------------------------------------------
+
+
+class ScrapeRunStatus(enum.StrEnum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class ScrapeRun(Base):
+    __tablename__ = "scrape_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=ScrapeRunStatus.PENDING)
+    pages_scraped: Mapped[int] = mapped_column(Integer, default=0)
+    jobs_found: Mapped[int] = mapped_column(Integer, default=0)
+    snapshots_created: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    company: Mapped["Company"] = relationship(back_populates="scrape_runs")
+
+    __table_args__ = (Index("ix_scrape_runs_company_started", "company_id", started_at.desc()),)
 
 
 class Posting(Base):
