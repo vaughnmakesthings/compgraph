@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -127,6 +128,7 @@ class Posting(Base):
     brand_mentions: Mapped[list["PostingBrandMention"]] = relationship(back_populates="posting")
 
     __table_args__ = (
+        UniqueConstraint("company_id", "external_job_id", name="uq_postings_company_external"),
         Index("ix_postings_fingerprint_hash", "fingerprint_hash"),
         Index("ix_postings_brand_active", "company_id", "is_active"),
     )
@@ -148,7 +150,10 @@ class PostingSnapshot(Base):
 
     posting: Mapped["Posting"] = relationship(back_populates="snapshots")
 
-    __table_args__ = (Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),)
+    __table_args__ = (
+        Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),
+        UniqueConstraint("posting_id", "snapshot_date", name="uq_snapshots_posting_date"),
+    )
 
 
 class PostingEnrichment(Base):

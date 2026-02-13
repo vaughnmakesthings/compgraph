@@ -56,9 +56,9 @@ reset_circuit "setup"
 log "[1/3] Worktree ready."
 
 # Phase 2: Implement
-# SECURITY: Issue body is interpolated into the prompt below. A malicious issue
-# could inject prompt instructions. Mitigate by restricting allowedTools and
-# reviewing agent output before merging.
+# SECURITY: Issue content is passed to the LLM which has tool access.
+# Mitigation: --allowedTools restricts to file/code operations only (no network, no git push).
+# Additional mitigation: the worktree is isolated from the main repo.
 log "[2/3] Implementing changes..."
 check_circuit "impl"
 claude -p "$(cat <<EOF
