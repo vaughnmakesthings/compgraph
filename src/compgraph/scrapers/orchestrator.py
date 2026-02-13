@@ -12,7 +12,7 @@ from enum import StrEnum
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from compgraph.db.models import Company
+from compgraph.db.models import Company, ScrapeRun
 from compgraph.db.session import async_session_factory
 from compgraph.scrapers.base import ScrapeResult
 from compgraph.scrapers.registry import get_adapter
@@ -176,90 +176,129 @@ class PipelineOrchestrator:
         return list(result.scalars().all())
 
     async def _scrape_company_with_isolation(self, company: Company) -> ScrapeResult:
-        """Scrape a single company with retry logic and error isolation.
-
-        This method NEVER raises. All exceptions are captured into ScrapeResult.errors.
-        """
         async with self.semaphore:
-            for attempt in range(1, self.max_retries + 1):
-                try:
-                    adapter = get_adapter(company.ats_platform)
-                except KeyError:
-                    return ScrapeResult(
-                        company_id=company.id,
-                        company_slug=company.slug,
-                        errors=[f"No adapter registered for ats_platform={company.ats_platform!r}"],
-                        finished_at=datetime.now(UTC),
-                    )
+            scrape_run = await self._create_scrape_run(company)
 
-                try:
+            result = await self._scrape_with_retries(company)
+
+            await self._finalize_scrape_run(scrape_run, result)
+            return result
+
+    async def _create_scrape_run(self, company: Company) -> ScrapeRun | None:
+        try:
+            async with async_session_factory() as session:
+                scrape_run = ScrapeRun(
+                    company_id=company.id,
+                    started_at=datetime.now(UTC),
+                    status="pending",
+                )
+                session.add(scrape_run)
+                await session.commit()
+                await session.refresh(scrape_run)
+                return scrape_run
+        except Exception:
+            logger.exception("Failed to create ScrapeRun for %s", company.slug)
+            return None
+
+    async def _finalize_scrape_run(
+        self, scrape_run: ScrapeRun | None, result: ScrapeResult
+    ) -> None:
+        if scrape_run is None:
+            return
+        try:
+            async with async_session_factory() as session:
+                await session.merge(scrape_run)
+                scrape_run.completed_at = datetime.now(UTC)
+                scrape_run.jobs_found = result.postings_found
+                scrape_run.snapshots_created = result.snapshots_created
+                scrape_run.pages_scraped = result.pages_scraped
+                if result.success:
+                    scrape_run.status = "completed"
+                else:
+                    scrape_run.status = "failed"
+                    scrape_run.errors = {"errors": result.errors}
+                await session.commit()
+        except Exception:
+            logger.exception("Failed to finalize ScrapeRun for %s", result.company_slug)
+
+    async def _scrape_with_retries(self, company: Company) -> ScrapeResult:
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                adapter = get_adapter(company.ats_platform)
+            except KeyError:
+                return ScrapeResult(
+                    company_id=company.id,
+                    company_slug=company.slug,
+                    errors=[f"No adapter registered for ats_platform={company.ats_platform!r}"],
+                    finished_at=datetime.now(UTC),
+                )
+
+            try:
+                logger.info(
+                    "Scraping %s (attempt %d/%d, adapter=%s)",
+                    company.slug,
+                    attempt,
+                    self.max_retries,
+                    company.ats_platform,
+                )
+                async with async_session_factory() as session:
+                    result = await adapter.scrape(company, session)
+
+                if result.success:
                     logger.info(
-                        "Scraping %s (attempt %d/%d, adapter=%s)",
+                        "Scrape succeeded for %s: %d postings, %d snapshots",
+                        company.slug,
+                        result.postings_found,
+                        result.snapshots_created,
+                    )
+                    return result
+
+                if attempt < self.max_retries:
+                    delay = self.retry_base_delay * (2 ** (attempt - 1))
+                    logger.warning(
+                        "Scrape for %s had errors (attempt %d/%d), retrying in %.0fs: %s",
                         company.slug,
                         attempt,
                         self.max_retries,
-                        company.ats_platform,
+                        delay,
+                        result.errors,
                     )
-                    async with async_session_factory() as session:
-                        result = await adapter.scrape(company, session)
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        "Scrape for %s failed after %d attempts: %s",
+                        company.slug,
+                        self.max_retries,
+                        result.errors,
+                    )
+                    return result
 
-                    if result.success:
-                        logger.info(
-                            "Scrape succeeded for %s: %d postings, %d snapshots",
-                            company.slug,
-                            result.postings_found,
-                            result.snapshots_created,
-                        )
-                        return result
+            except Exception as exc:
+                if attempt < self.max_retries:
+                    delay = self.retry_base_delay * (2 ** (attempt - 1))
+                    logger.warning(
+                        "Scrape for %s raised exception (attempt %d/%d), retrying in %.0fs: %r",
+                        company.slug,
+                        attempt,
+                        self.max_retries,
+                        delay,
+                        exc,
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        "Scrape for %s failed after %d attempts with exception: %r",
+                        company.slug,
+                        self.max_retries,
+                        exc,
+                    )
+                    return ScrapeResult(
+                        company_id=company.id,
+                        company_slug=company.slug,
+                        errors=[f"Exception after {self.max_retries} attempts: {exc!r}"],
+                        finished_at=datetime.now(UTC),
+                    )
 
-                    # Adapter returned errors but didn't raise — retriable
-                    if attempt < self.max_retries:
-                        delay = self.retry_base_delay * (2 ** (attempt - 1))
-                        logger.warning(
-                            "Scrape for %s had errors (attempt %d/%d), retrying in %.0fs: %s",
-                            company.slug,
-                            attempt,
-                            self.max_retries,
-                            delay,
-                            result.errors,
-                        )
-                        await asyncio.sleep(delay)
-                    else:
-                        logger.error(
-                            "Scrape for %s failed after %d attempts: %s",
-                            company.slug,
-                            self.max_retries,
-                            result.errors,
-                        )
-                        return result
-
-                except Exception as exc:
-                    if attempt < self.max_retries:
-                        delay = self.retry_base_delay * (2 ** (attempt - 1))
-                        logger.warning(
-                            "Scrape for %s raised exception (attempt %d/%d), retrying in %.0fs: %r",
-                            company.slug,
-                            attempt,
-                            self.max_retries,
-                            delay,
-                            exc,
-                        )
-                        await asyncio.sleep(delay)
-                    else:
-                        logger.error(
-                            "Scrape for %s failed after %d attempts with exception: %r",
-                            company.slug,
-                            self.max_retries,
-                            exc,
-                        )
-                        return ScrapeResult(
-                            company_id=company.id,
-                            company_slug=company.slug,
-                            errors=[f"Exception after {self.max_retries} attempts: {exc!r}"],
-                            finished_at=datetime.now(UTC),
-                        )
-
-        # Unreachable, but satisfies type checker
         return ScrapeResult(
             company_id=company.id,
             company_slug=company.slug,
