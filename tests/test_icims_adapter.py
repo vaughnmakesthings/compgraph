@@ -227,6 +227,7 @@ class TestPersistPosting:
     @pytest.mark.asyncio
     async def test_new_posting_creates_posting_and_snapshot(self) -> None:
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -242,7 +243,8 @@ class TestPersistPosting:
 
         result = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
         assert result is True
-        assert mock_session.add.call_count >= 1
+        assert mock_session.add.call_count == 1
+        assert mock_session.execute.call_count == 2
 
     @pytest.mark.asyncio
     async def test_existing_posting_updates_last_seen_and_adds_snapshot(self) -> None:
@@ -255,7 +257,10 @@ class TestPersistPosting:
         mock_snapshot_result = MagicMock()
         mock_snapshot_result.scalar_one_or_none.return_value = None
         mock_session = AsyncMock()
-        mock_session.execute = AsyncMock(side_effect=[mock_result, mock_snapshot_result])
+        mock_session.add = MagicMock()
+        mock_session.execute = AsyncMock(
+            side_effect=[mock_result, mock_snapshot_result, MagicMock()],
+        )
 
         raw: dict[str, str | int | None] = {
             "title": "Sales Rep",
@@ -267,10 +272,12 @@ class TestPersistPosting:
 
         result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
         assert result is True
+        assert mock_session.execute.call_count == 3
 
     @pytest.mark.asyncio
     async def test_returns_false_when_no_job_id(self) -> None:
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         raw: dict[str, str | int | None] = {
             "title": "Test",
             "description": "desc",
@@ -291,7 +298,8 @@ class TestPersistPosting:
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = existing_posting
         mock_session = AsyncMock()
-        mock_session.execute = AsyncMock(side_effect=[mock_result, last_hash])
+        mock_session.add = MagicMock()
+        mock_session.execute = AsyncMock(side_effect=[mock_result, last_hash, MagicMock()])
 
         raw: dict[str, str | int | None] = {
             "title": "Sales Rep",
@@ -303,7 +311,33 @@ class TestPersistPosting:
 
         result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
         assert result is True
-        assert mock_session.add.called
+        assert mock_session.execute.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_same_job_twice_same_day_uses_upsert(self) -> None:
+        mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        company_id = uuid.uuid4()
+        raw: dict[str, str | int | None] = {
+            "title": "Sales Rep",
+            "description": "<p>Great job</p>",
+            "location": "Houston, TX",
+            "job_id": "12345",
+            "url": "https://test.icims.com/jobs/12345/sales-rep/job",
+        }
+
+        result1 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
+        assert result1 is True
+
+        result2 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
+        assert result2 is True
+
+        assert mock_session.execute.call_count == 4
+        assert mock_session.add.call_count == 2
 
 
 class TestICIMSAdapter:
@@ -329,6 +363,7 @@ class TestICIMSAdapter:
             return _make_response(200, detail_html)
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)

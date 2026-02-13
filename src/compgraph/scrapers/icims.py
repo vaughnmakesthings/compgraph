@@ -7,12 +7,13 @@ import logging
 import random
 import re
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from typing import ClassVar
 
 import httpx
 from bs4 import BeautifulSoup
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Company, Posting, PostingSnapshot
@@ -271,17 +272,31 @@ async def persist_posting(
 
     url = raw.get("url") or f"{base_url}/jobs/{external_job_id}/job"
 
-    snapshot = PostingSnapshot(
-        posting_id=posting.id,
-        snapshot_date=date.today(),
-        title_raw=str(raw.get("title", "")),
-        location_raw=str(raw.get("location", "")),
-        url=str(url),
-        full_text_raw=full_text,
-        full_text_hash=full_text_hash,
-        content_changed=content_changed,
+    snapshot_date = datetime.now(UTC).date()
+    stmt = (
+        pg_insert(PostingSnapshot)
+        .values(
+            id=uuid.uuid4(),
+            posting_id=posting.id,
+            snapshot_date=snapshot_date,
+            title_raw=str(raw.get("title", "")),
+            location_raw=str(raw.get("location", "")),
+            url=str(url),
+            full_text_raw=full_text,
+            full_text_hash=full_text_hash,
+            content_changed=content_changed,
+        )
+        .on_conflict_do_update(
+            constraint="uq_snapshots_posting_date",
+            set_={
+                "title_raw": str(raw.get("title", "")),
+                "full_text_raw": full_text,
+                "full_text_hash": full_text_hash,
+                "content_changed": content_changed,
+            },
+        )
     )
-    session.add(snapshot)
+    await session.execute(stmt)
 
     return True
 
