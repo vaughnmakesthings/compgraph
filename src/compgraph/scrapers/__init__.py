@@ -8,6 +8,9 @@ from compgraph.scrapers.orchestrator import (
     PipelineStatus,
 )
 from compgraph.scrapers.registry import get_adapter, register_adapter
+from compgraph.scrapers.workday import WorkdayAdapter
+
+register_adapter("workday", WorkdayAdapter)
 
 register_adapter("icims", ICIMSAdapter)
 
@@ -19,6 +22,7 @@ __all__ = [
     "RawPosting",
     "ScrapeResult",
     "ScraperAdapter",
+    "WorkdayAdapter",
     "get_adapter",
     "register_adapter",
 ]
