@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import random
 import re
 
+import httpx
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
@@ -122,3 +125,89 @@ def parse_html_fallback(html: str) -> dict[str, str | None] | None:
         "location": "",
         "job_id": job_id,
     }
+
+
+class ICIMSFetcher:
+    CIRCUIT_BREAKER_THRESHOLD = 3
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        base_url: str,
+        delay_min: float = 2.0,
+        delay_max: float = 8.0,
+        max_concurrency: int = 5,
+    ) -> None:
+        self.client = client
+        self.base_url = base_url.rstrip("/")
+        self.delay_min = delay_min
+        self.delay_max = delay_max
+        self.semaphore = asyncio.Semaphore(max_concurrency)
+        self.consecutive_failures = 0
+        self.circuit_open = False
+
+    async def _delay(self) -> None:
+        if self.delay_min > 0 or self.delay_max > 0:
+            await asyncio.sleep(random.uniform(self.delay_min, self.delay_max))  # noqa: S311
+
+    async def fetch_all_listings(self) -> list[dict[str, str]]:
+        all_jobs: list[dict[str, str]] = []
+        page = 0
+
+        while True:
+            url = f"{self.base_url}/jobs/search?pr={page}&in_iframe=1"
+            await self._delay()
+            response = await self.client.get(url)
+            response.raise_for_status()
+
+            html = response.text
+            jobs = parse_listing_page(html)
+            all_jobs.extend(jobs)
+
+            if not has_next_page(html) or not jobs:
+                break
+            page += 1
+
+        return all_jobs
+
+    async def fetch_detail(self, job_id: str, slug: str) -> dict[str, str | int | None] | None:
+        if self.circuit_open:
+            logger.warning("Circuit breaker open — skipping job %s", job_id)
+            return None
+
+        async with self.semaphore:
+            await self._delay()
+            try:
+                url = f"{self.base_url}/jobs/{job_id}/{slug}/job?in_iframe=1"
+                response = await self.client.get(url)
+
+                if response.status_code != 200:
+                    logger.warning("HTTP %d for job %s", response.status_code, job_id)
+                    self._record_failure()
+                    return None
+
+                html = response.text
+                data = parse_json_ld(html)
+                if data is None:
+                    data = parse_html_fallback(html)
+                if data is None:
+                    logger.warning("Failed to parse job %s — no JSON-LD or HTML fallback", job_id)
+                    self._record_failure()
+                    return None
+
+                self.consecutive_failures = 0
+                return data
+
+            except httpx.HTTPError as exc:
+                logger.warning("HTTP error for job %s: %r", job_id, exc)
+                self._record_failure()
+                return None
+
+    def _record_failure(self) -> None:
+        self.consecutive_failures += 1
+        if self.consecutive_failures >= self.CIRCUIT_BREAKER_THRESHOLD:
+            self.circuit_open = True
+            logger.error(
+                "Circuit breaker tripped after %d failures",
+                self.consecutive_failures,
+            )
