@@ -97,7 +97,7 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
         salary_value = salary.get("value", {}) if isinstance(salary, dict) else {}
 
         job_id: str | None = None
-        url = data.get("url", "")
+        url = str(data.get("url") or "")
         url_match = re.search(r"/jobs/(\d+)/", url)
         if url_match:
             job_id = url_match.group(1)
