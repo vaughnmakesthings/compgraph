@@ -75,16 +75,21 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
         location_data = data.get("jobLocation", {})
         if isinstance(location_data, dict):
             address = location_data.get("address", {})
-            location = ", ".join(
-                filter(
-                    None,
-                    [
-                        address.get("addressLocality"),
-                        address.get("addressRegion"),
-                        address.get("addressCountry"),
-                    ],
+            if isinstance(address, dict):
+                location = ", ".join(
+                    filter(
+                        None,
+                        [
+                            address.get("addressLocality"),
+                            address.get("addressRegion"),
+                            address.get("addressCountry"),
+                        ],
+                    )
                 )
-            )
+            elif isinstance(address, str):
+                location = address
+            else:
+                location = ""
         else:
             location = str(location_data)
 
@@ -287,7 +292,10 @@ async def persist_posting(
     last_hash = snap_result.scalar_one_or_none()
     content_changed = last_hash is not None and last_hash != full_text_hash
 
-    url = raw.get("url") or (
+    raw_url = raw.get("url") or ""
+    if raw_url and not str(raw_url).startswith("http"):
+        raw_url = f"{base_url}{raw_url}"
+    url = raw_url or (
         f"{base_url}{url_path}" if url_path else f"{base_url}/jobs/{external_job_id}/job"
     )
 

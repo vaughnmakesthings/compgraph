@@ -44,6 +44,31 @@ def upgrade() -> None:
     )
     # Remove any existing duplicate postings before adding the unique constraint.
     # Keeps the row with the earliest first_seen_at for each (company_id, external_job_id).
+    # NULLs are excluded — PostgreSQL UNIQUE treats NULLs as distinct.
+    # Step 1: Reassign child rows from duplicates to survivors.
+    for child_table in ("posting_snapshots", "posting_enrichments", "posting_brand_mentions"):
+        op.execute(
+            sa.text(f"""
+                UPDATE {child_table}
+                SET posting_id = dups.survivor_id
+                FROM (
+                    SELECT id,
+                           FIRST_VALUE(id) OVER (
+                               PARTITION BY company_id, external_job_id
+                               ORDER BY first_seen_at ASC
+                           ) AS survivor_id,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY company_id, external_job_id
+                               ORDER BY first_seen_at ASC
+                           ) AS rn
+                    FROM postings
+                    WHERE external_job_id IS NOT NULL
+                ) dups
+                WHERE {child_table}.posting_id = dups.id
+                  AND dups.rn > 1
+            """)
+        )
+    # Step 2: Delete orphaned duplicate postings (no FK refs remain).
     op.execute(
         sa.text("""
             DELETE FROM postings
@@ -55,6 +80,7 @@ def upgrade() -> None:
                                ORDER BY first_seen_at ASC
                            ) AS rn
                     FROM postings
+                    WHERE external_job_id IS NOT NULL
                 ) ranked
                 WHERE rn > 1
             )

@@ -63,7 +63,7 @@ ignore = [
 "tests/**/*.py" = ["S101", "S106", "S108"]
 "scripts/**/*.py" = ["T20"]
 "src/compgraph/preflight.py" = ["S603", "S607", "T20"]
-"alembic/versions/**/*.py" = ["E501", "UP007", "UP035", "I001", "W291"]
+"alembic/versions/**/*.py" = ["E501", "UP007", "UP035", "I001", "W291", "S608"]
 
 [tool.mypy]
 python_version = "3.12"
