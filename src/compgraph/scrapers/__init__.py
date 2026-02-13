@@ -1,6 +1,7 @@
 """Scrapers package: adapter protocol, registry, and orchestrator."""
 
 from compgraph.scrapers.base import RawPosting, ScraperAdapter, ScrapeResult
+from compgraph.scrapers.icims import ICIMSAdapter
 from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
     PipelineRun,
@@ -11,7 +12,10 @@ from compgraph.scrapers.workday import WorkdayAdapter
 
 register_adapter("workday", WorkdayAdapter)
 
+register_adapter("icims", ICIMSAdapter)
+
 __all__ = [
+    "ICIMSAdapter",
     "PipelineOrchestrator",
     "PipelineRun",
     "PipelineStatus",
