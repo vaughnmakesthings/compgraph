@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -12,6 +14,7 @@ from compgraph.scrapers.icims import (
     parse_html_fallback,
     parse_json_ld,
     parse_listing_page,
+    persist_posting,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -218,3 +221,86 @@ class TestICIMSFetcher:
 
         assert result is not None
         assert result["title"] == "Senior Field Technician"
+
+
+class TestPersistPosting:
+    @pytest.mark.asyncio
+    async def test_new_posting_creates_posting_and_snapshot(self) -> None:
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        company_id = uuid.uuid4()
+        raw: dict[str, str | int | None] = {
+            "title": "Sales Rep",
+            "description": "<p>Great job</p>",
+            "location": "Houston, TX",
+            "job_id": "12345",
+            "url": "https://test.icims.com/jobs/12345/sales-rep/job",
+        }
+
+        result = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
+        assert result is True
+        assert mock_session.add.call_count >= 1
+
+    @pytest.mark.asyncio
+    async def test_existing_posting_updates_last_seen_and_adds_snapshot(self) -> None:
+        existing_posting = MagicMock()
+        existing_posting.id = uuid.uuid4()
+        existing_posting.last_seen_at = datetime(2026, 2, 12, tzinfo=UTC)
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = existing_posting
+        mock_snapshot_result = MagicMock()
+        mock_snapshot_result.scalar_one_or_none.return_value = None
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(side_effect=[mock_result, mock_snapshot_result])
+
+        raw: dict[str, str | int | None] = {
+            "title": "Sales Rep",
+            "description": "<p>Updated description</p>",
+            "location": "Houston, TX",
+            "job_id": "12345",
+            "url": "https://test.icims.com/jobs/12345/sales-rep/job",
+        }
+
+        result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_returns_false_when_no_job_id(self) -> None:
+        mock_session = AsyncMock()
+        raw: dict[str, str | int | None] = {
+            "title": "Test",
+            "description": "desc",
+            "location": "TX",
+            "job_id": None,
+        }
+        result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_content_changed_flag(self) -> None:
+        existing_posting = MagicMock()
+        existing_posting.id = uuid.uuid4()
+
+        last_hash = MagicMock()
+        last_hash.scalar_one_or_none.return_value = "oldhash123"
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = existing_posting
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(side_effect=[mock_result, last_hash])
+
+        raw: dict[str, str | int | None] = {
+            "title": "Sales Rep",
+            "description": "<p>New content</p>",
+            "location": "Houston, TX",
+            "job_id": "12345",
+            "url": "https://test.icims.com/jobs/12345/job",
+        }
+
+        result = await persist_posting(mock_session, raw, uuid.uuid4(), "https://test.icims.com")
+        assert result is True
+        assert mock_session.add.called

@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import random
 import re
+import uuid
+from datetime import UTC, date, datetime
 
 import httpx
 from bs4 import BeautifulSoup
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from compgraph.db.models import Posting, PostingSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -211,3 +218,67 @@ class ICIMSFetcher:
                 "Circuit breaker tripped after %d failures",
                 self.consecutive_failures,
             )
+
+
+async def persist_posting(
+    session: AsyncSession,
+    raw: dict[str, str | int | None],
+    company_id: uuid.UUID,
+    base_url: str,
+) -> bool:
+    external_job_id = raw.get("job_id")
+    if not external_job_id:
+        logger.warning("Skipping posting with no job_id")
+        return False
+
+    full_text = str(raw.get("description", ""))
+    full_text_hash = hashlib.sha256(full_text.encode()).hexdigest()
+
+    result = await session.execute(
+        select(Posting).where(
+            Posting.company_id == company_id,
+            Posting.external_job_id == str(external_job_id),
+        )
+    )
+    posting = result.scalar_one_or_none()
+
+    now = datetime.now(UTC)
+
+    if posting is None:
+        posting = Posting(
+            company_id=company_id,
+            external_job_id=str(external_job_id),
+            first_seen_at=now,
+            last_seen_at=now,
+            is_active=True,
+        )
+        session.add(posting)
+        await session.flush()
+        content_changed = False
+    else:
+        posting.last_seen_at = now
+
+        snap_result = await session.execute(
+            select(PostingSnapshot.full_text_hash)
+            .where(PostingSnapshot.posting_id == posting.id)
+            .order_by(PostingSnapshot.created_at.desc())
+            .limit(1)
+        )
+        last_hash = snap_result.scalar_one_or_none()
+        content_changed = last_hash is not None and last_hash != full_text_hash
+
+    url = raw.get("url") or f"{base_url}/jobs/{external_job_id}/job"
+
+    snapshot = PostingSnapshot(
+        posting_id=posting.id,
+        snapshot_date=date.today(),
+        title_raw=str(raw.get("title", "")),
+        location_raw=str(raw.get("location", "")),
+        url=str(url),
+        full_text_raw=full_text,
+        full_text_hash=full_text_hash,
+        content_changed=content_changed,
+    )
+    session.add(snapshot)
+
+    return True
