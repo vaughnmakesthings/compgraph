@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -100,6 +101,7 @@ class Posting(Base):
     brand_mentions: Mapped[list["PostingBrandMention"]] = relationship(back_populates="posting")
 
     __table_args__ = (
+        UniqueConstraint("company_id", "external_job_id", name="uq_postings_company_external_job"),
         Index("ix_postings_fingerprint_hash", "fingerprint_hash"),
         Index("ix_postings_brand_active", "company_id", "is_active"),
     )

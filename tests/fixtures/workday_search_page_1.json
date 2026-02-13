@@ -1,0 +1,45 @@
+{
+  "total": 25,
+  "jobPostings": [
+    {
+      "title": "Retail Sales Specialist - Samsung",
+      "externalPath": "Retail-Sales-Specialist-Samsung/R12345",
+      "locationsText": "New York, NY",
+      "postedOn": "Posted 2 Days Ago",
+      "bulletFields": ["Full time", "$18.00 - $22.00 per hour"],
+      "timeType": "Full time"
+    },
+    {
+      "title": "Field Marketing Manager",
+      "externalPath": "Field-Marketing-Manager/R12346",
+      "locationsText": "Chicago, IL",
+      "postedOn": "Posted 5 Days Ago",
+      "bulletFields": ["Full time"],
+      "timeType": "Full time"
+    },
+    {
+      "title": "Merchandiser - Consumer Electronics",
+      "externalPath": "Merchandiser-Consumer-Electronics/R12347",
+      "locationsText": "Los Angeles, CA",
+      "postedOn": "Posted Today",
+      "bulletFields": ["Part time", "$15.00 per hour"],
+      "timeType": "Part time"
+    },
+    {
+      "title": "Regional Director of Sales",
+      "externalPath": "Regional-Director-of-Sales/R12348",
+      "locationsText": "Dallas, TX",
+      "postedOn": "Posted 10 Days Ago",
+      "bulletFields": ["Full time"],
+      "timeType": "Full time"
+    },
+    {
+      "title": "Brand Ambassador - LG Electronics",
+      "externalPath": "Brand-Ambassador-LG-Electronics/R12349",
+      "locationsText": "Miami, FL",
+      "postedOn": "Posted 3 Days Ago",
+      "bulletFields": ["Full time", "$16.00 - $20.00 per hour"],
+      "timeType": "Full time"
+    }
+  ]
+}

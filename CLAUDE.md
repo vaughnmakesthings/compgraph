@@ -133,9 +133,22 @@ Before starting work with external APIs, validate API keys with a lightweight te
 
 All hooks MUST have a fallback/escape condition. If an external tool call fails 3 times, exit gracefully. The `.env` pattern in pre-tool hooks uses exact match to avoid blocking `.env.example`.
 
+## Background Tasks & Sub-Agents
+
+- Clean up stale background tasks before starting new orchestrator runs.
+- When spawning sub-agents or orchestrator pipelines, check for duplicate/orphaned processes first.
+- Do not improvise if a skill or resource is missing — ask the user or pull the latest from main before proceeding.
+- If a background agent has not produced output in 10 minutes, consider it stale and report to the user.
+
 ## Context Loading
 
 Read `docs/changelog.md` (latest entry only) for session continuity. Load context packs from `docs/context-packs.md` based on task type. Never load all of `docs/design.md` at once (~5.5K tokens).
+
+## Session Discipline
+
+- Spend no more than 30% of session effort on codebase exploration before producing actionable output (plan, code, or specific questions).
+- If the user interrupts or redirects, immediately pivot — do not continue the current exploration path.
+- Every exploration phase must end with a concrete deliverable: a bullet-point summary, a proposed approach, or a direct question.
 
 ## Agent Crew
 
@@ -150,3 +163,11 @@ Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-
 ## Code Standards
 
 When scaffolding new modules, create fully-implemented files — never empty stubs. Use TODO comments with specific descriptions for deferred work.
+
+## Session Wrap-Up
+
+Before ending a non-trivial session, write a structured summary instead of running parallel observer agents:
+- Use `claude-mem save_memory` (if available) or append to `docs/changelog.md`
+- Include: date, goal, files changed, key decisions, and open questions
+- Keep summaries concise — 5-10 lines maximum
+- This replaces the need for dedicated observer agent sessions
