@@ -45,7 +45,7 @@ def parse_listing_page(html: str) -> list[dict[str, str]]:
 
 def has_next_page(html: str) -> bool:
     soup = BeautifulSoup(html, "html.parser")
-    next_link = soup.find("a", string=re.compile(r"Next", re.IGNORECASE))  # type: ignore[call-overload]
+    next_link = soup.find("a", string=re.compile(r"^\s*Next\s*$", re.IGNORECASE))  # type: ignore[call-overload]
     if next_link:
         return True
     next_link = soup.select_one('a.iCIMS_PagingNext, a[title="Next"]')
@@ -60,6 +60,8 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
         except (json.JSONDecodeError, TypeError):
             continue
 
+        if isinstance(data, dict) and "@graph" in data:
+            data = data["@graph"]
         if isinstance(data, list):
             data = next((d for d in data if d.get("@type") == "JobPosting"), None)
             if not data:
@@ -146,13 +148,11 @@ class ICIMSFetcher:
         base_url: str,
         delay_min: float = 2.0,
         delay_max: float = 8.0,
-        max_concurrency: int = 5,
     ) -> None:
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.delay_min = delay_min
         self.delay_max = delay_max
-        self.semaphore = asyncio.Semaphore(max_concurrency)
         self.consecutive_failures = 0
         self.circuit_open = False
 
@@ -185,33 +185,32 @@ class ICIMSFetcher:
             logger.warning("Circuit breaker open — skipping job %s", job_id)
             return None
 
-        async with self.semaphore:
-            await self._delay()
-            try:
-                url = f"{self.base_url}/jobs/{job_id}/{slug}/job?in_iframe=1"
-                response = await self.client.get(url)
+        await self._delay()
+        try:
+            url = f"{self.base_url}/jobs/{job_id}/{slug}/job?in_iframe=1"
+            response = await self.client.get(url)
 
-                if response.status_code != 200:
-                    logger.warning("HTTP %d for job %s", response.status_code, job_id)
-                    self._record_failure()
-                    return None
-
-                html = response.text
-                data = parse_json_ld(html)
-                if data is None:
-                    data = parse_html_fallback(html)
-                if data is None:
-                    logger.warning("Failed to parse job %s — no JSON-LD or HTML fallback", job_id)
-                    self._record_failure()
-                    return None
-
-                self.consecutive_failures = 0
-                return data
-
-            except httpx.HTTPError as exc:
-                logger.warning("HTTP error for job %s: %r", job_id, exc)
+            if response.status_code != 200:
+                logger.warning("HTTP %d for job %s", response.status_code, job_id)
                 self._record_failure()
                 return None
+
+            html = response.text
+            data = parse_json_ld(html)
+            if data is None:
+                data = parse_html_fallback(html)
+            if data is None:
+                logger.warning("Failed to parse job %s — no JSON-LD or HTML fallback", job_id)
+                self._record_failure()
+                return None
+
+            self.consecutive_failures = 0
+            return data
+
+        except httpx.HTTPError as exc:
+            logger.warning("HTTP error for job %s: %r", job_id, exc)
+            self._record_failure()
+            return None
 
     def _record_failure(self) -> None:
         self.consecutive_failures += 1
@@ -273,28 +272,28 @@ async def persist_posting(
     url = raw.get("url") or f"{base_url}/jobs/{external_job_id}/job"
 
     snapshot_date = datetime.now(UTC).date()
-    stmt = (
-        pg_insert(PostingSnapshot)
-        .values(
-            id=uuid.uuid4(),
-            posting_id=posting.id,
-            snapshot_date=snapshot_date,
-            title_raw=str(raw.get("title", "")),
-            location_raw=str(raw.get("location", "")),
-            url=str(url),
-            full_text_raw=full_text,
-            full_text_hash=full_text_hash,
-            content_changed=content_changed,
-        )
-        .on_conflict_do_update(
-            constraint="uq_snapshots_posting_date",
-            set_={
-                "title_raw": str(raw.get("title", "")),
-                "full_text_raw": full_text,
-                "full_text_hash": full_text_hash,
-                "content_changed": content_changed,
-            },
-        )
+    stmt = pg_insert(PostingSnapshot).values(
+        id=uuid.uuid4(),
+        posting_id=posting.id,
+        snapshot_date=snapshot_date,
+        title_raw=str(raw.get("title", "")),
+        location_raw=str(raw.get("location", "")),
+        url=str(url),
+        full_text_raw=full_text,
+        full_text_hash=full_text_hash,
+        content_changed=content_changed,
+    )
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_snapshots_posting_date",
+        set_={
+            "title_raw": str(raw.get("title", "")),
+            "location_raw": str(raw.get("location", "")),
+            "url": str(url),
+            "full_text_raw": full_text,
+            "full_text_hash": full_text_hash,
+            "content_changed": stmt.excluded.content_changed
+            | PostingSnapshot.__table__.c.content_changed,
+        },
     )
     await session.execute(stmt)
 
@@ -318,7 +317,6 @@ class ICIMSAdapter:
         config = company.scraper_config or {}
         delay_min = config.get("delay_min", 2.0)
         delay_max = config.get("delay_max", 8.0)
-        max_concurrency = config.get("max_concurrency", 5)
 
         try:
             async with httpx.AsyncClient(
@@ -331,7 +329,6 @@ class ICIMSAdapter:
                     base_url=company.career_site_url,
                     delay_min=delay_min,
                     delay_max=delay_max,
-                    max_concurrency=max_concurrency,
                 )
 
                 job_entries = await fetcher.fetch_all_listings()
@@ -354,9 +351,10 @@ class ICIMSAdapter:
                         continue
 
                     try:
-                        persisted = await persist_posting(
-                            session, detail, company.id, company.career_site_url
-                        )
+                        async with session.begin_nested():
+                            persisted = await persist_posting(
+                                session, detail, company.id, company.career_site_url
+                            )
                         if persisted:
                             result.snapshots_created += 1
                     except Exception as exc:
@@ -366,6 +364,11 @@ class ICIMSAdapter:
                             company.slug,
                             exc,
                         )
+
+                if fetcher.circuit_open and not any("Circuit breaker" in e for e in result.errors):
+                    result.errors.append(
+                        f"Circuit breaker open after {fetcher.consecutive_failures} failures"
+                    )
 
                 await session.commit()
 

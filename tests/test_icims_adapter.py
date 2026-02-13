@@ -45,6 +45,14 @@ class TestParseJsonLd:
         data = parse_json_ld(html)
         assert data is None
 
+    def test_extracts_from_graph_wrapper(self) -> None:
+        html = """<script type="application/ld+json">
+        {"@graph": [{"@type": "JobPosting", "title": "Graph Job", "url": "/jobs/999/test/job"}]}
+        </script>"""
+        data = parse_json_ld(html)
+        assert data is not None
+        assert data["title"] == "Graph Job"
+
 
 class TestParseListingPage:
     def test_extracts_job_links(self) -> None:
@@ -76,6 +84,13 @@ class TestHasNextPage:
 
     def test_no_next_on_last_page(self) -> None:
         html = (FIXTURES / "icims_listing_page_2.html").read_text()
+        assert has_next_page(html) is False
+
+    def test_no_false_positive_on_next_in_title(self) -> None:
+        html = (
+            '<html><body><a href="/jobs/1/next-gen-rep/job">'
+            "Next Generation Field Rep</a></body></html>"
+        )
         assert has_next_page(html) is False
 
 
@@ -315,11 +330,34 @@ class TestPersistPosting:
 
     @pytest.mark.asyncio
     async def test_same_job_twice_same_day_uses_upsert(self) -> None:
+        """Second call for same job finds existing posting and issues upsert snapshot."""
+        existing_posting = MagicMock()
+        existing_posting.id = uuid.uuid4()
+        existing_posting.last_seen_at = datetime(2026, 2, 13, tzinfo=UTC)
+
+        # First call: no existing posting (new insert)
+        new_result = MagicMock()
+        new_result.scalar_one_or_none.return_value = None
+
+        # Second call: existing posting found + snapshot hash lookup
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = existing_posting
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = (
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        )
+
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                new_result,  # 1st call: SELECT posting (not found)
+                MagicMock(),  # 1st call: INSERT snapshot (upsert)
+                existing_result,  # 2nd call: SELECT posting (found)
+                snapshot_hash_result,  # 2nd call: SELECT latest hash
+                MagicMock(),  # 2nd call: INSERT snapshot (upsert)
+            ]
+        )
 
         company_id = uuid.uuid4()
         raw: dict[str, str | int | None] = {
@@ -336,8 +374,9 @@ class TestPersistPosting:
         result2 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
         assert result2 is True
 
-        assert mock_session.execute.call_count == 4
-        assert mock_session.add.call_count == 2
+        assert mock_session.execute.call_count == 5
+        # Only the first call adds a new Posting; second call updates existing
+        assert mock_session.add.call_count == 1
 
 
 class TestICIMSAdapter:
@@ -364,6 +403,7 @@ class TestICIMSAdapter:
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
+        mock_session.begin_nested = MagicMock(return_value=AsyncMock())
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -429,7 +469,7 @@ class TestICIMSAdapter:
         company.id = uuid.uuid4()
         company.slug = "marketsource"
         company.career_site_url = "https://applyatmarketsource-msc.icims.com"
-        company.scraper_config = {"delay_min": 1.0, "delay_max": 3.0, "max_concurrency": 3}
+        company.scraper_config = {"delay_min": 1.0, "delay_max": 3.0}
 
         mock_session = AsyncMock()
 
