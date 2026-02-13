@@ -11,6 +11,10 @@ Integration fixtures require DATABASE_PASSWORD in env and are marked with
 from __future__ import annotations
 
 import os
+
+# Set placeholder before any compgraph imports trigger Settings() validation
+os.environ.setdefault("DATABASE_PASSWORD", "test-placeholder")
+
 from collections.abc import AsyncGenerator
 from unittest.mock import patch
 

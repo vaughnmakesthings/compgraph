@@ -47,4 +47,4 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]  # populated by pydantic-settings from env

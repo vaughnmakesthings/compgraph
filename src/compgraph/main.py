@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from compgraph.api.routes.health import router as health_router
+from compgraph.api.routes.scrape import router as scrape_router
 from compgraph.config import settings
 from compgraph.db.session import engine
 
@@ -32,3 +33,4 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(scrape_router)

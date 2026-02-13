@@ -281,10 +281,10 @@ def _parse_version(version_str: str) -> tuple[int, ...]:
     return tuple(int(p) for p in parts if p.isdigit())
 
 
-def _check_version_specifier(specifier: str, version_info: object) -> bool:
+def _check_version_specifier(specifier: str, version_info: sys._version_info) -> bool:
     """Check if version_info satisfies a PEP 440-ish specifier string."""
     vi = version_info
-    current = (vi.major, vi.minor, vi.micro)  # type: ignore[union-attr]
+    current = (vi.major, vi.minor, vi.micro)
 
     for spec in specifier.split(","):
         spec = spec.strip()
@@ -745,8 +745,17 @@ def check_process_lock(project_root: Path, task_name: str | None = None) -> Chec
             pass
 
     atexit.register(_cleanup_lock)
-    signal.signal(signal.SIGTERM, lambda *a: (_cleanup_lock(), sys.exit(143)))
-    signal.signal(signal.SIGINT, lambda *a: (_cleanup_lock(), sys.exit(130)))
+
+    def _signal_handler_term(*_a: object) -> None:
+        _cleanup_lock()
+        sys.exit(143)
+
+    def _signal_handler_int(*_a: object) -> None:
+        _cleanup_lock()
+        sys.exit(130)
+
+    signal.signal(signal.SIGTERM, _signal_handler_term)  # type: ignore[arg-type]
+    signal.signal(signal.SIGINT, _signal_handler_int)  # type: ignore[arg-type]
 
     return CheckResult(
         name="process_lock",
