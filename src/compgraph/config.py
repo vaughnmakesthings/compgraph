@@ -1,4 +1,4 @@
-from urllib.parse import quote_plus, urlparse, urlunparse
+from urllib.parse import quote, quote_plus, urlparse, urlunparse
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,9 +57,10 @@ class Settings(BaseSettings):
             return self.PROXY_URL
 
         parsed = urlparse(self.PROXY_URL)
-        auth = quote_plus(self.PROXY_USERNAME)
+        # Use quote() not quote_plus() — userinfo uses percent-encoding per RFC 3986
+        auth = quote(self.PROXY_USERNAME, safe="")
         if self.PROXY_PASSWORD:
-            auth += f":{quote_plus(self.PROXY_PASSWORD.get_secret_value())}"
+            auth += f":{quote(self.PROXY_PASSWORD.get_secret_value(), safe='')}"
         # Preserve IPv6 brackets around hostname
         host = parsed.hostname or ""
         if ":" in host:

@@ -124,6 +124,23 @@ class TestProxyUrlWithAuth:
         assert "[::1]" in url
         assert "user:pass@[::1]:8080" in url
 
+    def test_credentials_use_percent_encoding_not_plus(self) -> None:
+        """Userinfo should use RFC 3986 percent-encoding, not query-string plus-encoding."""
+        from compgraph.config import Settings
+
+        s = Settings(
+            DATABASE_PASSWORD="test",
+            PROXY_URL="http://proxy.example.com:8080",
+            PROXY_USERNAME="my user",
+            PROXY_PASSWORD="my pass",
+        )
+        url = s.proxy_url_with_auth
+        assert url is not None
+        # Spaces should be %20, not +
+        assert "my%20user" in url
+        assert "my%20pass" in url
+        assert "+" not in url.split("@")[0]  # no plus-encoding in userinfo
+
     def test_password_is_secret_str(self) -> None:
         """PROXY_PASSWORD should be SecretStr and not leak in repr."""
         from compgraph.config import Settings
