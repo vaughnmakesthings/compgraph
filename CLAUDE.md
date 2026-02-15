@@ -144,10 +144,11 @@ All hooks MUST have a fallback/escape condition. If an external tool call fails 
 
 The project is indexed with CodeSight MCP for semantic search across code and docs.
 
-```bash
-# Re-index after significant changes (incremental, ~2s)
-# Use mcp__codesight__index_codebase with project_path and project_name="compgraph"
+**MANDATORY: Before ANY CodeSight search**, call `get_indexing_status(project="compgraph")`. If `is_stale: true`, reindex first:
 ```
+index_codebase(project_path="/Users/vmud/Documents/dev/projects/compgraph", project_name="compgraph")
+```
+This is incremental (~2-4s) and skips unchanged files. Never search a stale index.
 
 **Two-stage retrieval pattern:**
 1. `search_code(query, project="compgraph")` — returns metadata only (~40 tokens/result)

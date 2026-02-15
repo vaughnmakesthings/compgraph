@@ -277,7 +277,7 @@ async def persist_posting(
         )
         .on_conflict_do_update(
             index_elements=["company_id", "external_job_id"],
-            set_={"last_seen_at": now},
+            set_={"last_seen_at": now, "is_active": True},
         )
         .returning(Posting.id)
     )
