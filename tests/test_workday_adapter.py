@@ -697,6 +697,50 @@ class TestWorkdayAdapter:
         assert result.finished_at is not None
 
 
+class TestTrocConfig:
+    """Verify WorkdayAdapter works with T-ROC's Workday CXS configuration."""
+
+    async def test_scrape_uses_troc_tenant_and_site(self):
+        company = _make_company(
+            slug="troc",
+            career_site_url="https://troc.wd501.myworkdayjobs.com",
+            scraper_config={"tenant": "troc", "site": "TROC_External"},
+        )
+        empty = _load_fixture("workday_search_empty.json")
+
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(
+            return_value=httpx.Response(
+                200, json=empty, request=httpx.Request("POST", "https://example.com")
+            )
+        )
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+
+        session = AsyncMock()
+        session.commit = AsyncMock()
+
+        adapter = WorkdayAdapter()
+        with patch("compgraph.scrapers.workday.httpx.AsyncClient", return_value=mock_client):
+            result = await adapter.scrape(company, session)
+
+        call_url = mock_client.post.call_args[0][0]
+        assert "/wday/cxs/troc/TROC_External/jobs" in call_url
+        assert "wd501" in call_url
+        assert result.success
+
+    async def test_troc_fetcher_constructs_correct_urls(self):
+        fetcher = WorkdayFetcher(
+            base_url="https://troc.wd501.myworkdayjobs.com",
+            tenant="troc",
+            site="TROC_External",
+            search_delay=0.0,
+            detail_delay=0.0,
+        )
+        assert fetcher.tenant == "troc"
+        assert fetcher.site == "TROC_External"
+
+
 class TestAdapterRegistration:
     def test_workday_adapter_registered(self):
         from compgraph.scrapers.registry import _ADAPTER_REGISTRY
@@ -709,3 +753,50 @@ class TestAdapterRegistration:
 
         adapter = get_adapter("workday")
         assert isinstance(adapter, WorkdayAdapter)
+
+
+@pytest.mark.integration
+class TestTrocLiveIntegration:
+    """Live integration tests against T-ROC's Workday CXS instance.
+
+    These tests hit the real T-ROC career site API and require network access.
+    Run with: uv run pytest -m integration -k troc
+    """
+
+    async def test_troc_search_returns_jobs(self):
+        """Verify T-ROC's Workday CXS endpoint returns job postings."""
+        fetcher = WorkdayFetcher(
+            base_url="https://troc.wd501.myworkdayjobs.com",
+            tenant="troc",
+            site="TROC_External",
+            search_delay=1.0,
+            detail_delay=1.0,
+        )
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            result = await fetcher.fetch_search_page(client, offset=0)
+
+        assert result.total > 0, "T-ROC should have active job postings"
+        assert len(result.postings) > 0, "First page should return postings"
+        assert result.postings[0].title, "Postings should have titles"
+        assert result.postings[0].external_path, "Postings should have external paths"
+
+    async def test_troc_detail_fetches_job(self):
+        """Verify T-ROC job detail endpoint returns structured data."""
+        fetcher = WorkdayFetcher(
+            base_url="https://troc.wd501.myworkdayjobs.com",
+            tenant="troc",
+            site="TROC_External",
+            search_delay=1.0,
+            detail_delay=1.0,
+        )
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            search_result = await fetcher.fetch_search_page(client, offset=0)
+            assert len(search_result.postings) > 0, "Need at least one posting for detail test"
+
+            first_path = search_result.postings[0].external_path
+            detail = await fetcher.fetch_detail(client, first_path)
+
+        assert detail.title, "Detail should have a title"
+        assert detail.job_req_id, "Detail should have a job req ID"

@@ -135,6 +135,13 @@ async def seeded_db(async_session: AsyncSession) -> AsyncSession:
             ats_platform="icims",
             career_site_url="https://www.marketsource.com/careers",
         ),
+        Company(
+            name="T-ROC",
+            slug="troc",
+            ats_platform="workday",
+            career_site_url="https://troc.wd501.myworkdayjobs.com",
+            scraper_config={"tenant": "troc", "site": "TROC_External"},
+        ),
     ]
     async_session.add_all(companies)
     await async_session.flush()
