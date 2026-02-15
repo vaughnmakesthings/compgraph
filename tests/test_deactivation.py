@@ -113,9 +113,10 @@ class TestDeactivateStalePostings:
         # Verify the update statement was called (second execute call)
         update_call = session.execute.call_args_list[1]
         stmt = update_call[0][0]
-        compiled = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        compiled = str(stmt.compile(compile_kwargs={"literal_binds": True}))
         assert "postings" in compiled.lower()
         assert "is_active" in compiled.lower()
+        assert company_id.hex in compiled
 
     def test_grace_period_constant(self) -> None:
         """Grace period should be 3 runs."""
@@ -147,7 +148,7 @@ class TestScrapeRunPostingsClosedColumn:
 
         assert hasattr(ScrapeRun, "postings_closed")
         col = ScrapeRun.__table__.columns["postings_closed"]
-        assert col.nullable is True
+        assert col.nullable is False
         assert str(col.server_default.arg) == "0"  # type: ignore[union-attr]
 
 

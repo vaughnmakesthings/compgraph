@@ -19,7 +19,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column(
         "scrape_runs",
-        sa.Column("postings_closed", sa.Integer(), nullable=True, server_default="0"),
+        sa.Column("postings_closed", sa.Integer(), nullable=False, server_default="0"),
     )
 
 
