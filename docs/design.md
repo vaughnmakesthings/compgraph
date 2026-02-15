@@ -109,18 +109,19 @@ class ScraperAdapter(Protocol):
 - **Quirks:** Each company's portal may be configured differently. Inspect network calls per target.
 - **Rate limiting:** 2-8 second random delays between requests
 
-### Workday CXS Adapter (2020 Companies)
+### Workday CXS Adapter (Advantage Solutions, Acosta Group, T-ROC)
 
 - **List:** `POST https://{tenant}.wd1.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` — returns JSON with pagination (`offset` + `limit`)
 - **Detail:** `GET .../{job_id}` — returns structured JSON (no HTML parsing needed)
 - **Advantages:** Structured JSON responses, built-in filtering (location, category)
 - **Pagination:** Standard offset/limit, iterate until empty results
 
-### T-ROC Adapter (TBD)
+### T-ROC (Workday CXS — reuses WorkdayAdapter)
 
-- **Site:** `jobs.trocglobal.com`
-- **Status:** Requires inspection to determine ATS platform
-- **Approach:** Inspect network traffic, identify API endpoints or HTML structure
+- **Site:** `troc.wd501.myworkdayjobs.com/TROC_External`
+- **Tenant:** `troc`, **Site:** `TROC_External`, **Data center:** `wd501`
+- **Status:** Complete — no new adapter code needed, configuration-only addition
+- **Note:** WordPress frontend at `jobs.trocglobal.com` is a marketing page; legacy iCIMS at `careers-troc.icims.com` is secondary/deprecated
 
 ### Custom Adapter Pattern
 

@@ -36,7 +36,7 @@ The system is designed for **long-term data retention** as a core asset. Histori
 | MarketSource | iCIMS | `applyatmarketsource-msc.icims.com` | iCIMS portal scraping |
 | 2020 Companies | Workday | `2020companies.wd1.myworkdayjobs.com/External_Careers` | Workday CXS API |
 | BDS Connected Solutions | iCIMS | `careers-bdssolutions.icims.com` | iCIMS portal scraping |
-| T-ROC | Custom/TBD | `jobs.trocglobal.com` | Requires inspection |
+| T-ROC | Workday | `troc.wd501.myworkdayjobs.com/TROC_External` | Workday CXS API |
 
 **Design for extensibility** — adding a new competitor should require only a config entry and (if new ATS type) a scraper adapter.
 
@@ -567,7 +567,7 @@ Only after the prototype has proven the views and the data quality supports it.
 
 ## 13. Open Questions
 
-1. **T-ROC ATS identification** — Need to inspect `jobs.trocglobal.com` to determine scraping approach (may be Workday, custom CMS, or third-party platform).
+1. ~~**T-ROC ATS identification**~~ — **Resolved:** T-ROC uses Workday CXS (`troc.wd501.myworkdayjobs.com`). Existing WorkdayAdapter works as-is.
 2. **Brand taxonomy seeding** — Should we pre-seed the brands table with known CE/wireless brands, or let the system discover them purely from enrichment?
 3. **Market normalization** — DMA, metro area, or state-level? DMA is most useful for field marketing but requires a mapping table.
 4. **Historical backfill** — Can we get any historical posting data from Internet Archive/Wayback Machine for the target career sites, or do we start from scrape date zero?
