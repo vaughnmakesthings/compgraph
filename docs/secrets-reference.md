@@ -13,12 +13,15 @@ All secrets managed via 1Password. Never hardcode.
 
 > **Note:** `SUPABASE_ACCESS_TOKEN` is configured in 1Password. Update remaining references above with actual vault paths once connection strings are generated. Project ID: `tkvxyxwfosworwqxesnz`, DB host: `db.tkvxyxwfosworwqxesnz.supabase.co`.
 
-### Proxy Provider (when selected)
+### Proxy Provider (optional — for residential proxy rotation)
 
 | Env Var | 1Password Reference | Used By |
 |---------|-------------------|---------|
-| `PROXY_USERNAME` | `op://DEV/{PROVIDER}_PROXY/username` | Residential proxy rotation |
-| `PROXY_PASSWORD` | `op://DEV/{PROVIDER}_PROXY/credential` | Residential proxy rotation |
+| `PROXY_URL` | `op://DEV/{PROVIDER}_PROXY/url` | Proxy server URL (e.g. `http://proxy.example.com:8080`) |
+| `PROXY_USERNAME` | `op://DEV/{PROVIDER}_PROXY/username` | Proxy authentication username |
+| `PROXY_PASSWORD` | `op://DEV/{PROVIDER}_PROXY/credential` | Proxy authentication password |
+
+When configured, both iCIMS and Workday adapters route all HTTP requests through the proxy. Credentials are embedded in the proxy URL automatically via `Settings.proxy_url_with_auth`. User-agent strings are rotated per-scrape from a curated browser UA pool.
 
 ### Usage
 
