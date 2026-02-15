@@ -59,8 +59,8 @@ async def deactivate_stale_postings(
         )
         .values(is_active=False)
     )
-    result = await session.execute(deactivate_stmt)
-    count = result.rowcount
+    cursor_result = await session.execute(deactivate_stmt)
+    count: int = cursor_result.rowcount  # type: ignore[attr-defined]
 
     if count > 0:
         logger.info(
