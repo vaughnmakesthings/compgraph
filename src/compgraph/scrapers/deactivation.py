@@ -23,18 +23,19 @@ async def deactivate_stale_postings(
     """Deactivate postings not seen since the 3rd-most-recent completed scrape run.
 
     Uses a grace period of 3 completed runs: if a posting's last_seen_at is older
-    than the started_at of the 3rd-most-recent completed run, it is marked inactive.
+    than the completed_at of the 3rd-most-recent completed run, it is marked inactive.
+    We order by completed_at (not started_at) to correctly handle overlapping runs.
 
     Returns the number of postings deactivated.
     """
-    # Get the 3rd-most-recent completed scrape run's started_at as cutoff
+    # Get the 3rd-most-recent completed scrape run's completed_at as cutoff
     cutoff_query = (
-        select(ScrapeRun.started_at)
+        select(ScrapeRun.completed_at)
         .where(
             ScrapeRun.company_id == company_id,
             ScrapeRun.status == ScrapeRunStatus.COMPLETED,
         )
-        .order_by(ScrapeRun.started_at.desc())
+        .order_by(ScrapeRun.completed_at.desc())
         .offset(GRACE_PERIOD_RUNS - 1)
         .limit(1)
     )

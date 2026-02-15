@@ -11,16 +11,6 @@ import pytest
 from compgraph.scrapers.deactivation import GRACE_PERIOD_RUNS, deactivate_stale_postings
 
 
-def _make_scrape_run_row(started_at: datetime) -> object:
-    """Create a mock scrape run result row."""
-
-    class Row:
-        def __init__(self, started_at: datetime) -> None:
-            self.started_at = started_at
-
-    return Row(started_at)
-
-
 class TestDeactivateStalePostings:
     """Unit tests for deactivate_stale_postings."""
 
