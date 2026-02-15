@@ -13,8 +13,10 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.config import settings
 from compgraph.db.models import Company, Posting, PostingSnapshot
 from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
 
@@ -337,9 +339,6 @@ class WorkdayAdapter:
         base_url = company.career_site_url.rstrip("/")
 
         fetcher = WorkdayFetcher(base_url=base_url, tenant=tenant, site=site)
-
-        from compgraph.config import settings
-        from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
         proxy_kwargs = get_proxy_client_kwargs(settings)
         async with httpx.AsyncClient(

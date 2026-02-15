@@ -109,6 +109,33 @@ class TestProxyUrlWithAuth:
         assert url is not None
         assert url.startswith("http://myuser:mypass@proxy.example.com:8080")
 
+    def test_ipv6_proxy_url_preserves_brackets(self) -> None:
+        """IPv6 proxy hosts should retain brackets in the URL."""
+        from compgraph.config import Settings
+
+        s = Settings(
+            DATABASE_PASSWORD="test",
+            PROXY_URL="http://[::1]:8080",
+            PROXY_USERNAME="user",
+            PROXY_PASSWORD="pass",
+        )
+        url = s.proxy_url_with_auth
+        assert url is not None
+        assert "[::1]" in url
+        assert "user:pass@[::1]:8080" in url
+
+    def test_password_is_secret_str(self) -> None:
+        """PROXY_PASSWORD should be SecretStr and not leak in repr."""
+        from compgraph.config import Settings
+
+        s = Settings(
+            DATABASE_PASSWORD="test",
+            PROXY_PASSWORD="supersecret",
+        )
+        assert s.PROXY_PASSWORD is not None
+        assert "supersecret" not in repr(s.PROXY_PASSWORD)
+        assert s.PROXY_PASSWORD.get_secret_value() == "supersecret"
+
 
 class TestAdaptersUseProxy:
     """Verify adapters construct httpx clients with proxy kwargs."""

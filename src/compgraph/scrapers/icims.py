@@ -15,8 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.config import settings
 from compgraph.db.models import Company, Posting, PostingSnapshot
 from compgraph.scrapers.base import ScrapeResult
+from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
 
@@ -337,9 +339,6 @@ class ICIMSAdapter:
         config = company.scraper_config or {}
         delay_min = config.get("delay_min", 2.0)
         delay_max = config.get("delay_max", 8.0)
-
-        from compgraph.config import settings
-        from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
         proxy_kwargs = get_proxy_client_kwargs(settings)
         headers = {"User-Agent": random_user_agent()}

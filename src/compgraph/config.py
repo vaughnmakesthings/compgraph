@@ -1,5 +1,6 @@
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse, urlunparse
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     # Proxy (optional — for residential proxy rotation)
     PROXY_URL: str | None = None
     PROXY_USERNAME: str | None = None
-    PROXY_PASSWORD: str | None = None
+    PROXY_PASSWORD: SecretStr | None = None
 
     # App config
     ENVIRONMENT: str = "dev"
@@ -54,13 +55,16 @@ class Settings(BaseSettings):
             return None
         if not self.PROXY_USERNAME:
             return self.PROXY_URL
-        from urllib.parse import urlparse, urlunparse
 
         parsed = urlparse(self.PROXY_URL)
         auth = quote_plus(self.PROXY_USERNAME)
         if self.PROXY_PASSWORD:
-            auth += f":{quote_plus(self.PROXY_PASSWORD)}"
-        netloc = f"{auth}@{parsed.hostname}"
+            auth += f":{quote_plus(self.PROXY_PASSWORD.get_secret_value())}"
+        # Preserve IPv6 brackets around hostname
+        host = parsed.hostname or ""
+        if ":" in host:
+            host = f"[{host}]"
+        netloc = f"{auth}@{host}"
         if parsed.port:
             netloc += f":{parsed.port}"
         return urlunparse(parsed._replace(netloc=netloc))
