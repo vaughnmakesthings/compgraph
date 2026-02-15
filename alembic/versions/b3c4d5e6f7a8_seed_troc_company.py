@@ -31,7 +31,7 @@ def upgrade() -> None:
                 '{"tenant": "troc", "site": "TROC_External"}'::jsonb,
                 now()
             )
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (slug) DO NOTHING
         """)
     )
 
