@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
 from compgraph.db.session import async_session_factory
 from compgraph.scrapers.base import ScrapeResult
+from compgraph.scrapers.deactivation import deactivate_stale_postings
 from compgraph.scrapers.registry import get_adapter
 
 logger = logging.getLogger(__name__)
@@ -249,6 +250,12 @@ class PipelineOrchestrator:
                 refreshed.pages_scraped = result.pages_scraped
                 if result.success:
                     refreshed.status = ScrapeRunStatus.COMPLETED
+                    # Deactivate postings not seen in recent runs
+                    closed = await deactivate_stale_postings(
+                        session, result.company_id, scrape_run.id
+                    )
+                    refreshed.postings_closed = closed
+                    result.postings_closed = closed
                 else:
                     refreshed.status = ScrapeRunStatus.FAILED
                     refreshed.errors = {"errors": result.errors}

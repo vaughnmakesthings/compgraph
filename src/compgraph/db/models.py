@@ -99,6 +99,7 @@ class ScrapeRun(Base):
     pages_scraped: Mapped[int] = mapped_column(Integer, default=0)
     jobs_found: Mapped[int] = mapped_column(Integer, default=0)
     snapshots_created: Mapped[int] = mapped_column(Integer, default=0)
+    postings_closed: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default="0")
     errors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
