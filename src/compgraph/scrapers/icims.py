@@ -8,7 +8,6 @@ import random
 import re
 import uuid
 from datetime import UTC, datetime
-from typing import ClassVar
 
 import httpx
 from bs4 import BeautifulSoup
@@ -16,8 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.config import settings
 from compgraph.db.models import Company, Posting, PostingSnapshot
 from compgraph.scrapers.base import ScrapeResult
+from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
 
@@ -329,13 +330,6 @@ async def persist_posting(
 
 
 class ICIMSAdapter:
-    DEFAULT_HEADERS: ClassVar[dict[str, str]] = {
-        "User-Agent": (
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        ),
-    }
-
     async def scrape(self, company: Company, session: AsyncSession) -> ScrapeResult:
         result = ScrapeResult(
             company_id=company.id,
@@ -346,11 +340,15 @@ class ICIMSAdapter:
         delay_min = config.get("delay_min", 2.0)
         delay_max = config.get("delay_max", 8.0)
 
+        proxy_kwargs = get_proxy_client_kwargs(settings)
+        headers = {"User-Agent": random_user_agent()}
+
         try:
             async with httpx.AsyncClient(
-                headers=self.DEFAULT_HEADERS,
+                headers=headers,
                 timeout=30.0,
                 follow_redirects=True,
+                **proxy_kwargs,
             ) as client:
                 fetcher = ICIMSFetcher(
                     client=client,

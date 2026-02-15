@@ -13,8 +13,10 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.config import settings
 from compgraph.db.models import Company, Posting, PostingSnapshot
 from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
 
@@ -338,27 +340,37 @@ class WorkdayAdapter:
 
         fetcher = WorkdayFetcher(base_url=base_url, tenant=tenant, site=site)
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            try:
-                search_postings = await fetcher.fetch_all_postings(client)
-            except CircuitBreakerOpen as exc:
-                result.errors.append(str(exc))
-                result.finished_at = datetime.now(UTC)
-                return result
-            except Exception as exc:
-                result.errors.append(f"Search pagination failed: {exc!r}")
-                result.finished_at = datetime.now(UTC)
-                return result
+        proxy_kwargs = get_proxy_client_kwargs(settings)
+        try:
+            async with httpx.AsyncClient(
+                timeout=30.0,
+                headers={"User-Agent": random_user_agent()},
+                **proxy_kwargs,
+            ) as client:
+                try:
+                    search_postings = await fetcher.fetch_all_postings(client)
+                except CircuitBreakerOpen as exc:
+                    result.errors.append(str(exc))
+                    result.finished_at = datetime.now(UTC)
+                    return result
+                except Exception as exc:
+                    result.errors.append(f"Search pagination failed: {exc!r}")
+                    result.finished_at = datetime.now(UTC)
+                    return result
 
-            result.postings_found = len(search_postings)
+                result.postings_found = len(search_postings)
 
-            external_paths = [p.external_path for p in search_postings]
-            try:
-                details = await fetcher.fetch_details_batch(client, external_paths)
-            except CircuitBreakerOpen as exc:
-                result.errors.append(str(exc))
-                result.finished_at = datetime.now(UTC)
-                return result
+                external_paths = [p.external_path for p in search_postings]
+                try:
+                    details = await fetcher.fetch_details_batch(client, external_paths)
+                except CircuitBreakerOpen as exc:
+                    result.errors.append(str(exc))
+                    result.finished_at = datetime.now(UTC)
+                    return result
+        except Exception as exc:
+            result.errors.append(f"HTTP client setup failed: {exc!r}")
+            result.finished_at = datetime.now(UTC)
+            return result
 
         failed_details = len(external_paths) - len(details)
         if failed_details:

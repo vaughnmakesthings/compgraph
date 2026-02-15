@@ -1,5 +1,6 @@
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus, urlparse, urlunparse
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,11 @@ class Settings(BaseSettings):
 
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
+
+    # Proxy (optional — for residential proxy rotation)
+    PROXY_URL: str | None = None
+    PROXY_USERNAME: str | None = None
+    PROXY_PASSWORD: SecretStr | None = None
 
     # App config
     ENVIRONMENT: str = "dev"
@@ -41,6 +47,28 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://postgres:{pw}"
             f"@db.{self.SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
         )
+
+    @property
+    def proxy_url_with_auth(self) -> str | None:
+        """Proxy URL with embedded credentials if username/password are provided."""
+        if not self.PROXY_URL:
+            return None
+        if not self.PROXY_USERNAME:
+            return self.PROXY_URL
+
+        parsed = urlparse(self.PROXY_URL)
+        # Use quote() not quote_plus() — userinfo uses percent-encoding per RFC 3986
+        auth = quote(self.PROXY_USERNAME, safe="")
+        if self.PROXY_PASSWORD:
+            auth += f":{quote(self.PROXY_PASSWORD.get_secret_value(), safe='')}"
+        # Preserve IPv6 brackets around hostname
+        host = parsed.hostname or ""
+        if ":" in host:
+            host = f"[{host}]"
+        netloc = f"{auth}@{host}"
+        if parsed.port:
+            netloc += f":{parsed.port}"
+        return urlunparse(parsed._replace(netloc=netloc))
 
     @property
     def cors_origin_list(self) -> list[str]:
