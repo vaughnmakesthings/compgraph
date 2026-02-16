@@ -267,4 +267,4 @@ def get_role_archetypes(session: Session) -> list[str]:
         .order_by(PostingEnrichment.role_archetype)
     )
     rows = session.execute(stmt).scalars().all()
-    return list(rows)
+    return [r for r in rows if r is not None]
