@@ -1,13 +1,19 @@
 """CompGraph Dashboard — landing page and Streamlit entrypoint."""
 
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 import pandas as pd
 import streamlit as st
 
+from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
+from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import get_enrichment_coverage, get_per_company_counts
 
+configure_logging()
 logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
@@ -15,17 +21,19 @@ st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 st.title("CompGraph Dashboard")
 st.caption("Competitive intelligence — pipeline overview")
 
-
-@st.cache_data(ttl=60)
-def _load_coverage() -> dict:
-    with get_session() as session:
-        return get_enrichment_coverage(session)
+render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=60)
-def _load_company_counts() -> list[dict]:
+def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
-        return get_per_company_counts(session)
+        return dict(get_enrichment_coverage(session))
+
+
+@st.cache_data(ttl=60)
+def _load_company_counts() -> list[dict[str, Any]]:
+    with get_session() as session:
+        return list(get_per_company_counts(session))
 
 
 # --- Metrics row ---

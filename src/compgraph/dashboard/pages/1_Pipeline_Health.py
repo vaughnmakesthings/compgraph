@@ -1,39 +1,47 @@
 """Pipeline Health — scrape run history, enrichment coverage, and errors."""
 
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 import pandas as pd
 import streamlit as st
 
+from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
+from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
     get_enrichment_coverage,
     get_error_summary,
     get_recent_scrape_runs,
 )
 
+configure_logging()
 logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Pipeline Health", layout="wide")
 st.title("Pipeline Health")
 
-
-@st.cache_data(ttl=60)
-def _load_scrape_runs() -> list[dict]:
-    with get_session() as session:
-        return get_recent_scrape_runs(session)
+render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=60)
-def _load_coverage() -> dict:
+def _load_scrape_runs() -> list[dict[str, Any]]:
     with get_session() as session:
-        return get_enrichment_coverage(session)
+        return list(get_recent_scrape_runs(session))
 
 
 @st.cache_data(ttl=60)
-def _load_errors() -> list[dict]:
+def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
-        return get_error_summary(session)
+        return dict(get_enrichment_coverage(session))
+
+
+@st.cache_data(ttl=60)
+def _load_errors() -> list[dict[str, Any]]:
+    with get_session() as session:
+        return list(get_error_summary(session))
 
 
 # --- Enrichment coverage ---

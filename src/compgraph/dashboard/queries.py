@@ -6,8 +6,12 @@ All functions take a sync Session and return lists of dicts for easy DataFrame c
 from __future__ import annotations
 
 import json
+import logging
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from functools import wraps
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -20,6 +24,23 @@ from compgraph.db.models import (
     PostingSnapshot,
     ScrapeRun,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _timed_query(func_: Any) -> Any:
+    """Log query name, duration, and row count at INFO level."""
+
+    @wraps(func_)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        start = time.perf_counter()
+        result = func_(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        row_count = len(result) if isinstance(result, list) else (0 if result is None else 1)
+        logger.info("query.%s duration=%.3fs rows=%s", func_.__name__, elapsed, row_count)
+        return result
+
+    return wrapper
 
 
 def _latest_snapshot_subquery():
@@ -40,6 +61,7 @@ def _latest_snapshot_subquery():
 # ---------------------------------------------------------------------------
 
 
+@_timed_query
 def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
     """Recent scrape runs with company name."""
     stmt = (
@@ -65,6 +87,7 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
     ]
 
 
+@_timed_query
 def get_enrichment_coverage(session: Session) -> dict:
     """Enrichment coverage stats for active postings."""
     total_active = session.execute(
@@ -93,6 +116,7 @@ def get_enrichment_coverage(session: Session) -> dict:
     }
 
 
+@_timed_query
 def get_per_company_counts(session: Session) -> list[dict]:
     """Active posting counts per company."""
     stmt = (
@@ -106,6 +130,7 @@ def get_per_company_counts(session: Session) -> list[dict]:
     return [{"company": row.name, "count": row.count} for row in rows]
 
 
+@_timed_query
 def get_error_summary(session: Session, days: int = 7) -> list[dict]:
     """Scrape runs with errors in the last N days."""
     cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -135,6 +160,7 @@ def get_error_summary(session: Session, days: int = 7) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
+@_timed_query
 def search_postings(
     session: Session,
     company_id: uuid.UUID | None = None,
@@ -194,6 +220,7 @@ def search_postings(
     ]
 
 
+@_timed_query
 def get_posting_detail(session: Session, posting_id: uuid.UUID) -> dict | None:
     """Full detail for a single posting."""
     latest = _latest_snapshot_subquery()
@@ -254,6 +281,7 @@ def get_posting_detail(session: Session, posting_id: uuid.UUID) -> dict | None:
     return result
 
 
+@_timed_query
 def get_companies(session: Session) -> list[dict]:
     """All companies (for filter dropdowns)."""
     stmt = select(Company.id, Company.name).order_by(Company.name)
@@ -261,6 +289,7 @@ def get_companies(session: Session) -> list[dict]:
     return [{"id": str(row.id), "name": row.name} for row in rows]
 
 
+@_timed_query
 def get_role_archetypes(session: Session) -> list[str]:
     """Distinct role archetypes (for filter dropdowns)."""
     stmt = (
