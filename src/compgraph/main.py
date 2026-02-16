@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
         from compgraph.scheduler.app import setup_scheduler
 
         scheduler = await setup_scheduler()
-        scheduler.start_in_background()
+        await scheduler.start_in_background()
         app.state.scheduler = scheduler
     yield
     if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
