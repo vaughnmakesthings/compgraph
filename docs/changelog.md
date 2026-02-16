@@ -4,6 +4,41 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-15 (Session 9) — Dashboard, Scrape Controls, Enrichment Fix, M3 Kickoff
+
+### Completed
+- **PR #56 merged** — Dashboard UX fixes: pay value `0.0` falsy bug, error message sanitization (no raw exceptions to UI), empty JSON falsy check in error summary.
+- **PR #57 merged** — Dashboard diagnostics: `configure_logging()`, `_timed_query` decorator, session timing, diagnostics sidebar, typed return annotations.
+- **PR #58 merged** — Scrape pipeline controls: pause/resume/stop/force-stop API endpoints, `asyncio.Event` for pause, per-company state tracking, Pipeline Controls dashboard page.
+- **PR #62 merged** — Enrichment JSON fence fix: Haiku wraps JSON in ` ```json ``` ` markdown fences. Added `strip_markdown_fences()` to client.py, applied in pass1 + pass2.
+- **23 code review comments** triaged across PRs #56/#57/#58 — fixed, deferred (3 issues created: #59 auth, #60 concurrent runs, #61 multi-worker), or resolved.
+- **Merge conflicts** resolved across 5 dashboard files when merging PRs #56 and #57 (both modified same files).
+- **T-ROC scrape** — 98 postings successfully scraped. First M3 data collection run.
+- **Full enrichment** — 98/98 postings enriched (Pass 1 + Pass 2, 0 failures). 4 role archetypes detected, 19 postings with brand mentions.
+- **Branch cleanup** — Deleted 11 stale branches (local + remote + dev server). Only `main` + `feat/issue-6` remain.
+- **309 tests passing**, 69% coverage.
+
+### Scraper Status (M3 Day 1)
+- T-ROC: operational (98 postings)
+- Advantage Solutions: broken (301 redirect to `careers.youradv.com`)
+- Acosta Group: broken (DNS failure — domain gone)
+- BDS Connected Solutions: broken (DNS failure — domain gone)
+- MarketSource: broken (404 on careers search URL)
+
+### Key Bug Fixes
+- `strip_markdown_fences()` — regex strips ` ```json ``` ` fences before `json.loads()` in enrichment pass1/pass2
+- Pay value display: `if pay_min or pay_max` → `if pay_min is not None or pay_max is not None` (0.0 is falsy)
+- Error sanitization: `st.error(f"...{exc}")` → generic message + `logger.exception()`
+- Empty JSON check: `if row.ScrapeRun.errors` → `if row.ScrapeRun.errors is not None` (empty `{}` is falsy)
+- Misleading success: "No errors" shown even when error load failed → track `errors_loaded` flag
+
+### Next
+- **Fix broken scraper URLs** for Advantage, Acosta, BDS, MarketSource (career sites changed)
+- **M3 continues** — daily pipeline runs with T-ROC data while investigating other scrapers
+- **Issues #59-#61** — auth, concurrent run guard, multi-worker state (deferred from reviews)
+
+---
+
 ## 2026-02-15 (Session 8) — M2 PR Merged, All Review Bugs Fixed
 
 ### Completed

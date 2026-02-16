@@ -2,7 +2,7 @@
 
 ## Current State (2026-02-15)
 
-**M2 complete.** Full enrichment pipeline operational: 2-pass LLM (Haiku classification + Sonnet entity extraction), 3-tier entity resolution (exact/slug/fuzzy), fingerprinting for repost detection, backfill + validation scripts. 304 tests passing, 77% coverage. Dev server running at 192.168.1.69:8000.
+**M3 in progress (Day 1).** Dashboard (PRs #56-#58), scrape controls (pause/stop/force-stop), and enrichment JSON fence fix (PR #62) all merged. First T-ROC scrape: 98 postings, 98/98 enriched. 4 of 5 scrapers have broken URLs (career site changes). 309 tests passing, 69% coverage. Dev server + dashboard running at 192.168.1.69:8000/:8501.
 
 See `docs/changelog.md` for session-by-session history.
 
@@ -47,16 +47,21 @@ Goal: LLM enrichment transforms raw postings into structured intelligence.
 
 ---
 
-### Phase 3: Data Collection Period (M3)
+### Phase 3: Data Collection Period (M3) — IN PROGRESS
 
 Goal: 10-14 days of daily pipeline runs on autopilot. No new features — validate reliability and data quality.
 
-- [ ] Daily: monitor scrape logs, flag failures
-- [ ] Day 3-4: first data quality review (SQL queries)
-- [ ] Day 7: comprehensive audit — enrichment accuracy, entity resolution, fingerprints
-- [ ] Day 10-14: analysis session — what does the data say? What views matter most?
-- [ ] Tune enrichment prompts based on observed errors
-- [ ] Re-enrich affected postings after prompt changes
+| Task | Summary | Status |
+|------|---------|--------|
+| Dashboard + diagnostics | Streamlit app, Pipeline Health, Posting Explorer, diagnostics sidebar | Done (PRs #56-#57) |
+| Scrape controls | Pause/stop/force-stop API + dashboard page | Done (PR #58) |
+| Enrichment fence fix | `strip_markdown_fences()` for Haiku JSON responses | Done (PR #62) |
+| Fix broken scraper URLs | Advantage, Acosta, BDS, MarketSource career sites changed | TODO |
+| Daily pipeline runs | Monitor scrape + enrichment, flag failures | In progress (Day 1) |
+| Day 3-4: data quality review | SQL queries on enrichment accuracy | Pending |
+| Day 7: comprehensive audit | Entity resolution, fingerprints, archetype distribution | Pending |
+| Day 10-14: analysis session | What views matter most? Revise use case priorities | Pending |
+| Tune enrichment prompts | Based on observed errors | Pending |
 
 **Exit criteria:** 10+ days of clean snapshots. Enrichment accuracy validated. Use case priorities revised from real data.
 
