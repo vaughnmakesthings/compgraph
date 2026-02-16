@@ -1,5 +1,7 @@
 """Pipeline Health — scrape run history, enrichment coverage, and errors."""
 
+import logging
+
 import pandas as pd
 import streamlit as st
 
@@ -9,6 +11,8 @@ from compgraph.dashboard.queries import (
     get_error_summary,
     get_recent_scrape_runs,
 )
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Pipeline Health", layout="wide")
 st.title("Pipeline Health")
@@ -34,7 +38,13 @@ def _load_errors() -> list[dict]:
 
 # --- Enrichment coverage ---
 st.subheader("Enrichment Coverage")
-coverage = _load_coverage()
+try:
+    coverage = _load_coverage()
+except Exception:
+    logger.exception("Failed to load enrichment coverage")
+    st.error("Failed to load enrichment coverage. Check server logs for details.")
+    coverage = {"total_active": "—", "enriched": "—", "with_brands": "—", "unenriched": "—"}
+
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total Active", coverage["total_active"])
 c2.metric("Enriched", coverage["enriched"])
@@ -43,7 +53,13 @@ c4.metric("Unenriched", coverage["unenriched"])
 
 # --- Recent scrape runs ---
 st.subheader("Recent Scrape Runs")
-runs = _load_scrape_runs()
+try:
+    runs = _load_scrape_runs()
+except Exception:
+    logger.exception("Failed to load scrape runs")
+    st.error("Failed to load scrape runs. Check server logs for details.")
+    runs = []
+
 if runs:
     df = pd.DataFrame(runs)
 
@@ -61,10 +77,18 @@ else:
 
 # --- Error summary ---
 st.subheader("Errors (Last 7 Days)")
-errors = _load_errors()
+errors_loaded = True
+try:
+    errors = _load_errors()
+except Exception:
+    logger.exception("Failed to load error summary")
+    st.error("Failed to load error summary. Check server logs for details.")
+    errors = []
+    errors_loaded = False
+
 if errors:
     st.dataframe(pd.DataFrame(errors), use_container_width=True, hide_index=True)
-else:
+elif errors_loaded:
     st.success("No errors in the last 7 days.")
 
 # --- Refresh ---

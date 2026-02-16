@@ -5,6 +5,7 @@ All functions take a sync Session and return lists of dicts for easy DataFrame c
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -52,7 +53,7 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
         {
             "company": row.company_name,
             "started_at": row.ScrapeRun.started_at,
-            "completed_at": row.ScrapeRun.completed_at,
+            "completed_at": row.ScrapeRun.completed_at or "In Progress",
             "status": row.ScrapeRun.status,
             "pages_scraped": row.ScrapeRun.pages_scraped,
             "jobs_found": row.ScrapeRun.jobs_found,
@@ -121,7 +122,9 @@ def get_error_summary(session: Session, days: int = 7) -> list[dict]:
             "company": row.company_name,
             "started_at": row.ScrapeRun.started_at,
             "status": row.ScrapeRun.status,
-            "errors": row.ScrapeRun.errors,
+            "errors": json.dumps(row.ScrapeRun.errors, default=str)[:200]
+            if row.ScrapeRun.errors is not None
+            else None,
         }
         for row in rows
     ]
