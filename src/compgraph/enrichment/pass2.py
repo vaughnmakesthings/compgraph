@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, cast
 import anthropic
 
 from compgraph.config import settings
+from compgraph.enrichment.client import strip_markdown_fences
 from compgraph.enrichment.prompts import PASS2_SYSTEM_PROMPT, build_pass2_messages
 from compgraph.enrichment.schemas import Pass2Result
 
@@ -96,7 +97,8 @@ async def enrich_posting_pass2(
             text_content: str = content_block.text  # type: ignore[union-attr]
 
             try:
-                data = json.loads(text_content)
+                cleaned = strip_markdown_fences(text_content)
+                data = json.loads(cleaned)
                 return Pass2Result.model_validate(data)
             except (json.JSONDecodeError, Exception) as parse_err:
                 raise ValueError(

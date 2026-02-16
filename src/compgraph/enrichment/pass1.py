@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, cast
 import anthropic
 
 from compgraph.config import settings
+from compgraph.enrichment.client import strip_markdown_fences
 from compgraph.enrichment.prompts import PASS1_SYSTEM_PROMPT, build_pass1_messages
 from compgraph.enrichment.schemas import Pass1Result
 
@@ -92,7 +93,8 @@ async def enrich_posting_pass1(
 
             # Parse JSON response into Pass1Result
             try:
-                data = json.loads(text_content)
+                cleaned = strip_markdown_fences(text_content)
+                data = json.loads(cleaned)
                 return Pass1Result.model_validate(data)
             except (json.JSONDecodeError, Exception) as parse_err:
                 raise ValueError(
