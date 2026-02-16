@@ -14,13 +14,10 @@ SCHEDULE_ID = "daily_pipeline"
 
 
 async def setup_scheduler() -> AsyncScheduler:
-    scheduler = AsyncScheduler()
+    scheduler = AsyncScheduler(max_concurrent_jobs=1)
 
-    trigger = CronTrigger(
-        day_of_week="mon,wed,fri",
-        hour=2,
-        minute=0,
-        timezone=settings.SCHEDULER_TIMEZONE,
+    trigger = CronTrigger.from_crontab(
+        settings.SCHEDULER_PIPELINE_CRON, timezone=settings.SCHEDULER_TIMEZONE
     )
 
     await scheduler.__aenter__()

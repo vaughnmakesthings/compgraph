@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
         app.state.scheduler = scheduler
     yield
     if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
-        await app.state.scheduler.stop()
+        await app.state.scheduler.__aexit__(None, None, None)
     await engine.dispose()
 
 
