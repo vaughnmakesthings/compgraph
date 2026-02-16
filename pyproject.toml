@@ -15,6 +15,9 @@ dependencies = [
     "anthropic>=0.43.0",
     "rapidfuzz>=3.0.0",
     "python-slugify>=8.0.0",
+    "streamlit>=1.30.0",
+    "psycopg2-binary>=2.9.0",
+    "pandas>=2.0.0",
 ]
 
 [project.scripts]
@@ -67,6 +70,7 @@ ignore = [
 "src/compgraph/enrichment/prompts.py" = ["E501"]
 "src/compgraph/preflight.py" = ["S603", "S607", "T20"]
 "alembic/versions/**/*.py" = ["E501", "UP007", "UP035", "I001", "W291", "S608"]
+"src/compgraph/dashboard/**/*.py" = ["T20"]
 
 [tool.mypy]
 python_version = "3.12"
