@@ -19,7 +19,26 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial scaffold: FastAPI + SQLAlchemy models + Alembic config\n\nProject structure for CompGraph competitive intelligence platform.\n13 SQLAlchemy models \\(dimension, fact, aggregation, auth tables\\),\nasync FastAPI app with health endpoint, Alembic migration setup,\npydantic-settings config. Binds to 0.0.0.0:8000 for LAN dev server.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(command grep \"st.error\\\\|pay_min\")",
+      "Bash(command grep -A5 \"def get_error_summary\\\\|errors.*None\\\\|errors.*falsy\")",
+      "Bash(command grep -A15 \"def get_error_summary\")",
+      "Bash(command grep -A20 \"def get_error_summary\")",
+      "Bash(git checkout:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(git commit:*)",
+      "Bash(gh label list:*)",
+      "Bash(command grep -i \"security\\\\|enhance\\\\|api\")",
+      "Bash(gh label create:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh api:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr update-branch:*)",
+      "Bash(git merge:*)",
+      "Bash(command grep:*)"
     ]
   }
 }
