@@ -4,6 +4,76 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-15 (Session 8) — M2 PR Merged, All Review Bugs Fixed
+
+### Completed
+- **PR #39 merged** (Issues #8-#11) — Full M2 enrichment pipeline. 22 files, +3,649 LOC.
+- **3 rounds of review fixes** — Addressed all 21 conversation threads from Cursor Bugbot + Gemini Code Assist.
+- **304 tests passing**, 77% coverage.
+
+### Review Fixes (Round 2 — Cursor Bugbot)
+- Pass1 livelock: track `failed_ids` in-memory, pass `exclude_ids` to query.
+- Canonical repost ordering: `ORDER BY first_seen_at ASC` on unfingerprinted batch.
+- Run status aggregation: `_compute_final_status()` considers both pass1 + pass2 outcomes.
+- Fingerprint failure visibility: downgrade status to PARTIAL on exception.
+- Validation stale snapshots: latest-snapshot subquery (DISTINCT ON).
+- Concurrent entity creation: `IntegrityError` catch + re-query on slug conflict.
+
+### Review Fixes (Round 3 — Cursor Bugbot)
+- Pass2 livelock: same `failed_ids` + `exclude_ids` pattern as Pass1.
+- Backfill count: `enrichment_version` filter instead of `PostingBrandMention` existence.
+- Entity rollback: `begin_nested()` savepoint instead of full `session.rollback()`.
+- Validation duplicates: latest-enrichment subquery (DISTINCT ON `enriched_at`).
+
+### Deferred (acknowledged in review)
+- API authentication → M3
+- pg_trgm fuzzy matching → M6 (dimension tables <500 rows)
+- Prompt injection hardening → M6
+- N+1 queries in fingerprinting/validation → M6 (bounded batch sizes)
+- Concurrent run guard → M3 (single-operator deployment)
+
+### Next
+- **M3: Data Collection Period** — 10-14 days of daily pipeline runs, data quality monitoring
+
+---
+
+## 2026-02-15 (Session 7) — M2 Enrichment Pipeline Implementation
+
+### Completed
+- **PR #39 created** (Issues #8-#11) — Full M2 enrichment pipeline implementation
+- **Pass 1** (Haiku 4.5) — Classification, pay extraction, content section tagging. 9 enrichment modules.
+- **Pass 2** (Sonnet 4.5) — Entity extraction with 3-tier resolution (exact/slug/fuzzy via rapidfuzz). Auto-creates new Brand/Retailer records.
+- **Fingerprinting** — SHA-256 composite hash detects reposted jobs, increments `times_reposted`.
+- **Backfill scripts** — `scripts/backfill_enrichment.py` (CLI with --dry-run, --pass1-only, --pass2-only) and `scripts/validate_enrichment.py` (CSV spot-check).
+- **304 tests passing**, 78% coverage. 108 new enrichment tests.
+
+### Key Fixes During Initial Review
+- Pass 2 infinite loop: empty entities caused re-processing. Fixed via `enrichment_version` tracking.
+- mypy: `MessageParam` type via `TYPE_CHECKING` + `cast()`, content block `.text` via `hasattr` guard.
+- Entity confidence sorting: primary brand/retailer now selected by highest confidence.
+
+---
+
+## 2026-02-15 (Session 6) — M1 Complete: Deactivation + Proxy PRs Merged
+
+### Completed
+- **PR #37 merged** (Issue #5) — Posting deactivation with 3-run grace period. Uses `completed_at` ordering with `started_at` cutoff. Added `postings_closed` to ScrapeRun. Fixed iCIMS `is_active` ON CONFLICT bug.
+- **PR #38 merged** (Issue #7) — Proxy/UA integration. Optional `PROXY_URL` + credentials via `SecretStr`. RFC 3986 percent-encoding. IPv6 bracket preservation. UA rotation from 5 curated browser strings.
+- **10 review threads resolved per PR** — Addressed Cursor Bugbot and Gemini code review feedback across 3 cycles each.
+- **M1 milestone closed** — All 11 tasks complete. 196 tests passing, 87% coverage.
+
+### Key Fixes During Review
+- `postings_closed` nullable→non-nullable with `server_default="0"`
+- `quote_plus()` → `quote(safe="")` for proxy userinfo (RFC 3986)
+- Deactivation ordering: `completed_at` for recency, `started_at` for cutoff value
+- Workday `httpx.AsyncClient` wrapped in try/except for malformed proxy URLs
+
+### Next
+- **M2: Enrichment Pipeline** — Haiku classification (Pass 1) → Sonnet entity extraction (Pass 2)
+- Issues #8-#11 are the M2 implementation path
+
+---
+
 ## 2026-02-12 (Session 3) — Dev Environment + Supabase Migrations
 
 ### Completed

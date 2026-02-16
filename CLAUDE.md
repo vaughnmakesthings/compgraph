@@ -33,6 +33,11 @@ uv run ruff check src/ tests/                      # Lint
 uv run ruff format src/ tests/                     # Format
 uv run mypy src/compgraph/                         # Typecheck
 
+# Enrichment
+op run --env-file=.env -- uv run python scripts/backfill_enrichment.py          # Run full backfill
+op run --env-file=.env -- uv run python scripts/backfill_enrichment.py --dry-run  # Count only
+op run --env-file=.env -- uv run python scripts/validate_enrichment.py          # Spot-check CSV
+
 # Preflight
 uv run preflight                                   # Validate environment before work
 ```
@@ -47,6 +52,9 @@ uv run preflight                                   # Validate environment before
 - **Alembic** — migrations in `alembic/`, async engine, SSL required
 - **Supabase** — managed Postgres 17, project ref `tkvxyxwfosworwqxesnz`
 - **pydantic-settings** — config from `.env` via `src/compgraph/config.py`
+- **anthropic** — AsyncAnthropic client for LLM enrichment (Haiku + Sonnet)
+- **rapidfuzz** — fuzzy string matching for entity resolution
+- **python-slugify** — slug generation for brand/retailer matching
 
 ## Architecture
 
@@ -55,7 +63,7 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 ```
 
 - **Scrape**: 4 adapters (iCIMS×2, Workday CXS×2). Each isolated — one failing doesn't block others. Output: `postings` + `posting_snapshots` (append-only).
-- **Enrich**: 2-pass — Haiku for classification/pay extraction, Sonnet for entity extraction. Output: `posting_enrichments` + `posting_brand_mentions`.
+- **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
 - **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
@@ -83,6 +91,9 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - All timestamps use timezone-aware datetime (`DateTime(timezone=True)`).
 - UUIDs for all primary keys (`UUID(as_uuid=True)`, `default=uuid.uuid4`).
 - FastAPI dependency injection via `get_db()` in `src/compgraph/api/deps.py`.
+- Enrichment Pass 2 completion tracked via `enrichment_version` column containing "pass2" (not PostingBrandMention existence).
+- Entity resolution uses savepoints (`begin_nested()`) for concurrent-safe creation.
+- Anthropic SDK types (`MessageParam`) imported under `TYPE_CHECKING` guard, used via `cast()` at runtime.
 
 ## Tests
 
@@ -108,6 +119,9 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - Don't hardcode iCIMS page sizes — they vary per company.
 - Don't assume Workday CXS API is stable — it's undocumented.
 - Don't skip the enrichment 2-pass pattern — Haiku alone misses edge cases, Sonnet alone is too expensive.
+- Don't use `session.rollback()` in entity creation — use `session.begin_nested()` savepoints to preserve prior work.
+- Don't check Pass 2 completion via `PostingBrandMention` existence — use `enrichment_version` containing "pass2".
+- Don't forget `exclude_ids` for failed postings in batch loops — prevents livelock on persistent failures.
 
 ## Deployment
 

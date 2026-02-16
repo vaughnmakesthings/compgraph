@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | { read cmd; if echo \"$cmd\" | grep -q -- '--autogenerate'; then grep -q 'include_name' \"$CLAUDE_PROJECT_DIR/alembic/env.py\" 2>/dev/null || { echo 'BLOCKED: include_name schema filter missing from alembic/env.py. Autogenerate without it will corrupt Supabase-managed schemas (auth, storage, realtime). See failure-patterns.md PF-3.' >&2; exit 2; }; fi; exit 0; }",
+            "command": "jq -r '.tool_input.command // empty' | { read cmd; if echo \"$cmd\" | grep -q -- '--autogenerate'; then grep -q 'include_name' \"$CLAUDE_PROJECT_DIR/alembic/env.py\" 2>/dev/null || { echo 'BLOCKED: include_name schema filter missing from alembic/env.py. Autogenerate without it will corrupt Supabase-managed schemas (auth, storage, realtime). See failure-patterns.md PF-3.' >&2; exit 2; }; fi; if echo \"$cmd\" | grep -qE 'alembic\\s+downgrade'; then echo 'BLOCKED: alembic downgrade is destructive and may cause data loss on Supabase. Use alembic upgrade with a new migration to revert changes instead. Override with explicit user confirmation.' >&2; exit 2; fi; exit 0; }",
             "timeout": 5
           }
         ]

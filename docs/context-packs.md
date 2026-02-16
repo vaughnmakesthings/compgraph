@@ -63,23 +63,35 @@ Use when implementing any file in `src/compgraph/scrapers/`.
 
 ---
 
-### Pack B: Building the Enrichment Pipeline
+### Pack B: Enrichment Pipeline (Modifying/Debugging)
 
-Use when implementing any file in `src/compgraph/enrichment/`.
+Use when modifying or debugging any file in `src/compgraph/enrichment/`.
+
+**M2 implemented the full pipeline (PR #39).** This pack is now for modifications, prompt tuning, and debugging.
 
 | Load | Why | Tokens (est.) |
 |------|-----|:---:|
 | `docs/design.md` → §4 LLM Enrichment Pipeline | Two-pass architecture, prompt principles | ~800 |
-| `src/compgraph/db/models.py` → PostingEnrichment, PostingBrandMention models | Output schema | ~400 |
-| `src/compgraph/db/models.py` → Brand, Retailer models | Entity resolution targets | ~200 |
-| The enrichment module being built/modified | Current state | ~200–500 |
+| `src/compgraph/enrichment/schemas.py` | Pass1Result, Pass2Result, EntityMention schemas | ~400 |
+| `src/compgraph/enrichment/orchestrator.py` | Batch processing, concurrency, status tracking | ~500 |
+| The enrichment module being modified | Current state | ~200–500 |
 
-**Pass-specific additions:**
+**Module-specific additions:**
 
-| Pass | Also load | Why |
-|------|-----------|-----|
-| Pass 1 (Haiku) | `src/compgraph/db/models.py` → PostingSnapshot model | Input schema (raw text) |
-| Pass 2 (Sonnet) | Pass 1 output schema reference | Input from prior pass |
+| Module | Also load | Why |
+|--------|-----------|-----|
+| `pass1.py` | `prompts.py` (PASS1_SYSTEM_PROMPT) | Haiku classification prompt |
+| `pass2.py` | `prompts.py` (PASS2_SYSTEM_PROMPT) | Sonnet entity extraction prompt |
+| `resolver.py` | `db/models.py` → Brand, Retailer | Entity resolution targets, slug matching |
+| `fingerprint.py` | `db/models.py` → Posting (fingerprint_hash, times_reposted) | Repost detection schema |
+| `queries.py` | `db/models.py` → PostingEnrichment, PostingSnapshot | Query join patterns |
+
+**Key implementation patterns (from M2 review):**
+- Pass 2 completion tracked via `enrichment_version` containing "pass2" (NOT PostingBrandMention existence)
+- Failed postings tracked via `exclude_ids` set to prevent batch livelock
+- Entity creation uses `begin_nested()` savepoints for concurrent safety
+- Anthropic SDK types use `TYPE_CHECKING` guard + `cast()` (ruff strips unused imports)
+- Run status uses `_compute_final_status()` aggregating both pass results
 
 **Tier 2 escalation (load if hitting quality/cost issues):**
 
@@ -89,11 +101,9 @@ Use when implementing any file in `src/compgraph/enrichment/`.
 | `docs/references/llm-extraction-optimization.md` → §4 Haiku vs Sonnet Quality | Failure modes, hallucination risks, quality cliff | ~600 |
 | `docs/references/llm-extraction-optimization.md` → §6 Pipeline Architecture | 5-layer validation, retry strategy, monitoring metrics | ~700 |
 
-**Architectural decision (Feb 2026):** Use **Anthropic native structured output** (`client.messages.parse(output_format=Model)`) — NOT the Instructor library. Native constrained decoding guarantees schema compliance at the grammar level (no retry needed). Instructor's advantages (provider agnosticism, validation retries) are irrelevant since we're 100% Anthropic and native output cannot violate the schema. Native also supports Batch API (50% cost savings for backfills). See `docs/references/similar-projects-research.md` § Priority Adoption Recommendations for full evaluation.
-
 **Total: ~2K–3K tokens (core) + ~1.8K (Tier 2 if needed)**
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:prompt-engineer` for prompt design, `voltagent-lang:python-pro` for structured output patterns.
+**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:prompt-engineer` for prompt tuning, `voltagent-lang:python-pro` for async patterns.
 
 ---
 

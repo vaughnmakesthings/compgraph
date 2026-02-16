@@ -104,15 +104,15 @@ gh pr merge 42 --squash --delete-branch          # Merge PR
 
 ### Milestones (from `docs/phases.md`)
 
-| Milestone | Phase | What |
-|-----------|-------|------|
-| M1 | Foundation | Schema, migrations, Supabase setup |
-| M2 | Scrapers | 4 ATS adapters (iCIMS, Workday) |
-| M3 | Enrichment | 2-pass LLM extraction pipeline |
-| M4 | Aggregation | 4 materialized tables |
-| M5 | API | FastAPI endpoints for dashboards |
-| M6 | Alerts | Change detection + notifications |
-| M7 | Hardening | Monitoring, error handling, docs |
+| Milestone | Phase | What | Status |
+|-----------|-------|------|--------|
+| M1 | Foundation | Schema, migrations, scrapers, orchestrator | COMPLETE |
+| M2 | Enrichment | 2-pass LLM extraction, entity resolution, fingerprinting | COMPLETE |
+| M3 | Data Collection | 10-14 days daily runs, quality monitoring | Next |
+| M4 | Aggregation & API | 4 materialized tables + dashboard endpoints | |
+| M5 | Prototype UI | Streamlit dashboard connected to live API | |
+| M6 | Tuning & Hardening | Prompt tuning, pg_trgm, monitoring, security | |
+| M7 | Production UI | Frontend, auth, export, production deploy | |
 
 ### Labels
 
