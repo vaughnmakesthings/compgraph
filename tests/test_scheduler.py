@@ -104,6 +104,35 @@ class TestPipelineJobSkipsEnrichOnFailure:
         mock_enrich_orch.run_full.assert_not_called()
 
 
+class TestPipelineJobScrapeException:
+    async def test_exception_in_scrape_does_not_propagate(self):
+        import compgraph.scheduler.jobs as jobs_mod
+
+        mock_scrape_orch = MagicMock()
+        mock_scrape_orch.run = AsyncMock(side_effect=RuntimeError("connection lost"))
+
+        mock_enrich_orch = MagicMock()
+        mock_enrich_orch.run_full = AsyncMock()
+
+        with (
+            patch(
+                "compgraph.scheduler.jobs.PipelineOrchestrator",
+                return_value=mock_scrape_orch,
+            ),
+            patch(
+                "compgraph.scheduler.jobs.EnrichmentOrchestrator",
+                return_value=mock_enrich_orch,
+            ),
+            patch("compgraph.scheduler.jobs._store_scrape_run"),
+            patch("compgraph.scheduler.jobs._store_enrichment_run"),
+        ):
+            await pipeline_job()  # should not raise
+
+        mock_enrich_orch.run_full.assert_not_called()
+        assert jobs_mod._last_pipeline_success is False
+        assert jobs_mod._last_pipeline_finished_at is not None
+
+
 class TestPipelineJobPartialTriggers:
     async def test_enrichment_runs_on_partial_scrape(self):
         async def mock_scrape_run(pipeline_run: PipelineRun | None = None) -> PipelineRun:
@@ -198,6 +227,9 @@ class TestSchedulerSetup:
 
             trigger = schedules[0].trigger
             assert trigger.timezone.key == "America/New_York"
+            assert trigger.hour == "2"
+            assert trigger.minute == "0"
+            assert trigger.day_of_week == "1,3,5"
         finally:
             await scheduler.__aexit__(None, None, None)
 
@@ -287,6 +319,26 @@ class TestSchedulerTriggerAPI:
             resp = await client.post("/api/scheduler/jobs/daily_pipeline/trigger")
 
         assert resp.status_code == 503
+
+
+class TestSchedulerInvalidScheduleID:
+    async def test_trigger_unknown_schedule_returns_404(self, app_with_scheduler):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_scheduler),
+            base_url="http://test",
+        ) as client:
+            resp = await client.post("/api/scheduler/jobs/nonexistent/trigger")
+
+        assert resp.status_code == 404
+
+    async def test_pause_unknown_schedule_returns_404(self, app_with_scheduler):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_scheduler),
+            base_url="http://test",
+        ) as client:
+            resp = await client.post("/api/scheduler/jobs/nonexistent/pause")
+
+        assert resp.status_code == 404
 
 
 class TestSchedulerPauseResumeAPI:

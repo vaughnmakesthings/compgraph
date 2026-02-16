@@ -41,6 +41,9 @@ class ControlResponse(BaseModel):
     message: str
 
 
+_VALID_SCHEDULE_IDS = {"daily_pipeline"}
+
+
 def _get_scheduler(request: Request):
     scheduler = getattr(request.app.state, "scheduler", None)
     if scheduler is None:
@@ -49,6 +52,14 @@ def _get_scheduler(request: Request):
             detail="Scheduler is not enabled. Set SCHEDULER_ENABLED=true.",
         )
     return scheduler
+
+
+def _validate_schedule_id(job_id: str) -> None:
+    if job_id not in _VALID_SCHEDULE_IDS:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown schedule '{job_id}'. Valid: {', '.join(sorted(_VALID_SCHEDULE_IDS))}",
+        )
 
 
 @router.get("/status", response_model=SchedulerStatusResponse)
@@ -91,6 +102,7 @@ async def scheduler_status(request: Request) -> SchedulerStatusResponse:
 
 @router.post("/jobs/{job_id}/trigger", response_model=TriggerResponse)
 async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
+    _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 
     from compgraph.scheduler.jobs import pipeline_job
@@ -109,6 +121,7 @@ async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
 
 @router.post("/jobs/{job_id}/pause", response_model=ControlResponse)
 async def pause_job(request: Request, job_id: str) -> ControlResponse:
+    _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 
     try:
@@ -125,6 +138,7 @@ async def pause_job(request: Request, job_id: str) -> ControlResponse:
 
 @router.post("/jobs/{job_id}/resume", response_model=ControlResponse)
 async def resume_job(request: Request, job_id: str) -> ControlResponse:
+    _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 
     try:
