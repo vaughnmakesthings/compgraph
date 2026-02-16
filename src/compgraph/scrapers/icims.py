@@ -468,7 +468,11 @@ class ICIMSAdapter:
                 delay_max=delay_max,
                 search_url=search_url,
             )
-            jobs = await fetcher.fetch_all_listings()
+            try:
+                jobs = await fetcher.fetch_all_listings()
+            except Exception as exc:
+                logger.warning("Failed to fetch listings from %s: %r", search_url, exc)
+                continue
             for job in jobs:
                 if job["job_id"] not in seen_job_ids:
                     seen_job_ids.add(job["job_id"])
