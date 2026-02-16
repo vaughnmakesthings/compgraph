@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
@@ -181,3 +182,61 @@ class TestPipelineStatusEndpoint:
             data = resp.json()
             assert data["scrape"]["status"] == "completed"
             assert data["system_state"] == "idle"
+
+    def test_scraping_takes_priority_over_enriching(self, client):
+        from compgraph.enrichment.orchestrator import _store_run as store_enrich
+
+        scrape_run = PipelineRun(status=PipelineStatus.RUNNING)
+        _store_run(scrape_run)
+        enrich_run = EnrichmentRun(status=EnrichmentStatus.RUNNING)
+        store_enrich(enrich_run)
+        with (
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_enrichment_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+        ):
+            resp = client.get("/api/pipeline/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["system_state"] == "scraping"
+
+    def test_enrich_db_fallback(self, client):
+        db_enrich = {
+            "run_id": str(uuid.uuid4()),
+            "status": "completed",
+            "started_at": datetime.now(UTC).isoformat(),
+            "finished_at": datetime.now(UTC).isoformat(),
+            "pass1_total": 50,
+            "pass1_succeeded": 48,
+            "pass1_failed": 2,
+            "pass1_skipped": 0,
+            "pass2_total": 48,
+            "pass2_succeeded": 45,
+            "pass2_failed": 3,
+            "pass2_skipped": 0,
+            "error_summary": None,
+        }
+        with (
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_enrichment_run_from_db",
+                new_callable=AsyncMock,
+                return_value=db_enrich,
+            ),
+        ):
+            resp = client.get("/api/pipeline/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["enrich"]["status"] == "completed"
+            assert data["enrich"]["last_completed_at"] is not None

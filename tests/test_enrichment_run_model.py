@@ -8,14 +8,16 @@ from compgraph.db.models import EnrichmentRunDB, EnrichmentRunStatus
 
 class TestEnrichmentRunDBModel:
     def test_model_has_required_columns(self):
+        expected_id = uuid.uuid4()
+        expected_time = datetime.now(UTC)
         run = EnrichmentRunDB(
-            id=uuid.uuid4(),
+            id=expected_id,
             status=EnrichmentRunStatus.PENDING,
-            started_at=datetime.now(UTC),
+            started_at=expected_time,
         )
         assert run.status == "pending"
-        assert run.id is not None
-        assert run.started_at is not None
+        assert run.id == expected_id
+        assert run.started_at == expected_time
 
     def test_integer_columns_have_server_defaults(self):
         table = EnrichmentRunDB.__table__
