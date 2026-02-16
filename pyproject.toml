@@ -13,6 +13,8 @@ dependencies = [
     "httpx>=0.28.0",
     "beautifulsoup4>=4.12.0",
     "anthropic>=0.43.0",
+    "rapidfuzz>=3.0.0",
+    "python-slugify>=8.0.0",
 ]
 
 [project.scripts]
@@ -60,8 +62,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "S106", "S108"]
-"scripts/**/*.py" = ["T20"]
+"tests/**/*.py" = ["S101", "S106", "S108", "E501"]
+"scripts/**/*.py" = ["T20", "E501"]
+"src/compgraph/enrichment/prompts.py" = ["E501"]
 "src/compgraph/preflight.py" = ["S603", "S607", "T20"]
 "alembic/versions/**/*.py" = ["E501", "UP007", "UP035", "I001", "W291", "S608"]
 
