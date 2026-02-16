@@ -208,7 +208,8 @@ class ICIMSFetcher:
             html = response.text
             jobs = parse_listing_page(html)
             all_jobs.extend(jobs)
-            self.pages_fetched += 1
+            if jobs or page > 0:
+                self.pages_fetched += 1
 
             if not has_next_page(html) or not jobs:
                 break
@@ -504,6 +505,7 @@ class ICIMSAdapter:
             except Exception as exc:
                 logger.warning("Failed to fetch listings from %s: %r", search_url, exc)
                 failed_urls.append(search_url)
+                total_pages += fetcher.pages_fetched
                 continue
             total_pages += fetcher.pages_fetched
             for job in jobs:

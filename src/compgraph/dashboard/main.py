@@ -36,7 +36,8 @@ def _api_get(path: str) -> dict[str, Any] | None:
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return resp.json()
+        result: dict[str, Any] = resp.json()
+        return result
     except requests.RequestException as exc:
         logger.warning("API request failed: %s", exc)
         return None

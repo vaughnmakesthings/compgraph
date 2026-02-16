@@ -176,10 +176,10 @@ class WorkdayFetcher:
         while True:
             self._check_circuit()
             result = await self.fetch_search_page(client, offset)
-            self.pages_fetched += 1
 
             if not result.postings:
                 break
+            self.pages_fetched += 1
 
             for posting in result.postings:
                 if posting.external_path not in seen_paths:
