@@ -38,7 +38,18 @@
       "Bash(gh pr merge:*)",
       "Bash(gh pr update-branch:*)",
       "Bash(git merge:*)",
-      "Bash(command grep:*)"
+      "Bash(command grep:*)",
+      "Bash(git -C /Users/vmud/Documents/dev/projects/compgraph checkout -b fix/enrichment-json-fences)",
+      "Bash(git -C /Users/vmud/Documents/dev/projects/compgraph add src/compgraph/enrichment/client.py src/compgraph/enrichment/pass1.py src/compgraph/enrichment/pass2.py tests/test_enrichment_pass1.py)",
+      "Bash(git -C:*)",
+      "Bash(gh pr create:*)",
+      "Bash(for b in feat/issue-2 feat/issue-3 feat/issue-6 feat/issue-32)",
+      "Bash(do echo \"=== $b ===\")",
+      "Bash(done)",
+      "Bash(for b in feat/issue-2 feat/issue-3 feat/issue-32)",
+      "Bash(do echo \"Deleting $b...\")",
+      "mcp__codesight__get_indexing_status",
+      "mcp__codesight__index_codebase"
     ]
   }
 }
