@@ -105,12 +105,13 @@ if runs:
             return ["color: red"] * len(row)
         if row.get("warnings"):
             return ["color: orange"] * len(row)
-        if row.get("status") == "completed":
+        if row.get("scrape_status") == "completed":
             return ["color: green"] * len(row)
         return [""] * len(row)
 
     styled = df.style.apply(_style_row, axis=1)
     st.dataframe(styled, use_container_width=True, hide_index=True)
+    st.caption("Status shows scrape phase only. Enrichment runs separately after scrape completes.")
 else:
     st.info("No scrape runs recorded yet.")
 
