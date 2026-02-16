@@ -125,7 +125,7 @@ def get_latest_pipeline_status(session: Session) -> dict | None:
             Company.slug,
         )
         .join(Company, ScrapeRun.company_id == Company.id)
-        .where(ScrapeRun.started_at == latest_started)
+        .where(ScrapeRun.started_at >= latest_started - timedelta(minutes=2))
     )
     rows = session.execute(stmt).all()
 
@@ -217,6 +217,7 @@ def get_enrichment_pass_breakdown(session: Session) -> dict:
     pass1_only = session.execute(
         select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
             PostingEnrichment.posting_id.in_(active_ids),
+            PostingEnrichment.enrichment_version.isnot(None),
             ~PostingEnrichment.enrichment_version.contains("pass2"),
         )
     ).scalar_one()
