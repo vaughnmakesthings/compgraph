@@ -84,7 +84,9 @@ def upgrade() -> None:
                 '{"tenant": "2020companies", "site": "External_Careers"}'::jsonb,
                 now()
             )
-            ON CONFLICT (slug) DO NOTHING
+            ON CONFLICT (slug) DO UPDATE SET
+                career_site_url = EXCLUDED.career_site_url,
+                scraper_config = EXCLUDED.scraper_config
         """)
     )
 
@@ -101,7 +103,9 @@ def upgrade() -> None:
                 '{"search_urls": ["https://careers-bdssolutions.icims.com/jobs/search", "https://careers-apolloretail.icims.com/jobs/search"]}'::jsonb,
                 now()
             )
-            ON CONFLICT (slug) DO NOTHING
+            ON CONFLICT (slug) DO UPDATE SET
+                career_site_url = EXCLUDED.career_site_url,
+                scraper_config = EXCLUDED.scraper_config
         """)
     )
 
@@ -118,7 +122,9 @@ def upgrade() -> None:
                 '{"search_urls": ["https://applyatmarketsource-msc.icims.com/jobs/search", "https://careers-marketsource.icims.com/jobs/search"]}'::jsonb,
                 now()
             )
-            ON CONFLICT (slug) DO NOTHING
+            ON CONFLICT (slug) DO UPDATE SET
+                career_site_url = EXCLUDED.career_site_url,
+                scraper_config = EXCLUDED.scraper_config
         """)
     )
 

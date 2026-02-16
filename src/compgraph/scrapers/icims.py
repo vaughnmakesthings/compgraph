@@ -185,6 +185,7 @@ class ICIMSFetcher:
         self.search_url = search_url
         self.consecutive_failures = 0
         self.circuit_open = False
+        self.pages_fetched = 0
 
     async def _delay(self) -> None:
         if self.delay_min > 0 or self.delay_max > 0:
@@ -207,6 +208,7 @@ class ICIMSFetcher:
             html = response.text
             jobs = parse_listing_page(html)
             all_jobs.extend(jobs)
+            self.pages_fetched += 1
 
             if not has_next_page(html) or not jobs:
                 break
@@ -367,9 +369,10 @@ class ICIMSAdapter:
             ) as client:
                 # Collect job entries — multi-URL or single default
                 if search_urls:
-                    job_entries, failed_urls = await self._fetch_multi_url(
+                    job_entries, failed_urls, pages = await self._fetch_multi_url(
                         client, search_urls, delay_min, delay_max
                     )
+                    result.pages_scraped = pages
                     if failed_urls and job_entries:
                         # Partial success — warn, don't error
                         for url in failed_urls:
@@ -389,6 +392,7 @@ class ICIMSAdapter:
                         (entry, company.career_site_url)
                         for entry in await fetcher.fetch_all_listings()
                     ]
+                    result.pages_scraped = fetcher.pages_fetched
 
                 result.postings_found = len(job_entries)
 
@@ -472,17 +476,19 @@ class ICIMSAdapter:
         search_urls: list[str],
         delay_min: float,
         delay_max: float,
-    ) -> tuple[list[tuple[dict[str, str], str]], list[str]]:
+    ) -> tuple[list[tuple[dict[str, str], str]], list[str], int]:
         """Fetch listings from multiple search URLs, deduplicating by (base_url, job_id).
 
         Dedup is scoped per-portal (base_url) since iCIMS job IDs are per-tenant.
         The same numeric ID on different portals represents different jobs.
 
-        Returns (entries, failed_urls) where failed_urls lists URLs that raised exceptions.
+        Returns (entries, failed_urls, pages_scraped) where failed_urls lists URLs
+        that raised exceptions.
         """
         seen: set[tuple[str, str]] = set()  # (base_url, job_id)
         entries: list[tuple[dict[str, str], str]] = []
         failed_urls: list[str] = []
+        total_pages = 0
 
         for search_url in search_urls:
             base_url = _base_url_from_search_url(search_url)
@@ -499,6 +505,7 @@ class ICIMSAdapter:
                 logger.warning("Failed to fetch listings from %s: %r", search_url, exc)
                 failed_urls.append(search_url)
                 continue
+            total_pages += fetcher.pages_fetched
             for job in jobs:
                 key = (base_url, job["job_id"])
                 if key not in seen:
@@ -511,4 +518,4 @@ class ICIMSAdapter:
                         base_url,
                     )
 
-        return entries, failed_urls
+        return entries, failed_urls, total_pages
