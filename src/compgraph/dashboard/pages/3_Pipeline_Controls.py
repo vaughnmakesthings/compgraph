@@ -1,7 +1,11 @@
 """Pipeline Controls — start, pause, stop, and monitor scrape pipeline runs."""
 
+from __future__ import annotations
+
 import logging
+import os
 import time
+from typing import Any
 
 import pandas as pd
 import requests
@@ -12,10 +16,10 @@ logger = logging.getLogger(__name__)
 st.set_page_config(page_title="Pipeline Controls", layout="wide")
 st.title("Pipeline Controls")
 
-API_BASE = "http://localhost:8000"
+API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 # --- Status color mapping ---
-STATUS_COLORS = {
+STATUS_COLORS: dict[str, str] = {
     "pending": "gray",
     "running": "blue",
     "paused": "orange",
@@ -26,7 +30,7 @@ STATUS_COLORS = {
     "cancelled": "red",
 }
 
-COMPANY_STATE_ICONS = {
+COMPANY_STATE_ICONS: dict[str, str] = {
     "pending": ":hourglass_flowing_sand:",
     "running": ":runner:",
     "completed": ":white_check_mark:",
@@ -35,25 +39,27 @@ COMPANY_STATE_ICONS = {
 }
 
 
-def _api_get(path: str) -> dict | None:
+def _api_get(path: str) -> dict[str, Any] | None:
     """GET from FastAPI, return JSON or None on error."""
     try:
         resp = requests.get(f"{API_BASE}{path}", timeout=5)
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return resp.json()
+        result: dict[str, Any] = resp.json()
+        return result
     except requests.RequestException as exc:
         st.error(f"API error: {exc}")
         return None
 
 
-def _api_post(path: str) -> dict | None:
+def _api_post(path: str) -> dict[str, Any] | None:
     """POST to FastAPI, return JSON or None on error."""
     try:
         resp = requests.post(f"{API_BASE}{path}", timeout=10)
         resp.raise_for_status()
-        return resp.json()
+        result: dict[str, Any] = resp.json()
+        return result
     except requests.RequestException as exc:
         st.error(f"API error: {exc}")
         return None
@@ -64,13 +70,13 @@ status_data = _api_get("/api/scrape/status")
 
 if status_data is None:
     st.info("No pipeline runs found. Start a scrape to begin.")
-    pipeline_status = None
+    pipeline_status: str | None = None
 else:
-    pipeline_status = status_data["status"]
+    pipeline_status = str(status_data["status"])
 
 
 # --- Status display ---
-if status_data is not None:
+if status_data is not None and pipeline_status is not None:
     st.subheader("Current Run")
 
     color = STATUS_COLORS.get(pipeline_status, "gray")
@@ -83,7 +89,7 @@ if status_data is not None:
     m4.metric("Errors", status_data["total_errors"])
 
     # Per-company progress
-    company_states = status_data.get("company_states", {})
+    company_states: dict[str, str] = status_data.get("company_states", {})
     if company_states:
         st.subheader("Per-Company Progress")
         rows = []

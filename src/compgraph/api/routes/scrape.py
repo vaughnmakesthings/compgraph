@@ -90,12 +90,17 @@ def _run_to_response(run: PipelineRun) -> PipelineRunResponse:
     )
 
 
-def _get_active_run_and_orchestrator() -> tuple[PipelineRun, PipelineOrchestrator]:
+def _get_active_run_and_orchestrator(
+    allowed_statuses: tuple[PipelineStatus, ...] = (
+        PipelineStatus.RUNNING,
+        PipelineStatus.PAUSED,
+    ),
+) -> tuple[PipelineRun, PipelineOrchestrator]:
     """Find the latest active run and its orchestrator, or raise HTTP errors."""
     run = get_latest_run()
     if run is None:
         raise HTTPException(status_code=404, detail="No pipeline runs found")
-    if run.status not in (PipelineStatus.RUNNING, PipelineStatus.PAUSED):
+    if run.status not in allowed_statuses:
         raise HTTPException(
             status_code=409,
             detail=f"Pipeline is not active (status={run.status})",
@@ -199,21 +204,13 @@ async def stop_scrape() -> ControlResponse:
 @router.post("/force-stop", response_model=ControlResponse)
 async def force_stop_scrape() -> ControlResponse:
     """Force stop the scrape pipeline. All tasks are cancelled immediately."""
-    run = get_latest_run()
-    if run is None:
-        raise HTTPException(status_code=404, detail="No pipeline runs found")
-    if run.status not in (
-        PipelineStatus.RUNNING,
-        PipelineStatus.PAUSED,
-        PipelineStatus.STOPPING,
-    ):
-        raise HTTPException(
-            status_code=409,
-            detail=f"Pipeline is not active (status={run.status})",
-        )
-    orch = get_orchestrator(run.run_id)
-    if orch is None:
-        raise HTTPException(status_code=409, detail="Orchestrator not found for this run")
+    run, orch = _get_active_run_and_orchestrator(
+        allowed_statuses=(
+            PipelineStatus.RUNNING,
+            PipelineStatus.PAUSED,
+            PipelineStatus.STOPPING,
+        ),
+    )
     orch.force_stop(run)
     return ControlResponse(
         run_id=run.run_id,
