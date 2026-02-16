@@ -1,21 +1,18 @@
 """CompGraph Dashboard — landing page and Streamlit entrypoint."""
 
-import logging
+from __future__ import annotations
+
+from typing import Any
 
 import pandas as pd
 import streamlit as st
 
+from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import get_enrichment_coverage, get_per_company_counts
 
-# Configure structured logging for journalctl
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logging.getLogger("compgraph.dashboard").setLevel(logging.DEBUG)
+configure_logging()
 
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 
@@ -26,15 +23,15 @@ render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=60)
-def _load_coverage() -> dict:
+def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
-        return get_enrichment_coverage(session)
+        return dict(get_enrichment_coverage(session))
 
 
 @st.cache_data(ttl=60)
-def _load_company_counts() -> list[dict]:
+def _load_company_counts() -> list[dict[str, Any]]:
     with get_session() as session:
-        return get_per_company_counts(session)
+        return list(get_per_company_counts(session))
 
 
 # --- Metrics row ---

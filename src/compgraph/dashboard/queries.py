@@ -35,7 +35,7 @@ def _timed_query(func_: Any) -> Any:
         start = time.perf_counter()
         result = func_(*args, **kwargs)
         elapsed = time.perf_counter() - start
-        row_count = len(result) if isinstance(result, list) else 1
+        row_count = len(result) if isinstance(result, list) else (0 if result is None else 1)
         logger.info("query.%s duration=%.3fs rows=%s", func_.__name__, elapsed, row_count)
         return result
 

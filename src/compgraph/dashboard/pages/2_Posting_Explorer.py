@@ -1,10 +1,14 @@
 """Posting Explorer — search, filter, and inspect individual postings."""
 
+from __future__ import annotations
+
 import uuid
+from typing import Any
 
 import pandas as pd
 import streamlit as st
 
+from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
@@ -14,6 +18,8 @@ from compgraph.dashboard.queries import (
     search_postings,
 )
 
+configure_logging()
+
 st.set_page_config(page_title="Posting Explorer", layout="wide")
 st.title("Posting Explorer")
 
@@ -21,15 +27,15 @@ render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=120)
-def _load_companies() -> list[dict]:
+def _load_companies() -> list[dict[str, Any]]:
     with get_session() as session:
-        return get_companies(session)
+        return list(get_companies(session))
 
 
 @st.cache_data(ttl=120)
 def _load_archetypes() -> list[str]:
     with get_session() as session:
-        return get_role_archetypes(session)
+        return list(get_role_archetypes(session))
 
 
 # --- Sidebar filters ---
@@ -67,15 +73,17 @@ def _search(
     _is_active: bool | None,
     _role_archetype: str | None,
     _has_enrichment: bool | None,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     cid = uuid.UUID(_company_id) if _company_id else None
     with get_session() as session:
-        return search_postings(
-            session,
-            company_id=cid,
-            is_active=_is_active,
-            role_archetype=_role_archetype,
-            has_enrichment=_has_enrichment,
+        return list(
+            search_postings(
+                session,
+                company_id=cid,
+                is_active=_is_active,
+                role_archetype=_role_archetype,
+                has_enrichment=_has_enrichment,
+            )
         )
 
 
