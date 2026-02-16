@@ -114,6 +114,59 @@ def get_orchestrator(run_id: uuid.UUID) -> PipelineOrchestrator | None:
     return None
 
 
+BASELINE_LOOKBACK = 7
+BASELINE_DROP_THRESHOLD = 0.50
+
+
+async def check_baseline_anomaly(
+    session: AsyncSession,
+    company_id: uuid.UUID,
+    current_jobs_found: int,
+    exclude_run_id: uuid.UUID | None = None,
+) -> list[str]:
+    """Compare current scrape against historical baseline.
+
+    Returns warning messages if current count is zero with history,
+    or drops >BASELINE_DROP_THRESHOLD below the rolling average.
+    """
+    stmt = select(ScrapeRun.jobs_found).where(
+        ScrapeRun.company_id == company_id,
+        ScrapeRun.status == ScrapeRunStatus.COMPLETED,
+    )
+    if exclude_run_id is not None:
+        stmt = stmt.where(ScrapeRun.id != exclude_run_id)
+    stmt = stmt.order_by(ScrapeRun.completed_at.desc()).limit(BASELINE_LOOKBACK)
+    result = await session.execute(stmt)
+    historical_counts = list(result.scalars().all())
+
+    if not historical_counts:
+        return []
+
+    baseline_avg = sum(historical_counts) / len(historical_counts)
+
+    warnings: list[str] = []
+
+    if current_jobs_found == 0 and baseline_avg > 0:
+        msg = (
+            f"Zero results detected: found 0 postings but baseline average "
+            f"is {baseline_avg:.1f} (last {len(historical_counts)} runs). "
+            f"The career site may have changed."
+        )
+        logger.warning(msg)
+        warnings.append(msg)
+    elif baseline_avg > 0 and current_jobs_found < baseline_avg * BASELINE_DROP_THRESHOLD:
+        msg = (
+            f"Significant drop detected: found {current_jobs_found} postings "
+            f"but baseline average is {baseline_avg:.1f} "
+            f"(>{BASELINE_DROP_THRESHOLD:.0%} below baseline). "
+            f"The career site may have changed."
+        )
+        logger.warning(msg)
+        warnings.append(msg)
+
+    return warnings
+
+
 class PipelineOrchestrator:
     """Coordinates scrape runs across all companies with error isolation.
 
@@ -363,16 +416,18 @@ class PipelineOrchestrator:
                     company = await session.get(Company, result.company_id)
                     if company:
                         company.last_scraped_at = datetime.now(UTC)
-                    # Deactivate postings not seen in recent runs.
-                    # Safe even on partial success (warnings present) because
-                    # deactivation uses a 3-run grace period — postings from a
-                    # temporarily-failed portal won't be deactivated until they've
-                    # been missing for 3 consecutive completed runs.
                     closed = await deactivate_stale_postings(
                         session, result.company_id, scrape_run.id
                     )
                     refreshed.postings_closed = closed
                     result.postings_closed = closed
+                    baseline_warnings = await check_baseline_anomaly(
+                        session,
+                        result.company_id,
+                        result.postings_found,
+                        exclude_run_id=refreshed.id,
+                    )
+                    result.warnings.extend(baseline_warnings)
                     if result.warnings:
                         refreshed.errors = {
                             "errors": result.errors,
