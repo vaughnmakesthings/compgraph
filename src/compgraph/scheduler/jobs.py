@@ -84,7 +84,10 @@ async def pipeline_job() -> None:
             enrichment_run.status = EnrichmentStatus.FAILED
             enrichment_run.finished_at = datetime.now(UTC)
 
-        enrich_succeeded = enrichment_run.status == EnrichmentStatus.SUCCESS
+        enrich_succeeded = enrichment_run.status in (
+            EnrichmentStatus.SUCCESS,
+            EnrichmentStatus.PARTIAL,
+        )
 
         logger.info(
             "[ENRICH] Enrichment phase finished: status=%s, pass1=%s, pass2=%s",
