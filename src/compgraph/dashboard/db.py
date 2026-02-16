@@ -4,6 +4,7 @@ Uses psycopg2 (sync) instead of asyncpg — Streamlit is synchronous.
 Does NOT import from compgraph.db.session (that's async-only).
 """
 
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 
@@ -11,6 +12,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from compgraph.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Swap async driver for sync psycopg2
 _sync_url = settings.database_url.replace("postgresql+asyncpg", "postgresql+psycopg2")
@@ -33,5 +36,8 @@ def get_session() -> Generator[Session, None, None]:
     session = _SessionFactory()
     try:
         yield session
+    except Exception:
+        logger.exception("Dashboard database session error")
+        raise
     finally:
         session.close()

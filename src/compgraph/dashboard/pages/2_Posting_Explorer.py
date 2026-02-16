@@ -30,7 +30,12 @@ def _load_archetypes() -> list[str]:
 
 
 # --- Sidebar filters ---
-companies = _load_companies()
+try:
+    companies = _load_companies()
+except Exception as exc:
+    st.error(f"Failed to load companies: {exc}")
+    companies = []
+
 company_options = {"All": None} | {c["name"]: c["id"] for c in companies}
 selected_company = st.sidebar.selectbox("Company", list(company_options.keys()))
 company_id = company_options[selected_company]
@@ -44,7 +49,12 @@ if status_choice == "Active":
 elif status_choice == "Inactive":
     is_active = False
 
-archetypes = _load_archetypes()
+try:
+    archetypes = _load_archetypes()
+except Exception as exc:
+    st.error(f"Failed to load archetypes: {exc}")
+    archetypes = []
+
 archetype_options = ["All", *archetypes]
 selected_archetype = st.sidebar.selectbox("Role Archetype", archetype_options)
 role_archetype = None if selected_archetype == "All" else selected_archetype
@@ -56,9 +66,14 @@ if enrichment_choice == "Enriched":
 elif enrichment_choice == "Unenriched":
     has_enrichment = False
 
+# Guard: role_archetype filter is meaningless when filtering for unenriched postings
+if has_enrichment is False and role_archetype is not None:
+    role_archetype = None
+    st.sidebar.warning("Role archetype filter ignored — unenriched postings have no archetype.")
+
 
 # --- Search ---
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=60, show_spinner="Searching postings...")
 def _search(
     _company_id: str | None,
     _is_active: bool | None,
@@ -76,14 +91,20 @@ def _search(
         )
 
 
-results = _search(
-    str(company_id) if company_id else None,
-    is_active,
-    role_archetype,
-    has_enrichment,
-)
+try:
+    results = _search(
+        str(company_id) if company_id else None,
+        is_active,
+        role_archetype,
+        has_enrichment,
+    )
+except Exception as exc:
+    st.error(f"Search failed: {exc}")
+    results = []
 
 st.subheader(f"Results ({len(results)})")
+if len(results) == 100:
+    st.warning("Showing first 100 results. Refine filters to narrow down.")
 
 if results:
     df = pd.DataFrame(results)
@@ -91,6 +112,8 @@ if results:
 
     # --- Detail expanders (single session to avoid N+1) ---
     st.subheader("Posting Details")
+    if len(results) > 20:
+        st.info("Showing details for the first 20 postings.")
     with get_session() as session:
         for row in results[:20]:
             title = row["title"] or "(no title)"
@@ -100,30 +123,45 @@ if results:
                 if detail:
                     col1, col2 = st.columns(2)
                     col1.write(f"**Status:** {'Active' if detail['is_active'] else 'Inactive'}")
-                    col1.write(f"**First seen:** {detail['first_seen_at']}")
-                    col1.write(f"**Last seen:** {detail.get('last_seen_at', 'N/A')}")
+                    first_seen = detail["first_seen_at"]
+                    if hasattr(first_seen, "strftime"):
+                        first_seen = first_seen.strftime("%Y-%m-%d %H:%M")
+                    col1.write(f"**First seen:** {first_seen}")
+                    last_seen = detail.get("last_seen_at")
+                    if last_seen and hasattr(last_seen, "strftime"):
+                        last_seen = last_seen.strftime("%Y-%m-%d %H:%M")
+                    col1.write(f"**Last seen:** {last_seen or 'N/A'}")
                     col2.write(f"**Location:** {detail.get('location', 'N/A')}")
                     if "role_archetype" in detail:
                         col2.write(f"**Role:** {detail['role_archetype']}")
                         pay_str = ""
-                        if detail.get("pay_min") or detail.get("pay_max"):
-                            pay_str = (
-                                f"${detail.get('pay_min', '?')} - ${detail.get('pay_max', '?')}"
-                            )
+                        pay_min = detail.get("pay_min")
+                        pay_max = detail.get("pay_max")
+                        if pay_min or pay_max:
+                            min_s = f"${pay_min:.2f}" if pay_min else "?"
+                            max_s = f"${pay_max:.2f}" if pay_max else "?"
+                            pay_str = f"{min_s} - {max_s}"
                             if detail.get("pay_frequency"):
-                                pay_str += f" ({detail['pay_frequency']})"
+                                pay_str += f" ({detail['pay_frequency'].capitalize()})"
                         col2.write(f"**Pay:** {pay_str or 'N/A'}")
                         col2.write(f"**Enrichment:** {detail.get('enrichment_version', 'N/A')}")
 
                     if detail.get("brand_mentions"):
                         st.write("**Brand Mentions:**")
                         for bm in detail["brand_mentions"]:
-                            conf = f" ({bm['confidence']:.0%})" if bm.get("confidence") else ""
+                            conf = ""
+                            if bm.get("confidence") is not None:
+                                conf = f" ({bm['confidence']:.0%})"
                             st.write(f"- {bm['entity_name']} [{bm['entity_type']}]{conf}")
 
                     if detail.get("full_text"):
                         st.write("**Full Text (truncated):**")
-                        st.text(detail["full_text"][:2000])
+                        text = detail["full_text"]
+                        if len(text) > 2000:
+                            text = text[:2000].rsplit(" ", 1)[0] + "…"
+                        st.text(text)
+                else:
+                    st.warning("Could not load details for this posting.")
 else:
     st.info("No postings match the current filters.")
 

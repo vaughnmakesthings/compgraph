@@ -34,7 +34,12 @@ def _load_errors() -> list[dict]:
 
 # --- Enrichment coverage ---
 st.subheader("Enrichment Coverage")
-coverage = _load_coverage()
+try:
+    coverage = _load_coverage()
+except Exception as exc:
+    st.error(f"Failed to load enrichment coverage: {exc}")
+    coverage = {"total_active": "—", "enriched": "—", "with_brands": "—", "unenriched": "—"}
+
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Total Active", coverage["total_active"])
 c2.metric("Enriched", coverage["enriched"])
@@ -43,7 +48,12 @@ c4.metric("Unenriched", coverage["unenriched"])
 
 # --- Recent scrape runs ---
 st.subheader("Recent Scrape Runs")
-runs = _load_scrape_runs()
+try:
+    runs = _load_scrape_runs()
+except Exception as exc:
+    st.error(f"Failed to load scrape runs: {exc}")
+    runs = []
+
 if runs:
     df = pd.DataFrame(runs)
 
@@ -61,7 +71,12 @@ else:
 
 # --- Error summary ---
 st.subheader("Errors (Last 7 Days)")
-errors = _load_errors()
+try:
+    errors = _load_errors()
+except Exception as exc:
+    st.error(f"Failed to load error summary: {exc}")
+    errors = []
+
 if errors:
     st.dataframe(pd.DataFrame(errors), use_container_width=True, hide_index=True)
 else:
