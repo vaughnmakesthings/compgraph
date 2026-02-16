@@ -175,11 +175,13 @@ class ICIMSFetcher:
         base_url: str,
         delay_min: float = 2.0,
         delay_max: float = 8.0,
+        search_url: str | None = None,
     ) -> None:
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.delay_min = delay_min
         self.delay_max = delay_max
+        self.search_url = search_url
         self.consecutive_failures = 0
         self.circuit_open = False
 
@@ -192,7 +194,11 @@ class ICIMSFetcher:
         page = 0
 
         while True:
-            url = f"{self.base_url}/jobs/search?pr={page}&in_iframe=1"
+            if self.search_url:
+                sep = "&" if "?" in self.search_url else "?"
+                url = f"{self.search_url}{sep}pr={page}&in_iframe=1"
+            else:
+                url = f"{self.base_url}/jobs/search?pr={page}&in_iframe=1"
             await self._delay()
             response = await self.client.get(url)
             response.raise_for_status()
@@ -329,6 +335,14 @@ async def persist_posting(
     return True
 
 
+def _base_url_from_search_url(search_url: str) -> str:
+    """Extract scheme + host from a full search URL for use as base_url."""
+    from urllib.parse import urlparse
+
+    parsed = urlparse(search_url)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 class ICIMSAdapter:
     async def scrape(self, company: Company, session: AsyncSession) -> ScrapeResult:
         result = ScrapeResult(
@@ -339,6 +353,7 @@ class ICIMSAdapter:
         config = company.scraper_config or {}
         delay_min = config.get("delay_min", 2.0)
         delay_max = config.get("delay_max", 8.0)
+        search_urls: list[str] = config.get("search_urls", [])
 
         proxy_kwargs = get_proxy_client_kwargs(settings)
         headers = {"User-Agent": random_user_agent()}
@@ -350,14 +365,23 @@ class ICIMSAdapter:
                 follow_redirects=True,
                 **proxy_kwargs,
             ) as client:
-                fetcher = ICIMSFetcher(
-                    client=client,
-                    base_url=company.career_site_url,
-                    delay_min=delay_min,
-                    delay_max=delay_max,
-                )
+                # Collect job entries — multi-URL or single default
+                if search_urls:
+                    job_entries = await self._fetch_multi_url(
+                        client, search_urls, delay_min, delay_max
+                    )
+                else:
+                    fetcher = ICIMSFetcher(
+                        client=client,
+                        base_url=company.career_site_url,
+                        delay_min=delay_min,
+                        delay_max=delay_max,
+                    )
+                    job_entries = [
+                        (entry, company.career_site_url)
+                        for entry in await fetcher.fetch_all_listings()
+                    ]
 
-                job_entries = await fetcher.fetch_all_listings()
                 result.postings_found = len(job_entries)
 
                 if not job_entries:
@@ -365,12 +389,24 @@ class ICIMSAdapter:
                     result.finished_at = datetime.now(UTC)
                     return result
 
-                for entry in job_entries:
+                # Create a single fetcher for detail fetching per base_url
+                fetchers: dict[str, ICIMSFetcher] = {}
+                for entry, base_url in job_entries:
+                    if base_url not in fetchers:
+                        fetchers[base_url] = ICIMSFetcher(
+                            client=client,
+                            base_url=base_url,
+                            delay_min=delay_min,
+                            delay_max=delay_max,
+                        )
+
+                    fetcher = fetchers[base_url]
                     if fetcher.circuit_open:
                         result.errors.append(
-                            f"Circuit breaker open after {fetcher.consecutive_failures} failures"
+                            f"Circuit breaker open for {base_url} after "
+                            f"{fetcher.consecutive_failures} failures"
                         )
-                        break
+                        continue
 
                     detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
                     if detail is None:
@@ -382,7 +418,7 @@ class ICIMSAdapter:
                                 session,
                                 detail,
                                 company.id,
-                                company.career_site_url,
+                                base_url,
                                 url_path=entry.get("url_path"),
                             )
                         if persisted:
@@ -395,10 +431,13 @@ class ICIMSAdapter:
                             exc,
                         )
 
-                if fetcher.circuit_open and not any("Circuit breaker" in e for e in result.errors):
-                    result.errors.append(
-                        f"Circuit breaker open after {fetcher.consecutive_failures} failures"
-                    )
+                # Report any tripped circuit breakers
+                for base_url, fetcher in fetchers.items():
+                    if fetcher.circuit_open and not any(base_url in e for e in result.errors):
+                        result.errors.append(
+                            f"Circuit breaker open for {base_url} after "
+                            f"{fetcher.consecutive_failures} failures"
+                        )
 
                 await session.commit()
 
@@ -408,3 +447,36 @@ class ICIMSAdapter:
 
         result.finished_at = datetime.now(UTC)
         return result
+
+    async def _fetch_multi_url(
+        self,
+        client: httpx.AsyncClient,
+        search_urls: list[str],
+        delay_min: float,
+        delay_max: float,
+    ) -> list[tuple[dict[str, str], str]]:
+        """Fetch listings from multiple search URLs, deduplicating by job_id."""
+        seen_job_ids: set[str] = set()
+        entries: list[tuple[dict[str, str], str]] = []
+
+        for search_url in search_urls:
+            base_url = _base_url_from_search_url(search_url)
+            fetcher = ICIMSFetcher(
+                client=client,
+                base_url=base_url,
+                delay_min=delay_min,
+                delay_max=delay_max,
+                search_url=search_url,
+            )
+            jobs = await fetcher.fetch_all_listings()
+            for job in jobs:
+                if job["job_id"] not in seen_job_ids:
+                    seen_job_ids.add(job["job_id"])
+                    entries.append((job, base_url))
+                else:
+                    logger.debug(
+                        "Dedup: skipping job %s already seen from another URL",
+                        job["job_id"],
+                    )
+
+        return entries
