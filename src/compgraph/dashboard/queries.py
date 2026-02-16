@@ -123,7 +123,7 @@ def get_error_summary(session: Session, days: int = 7) -> list[dict]:
             "started_at": row.ScrapeRun.started_at,
             "status": row.ScrapeRun.status,
             "errors": json.dumps(row.ScrapeRun.errors, default=str)[:200]
-            if row.ScrapeRun.errors
+            if row.ScrapeRun.errors is not None
             else None,
         }
         for row in rows
