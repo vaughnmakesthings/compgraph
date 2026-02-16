@@ -397,8 +397,12 @@ class ICIMSAdapter:
                     result.finished_at = datetime.now(UTC)
                     return result
 
-                # Create a single fetcher for detail fetching per base_url
-                distinct_portals = len({base_url for _, base_url in job_entries})
+                # Determine portal count from config (not runtime results) to ensure
+                # consistent ID prefixing across runs, even when a portal is down.
+                if search_urls:
+                    distinct_portals = len({_base_url_from_search_url(u) for u in search_urls})
+                else:
+                    distinct_portals = 1
                 fetchers: dict[str, ICIMSFetcher] = {}
                 for entry, base_url in job_entries:
                     if base_url not in fetchers:
