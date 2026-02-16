@@ -40,6 +40,9 @@ op run --env-file=.env -- uv run python scripts/validate_enrichment.py          
 
 # Preflight
 uv run preflight                                   # Validate environment before work
+
+# Dashboard
+op run --env-file=.env -- uv run streamlit run src/compgraph/dashboard/main.py  # Local (:8501)
 ```
 
 **Secrets**: All secrets managed via 1Password. Use `op run --env-file=.env --` prefix for any command that needs DATABASE_PASSWORD or ANTHROPIC_API_KEY. See `docs/secrets-reference.md`.
@@ -132,6 +135,11 @@ Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.1
 - **Logs**: `journalctl -u compgraph -f`
 - **Health**: `http://192.168.1.69:8000/health`
 - **Deploy**: `ssh compgraph-dev "cd /opt/compgraph && git pull && source /root/.local/bin/env && uv sync && systemctl restart compgraph"`
+
+### Dashboard
+- **URL**: `http://192.168.1.69:8501`
+- **Service**: `systemctl {start|stop|restart|status} compgraph-dashboard`
+- **Logs**: `journalctl -u compgraph-dashboard -f`
 
 ## Git Workflow
 
