@@ -107,6 +107,77 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
 
 
 @_timed_query
+def get_latest_pipeline_status(session: Session) -> dict | None:
+    latest_started = session.execute(select(func.max(ScrapeRun.started_at))).scalars().first()
+
+    if latest_started is None:
+        return None
+
+    stmt = (
+        select(
+            ScrapeRun.status,
+            ScrapeRun.started_at,
+            ScrapeRun.completed_at,
+            ScrapeRun.jobs_found,
+            ScrapeRun.snapshots_created,
+            ScrapeRun.errors,
+            Company.name.label("company_name"),
+            Company.slug,
+        )
+        .join(Company, ScrapeRun.company_id == Company.id)
+        .where(ScrapeRun.started_at == latest_started)
+    )
+    rows = session.execute(stmt).all()
+
+    if not rows:
+        return None
+
+    total_postings = 0
+    total_snapshots = 0
+    total_errors = 0
+    succeeded = 0
+    failed = 0
+    company_states: dict[str, str] = {}
+    company_results: dict[str, dict] = {}
+
+    for row in rows:
+        total_postings += row.jobs_found or 0
+        total_snapshots += row.snapshots_created or 0
+        company_states[row.slug] = row.status
+        company_results[row.slug] = {
+            "postings_found": row.jobs_found or 0,
+            "snapshots_created": row.snapshots_created or 0,
+        }
+        if row.status == "completed":
+            succeeded += 1
+        elif row.status == "failed":
+            failed += 1
+            total_errors += 1
+
+    statuses = set(company_states.values())
+    if "pending" in statuses:
+        overall = "running"
+    elif failed == len(rows):
+        overall = "failed"
+    elif failed > 0:
+        overall = "partial"
+    else:
+        overall = "success"
+
+    return {
+        "status": overall,
+        "started_at": latest_started,
+        "total_postings_found": total_postings,
+        "total_snapshots_created": total_snapshots,
+        "companies_succeeded": succeeded,
+        "companies_failed": failed,
+        "total_errors": total_errors,
+        "company_states": company_states,
+        "company_results": company_results,
+    }
+
+
+@_timed_query
 def get_enrichment_coverage(session: Session) -> dict:
     """Enrichment coverage stats for active postings."""
     total_active = session.execute(
@@ -132,6 +203,36 @@ def get_enrichment_coverage(session: Session) -> dict:
         "enriched": enriched,
         "with_brands": with_brands,
         "unenriched": total_active - enriched,
+    }
+
+
+@_timed_query
+def get_enrichment_pass_breakdown(session: Session) -> dict:
+    active_ids = select(Posting.id).where(Posting.is_active.is_(True))
+
+    total_active = session.execute(
+        select(func.count()).select_from(Posting).where(Posting.is_active.is_(True))
+    ).scalar_one()
+
+    pass1_only = session.execute(
+        select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
+            PostingEnrichment.posting_id.in_(active_ids),
+            ~PostingEnrichment.enrichment_version.contains("pass2"),
+        )
+    ).scalar_one()
+
+    fully_enriched = session.execute(
+        select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
+            PostingEnrichment.posting_id.in_(active_ids),
+            PostingEnrichment.enrichment_version.contains("pass2"),
+        )
+    ).scalar_one()
+
+    return {
+        "total_active": total_active,
+        "unenriched": total_active - pass1_only - fully_enriched,
+        "pass1_only": pass1_only,
+        "fully_enriched": fully_enriched,
     }
 
 
