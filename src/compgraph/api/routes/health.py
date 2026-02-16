@@ -2,6 +2,7 @@ import asyncio
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
@@ -20,7 +21,7 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> JSONResponse:  # n
             status_code=200,
             content={"status": "ok", "version": "0.1.0", "database": "connected"},
         )
-    except Exception as exc:
+    except (TimeoutError, OSError, SQLAlchemyError) as exc:
         detail = str(exc) if str(exc) else type(exc).__name__
         return JSONResponse(
             status_code=503,
