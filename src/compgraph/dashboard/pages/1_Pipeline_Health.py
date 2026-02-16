@@ -77,16 +77,18 @@ else:
 
 # --- Error summary ---
 st.subheader("Errors (Last 7 Days)")
+errors_loaded = True
 try:
     errors = _load_errors()
 except Exception:
     logger.exception("Failed to load error summary")
     st.error("Failed to load error summary. Check server logs for details.")
     errors = []
+    errors_loaded = False
 
 if errors:
     st.dataframe(pd.DataFrame(errors), use_container_width=True, hide_index=True)
-else:
+elif errors_loaded:
     st.success("No errors in the last 7 days.")
 
 # --- Refresh ---
