@@ -242,6 +242,50 @@ class TestICIMSFetcher:
         assert fetcher.circuit_open is False
 
     @pytest.mark.asyncio
+    async def test_fetch_listing_with_search_url(self) -> None:
+        """When search_url is set, it's used as the pagination base instead of base_url."""
+        page1_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=_make_response(200, page1_html))
+
+        fetcher = ICIMSFetcher(
+            client=mock_client,
+            base_url="https://careers-bdssolutions.icims.com",
+            delay_min=0,
+            delay_max=0,
+            search_url="https://careers-bdssolutions.icims.com/jobs/search?searchCategory=25262",
+        )
+        jobs = await fetcher.fetch_all_listings()
+
+        assert len(jobs) == 2
+        # Verify the search_url was used (with & separator since it has ?)
+        called_url = mock_client.get.call_args_list[0][0][0]
+        assert "searchCategory=25262" in called_url
+        assert "&pr=0&in_iframe=1" in called_url
+
+    @pytest.mark.asyncio
+    async def test_fetch_listing_search_url_no_query_params(self) -> None:
+        """When search_url has no query params, ? separator is used."""
+        page1_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=_make_response(200, page1_html))
+
+        fetcher = ICIMSFetcher(
+            client=mock_client,
+            base_url="https://careers-apolloretail.icims.com",
+            delay_min=0,
+            delay_max=0,
+            search_url="https://careers-apolloretail.icims.com/jobs/search",
+        )
+        jobs = await fetcher.fetch_all_listings()
+
+        assert len(jobs) == 2
+        called_url = mock_client.get.call_args_list[0][0][0]
+        assert "?pr=0&in_iframe=1" in called_url
+
+    @pytest.mark.asyncio
     async def test_fetch_detail_uses_html_fallback(self) -> None:
         detail_html = (FIXTURES / "icims_detail_no_jsonld.html").read_text()
         mock_client = AsyncMock()
@@ -257,6 +301,26 @@ class TestICIMSFetcher:
 
         assert result is not None
         assert result["title"] == "Senior Field Technician"
+
+
+class TestBaseUrlFromSearchUrl:
+    def test_extracts_scheme_and_host(self) -> None:
+        from compgraph.scrapers.icims import _base_url_from_search_url
+
+        assert (
+            _base_url_from_search_url(
+                "https://careers-bdssolutions.icims.com/jobs/search?searchCategory=25262"
+            )
+            == "https://careers-bdssolutions.icims.com"
+        )
+
+    def test_strips_path_and_query(self) -> None:
+        from compgraph.scrapers.icims import _base_url_from_search_url
+
+        assert (
+            _base_url_from_search_url("https://careers-apolloretail.icims.com/jobs/search")
+            == "https://careers-apolloretail.icims.com"
+        )
 
 
 class TestPersistPosting:
@@ -555,3 +619,298 @@ class TestICIMSAdapter:
             result = await adapter.scrape(company, mock_session)
 
         assert result.success
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_cross_portal(self) -> None:
+        """Cross-portal jobs with same IDs are treated as distinct (per-portal dedup).
+
+        Verifies that job_ids are prefixed with portal hostname to prevent
+        DB unique constraint collisions on (company_id, external_job_id).
+        """
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        listing_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+        detail_html = (FIXTURES / "icims_detail_with_jsonld.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://careers-bdssolutions.icims.com/jobs/search",
+                "https://careers-apolloretail.icims.com/jobs/search",
+            ],
+        }
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            if "search" in url:
+                return _make_response(200, listing_html)
+            return _make_response(200, detail_html)
+
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
+        mock_session = AsyncMock()
+        mock_session.begin_nested = MagicMock(return_value=AsyncMock())
+        # 2 portals x 2 jobs each = 4 entries (iCIMS IDs are per-tenant, not global)
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+            ]
+        )
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.success
+        # Same IDs on different portals are distinct jobs
+        assert result.postings_found == 4
+        assert result.snapshots_created == 4
+        # Verify portal-prefixed job IDs via the posting upsert SQL statements.
+        # Every 3rd execute call (index 0, 3, 6, 9) is a posting upsert.
+        execute_calls = mock_session.execute.call_args_list
+        persisted_stmts: list[str] = []
+        for i in range(0, len(execute_calls), 3):
+            stmt = execute_calls[i][0][0]
+            compiled = stmt.compile(compile_kwargs={"literal_binds": True})
+            persisted_stmts.append(str(compiled))
+        bds_matches = [s for s in persisted_stmts if "careers-bdssolutions" in s]
+        apollo_matches = [s for s in persisted_stmts if "careers-apolloretail" in s]
+        assert len(bds_matches) == 2, f"Expected 2 BDS-prefixed IDs, got {persisted_stmts}"
+        assert len(apollo_matches) == 2, f"Expected 2 Apollo-prefixed IDs, got {persisted_stmts}"
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_empty(self) -> None:
+        """Multi-URL scraping handles empty results from all URLs."""
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        empty_html = (FIXTURES / "icims_listing_empty.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "marketsource"
+        company.career_site_url = "https://applyatmarketsource-msc.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://applyatmarketsource-msc.icims.com/jobs/search",
+                "https://careers-marketsource.icims.com/jobs/search",
+            ],
+        }
+
+        mock_session = AsyncMock()
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(return_value=_make_response(200, empty_html))
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.success
+        assert result.postings_found == 0
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_same_portal_keeps_plain_ids(self) -> None:
+        """Single-portal multi-URL (2 category URLs on same domain) keeps plain numeric IDs."""
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        listing_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+        detail_html = (FIXTURES / "icims_detail_with_jsonld.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://careers-bdssolutions.icims.com/jobs/search?searchCategory=111",
+                "https://careers-bdssolutions.icims.com/jobs/search?searchCategory=222",
+            ],
+        }
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            if "search" in url:
+                return _make_response(200, listing_html)
+            return _make_response(200, detail_html)
+
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
+        mock_session = AsyncMock()
+        mock_session.begin_nested = MagicMock(return_value=AsyncMock())
+        # Same portal, dedup means only 2 unique jobs (not 4)
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+            ]
+        )
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.success
+        # Same domain = 1 fetcher, so no portal prefix applied
+        assert result.postings_found == 2
+        assert result.snapshots_created == 2
+        # Verify IDs are plain numeric (no portal prefix for single-portal)
+        execute_calls = mock_session.execute.call_args_list
+        for i in range(0, len(execute_calls), 3):
+            stmt = execute_calls[i][0][0]
+            compiled = str(stmt.compile(compile_kwargs={"literal_binds": True}))
+            # Should NOT contain portal hostname prefix
+            assert "careers-bdssolutions.icims.com:" not in compiled
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_isolates_failures(self) -> None:
+        """One failing search URL doesn't abort scraping from other URLs."""
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        listing_html = (FIXTURES / "icims_listing_page_2.html").read_text()
+        detail_html = (FIXTURES / "icims_detail_with_jsonld.html").read_text()
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://careers-bdssolutions.icims.com/jobs/search",
+                "https://careers-apolloretail.icims.com/jobs/search",
+            ],
+        }
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            # First search URL fails, second succeeds
+            if "search" in url and "bdssolutions" in url:
+                raise httpx.ConnectError("DNS resolution failed")
+            if "search" in url:
+                return _make_response(200, listing_html)
+            return _make_response(200, detail_html)
+
+        posting_id = uuid.uuid4()
+        posting_upsert_result = MagicMock()
+        posting_upsert_result.scalar_one.return_value = posting_id
+        snapshot_hash_result = MagicMock()
+        snapshot_hash_result.scalar_one_or_none.return_value = None
+
+        mock_session = AsyncMock()
+        mock_session.begin_nested = MagicMock(return_value=AsyncMock())
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+            ]
+        )
+
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        # First URL failed but second URL's 2 jobs were still scraped
+        assert result.postings_found == 2
+        assert result.snapshots_created == 2
+        # Partial success: failure goes to warnings, not errors
+        assert result.success is True
+        assert len(result.errors) == 0
+        assert len(result.warnings) == 1
+        assert "bdssolutions" in result.warnings[0]
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_all_fail_reports_errors(self) -> None:
+        """When all search URLs fail, result has errors and is not a silent success."""
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://careers-bdssolutions.icims.com/jobs/search",
+                "https://careers-apolloretail.icims.com/jobs/search",
+            ],
+        }
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            raise httpx.ConnectError("DNS resolution failed")
+
+        mock_session = AsyncMock()
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.postings_found == 0
+        # Both URLs failed — errors should be reported
+        assert len(result.errors) == 2
+        assert not result.success

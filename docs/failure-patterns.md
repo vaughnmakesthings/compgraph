@@ -208,6 +208,142 @@ Observed and anticipated failure modes from pipeline development, E2E runs, and 
 
 ---
 
+### SF-4: Zero Results Without Error
+
+**Trigger**: Scraper target returns HTTP 200 but with empty job listings (error page, redesigned portal, empty search results). Scraper logs INFO and returns `jobs_found=0` with `status=COMPLETED`.
+
+**Blast radius**: Entire company's data collection silently stops. Existing postings never deactivated (grace period prevents it for 2 runs). Dashboard shows stale data as current.
+
+**Symptoms**: `ScrapeRun` with `status=COMPLETED, jobs_found=0`. No errors logged. Indistinguishable from a legitimately empty job board.
+
+**Mitigation**: Compare result count against 7-day rolling average. >50% drop = WARNING, >90% drop = ERROR. Add `expected_count` field to `ScrapeRun` for baseline tracking. Alert on 0-result completions for companies with historical postings.
+
+**Status**: Anticipated. Currently observable with 4 broken scrapers (Advantage 301, Acosta/BDS DNS dead, MarketSource 404) — all would report as "completed" with 0 postings.
+
+---
+
+### SF-5: Stale Data Without Refresh Indicator
+
+**Trigger**: Scraper fails for multiple runs but deactivation grace period (3 runs) hasn't elapsed. Or scraper simply hasn't been triggered (no scheduling). Active postings remain marked `is_active=True` indefinitely.
+
+**Blast radius**: Dashboard shows outdated posting counts as current. Users make decisions on stale data.
+
+**Symptoms**: No visible symptom — data looks current. Only discoverable by checking `last ScrapeRun.started_at` per company.
+
+**Mitigation**: Add `last_scraped_at` timestamp to `companies` table, update on each successful scrape. Surface in dashboard header as "Data as of: {timestamp}". Warn if >24h stale.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+### SF-6: HTTP Redirect Without Detection
+
+**Trigger**: Target ATS URL returns 301/302 redirect. Both scrapers use `follow_redirects=True`, so redirect is silently followed. Final page may be an error page, login page, or different site entirely that returns HTTP 200.
+
+**Blast radius**: Per-company. Scraper parses wrong page, finds 0 jobs, returns success.
+
+**Symptoms**: `jobs_found=0` with no errors. Only discoverable by inspecting redirect chain or comparing final URL to expected domain.
+
+**Mitigation**: After HTTP response, validate that final URL domain matches expected ATS domain. Log WARNING if redirect detected. Block scraping if final domain doesn't match.
+
+**Status**: Anticipated. Known example: Advantage Solutions redirects from original URL to `careers.youradv.com`.
+
+---
+
+## Enrichment Failures (continued)
+
+### EF-5: Empty Entity Extraction Ambiguity
+
+**Trigger**: Pass 2 extracts zero entities from a posting. This is a legitimate outcome (not all postings mention brands), but it's indistinguishable from an extraction that silently failed to find real entities.
+
+**Blast radius**: Low per-posting. At scale, systematic misses would mean brand analytics undercount relationships.
+
+**Symptoms**: `PostingBrandMention` has no rows for posting. `enrichment_version` contains "pass2" (extraction ran, just found nothing). No error logged.
+
+**Mitigation**: Add `entities_attempted` boolean or `entity_count` to `PostingEnrichment` to distinguish "ran and found nothing" from "didn't run." Periodic spot-check: sample postings with 0 entities, verify manually that no brands appear in text.
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+## API Failures
+
+### API-1: Health Endpoint Does Not Check Database
+
+**Trigger**: `/health` endpoint returns `{"status": "ok"}` without performing any database connectivity check.
+
+**Blast radius**: External uptime monitors (Uptime Robot, Pingdom, etc.) see 200 OK even when database is unreachable. False positive on health status.
+
+**Symptoms**: Health check passes while all data-serving endpoints fail with connection errors.
+
+**Mitigation**: Add `SELECT 1` database ping to health endpoint. Return `{"status": "degraded", "database": "error: ..."}` on failure with HTTP 503. Keep response fast (<500ms timeout on DB check).
+
+**Status**: Anticipated. Current health endpoint at `src/compgraph/api/routes/health.py` has no DB check.
+
+---
+
+### API-2: In-Memory Run History Lost on Restart
+
+**Trigger**: Server restart (deployment, crash, systemd restart). `_pipeline_runs` dict in `scrape.py` and `EnrichmentRun` objects are stored in process memory only.
+
+**Blast radius**: All pipeline run history lost. `/api/scrape/status` returns 404 for previously tracked runs. No audit trail of past runs.
+
+**Symptoms**: After restart, status endpoints show no history. Users cannot review outcomes of recent pipeline executions.
+
+**Mitigation**: Persist `EnrichmentRun` to database (mirror existing `ScrapeRun` pattern which is already DB-persisted). For scrape pipeline status, add a `pipeline_runs` table or extend `scrape_runs` with pipeline-level metadata.
+
+**Status**: Anticipated, not yet observed. `ScrapeRun` is DB-persisted but pipeline orchestration state and enrichment runs are memory-only.
+
+---
+
+## Dashboard Failures
+
+### DASH-1: Stale Cached Data Without Freshness Indicator
+
+**Trigger**: Streamlit `@st.cache_data(ttl=60)` serves cached query results for up to 60 seconds. No timestamp shown indicating when data was last fetched.
+
+**Blast radius**: User sees metrics that are up to 60 seconds old without knowing it. Combined with SF-5 (no scrape freshness), could show data that is days old with no indication.
+
+**Symptoms**: No visible symptom. Metrics appear current but may reflect old state.
+
+**Mitigation**: Display "Last refreshed: {timestamp}" on each cached section. Show "Data as of last scrape: {timestamp}" using most recent `ScrapeRun.started_at`. Color-code: green (<1h), yellow (1-24h), red (>24h).
+
+**Status**: Anticipated, not yet observed.
+
+---
+
+## Database Failures
+
+### DB-1: PostingEnrichment Allows Multiple Records Per Posting
+
+**Trigger**: Re-enrichment of a posting creates a new `PostingEnrichment` row (by design — versioning). Queries that join `postings` to `posting_enrichments` without filtering to latest version will return multiple rows per posting.
+
+**Blast radius**: Aggregation queries double-count postings. Dashboard metrics inflated.
+
+**Symptoms**: Posting counts higher than expected. Metrics change after re-enrichment even though underlying data hasn't changed.
+
+**Mitigation**: Create a SQL view or query pattern that selects only the latest enrichment per posting (by `created_at` or `enrichment_version`). Use this view consistently in aggregation and dashboard queries. Consider a partial unique index on `(posting_id)` for the latest record.
+
+**Status**: Anticipated. Current dashboard queries use outer join without deduplication.
+
+---
+
+## Scheduling Failures
+
+### SCHED-1: No Automated Pipeline Scheduling
+
+**Trigger**: No cron, scheduler, or automated trigger exists. Pipelines only run when a user manually triggers them via API (`/api/scrape/trigger`) or dashboard button.
+
+**Blast radius**: Entire system. If no one triggers a scrape for days, all data goes stale silently. No missed-run detection exists.
+
+**Symptoms**: `ScrapeRun` table shows no recent entries. Dashboard shows old data. No alert or notification that scrapes haven't run.
+
+**Mitigation**: Implement automated scheduling (APScheduler, Celery Beat, or systemd timer). Daily scrape at 2am, enrichment at 3am, aggregation at 4am. Add missed-run detection: if expected run hasn't started within 2x its normal interval, alert via webhook/email.
+
+**Status**: Anticipated. System is currently manual-only. M3 phase includes pipeline automation.
+
+---
+
 ## Template for New Patterns
 
 ```markdown

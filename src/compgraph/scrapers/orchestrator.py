@@ -360,15 +360,27 @@ class PipelineOrchestrator:
                 refreshed.pages_scraped = result.pages_scraped
                 if result.success:
                     refreshed.status = ScrapeRunStatus.COMPLETED
-                    # Deactivate postings not seen in recent runs
+                    # Deactivate postings not seen in recent runs.
+                    # Safe even on partial success (warnings present) because
+                    # deactivation uses a 3-run grace period — postings from a
+                    # temporarily-failed portal won't be deactivated until they've
+                    # been missing for 3 consecutive completed runs.
                     closed = await deactivate_stale_postings(
                         session, result.company_id, scrape_run.id
                     )
                     refreshed.postings_closed = closed
                     result.postings_closed = closed
+                    if result.warnings:
+                        refreshed.errors = {
+                            "errors": result.errors,
+                            "warnings": result.warnings,
+                        }
                 else:
                     refreshed.status = ScrapeRunStatus.FAILED
-                    refreshed.errors = {"errors": result.errors}
+                    refreshed.errors = {
+                        "errors": result.errors,
+                        "warnings": result.warnings,
+                    }
                 await session.commit()
         except (IntegrityError, OperationalError) as exc:
             logger.error(
