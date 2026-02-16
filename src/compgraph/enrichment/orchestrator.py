@@ -257,11 +257,15 @@ class EnrichmentOrchestrator:
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
+        failed_ids: set[uuid.UUID] = set()
 
         while True:
             async with async_session_factory() as session:
                 batch = await fetch_pass1_complete_postings(
-                    session, company_id=company_id, batch_size=self.batch_size
+                    session,
+                    company_id=company_id,
+                    batch_size=self.batch_size,
+                    exclude_ids=failed_ids,
                 )
 
                 if not batch:
@@ -274,7 +278,7 @@ class EnrichmentOrchestrator:
                     location: str,
                     content_role_specific: str | None,
                     full_text: str,
-                ) -> bool:
+                ) -> tuple[bool, uuid.UUID]:
                     async with semaphore:
                         try:
                             pass2_result = await enrich_posting_pass2(
@@ -313,10 +317,10 @@ class EnrichmentOrchestrator:
                                 await _mark_pass2_complete(save_session, enrichment_id)
                                 await save_session.commit()
 
-                            return True
+                            return True, posting_id
                         except Exception:
                             logger.exception("Pass 2 failed for posting %s", posting_id)
-                            return False
+                            return False, posting_id
 
                 tasks = [
                     _process_posting_pass2(
@@ -331,11 +335,12 @@ class EnrichmentOrchestrator:
                 ]
 
                 outcomes = await asyncio.gather(*tasks)
-                for success in outcomes:
+                for success, pid in outcomes:
                     if success:
                         result.succeeded += 1
                     else:
                         result.failed += 1
+                        failed_ids.add(pid)
 
                 total_processed += len(batch)
                 if total_processed % 10 == 0 or len(batch) < self.batch_size:

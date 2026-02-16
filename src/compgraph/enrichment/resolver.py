@@ -130,18 +130,18 @@ async def _find_retailer(session: AsyncSession, entity_name: str) -> tuple[uuid.
 
 
 async def _create_brand(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Brand record. Handles concurrent duplicate slugs."""
+    """Create a new Brand record. Uses savepoint for concurrent duplicate handling."""
     from sqlalchemy.exc import IntegrityError
 
     normalized = normalize_entity_name(entity_name)
     entity_slug = slugify(normalized)
     brand = Brand(name=normalized, slug=entity_slug)
-    session.add(brand)
     try:
-        await session.flush()
+        async with session.begin_nested():
+            session.add(brand)
+            await session.flush()
     except IntegrityError:
-        await session.rollback()
-        # Another worker created this brand — re-query
+        # Savepoint rolled back, session state preserved — re-query
         stmt = select(Brand).where(Brand.slug == entity_slug)
         result = await session.execute(stmt)
         existing = result.scalar_one()
@@ -152,18 +152,18 @@ async def _create_brand(session: AsyncSession, entity_name: str) -> uuid.UUID:
 
 
 async def _create_retailer(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Retailer record. Handles concurrent duplicate slugs."""
+    """Create a new Retailer record. Uses savepoint for concurrent duplicate handling."""
     from sqlalchemy.exc import IntegrityError
 
     normalized = normalize_entity_name(entity_name)
     entity_slug = slugify(normalized)
     retailer = Retailer(name=normalized, slug=entity_slug)
-    session.add(retailer)
     try:
-        await session.flush()
+        async with session.begin_nested():
+            session.add(retailer)
+            await session.flush()
     except IntegrityError:
-        await session.rollback()
-        # Another worker created this retailer — re-query
+        # Savepoint rolled back, session state preserved — re-query
         stmt = select(Retailer).where(Retailer.slug == entity_slug)
         result = await session.execute(stmt)
         existing = result.scalar_one()

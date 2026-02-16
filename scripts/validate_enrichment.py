@@ -67,7 +67,18 @@ async def sample_enriched_postings(sample_size: int) -> list[dict]:
             .subquery()
         )
 
-        # Random sample of enriched postings with latest snapshot
+        # Subquery: latest enrichment per posting
+        latest_enrichment = (
+            select(
+                PostingEnrichment.posting_id,
+                PostingEnrichment.id.label("enrichment_id"),
+            )
+            .distinct(PostingEnrichment.posting_id)
+            .order_by(PostingEnrichment.posting_id, PostingEnrichment.enriched_at.desc())
+            .subquery()
+        )
+
+        # Random sample of enriched postings with latest snapshot + enrichment
         stmt = (
             select(
                 Posting,
@@ -75,7 +86,8 @@ async def sample_enriched_postings(sample_size: int) -> list[dict]:
                 PostingEnrichment,
                 Company.name.label("company_name"),
             )
-            .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
+            .join(latest_enrichment, Posting.id == latest_enrichment.c.posting_id)
+            .join(PostingEnrichment, PostingEnrichment.id == latest_enrichment.c.enrichment_id)
             .join(Company, Posting.company_id == Company.id)
             .join(latest_snapshot, Posting.id == latest_snapshot.c.posting_id)
             .join(PostingSnapshot, PostingSnapshot.id == latest_snapshot.c.snapshot_id)

@@ -111,6 +111,7 @@ async def fetch_pass1_complete_postings(
     session: AsyncSession,
     company_id: uuid.UUID | None = None,
     batch_size: int = 50,
+    exclude_ids: set[uuid.UUID] | None = None,
 ) -> list[tuple[Posting, PostingSnapshot, PostingEnrichment]]:
     """Fetch postings with Pass 1 enrichment but no Pass 2.
 
@@ -152,6 +153,9 @@ async def fetch_pass1_complete_postings(
 
     if company_id is not None:
         stmt = stmt.where(Posting.company_id == company_id)
+
+    if exclude_ids:
+        stmt = stmt.where(Posting.id.notin_(exclude_ids))
 
     result = await session.execute(stmt)
     return [(row[0], row[1], row[2]) for row in result.all()]

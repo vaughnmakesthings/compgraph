@@ -50,7 +50,7 @@ async def count_unenriched(company_id: uuid.UUID | None = None) -> dict[str, int
     """Count postings needing enrichment at each stage."""
     from sqlalchemy import func, select
 
-    from compgraph.db.models import Posting, PostingBrandMention, PostingEnrichment
+    from compgraph.db.models import Posting, PostingEnrichment
     from compgraph.db.session import async_session_factory
 
     counts: dict[str, int] = {}
@@ -76,13 +76,12 @@ async def count_unenriched(company_id: uuid.UUID | None = None) -> dict[str, int
         result = await session.execute(stmt)
         counts["need_pass1"] = result.scalar_one()
 
-        # Postings with enrichment but no brand mentions (need Pass 2)
+        # Postings with Pass 1 enrichment but Pass 2 not yet run
         stmt = (
             select(func.count())
             .select_from(Posting)
             .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
-            .outerjoin(PostingBrandMention, Posting.id == PostingBrandMention.posting_id)
-            .where(PostingBrandMention.id.is_(None))
+            .where(PostingEnrichment.enrichment_version.not_like("%pass2%"))
             .where(Posting.is_active.is_(True))
         )
         if company_id:
