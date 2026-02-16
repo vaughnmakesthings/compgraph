@@ -8,6 +8,7 @@ import random
 import re
 import uuid
 from datetime import UTC, datetime
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -337,7 +338,6 @@ async def persist_posting(
 
 def _base_url_from_search_url(search_url: str) -> str:
     """Extract scheme + host from a full search URL for use as base_url."""
-    from urllib.parse import urlparse
 
     parsed = urlparse(search_url)
     return f"{parsed.scheme}://{parsed.netloc}"

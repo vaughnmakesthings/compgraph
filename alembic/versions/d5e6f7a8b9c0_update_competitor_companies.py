@@ -24,9 +24,8 @@ def upgrade() -> None:
     op.execute(
         sa.text("""
             DELETE FROM posting_brand_mentions
-            WHERE enrichment_id IN (
-                SELECT pe.id FROM posting_enrichments pe
-                JOIN postings p ON pe.posting_id = p.id
+            WHERE posting_id IN (
+                SELECT p.id FROM postings p
                 JOIN companies c ON p.company_id = c.id
                 WHERE c.slug IN ('acosta', 'advantage')
             )
@@ -125,5 +124,52 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Delete dependent rows before companies to avoid FK violations
+    op.execute(
+        sa.text("""
+            DELETE FROM posting_brand_mentions
+            WHERE posting_id IN (
+                SELECT p.id FROM postings p
+                JOIN companies c ON p.company_id = c.id
+                WHERE c.slug IN ('2020', 'bds', 'marketsource')
+            )
+        """)
+    )
+    op.execute(
+        sa.text("""
+            DELETE FROM posting_enrichments
+            WHERE posting_id IN (
+                SELECT p.id FROM postings p
+                JOIN companies c ON p.company_id = c.id
+                WHERE c.slug IN ('2020', 'bds', 'marketsource')
+            )
+        """)
+    )
+    op.execute(
+        sa.text("""
+            DELETE FROM posting_snapshots
+            WHERE posting_id IN (
+                SELECT p.id FROM postings p
+                JOIN companies c ON p.company_id = c.id
+                WHERE c.slug IN ('2020', 'bds', 'marketsource')
+            )
+        """)
+    )
+    op.execute(
+        sa.text("""
+            DELETE FROM postings
+            WHERE company_id IN (
+                SELECT id FROM companies WHERE slug IN ('2020', 'bds', 'marketsource')
+            )
+        """)
+    )
+    op.execute(
+        sa.text("""
+            DELETE FROM scrape_runs
+            WHERE company_id IN (
+                SELECT id FROM companies WHERE slug IN ('2020', 'bds', 'marketsource')
+            )
+        """)
+    )
     op.execute(sa.text("DELETE FROM companies WHERE slug IN ('2020', 'bds', 'marketsource')"))
     # Note: Acosta/Advantage are not re-inserted on downgrade — they were broken
