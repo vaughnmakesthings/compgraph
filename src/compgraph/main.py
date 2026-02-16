@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from compgraph.api.routes.enrich import router as enrich_router
 from compgraph.api.routes.health import router as health_router
+from compgraph.api.routes.pipeline import router as pipeline_router
 from compgraph.api.routes.scheduler import router as scheduler_router
 from compgraph.api.routes.scrape import router as scrape_router
 from compgraph.config import settings
@@ -46,3 +47,4 @@ app.include_router(health_router)
 app.include_router(scrape_router)
 app.include_router(enrich_router)
 app.include_router(scheduler_router)
+app.include_router(pipeline_router)
