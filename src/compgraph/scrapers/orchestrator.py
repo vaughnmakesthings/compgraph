@@ -360,6 +360,9 @@ class PipelineOrchestrator:
                 refreshed.pages_scraped = result.pages_scraped
                 if result.success:
                     refreshed.status = ScrapeRunStatus.COMPLETED
+                    company = await session.get(Company, result.company_id)
+                    if company:
+                        company.last_scraped_at = datetime.now(UTC)
                     # Deactivate postings not seen in recent runs.
                     # Safe even on partial success (warnings present) because
                     # deactivation uses a 3-run grace period — postings from a

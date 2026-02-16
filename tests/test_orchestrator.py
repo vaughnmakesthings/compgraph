@@ -319,6 +319,96 @@ class TestPipelineRunStore:
         assert get_run(uuid.uuid4()) is None
 
 
+# --- _finalize_scrape_run Tests ---
+
+
+def _mock_session_factory_for_finalize(
+    scrape_run_obj: MagicMock, company_obj: MagicMock | None = None
+):
+    mock_session = AsyncMock()
+
+    async def _get_side_effect(model_cls, pk):
+        from compgraph.db.models import Company, ScrapeRun
+
+        if model_cls is ScrapeRun:
+            return scrape_run_obj
+        if model_cls is Company:
+            return company_obj
+        return None
+
+    mock_session.get = AsyncMock(side_effect=_get_side_effect)
+    mock_session.commit = AsyncMock()
+
+    mock_factory = MagicMock()
+    mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    return mock_factory, mock_session
+
+
+class TestFinalizeUpdatesLastScrapedAt:
+    async def test_success_updates_last_scraped_at(self):
+        company = _make_company("bds")
+        company_id = company.id
+
+        mock_scrape_run = MagicMock()
+        mock_scrape_run.id = uuid.uuid4()
+
+        mock_company = MagicMock()
+        mock_company.id = company_id
+        mock_company.last_scraped_at = None
+
+        mock_factory, _mock_session = _mock_session_factory_for_finalize(
+            mock_scrape_run, mock_company
+        )
+
+        result = _make_success_result(company, postings=5, snapshots=5)
+
+        orchestrator = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        with (
+            patch("compgraph.scrapers.orchestrator.async_session_factory", mock_factory),
+            patch(
+                "compgraph.scrapers.orchestrator.deactivate_stale_postings",
+                AsyncMock(return_value=0),
+            ),
+        ):
+            await orchestrator._finalize_scrape_run(mock_scrape_run, result)
+
+        assert mock_company.last_scraped_at is not None
+
+    async def test_failure_does_not_update_last_scraped_at(self):
+        company = _make_company("bds")
+        company_id = company.id
+
+        mock_scrape_run = MagicMock()
+        mock_scrape_run.id = uuid.uuid4()
+
+        mock_company = MagicMock()
+        mock_company.id = company_id
+        mock_company.last_scraped_at = None
+
+        mock_factory, mock_session = _mock_session_factory_for_finalize(
+            mock_scrape_run, mock_company
+        )
+
+        result = _make_failure_result(company, error="Connection timeout")
+
+        orchestrator = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        with (
+            patch("compgraph.scrapers.orchestrator.async_session_factory", mock_factory),
+            patch(
+                "compgraph.scrapers.orchestrator.deactivate_stale_postings",
+                AsyncMock(return_value=0),
+            ),
+        ):
+            await orchestrator._finalize_scrape_run(mock_scrape_run, result)
+
+        assert mock_company.last_scraped_at is None
+        mock_session.get.assert_called_once()
+
+
 # --- PipelineRun Property Tests ---
 
 
