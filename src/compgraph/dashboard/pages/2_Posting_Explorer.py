@@ -89,39 +89,41 @@ if results:
     df = pd.DataFrame(results)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-    # --- Detail expanders ---
+    # --- Detail expanders (single session to avoid N+1) ---
     st.subheader("Posting Details")
-    for row in results[:20]:
-        title = row["title"] or "(no title)"
-        label = f"{row['company']} — {title}"
-        with st.expander(label):
-            with get_session() as session:
+    with get_session() as session:
+        for row in results[:20]:
+            title = row["title"] or "(no title)"
+            label = f"{row['company']} — {title}"
+            with st.expander(label):
                 detail = get_posting_detail(session, uuid.UUID(row["posting_id"]))
-            if detail:
-                col1, col2 = st.columns(2)
-                col1.write(f"**Status:** {'Active' if detail['is_active'] else 'Inactive'}")
-                col1.write(f"**First seen:** {detail['first_seen_at']}")
-                col1.write(f"**Last seen:** {detail.get('last_seen_at', 'N/A')}")
-                col2.write(f"**Location:** {detail.get('location', 'N/A')}")
-                if "role_archetype" in detail:
-                    col2.write(f"**Role:** {detail['role_archetype']}")
-                    pay_str = ""
-                    if detail.get("pay_min") or detail.get("pay_max"):
-                        pay_str = f"${detail.get('pay_min', '?')} - ${detail.get('pay_max', '?')}"
-                        if detail.get("pay_frequency"):
-                            pay_str += f" ({detail['pay_frequency']})"
-                    col2.write(f"**Pay:** {pay_str or 'N/A'}")
-                    col2.write(f"**Enrichment:** {detail.get('enrichment_version', 'N/A')}")
+                if detail:
+                    col1, col2 = st.columns(2)
+                    col1.write(f"**Status:** {'Active' if detail['is_active'] else 'Inactive'}")
+                    col1.write(f"**First seen:** {detail['first_seen_at']}")
+                    col1.write(f"**Last seen:** {detail.get('last_seen_at', 'N/A')}")
+                    col2.write(f"**Location:** {detail.get('location', 'N/A')}")
+                    if "role_archetype" in detail:
+                        col2.write(f"**Role:** {detail['role_archetype']}")
+                        pay_str = ""
+                        if detail.get("pay_min") or detail.get("pay_max"):
+                            pay_str = (
+                                f"${detail.get('pay_min', '?')} - ${detail.get('pay_max', '?')}"
+                            )
+                            if detail.get("pay_frequency"):
+                                pay_str += f" ({detail['pay_frequency']})"
+                        col2.write(f"**Pay:** {pay_str or 'N/A'}")
+                        col2.write(f"**Enrichment:** {detail.get('enrichment_version', 'N/A')}")
 
-                if detail.get("brand_mentions"):
-                    st.write("**Brand Mentions:**")
-                    for bm in detail["brand_mentions"]:
-                        conf = f" ({bm['confidence']:.0%})" if bm.get("confidence") else ""
-                        st.write(f"- {bm['entity_name']} [{bm['entity_type']}]{conf}")
+                    if detail.get("brand_mentions"):
+                        st.write("**Brand Mentions:**")
+                        for bm in detail["brand_mentions"]:
+                            conf = f" ({bm['confidence']:.0%})" if bm.get("confidence") else ""
+                            st.write(f"- {bm['entity_name']} [{bm['entity_type']}]{conf}")
 
-                if detail.get("full_text"):
-                    st.write("**Full Text (truncated):**")
-                    st.text(detail["full_text"][:2000])
+                    if detail.get("full_text"):
+                        st.write("**Full Text (truncated):**")
+                        st.text(detail["full_text"][:2000])
 else:
     st.info("No postings match the current filters.")
 
