@@ -13,7 +13,10 @@ from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
+    FRESHNESS_ICONS,
+    freshness_color,
     get_companies,
+    get_last_scrape_timestamps,
     get_posting_detail,
     get_role_archetypes,
     search_postings,
@@ -26,6 +29,24 @@ st.set_page_config(page_title="Posting Explorer", layout="wide")
 st.title("Posting Explorer")
 
 render_diagnostics_sidebar()
+
+
+@st.cache_data(ttl=60)
+def _load_freshness() -> list[dict[str, Any]]:
+    with get_session() as session:
+        return list(get_last_scrape_timestamps(session))
+
+
+try:
+    freshness_data = _load_freshness()
+    global_entry = next((e for e in freshness_data if e["slug"] == "__global__"), None)
+    global_ts = global_entry["last_scraped_at"] if global_entry else None
+    color = freshness_color(global_ts)
+    icon = FRESHNESS_ICONS[color]
+    ts_str = global_ts.strftime("%Y-%m-%d %H:%M UTC") if global_ts else "Never"
+    st.markdown(f"{icon} **Data as of:** {ts_str}")
+except Exception:
+    logger.exception("Failed to load freshness timestamps")
 
 
 @st.cache_data(ttl=120)

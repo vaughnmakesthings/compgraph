@@ -12,8 +12,11 @@ from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
+    FRESHNESS_ICONS,
+    freshness_color,
     get_enrichment_coverage,
     get_error_summary,
+    get_last_scrape_timestamps,
     get_recent_scrape_runs,
 )
 
@@ -44,6 +47,32 @@ def _load_errors() -> list[dict[str, Any]]:
         return list(get_error_summary(session))
 
 
+@st.cache_data(ttl=60)
+def _load_freshness() -> list[dict[str, Any]]:
+    with get_session() as session:
+        return list(get_last_scrape_timestamps(session))
+
+
+# --- Data freshness per company ---
+st.subheader("Data Freshness")
+try:
+    freshness_data = _load_freshness()
+    company_entries = [e for e in freshness_data if e["slug"] != "__global__"]
+    if company_entries:
+        cols = st.columns(len(company_entries))
+        for col, entry in zip(cols, company_entries, strict=True):
+            ts = entry["last_scraped_at"]
+            color = freshness_color(ts)
+            icon = FRESHNESS_ICONS[color]
+            ts_str = ts.strftime("%Y-%m-%d %H:%M UTC") if ts else "Never"
+            col.markdown(f"{icon} **{entry['name']}**")
+            col.caption(f"Last scraped: {ts_str}")
+    else:
+        st.info("No companies configured.")
+except Exception:
+    logger.exception("Failed to load freshness timestamps")
+    st.error("Failed to load freshness data.")
+
 # --- Enrichment coverage ---
 st.subheader("Enrichment Coverage")
 try:
@@ -71,14 +100,16 @@ except Exception:
 if runs:
     df = pd.DataFrame(runs)
 
-    def _style_status(val: str) -> str:
-        if val == "completed":
-            return "color: green"
-        if val == "failed":
-            return "color: red"
-        return ""
+    def _style_row(row: pd.Series) -> list[str]:
+        if row.get("has_errors"):
+            return ["color: red"] * len(row)
+        if row.get("warnings"):
+            return ["color: orange"] * len(row)
+        if row.get("status") == "completed":
+            return ["color: green"] * len(row)
+        return [""] * len(row)
 
-    styled = df.style.map(_style_status, subset=["status"])
+    styled = df.style.apply(_style_row, axis=1)
     st.dataframe(styled, use_container_width=True, hide_index=True)
 else:
     st.info("No scrape runs recorded yet.")

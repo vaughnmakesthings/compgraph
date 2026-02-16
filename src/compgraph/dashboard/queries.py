@@ -71,20 +71,29 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
         .limit(limit)
     )
     rows = session.execute(stmt).all()
-    return [
-        {
-            "company": row.company_name,
-            "started_at": row.ScrapeRun.started_at,
-            "completed_at": row.ScrapeRun.completed_at or "In Progress",
-            "status": row.ScrapeRun.status,
-            "pages_scraped": row.ScrapeRun.pages_scraped,
-            "jobs_found": row.ScrapeRun.jobs_found,
-            "snapshots_created": row.ScrapeRun.snapshots_created,
-            "postings_closed": row.ScrapeRun.postings_closed,
-            "has_errors": row.ScrapeRun.errors is not None,
-        }
-        for row in rows
-    ]
+    results = []
+    for row in rows:
+        errors_json = row.ScrapeRun.errors
+        has_errors = False
+        has_warnings = False
+        if isinstance(errors_json, dict):
+            has_errors = bool(errors_json.get("errors"))
+            has_warnings = bool(errors_json.get("warnings"))
+        results.append(
+            {
+                "company": row.company_name,
+                "started_at": row.ScrapeRun.started_at,
+                "completed_at": row.ScrapeRun.completed_at or "In Progress",
+                "status": row.ScrapeRun.status,
+                "pages_scraped": row.ScrapeRun.pages_scraped,
+                "jobs_found": row.ScrapeRun.jobs_found,
+                "snapshots_created": row.ScrapeRun.snapshots_created,
+                "postings_closed": row.ScrapeRun.postings_closed,
+                "has_errors": has_errors,
+                "warnings": has_warnings,
+            }
+        )
+    return results
 
 
 @_timed_query
@@ -287,6 +296,58 @@ def get_companies(session: Session) -> list[dict]:
     stmt = select(Company.id, Company.name).order_by(Company.name)
     rows = session.execute(stmt).all()
     return [{"id": str(row.id), "name": row.name} for row in rows]
+
+
+@_timed_query
+def get_last_scrape_timestamps(session: Session) -> list[dict]:
+    company_stmt = select(
+        Company.name,
+        Company.slug,
+        Company.last_scraped_at,
+    ).order_by(Company.name)
+    company_rows = session.execute(company_stmt).all()
+
+    global_latest_stmt = select(func.max(ScrapeRun.completed_at)).where(
+        ScrapeRun.status == "completed"
+    )
+    global_latest: datetime | None = session.execute(global_latest_stmt).scalar_one_or_none()
+
+    results: list[dict] = [
+        {
+            "name": row.name,
+            "slug": row.slug,
+            "last_scraped_at": row.last_scraped_at,
+        }
+        for row in company_rows
+    ]
+    results.append(
+        {
+            "name": "__global__",
+            "slug": "__global__",
+            "last_scraped_at": global_latest,
+        }
+    )
+    return results
+
+
+FRESHNESS_ICONS: dict[str, str] = {
+    "green": ":green_circle:",
+    "yellow": ":yellow_circle:",
+    "red": ":red_circle:",
+    "gray": ":white_circle:",
+}
+
+
+def freshness_color(last_scraped_at: datetime | None) -> str:
+    """Return color based on age: green <24h, yellow 24-72h, red >72h, gray never."""
+    if last_scraped_at is None:
+        return "gray"
+    age = datetime.now(UTC) - last_scraped_at
+    if age < timedelta(hours=24):
+        return "green"
+    if age < timedelta(hours=72):
+        return "yellow"
+    return "red"
 
 
 @_timed_query
