@@ -778,7 +778,47 @@ class TestICIMSAdapter:
 
             result = await adapter.scrape(company, mock_session)
 
-        assert result.success
         # First URL failed but second URL's 2 jobs were still scraped
         assert result.postings_found == 2
         assert result.snapshots_created == 2
+        # Failure is reported in errors but doesn't prevent success
+        assert len(result.errors) == 1
+        assert "bdssolutions" in result.errors[0]
+
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_all_fail_reports_errors(self) -> None:
+        """When all search URLs fail, result has errors and is not a silent success."""
+        from unittest.mock import patch as _patch
+
+        from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
+
+        company = MagicMock()
+        company.id = uuid.uuid4()
+        company.slug = "bds"
+        company.career_site_url = "https://careers-bdssolutions.icims.com"
+        company.scraper_config = {
+            "search_urls": [
+                "https://careers-bdssolutions.icims.com/jobs/search",
+                "https://careers-apolloretail.icims.com/jobs/search",
+            ],
+        }
+
+        async def mock_get(url: str, **kwargs: object) -> httpx.Response:
+            raise httpx.ConnectError("DNS resolution failed")
+
+        mock_session = AsyncMock()
+        adapter = _ICIMSAdapter()
+
+        with _patch("compgraph.scrapers.icims.httpx.AsyncClient") as MockClient:
+            mock_client_instance = AsyncMock()
+            mock_client_instance.get = AsyncMock(side_effect=mock_get)
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = mock_client_instance
+
+            result = await adapter.scrape(company, mock_session)
+
+        assert result.postings_found == 0
+        # Both URLs failed — errors should be reported
+        assert len(result.errors) == 2
+        assert not result.success

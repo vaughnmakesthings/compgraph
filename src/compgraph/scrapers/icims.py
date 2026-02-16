@@ -367,9 +367,11 @@ class ICIMSAdapter:
             ) as client:
                 # Collect job entries — multi-URL or single default
                 if search_urls:
-                    job_entries = await self._fetch_multi_url(
+                    job_entries, failed_urls = await self._fetch_multi_url(
                         client, search_urls, delay_min, delay_max
                     )
+                    for url in failed_urls:
+                        result.errors.append(f"Failed to fetch listings from {url}")
                 else:
                     fetcher = ICIMSFetcher(
                         client=client,
@@ -454,10 +456,14 @@ class ICIMSAdapter:
         search_urls: list[str],
         delay_min: float,
         delay_max: float,
-    ) -> list[tuple[dict[str, str], str]]:
-        """Fetch listings from multiple search URLs, deduplicating by job_id."""
+    ) -> tuple[list[tuple[dict[str, str], str]], list[str]]:
+        """Fetch listings from multiple search URLs, deduplicating by job_id.
+
+        Returns (entries, failed_urls) where failed_urls lists URLs that raised exceptions.
+        """
         seen_job_ids: set[str] = set()
         entries: list[tuple[dict[str, str], str]] = []
+        failed_urls: list[str] = []
 
         for search_url in search_urls:
             base_url = _base_url_from_search_url(search_url)
@@ -472,6 +478,7 @@ class ICIMSAdapter:
                 jobs = await fetcher.fetch_all_listings()
             except Exception as exc:
                 logger.warning("Failed to fetch listings from %s: %r", search_url, exc)
+                failed_urls.append(search_url)
                 continue
             for job in jobs:
                 if job["job_id"] not in seen_job_ids:
@@ -483,4 +490,4 @@ class ICIMSAdapter:
                         job["job_id"],
                     )
 
-        return entries
+        return entries, failed_urls
