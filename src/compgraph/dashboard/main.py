@@ -1,10 +1,14 @@
 """CompGraph Dashboard — landing page and Streamlit entrypoint."""
 
+import logging
+
 import pandas as pd
 import streamlit as st
 
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.queries import get_enrichment_coverage, get_per_company_counts
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 
@@ -27,8 +31,9 @@ def _load_company_counts() -> list[dict]:
 # --- Metrics row ---
 try:
     coverage = _load_coverage()
-except Exception as exc:
-    st.error(f"Failed to load enrichment coverage: {exc}")
+except Exception:
+    logger.exception("Failed to load enrichment coverage")
+    st.error("Failed to load enrichment coverage. Check server logs for details.")
     coverage = {"total_active": "—", "enriched": "—", "with_brands": "—", "unenriched": "—"}
 
 c1, c2, c3, c4 = st.columns(4)
@@ -41,8 +46,9 @@ c4.metric("Unenriched", coverage["unenriched"])
 st.subheader("Active Postings by Company")
 try:
     company_data = _load_company_counts()
-except Exception as exc:
-    st.error(f"Failed to load company counts: {exc}")
+except Exception:
+    logger.exception("Failed to load company counts")
+    st.error("Failed to load company counts. Check server logs for details.")
     company_data = []
 
 if company_data:

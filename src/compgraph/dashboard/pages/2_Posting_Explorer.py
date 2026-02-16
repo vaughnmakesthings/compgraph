@@ -1,5 +1,6 @@
 """Posting Explorer — search, filter, and inspect individual postings."""
 
+import logging
 import uuid
 
 import pandas as pd
@@ -12,6 +13,8 @@ from compgraph.dashboard.queries import (
     get_role_archetypes,
     search_postings,
 )
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Posting Explorer", layout="wide")
 st.title("Posting Explorer")
@@ -32,8 +35,9 @@ def _load_archetypes() -> list[str]:
 # --- Sidebar filters ---
 try:
     companies = _load_companies()
-except Exception as exc:
-    st.error(f"Failed to load companies: {exc}")
+except Exception:
+    logger.exception("Failed to load companies")
+    st.error("Failed to load companies. Check server logs for details.")
     companies = []
 
 company_options = {"All": None} | {c["name"]: c["id"] for c in companies}
@@ -51,8 +55,9 @@ elif status_choice == "Inactive":
 
 try:
     archetypes = _load_archetypes()
-except Exception as exc:
-    st.error(f"Failed to load archetypes: {exc}")
+except Exception:
+    logger.exception("Failed to load archetypes")
+    st.error("Failed to load archetypes. Check server logs for details.")
     archetypes = []
 
 archetype_options = ["All", *archetypes]
@@ -98,8 +103,9 @@ try:
         role_archetype,
         has_enrichment,
     )
-except Exception as exc:
-    st.error(f"Search failed: {exc}")
+except Exception:
+    logger.exception("Posting search failed")
+    st.error("Search failed. Check server logs for details.")
     results = []
 
 st.subheader(f"Results ({len(results)})")
@@ -137,9 +143,9 @@ if results:
                         pay_str = ""
                         pay_min = detail.get("pay_min")
                         pay_max = detail.get("pay_max")
-                        if pay_min or pay_max:
-                            min_s = f"${pay_min:.2f}" if pay_min else "?"
-                            max_s = f"${pay_max:.2f}" if pay_max else "?"
+                        if pay_min is not None or pay_max is not None:
+                            min_s = f"${pay_min:.2f}" if pay_min is not None else "?"
+                            max_s = f"${pay_max:.2f}" if pay_max is not None else "?"
                             pay_str = f"{min_s} - {max_s}"
                             if detail.get("pay_frequency"):
                                 pay_str += f" ({detail['pay_frequency'].capitalize()})"
