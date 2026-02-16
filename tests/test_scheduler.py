@@ -212,6 +212,47 @@ class TestPipelineJobTracksState:
         assert jobs_mod._last_pipeline_success is True
 
 
+class TestPipelineJobEnrichFailureTracked:
+    async def test_enrichment_failure_sets_success_false(self):
+        import compgraph.scheduler.jobs as jobs_mod
+
+        async def mock_scrape_run(pipeline_run: PipelineRun | None = None) -> PipelineRun:
+            if pipeline_run is not None:
+                pipeline_run.status = PipelineStatus.SUCCESS
+                pipeline_run.finished_at = datetime.now(UTC)
+            return pipeline_run or PipelineRun()
+
+        async def mock_enrich_run_full(
+            run: EnrichmentRun, company_id=None
+        ) -> tuple[MagicMock, MagicMock]:
+            run.status = EnrichmentStatus.FAILED
+            run.finished_at = datetime.now(UTC)
+            return MagicMock(), MagicMock()
+
+        mock_scrape_orch = MagicMock()
+        mock_scrape_orch.run = AsyncMock(side_effect=mock_scrape_run)
+
+        mock_enrich_orch = MagicMock()
+        mock_enrich_orch.run_full = AsyncMock(side_effect=mock_enrich_run_full)
+
+        with (
+            patch(
+                "compgraph.scheduler.jobs.PipelineOrchestrator",
+                return_value=mock_scrape_orch,
+            ),
+            patch(
+                "compgraph.scheduler.jobs.EnrichmentOrchestrator",
+                return_value=mock_enrich_orch,
+            ),
+            patch("compgraph.scheduler.jobs._store_scrape_run"),
+            patch("compgraph.scheduler.jobs._store_enrichment_run"),
+        ):
+            await pipeline_job()
+
+        assert jobs_mod._last_pipeline_finished_at is not None
+        assert jobs_mod._last_pipeline_success is False
+
+
 # --- Scheduler setup tests ---
 
 
@@ -337,6 +378,15 @@ class TestSchedulerInvalidScheduleID:
             base_url="http://test",
         ) as client:
             resp = await client.post("/api/scheduler/jobs/nonexistent/pause")
+
+        assert resp.status_code == 404
+
+    async def test_resume_unknown_schedule_returns_404(self, app_with_scheduler):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_scheduler),
+            base_url="http://test",
+        ) as client:
+            resp = await client.post("/api/scheduler/jobs/nonexistent/resume")
 
         assert resp.status_code == 404
 

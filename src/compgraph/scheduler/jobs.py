@@ -70,6 +70,7 @@ async def pipeline_job() -> None:
     )
 
     # --- Enrich phase ---
+    enrich_succeeded = True
     if scrape_succeeded:
         logger.info("[ENRICH] Starting enrichment phase (scrape had successes)")
         enrichment_run = EnrichmentRun()
@@ -82,6 +83,8 @@ async def pipeline_job() -> None:
             logger.exception("[ENRICH] Enrichment phase failed with unhandled exception")
             enrichment_run.status = EnrichmentStatus.FAILED
             enrichment_run.finished_at = datetime.now(UTC)
+
+        enrich_succeeded = enrichment_run.status == EnrichmentStatus.SUCCESS
 
         logger.info(
             "[ENRICH] Enrichment phase finished: status=%s, pass1=%s, pass2=%s",
@@ -100,5 +103,5 @@ async def pipeline_job() -> None:
         )
 
     _last_pipeline_finished_at = datetime.now(UTC)
-    _last_pipeline_success = scrape_succeeded
+    _last_pipeline_success = scrape_succeeded and enrich_succeeded
     logger.info("[PIPELINE] Scheduled pipeline job complete")

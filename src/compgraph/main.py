@@ -20,9 +20,11 @@ async def lifespan(app: FastAPI):
         await scheduler.start_in_background()
         app.state.scheduler = scheduler
     yield
-    if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
-        await app.state.scheduler.__aexit__(None, None, None)
-    await engine.dispose()
+    try:
+        if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
+            await app.state.scheduler.__aexit__(None, None, None)
+    finally:
+        await engine.dispose()
 
 
 app = FastAPI(

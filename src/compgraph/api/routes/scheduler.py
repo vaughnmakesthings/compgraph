@@ -6,13 +6,14 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from compgraph.scheduler.app import SCHEDULE_ID
 from compgraph.scheduler.jobs import get_last_pipeline_finished_at, get_last_pipeline_success
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/scheduler", tags=["scheduler"])
 
-MISSED_RUN_THRESHOLD_HOURS = 56
+MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri→Mon) + 8h grace
 
 
 class ScheduleInfo(BaseModel):
@@ -41,7 +42,7 @@ class ControlResponse(BaseModel):
     message: str
 
 
-_VALID_SCHEDULE_IDS = {"daily_pipeline"}
+_VALID_SCHEDULE_IDS = {SCHEDULE_ID}
 
 
 def _get_scheduler(request: Request):
@@ -109,8 +110,9 @@ async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
 
     try:
         result_id = await scheduler.add_job(pipeline_job)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to trigger job: {exc}") from exc
+    except Exception:
+        logger.exception("Failed to trigger job")
+        raise HTTPException(status_code=500, detail="Failed to trigger job") from None
 
     return TriggerResponse(
         job_id=str(result_id),
@@ -126,8 +128,9 @@ async def pause_job(request: Request, job_id: str) -> ControlResponse:
 
     try:
         await scheduler.pause_schedule(job_id)
-    except Exception as exc:
-        raise HTTPException(status_code=404, detail=f"Schedule {job_id} not found: {exc}") from exc
+    except Exception:
+        logger.exception("Failed to pause schedule %s", job_id)
+        raise HTTPException(status_code=404, detail=f"Schedule {job_id} not found") from None
 
     return ControlResponse(
         schedule_id=job_id,
@@ -143,8 +146,9 @@ async def resume_job(request: Request, job_id: str) -> ControlResponse:
 
     try:
         await scheduler.unpause_schedule(job_id, resume_from="now")
-    except Exception as exc:
-        raise HTTPException(status_code=404, detail=f"Schedule {job_id} not found: {exc}") from exc
+    except Exception:
+        logger.exception("Failed to resume schedule %s", job_id)
+        raise HTTPException(status_code=404, detail=f"Schedule {job_id} not found") from None
 
     return ControlResponse(
         schedule_id=job_id,
