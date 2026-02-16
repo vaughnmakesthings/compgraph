@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     PROXY_USERNAME: str | None = None
     PROXY_PASSWORD: SecretStr | None = None
 
+    # Enrichment pipeline
+    ENRICHMENT_BATCH_SIZE: int = 50
+    ENRICHMENT_CONCURRENCY: int = 5
+    ENRICHMENT_MODEL_PASS1: str = "claude-haiku-4-5-20251001"
+    ENRICHMENT_MODEL_PASS2: str = "claude-sonnet-4-5-20250929"
+
     # App config
     ENVIRONMENT: str = "dev"
     HOST: str = "0.0.0.0"

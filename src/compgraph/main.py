@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from compgraph.api.routes.enrich import router as enrich_router
 from compgraph.api.routes.health import router as health_router
 from compgraph.api.routes.scrape import router as scrape_router
 from compgraph.config import settings
@@ -34,3 +35,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(scrape_router)
+app.include_router(enrich_router)
