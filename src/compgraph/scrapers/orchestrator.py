@@ -27,9 +27,22 @@ class PipelineStatus(StrEnum):
 
     PENDING = "pending"
     RUNNING = "running"
+    PAUSED = "paused"
+    STOPPING = "stopping"
     SUCCESS = "success"
     PARTIAL = "partial"
     FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class CompanyState(StrEnum):
+    """Per-company scrape state within a pipeline run."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
 
 
 @dataclass
@@ -41,6 +54,7 @@ class PipelineRun:
     started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     finished_at: datetime | None = None
     company_results: dict[str, ScrapeResult] = field(default_factory=dict)
+    company_states: dict[str, CompanyState] = field(default_factory=dict)
 
     @property
     def total_postings_found(self) -> int:
@@ -67,6 +81,10 @@ class PipelineRun:
 MAX_STORED_RUNS = 10
 _pipeline_runs: dict[uuid.UUID, PipelineRun] = {}
 
+# In-memory store for active orchestrators (keyed by run_id).
+# Populated by API layer when triggering runs, cleaned up on run completion.
+_pipeline_orchestrators: dict[uuid.UUID, object] = {}  # values are PipelineOrchestrator
+
 
 def _store_run(run: PipelineRun) -> None:
     """Store a pipeline run, evicting oldest if over limit."""
@@ -88,6 +106,14 @@ def get_run(run_id: uuid.UUID) -> PipelineRun | None:
     return _pipeline_runs.get(run_id)
 
 
+def get_orchestrator(run_id: uuid.UUID) -> PipelineOrchestrator | None:
+    """Return the orchestrator for an active run, or None."""
+    orch = _pipeline_orchestrators.get(run_id)
+    if orch is not None and isinstance(orch, PipelineOrchestrator):
+        return orch
+    return None
+
+
 class PipelineOrchestrator:
     """Coordinates scrape runs across all companies with error isolation.
 
@@ -105,6 +131,36 @@ class PipelineOrchestrator:
         self.max_retries = max_retries
         self.retry_base_delay = retry_base_delay
         self.semaphore = asyncio.Semaphore(max_concurrency)
+        self._resume_event = asyncio.Event()
+        self._resume_event.set()  # not paused initially
+        self._stop_requested = False
+        self._force_stop_requested = False
+        self._tasks: list[asyncio.Task] = []
+
+    def pause(self, run: PipelineRun) -> None:
+        """Pause the pipeline. Companies already scraping will finish their current page."""
+        self._resume_event.clear()
+        run.status = PipelineStatus.PAUSED
+
+    def resume(self, run: PipelineRun) -> None:
+        """Resume a paused pipeline."""
+        self._resume_event.set()
+        run.status = PipelineStatus.RUNNING
+
+    def stop(self, run: PipelineRun) -> None:
+        """Graceful stop: running companies finish, pending companies get skipped."""
+        self._stop_requested = True
+        self._resume_event.set()  # unblock if paused so loop can see stop flag
+        run.status = PipelineStatus.STOPPING
+
+    def force_stop(self, run: PipelineRun) -> None:
+        """Force stop: cancel all tasks immediately."""
+        self._force_stop_requested = True
+        self._stop_requested = True
+        self._resume_event.set()
+        for task in self._tasks:
+            task.cancel()
+        run.status = PipelineStatus.CANCELLED
 
     async def run(self, pipeline_run: PipelineRun | None = None) -> PipelineRun:
         """Execute a full scrape pipeline run.
@@ -129,23 +185,46 @@ class PipelineOrchestrator:
                 pipeline_run.finished_at = datetime.now(UTC)
                 return pipeline_run
 
-            tasks = [self._scrape_company_with_isolation(company) for company in companies]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Initialize per-company states
+            for company in companies:
+                pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+            self._tasks = [
+                asyncio.create_task(
+                    self._scrape_company_with_isolation(company, pipeline_run),
+                    name=f"scrape-{company.slug}",
+                )
+                for company in companies
+            ]
+            results = await asyncio.gather(*self._tasks, return_exceptions=True)
 
             for company, result in zip(companies, results, strict=True):
                 if isinstance(result, BaseException):
+                    # CancelledError from force-stop → SKIPPED, not FAILED
+                    is_cancelled = isinstance(result, asyncio.CancelledError)
                     error_result = ScrapeResult(
                         company_id=company.id,
                         company_slug=company.slug,
-                        errors=[f"Unhandled exception: {result!r}"],
+                        errors=[
+                            "Cancelled: pipeline force-stop"
+                            if is_cancelled
+                            else f"Unhandled exception: {result!r}"
+                        ],
                         finished_at=datetime.now(UTC),
                     )
                     pipeline_run.company_results[company.slug] = error_result
-                    logger.error("Unhandled exception scraping %s: %r", company.slug, result)
+                    pipeline_run.company_states[company.slug] = (
+                        CompanyState.SKIPPED if is_cancelled else CompanyState.FAILED
+                    )
+                    if not is_cancelled:
+                        logger.error("Unhandled exception scraping %s: %r", company.slug, result)
                 else:
                     pipeline_run.company_results[company.slug] = result
 
-            if pipeline_run.companies_failed == 0:
+            # Determine final status
+            if self._stop_requested or self._force_stop_requested:
+                pipeline_run.status = PipelineStatus.CANCELLED
+            elif pipeline_run.companies_failed == 0:
                 pipeline_run.status = PipelineStatus.SUCCESS
             elif pipeline_run.companies_succeeded == 0:
                 pipeline_run.status = PipelineStatus.FAILED
@@ -177,8 +256,35 @@ class PipelineOrchestrator:
         result = await session.execute(select(Company))
         return list(result.scalars().all())
 
-    async def _scrape_company_with_isolation(self, company: Company) -> ScrapeResult:
+    async def _scrape_company_with_isolation(
+        self, company: Company, pipeline_run: PipelineRun
+    ) -> ScrapeResult:
+        # Wait if paused
+        await self._resume_event.wait()
+
+        # Check graceful stop before acquiring semaphore
+        if self._stop_requested:
+            pipeline_run.company_states[company.slug] = CompanyState.SKIPPED
+            return ScrapeResult(
+                company_id=company.id,
+                company_slug=company.slug,
+                errors=["Skipped: pipeline stop requested"],
+                finished_at=datetime.now(UTC),
+            )
+
+        pipeline_run.company_states[company.slug] = CompanyState.RUNNING
+
         async with self.semaphore:
+            # Re-check after acquiring semaphore (may have been queued while stop was issued)
+            if self._stop_requested:
+                pipeline_run.company_states[company.slug] = CompanyState.SKIPPED
+                return ScrapeResult(
+                    company_id=company.id,
+                    company_slug=company.slug,
+                    errors=["Skipped: pipeline stop requested"],
+                    finished_at=datetime.now(UTC),
+                )
+
             scrape_run = await self._create_scrape_run(company)
 
             result: ScrapeResult | None = None
@@ -194,6 +300,10 @@ class PipelineOrchestrator:
                 raise
             finally:
                 if result is not None:
+                    # Update company state based on result
+                    pipeline_run.company_states[company.slug] = (
+                        CompanyState.COMPLETED if result.success else CompanyState.FAILED
+                    )
                     try:
                         await asyncio.shield(self._finalize_scrape_run(scrape_run, result))
                     except asyncio.CancelledError:
