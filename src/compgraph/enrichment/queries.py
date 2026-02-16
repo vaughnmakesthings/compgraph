@@ -108,14 +108,13 @@ async def fetch_pass1_complete_postings(
     company_id: uuid.UUID | None = None,
     batch_size: int = 50,
 ) -> list[tuple[Posting, PostingSnapshot, PostingEnrichment]]:
-    """Fetch postings with Pass 1 enrichment but no Pass 2 (no brand mentions).
+    """Fetch postings with Pass 1 enrichment but no Pass 2.
 
     Returns postings paired with their latest snapshot and enrichment record.
-    Filters to enrichments that have been created (Pass 1 done) but have no
-    associated PostingBrandMention rows (Pass 2 not yet run).
+    Filters to enrichments that have Pass 1 done but Pass 2 not yet run.
+    Uses enrichment_version to track completion (avoids infinite loop when
+    Pass 2 extracts zero entities).
     """
-    from compgraph.db.models import PostingBrandMention
-
     # Subquery: latest snapshot per posting
     latest_snapshot = (
         select(
@@ -127,7 +126,7 @@ async def fetch_pass1_complete_postings(
         .subquery()
     )
 
-    # Main query: postings with enrichment but no brand mentions
+    # Main query: postings with enrichment but Pass 2 not yet run
     stmt = (
         select(Posting, PostingSnapshot, PostingEnrichment)
         .join(
@@ -139,8 +138,9 @@ async def fetch_pass1_complete_postings(
             PostingSnapshot.id == latest_snapshot.c.snapshot_id,
         )
         .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
-        .outerjoin(PostingBrandMention, Posting.id == PostingBrandMention.posting_id)
-        .where(PostingBrandMention.id.is_(None))
+        .where(
+            PostingEnrichment.enrichment_version.not_like("%pass2%"),
+        )
         .where(Posting.is_active.is_(True))
         .order_by(Posting.first_seen_at.asc())
         .limit(batch_size)

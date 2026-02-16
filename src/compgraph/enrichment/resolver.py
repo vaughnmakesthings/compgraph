@@ -226,7 +226,14 @@ async def save_brand_mentions(
     primary_retailer_id: uuid.UUID | None = None
     count = 0
 
-    for entity, (brand_id, retailer_id, _is_new) in zip(entities, resolved, strict=True):
+    # Sort by confidence descending so primary entity is highest confidence
+    sorted_pairs = sorted(
+        zip(entities, resolved, strict=True),
+        key=lambda item: item[0].confidence,
+        reverse=True,
+    )
+
+    for entity, (brand_id, retailer_id, _is_new) in sorted_pairs:
         mention = PostingBrandMention(
             posting_id=posting_id,
             entity_name=entity.entity_name,

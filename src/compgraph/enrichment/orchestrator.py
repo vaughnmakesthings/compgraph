@@ -8,6 +8,10 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.config import settings
 from compgraph.db.session import async_session_factory
@@ -91,6 +95,28 @@ def get_latest_enrichment_run() -> EnrichmentRun | None:
     if not _runs:
         return None
     return max(_runs.values(), key=lambda r: r.started_at)
+
+
+async def _mark_pass2_complete(
+    session: AsyncSession,
+    enrichment_id: uuid.UUID,
+) -> None:
+    """Mark an enrichment record as having completed Pass 2.
+
+    Appends '+pass2' to enrichment_version so fetch_pass1_complete_postings
+    skips it. Prevents infinite re-processing of postings with no entities.
+    """
+    from sqlalchemy import select
+
+    from compgraph.db.models import PostingEnrichment
+
+    stmt = select(PostingEnrichment).where(PostingEnrichment.id == enrichment_id)
+    result = await session.execute(stmt)
+    enrichment = result.scalar_one_or_none()
+    if enrichment:
+        current = enrichment.enrichment_version or ""
+        if "pass2" not in current:
+            enrichment.enrichment_version = f"{current}+pass2" if current else "pass2"
 
 
 class EnrichmentOrchestrator:
@@ -237,8 +263,8 @@ class EnrichmentOrchestrator:
                                 full_text,
                             )
 
-                            if pass2_result.entities:
-                                async with async_session_factory() as save_session:
+                            async with async_session_factory() as save_session:
+                                if pass2_result.entities:
                                     # Resolve each entity against dimension tables
                                     resolved = []
                                     for entity in pass2_result.entities:
@@ -257,7 +283,12 @@ class EnrichmentOrchestrator:
                                         pass2_result.entities,
                                         resolved,
                                     )
-                                    await save_session.commit()
+
+                                # Always mark Pass 2 complete on enrichment
+                                # to prevent infinite re-processing of postings
+                                # with no extractable entities
+                                await _mark_pass2_complete(save_session, enrichment_id)
+                                await save_session.commit()
 
                             return True
                         except Exception:
