@@ -119,17 +119,23 @@ BASELINE_DROP_THRESHOLD = 0.50
 
 
 async def check_baseline_anomaly(
-    session: AsyncSession, company_id: uuid.UUID, current_jobs_found: int
+    session: AsyncSession,
+    company_id: uuid.UUID,
+    current_jobs_found: int,
+    exclude_run_id: uuid.UUID | None = None,
 ) -> list[str]:
-    stmt = (
-        select(ScrapeRun.jobs_found)
-        .where(
-            ScrapeRun.company_id == company_id,
-            ScrapeRun.status == ScrapeRunStatus.COMPLETED,
-        )
-        .order_by(ScrapeRun.completed_at.desc())
-        .limit(BASELINE_LOOKBACK)
+    """Compare current scrape against historical baseline.
+
+    Returns warning messages if current count is zero with history,
+    or drops >BASELINE_DROP_THRESHOLD below the rolling average.
+    """
+    stmt = select(ScrapeRun.jobs_found).where(
+        ScrapeRun.company_id == company_id,
+        ScrapeRun.status == ScrapeRunStatus.COMPLETED,
     )
+    if exclude_run_id is not None:
+        stmt = stmt.where(ScrapeRun.id != exclude_run_id)
+    stmt = stmt.order_by(ScrapeRun.completed_at.desc()).limit(BASELINE_LOOKBACK)
     result = await session.execute(stmt)
     historical_counts = list(result.scalars().all())
 
@@ -416,7 +422,10 @@ class PipelineOrchestrator:
                     refreshed.postings_closed = closed
                     result.postings_closed = closed
                     baseline_warnings = await check_baseline_anomaly(
-                        session, result.company_id, result.postings_found
+                        session,
+                        result.company_id,
+                        result.postings_found,
+                        exclude_run_id=refreshed.id,
                     )
                     result.warnings.extend(baseline_warnings)
                     if result.warnings:

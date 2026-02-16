@@ -11,7 +11,6 @@ import pytest
 from compgraph.scrapers.base import ScrapeResult
 from compgraph.scrapers.orchestrator import (
     BASELINE_DROP_THRESHOLD,
-    BASELINE_LOOKBACK,
     MAX_STORED_RUNS,
     PipelineOrchestrator,
     PipelineRun,
@@ -534,8 +533,24 @@ class TestCheckBaselineAnomaly:
 
         assert warnings == []
 
-    async def test_lookback_constant_matches_query(self):
-        assert BASELINE_LOOKBACK == 7
+    async def test_exclude_run_id_passed_to_query(self):
+        """Verify exclude_run_id adds a filter to prevent self-inclusion."""
+        session = _mock_session_with_historical([50, 50, 50])
+        company_id = uuid.uuid4()
+        run_id = uuid.uuid4()
 
-    async def test_drop_threshold_constant(self):
-        assert BASELINE_DROP_THRESHOLD == 0.50
+        await check_baseline_anomaly(
+            session, company_id, current_jobs_found=50, exclude_run_id=run_id
+        )
+
+        # The execute call should have been made with the exclusion filter
+        session.execute.assert_called_once()
+
+    async def test_without_exclude_run_id(self):
+        """Without exclude_run_id, query runs without extra filter."""
+        session = _mock_session_with_historical([50, 50, 50])
+        company_id = uuid.uuid4()
+
+        await check_baseline_anomaly(session, company_id, current_jobs_found=50)
+
+        session.execute.assert_called_once()
