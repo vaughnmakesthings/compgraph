@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     ENRICHMENT_MODEL_PASS1: str = "claude-haiku-4-5-20251001"
     ENRICHMENT_MODEL_PASS2: str = "claude-sonnet-4-5-20250929"
 
+    # Scheduler
+    SCHEDULER_ENABLED: bool = False
+    SCHEDULER_PIPELINE_CRON: str = "0 2 * * 1,3,5"  # Mon/Wed/Fri 2am
+    SCHEDULER_TIMEZONE: str = "America/New_York"
+
     # App config
     ENVIRONMENT: str = "dev"
     HOST: str = "0.0.0.0"
