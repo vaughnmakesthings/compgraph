@@ -130,27 +130,47 @@ async def _find_retailer(session: AsyncSession, entity_name: str) -> tuple[uuid.
 
 
 async def _create_brand(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Brand record."""
+    """Create a new Brand record. Handles concurrent duplicate slugs."""
+    from sqlalchemy.exc import IntegrityError
+
     normalized = normalize_entity_name(entity_name)
-    brand = Brand(
-        name=normalized,
-        slug=slugify(normalized),
-    )
+    entity_slug = slugify(normalized)
+    brand = Brand(name=normalized, slug=entity_slug)
     session.add(brand)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        # Another worker created this brand — re-query
+        stmt = select(Brand).where(Brand.slug == entity_slug)
+        result = await session.execute(stmt)
+        existing = result.scalar_one()
+        logger.info("Brand already exists (concurrent create): %s (id=%s)", normalized, existing.id)
+        return existing.id
     logger.info("Created new brand: %s (id=%s)", normalized, brand.id)
     return brand.id
 
 
 async def _create_retailer(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Retailer record."""
+    """Create a new Retailer record. Handles concurrent duplicate slugs."""
+    from sqlalchemy.exc import IntegrityError
+
     normalized = normalize_entity_name(entity_name)
-    retailer = Retailer(
-        name=normalized,
-        slug=slugify(normalized),
-    )
+    entity_slug = slugify(normalized)
+    retailer = Retailer(name=normalized, slug=entity_slug)
     session.add(retailer)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        # Another worker created this retailer — re-query
+        stmt = select(Retailer).where(Retailer.slug == entity_slug)
+        result = await session.execute(stmt)
+        existing = result.scalar_one()
+        logger.info(
+            "Retailer already exists (concurrent create): %s (id=%s)", normalized, existing.id
+        )
+        return existing.id
     logger.info("Created new retailer: %s (id=%s)", normalized, retailer.id)
     return retailer.id
 

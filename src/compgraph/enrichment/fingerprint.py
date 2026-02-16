@@ -85,6 +85,10 @@ async def detect_reposts(session: AsyncSession, company_id: uuid.UUID | None = N
     if company_id is not None:
         stmt = stmt.where(Posting.company_id == company_id)
 
+    # Order by first_seen_at so oldest posting is fingerprinted first
+    # and becomes the canonical for any repost cluster
+    stmt = stmt.order_by(Posting.first_seen_at.asc())
+
     result = await session.execute(stmt)
     rows = result.all()
 

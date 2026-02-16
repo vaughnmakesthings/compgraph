@@ -56,7 +56,18 @@ async def sample_enriched_postings(sample_size: int) -> list[dict]:
     rows = []
 
     async with async_session_factory() as session:
-        # Random sample of enriched postings
+        # Subquery: latest snapshot per posting
+        latest_snapshot = (
+            select(
+                PostingSnapshot.posting_id,
+                PostingSnapshot.id.label("snapshot_id"),
+            )
+            .distinct(PostingSnapshot.posting_id)
+            .order_by(PostingSnapshot.posting_id, PostingSnapshot.created_at.desc())
+            .subquery()
+        )
+
+        # Random sample of enriched postings with latest snapshot
         stmt = (
             select(
                 Posting,
@@ -66,7 +77,8 @@ async def sample_enriched_postings(sample_size: int) -> list[dict]:
             )
             .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
             .join(Company, Posting.company_id == Company.id)
-            .join(PostingSnapshot, PostingSnapshot.posting_id == Posting.id)
+            .join(latest_snapshot, Posting.id == latest_snapshot.c.posting_id)
+            .join(PostingSnapshot, PostingSnapshot.id == latest_snapshot.c.snapshot_id)
             .where(Posting.is_active.is_(True))
             .order_by(func.random())
             .limit(sample_size)

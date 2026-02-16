@@ -66,7 +66,7 @@ class EnrichmentRun:
     def finish_pass2(self, result: EnrichResult) -> None:
         self.pass2_result = result
         self.finished_at = datetime.now(UTC)
-        self._update_status(result)
+        self._compute_final_status()
 
     def _update_status(self, result: EnrichResult) -> None:
         if result.failed == 0 and result.succeeded > 0:
@@ -75,6 +75,24 @@ class EnrichmentRun:
             self.status = EnrichmentStatus.PARTIAL
         elif result.succeeded == 0 and result.failed == 0:
             self.status = EnrichmentStatus.SUCCESS  # nothing to process
+        else:
+            self.status = EnrichmentStatus.FAILED
+
+    def _compute_final_status(self) -> None:
+        """Aggregate pass1 + pass2 results into a single status."""
+        total_failed = 0
+        total_succeeded = 0
+        for r in (self.pass1_result, self.pass2_result):
+            if r:
+                total_failed += r.failed
+                total_succeeded += r.succeeded
+
+        if total_failed == 0 and total_succeeded > 0:
+            self.status = EnrichmentStatus.SUCCESS
+        elif total_succeeded > 0 and total_failed > 0:
+            self.status = EnrichmentStatus.PARTIAL
+        elif total_succeeded == 0 and total_failed == 0:
+            self.status = EnrichmentStatus.SUCCESS
         else:
             self.status = EnrichmentStatus.FAILED
 
@@ -145,11 +163,15 @@ class EnrichmentOrchestrator:
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
+        failed_ids: set[uuid.UUID] = set()
 
         while True:
             async with async_session_factory() as session:
                 batch = await fetch_unenriched_postings(
-                    session, company_id=company_id, batch_size=self.batch_size
+                    session,
+                    company_id=company_id,
+                    batch_size=self.batch_size,
+                    exclude_ids=failed_ids,
                 )
 
                 if not batch:
@@ -161,7 +183,7 @@ class EnrichmentOrchestrator:
                     title: str,
                     location: str,
                     full_text: str,
-                ) -> bool:
+                ) -> tuple[bool, uuid.UUID]:
                     async with semaphore:
                         try:
                             pass1_result = await enrich_posting_pass1(
@@ -181,10 +203,10 @@ class EnrichmentOrchestrator:
                                     version="pass1-v1",
                                 )
                                 await save_session.commit()
-                            return True
+                            return True, posting_id
                         except Exception:
                             logger.exception("Pass 1 failed for posting %s", posting_id)
-                            return False
+                            return False, posting_id
 
                 tasks = [
                     _process_posting(
@@ -198,11 +220,12 @@ class EnrichmentOrchestrator:
                 ]
 
                 outcomes = await asyncio.gather(*tasks)
-                for success in outcomes:
+                for success, pid in outcomes:
                     if success:
                         result.succeeded += 1
                     else:
                         result.failed += 1
+                        failed_ids.add(pid)
 
                 total_processed += len(batch)
                 if total_processed % 10 == 0 or len(batch) < self.batch_size:
@@ -351,5 +374,8 @@ class EnrichmentOrchestrator:
                 logger.info("Fingerprinting complete: %d reposts detected", reposts)
         except Exception:
             logger.exception("Fingerprinting failed")
+            # Downgrade status since pipeline didn't fully complete
+            if run.status == EnrichmentStatus.SUCCESS:
+                run.status = EnrichmentStatus.PARTIAL
 
         return pass1_result, pass2_result

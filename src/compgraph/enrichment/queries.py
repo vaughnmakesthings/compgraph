@@ -16,6 +16,7 @@ async def fetch_unenriched_postings(
     session: AsyncSession,
     company_id: uuid.UUID | None = None,
     batch_size: int = 50,
+    exclude_ids: set[uuid.UUID] | None = None,
 ) -> list[tuple[Posting, PostingSnapshot]]:
     """Fetch postings that have no enrichment record yet.
 
@@ -53,6 +54,9 @@ async def fetch_unenriched_postings(
 
     if company_id is not None:
         stmt = stmt.where(Posting.company_id == company_id)
+
+    if exclude_ids:
+        stmt = stmt.where(Posting.id.notin_(exclude_ids))
 
     result = await session.execute(stmt)
     return [(row[0], row[1]) for row in result.all()]
