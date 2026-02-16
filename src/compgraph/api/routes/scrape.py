@@ -30,6 +30,7 @@ class CompanyResultResponse(BaseModel):
     postings_found: int
     snapshots_created: int
     errors: list[str]
+    warnings: list[str]
     success: bool
     started_at: datetime
     finished_at: datetime | None
@@ -80,6 +81,7 @@ def _run_to_response(run: PipelineRun) -> PipelineRunResponse:
                 postings_found=r.postings_found,
                 snapshots_created=r.snapshots_created,
                 errors=r.errors,
+                warnings=r.warnings,
                 success=r.success,
                 started_at=r.started_at,
                 finished_at=r.finished_at,

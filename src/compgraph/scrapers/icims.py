@@ -370,8 +370,14 @@ class ICIMSAdapter:
                     job_entries, failed_urls = await self._fetch_multi_url(
                         client, search_urls, delay_min, delay_max
                     )
-                    for url in failed_urls:
-                        result.errors.append(f"Failed to fetch listings from {url}")
+                    if failed_urls and job_entries:
+                        # Partial success — warn, don't error
+                        for url in failed_urls:
+                            result.warnings.append(f"Failed to fetch listings from {url}")
+                    elif failed_urls:
+                        # Total failure — error
+                        for url in failed_urls:
+                            result.errors.append(f"Failed to fetch listings from {url}")
                 else:
                     fetcher = ICIMSFetcher(
                         client=client,
@@ -392,6 +398,7 @@ class ICIMSAdapter:
                     return result
 
                 # Create a single fetcher for detail fetching per base_url
+                distinct_portals = len({base_url for _, base_url in job_entries})
                 fetchers: dict[str, ICIMSFetcher] = {}
                 for entry, base_url in job_entries:
                     if base_url not in fetchers:
@@ -413,6 +420,11 @@ class ICIMSAdapter:
                     detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
                     if detail is None:
                         continue
+
+                    # Disambiguate cross-portal IDs when multiple portals present
+                    if distinct_portals > 1 and detail.get("job_id"):
+                        portal_host = urlparse(base_url).netloc
+                        detail["job_id"] = f"{portal_host}:{detail['job_id']}"
 
                     try:
                         async with session.begin_nested():

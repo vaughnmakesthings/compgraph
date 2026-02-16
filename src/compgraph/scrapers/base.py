@@ -34,6 +34,7 @@ class ScrapeResult:
     postings_closed: int = 0
     pages_scraped: int = 0
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     finished_at: datetime | None = None
 

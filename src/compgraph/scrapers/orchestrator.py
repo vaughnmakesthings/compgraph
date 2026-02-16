@@ -358,7 +358,7 @@ class PipelineOrchestrator:
                 refreshed.jobs_found = result.postings_found
                 refreshed.snapshots_created = result.snapshots_created
                 refreshed.pages_scraped = result.pages_scraped
-                if result.success:
+                if result.success and not result.warnings:
                     refreshed.status = ScrapeRunStatus.COMPLETED
                     # Deactivate postings not seen in recent runs
                     closed = await deactivate_stale_postings(
@@ -366,9 +366,21 @@ class PipelineOrchestrator:
                     )
                     refreshed.postings_closed = closed
                     result.postings_closed = closed
+                elif result.success and result.warnings:
+                    # Partial success — data captured but some sources failed.
+                    # Do NOT deactivate stale postings (would falsely deactivate
+                    # postings from the failed source).
+                    refreshed.status = ScrapeRunStatus.COMPLETED
+                    refreshed.errors = {
+                        "errors": result.errors,
+                        "warnings": result.warnings,
+                    }
                 else:
                     refreshed.status = ScrapeRunStatus.FAILED
-                    refreshed.errors = {"errors": result.errors}
+                    refreshed.errors = {
+                        "errors": result.errors,
+                        "warnings": result.warnings,
+                    }
                 await session.commit()
         except (IntegrityError, OperationalError) as exc:
             logger.error(
