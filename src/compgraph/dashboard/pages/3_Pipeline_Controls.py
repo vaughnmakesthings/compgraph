@@ -31,11 +31,11 @@ STATUS_COLORS: dict[str, str] = {
 }
 
 COMPANY_STATE_ICONS: dict[str, str] = {
-    "pending": ":hourglass_flowing_sand:",
-    "running": ":runner:",
-    "completed": ":white_check_mark:",
-    "failed": ":x:",
-    "skipped": ":next_track_button:",
+    "pending": "\u23f3",
+    "running": "\U0001f3c3",
+    "completed": "\u2705",
+    "failed": "\u274c",
+    "skipped": "\u23ed\ufe0f",
 }
 
 

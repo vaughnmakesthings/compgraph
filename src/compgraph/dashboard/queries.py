@@ -61,6 +61,16 @@ def _latest_snapshot_subquery():
 # ---------------------------------------------------------------------------
 
 
+def _format_completed_at(run: Any) -> Any:
+    if run.completed_at:
+        return run.completed_at
+    if run.status == "pending":
+        elapsed = datetime.now(UTC) - run.started_at
+        minutes = int(elapsed.total_seconds() / 60)
+        return f"Running ({minutes}m elapsed)"
+    return "In Progress"
+
+
 @_timed_query
 def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
     """Recent scrape runs with company name."""
@@ -83,8 +93,8 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
             {
                 "company": row.company_name,
                 "started_at": row.ScrapeRun.started_at,
-                "completed_at": row.ScrapeRun.completed_at or "In Progress",
-                "status": row.ScrapeRun.status,
+                "completed_at": _format_completed_at(row.ScrapeRun),
+                "scrape_status": row.ScrapeRun.status,
                 "pages_scraped": row.ScrapeRun.pages_scraped,
                 "jobs_found": row.ScrapeRun.jobs_found,
                 "snapshots_created": row.ScrapeRun.snapshots_created,
@@ -331,10 +341,10 @@ def get_last_scrape_timestamps(session: Session) -> list[dict]:
 
 
 FRESHNESS_ICONS: dict[str, str] = {
-    "green": ":green_circle:",
-    "yellow": ":yellow_circle:",
-    "red": ":red_circle:",
-    "gray": ":white_circle:",
+    "green": "\U0001f7e2",
+    "yellow": "\U0001f7e1",
+    "red": "\U0001f534",
+    "gray": "\u26aa",
 }
 
 
