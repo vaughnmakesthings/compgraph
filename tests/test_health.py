@@ -40,6 +40,13 @@ def _mock_db_timeout():
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=False)
+def _cleanup_scheduler_state():
+    yield
+    if hasattr(app.state, "scheduler"):
+        del app.state.scheduler
+
+
 class TestHealthEndpoint:
     def test_healthy_when_db_connected(self, _mock_db_success: None) -> None:
         with TestClient(app) as client:
@@ -75,7 +82,9 @@ class TestHealthEndpoint:
         body = resp.json()
         assert body["checks"]["scheduler"] == "disabled"
 
-    def test_scheduler_enabled_and_healthy(self, _mock_db_success: None) -> None:
+    def test_scheduler_enabled_and_healthy(
+        self, _mock_db_success: None, _cleanup_scheduler_state: None
+    ) -> None:
         mock_scheduler = AsyncMock()
         mock_scheduler.get_schedules = AsyncMock(return_value=[MagicMock()])
         with (
@@ -83,32 +92,29 @@ class TestHealthEndpoint:
             TestClient(app) as client,
         ):
             mock_settings.SCHEDULER_ENABLED = True
-            # Set scheduler on app state
             app.state.scheduler = mock_scheduler
-            try:
-                resp = client.get("/health")
-            finally:
-                del app.state.scheduler
+            resp = client.get("/health")
         assert resp.status_code == 200
         body = resp.json()
         assert body["checks"]["scheduler"] == "ok (1 schedule(s))"
 
-    def test_scheduler_enabled_but_not_initialized(self, _mock_db_success: None) -> None:
+    def test_scheduler_enabled_but_not_initialized(
+        self, _mock_db_success: None, _cleanup_scheduler_state: None
+    ) -> None:
         with (
             patch("compgraph.api.routes.health.settings") as mock_settings,
             TestClient(app) as client,
         ):
             mock_settings.SCHEDULER_ENABLED = True
-            # Ensure no scheduler on app state
-            if hasattr(app.state, "scheduler"):
-                del app.state.scheduler
             resp = client.get("/health")
         assert resp.status_code == 503
         body = resp.json()
         assert body["status"] == "degraded"
         assert body["checks"]["scheduler"] == "error: not initialized"
 
-    def test_scheduler_check_failure(self, _mock_db_success: None) -> None:
+    def test_scheduler_check_failure(
+        self, _mock_db_success: None, _cleanup_scheduler_state: None
+    ) -> None:
         mock_scheduler = MagicMock()
         mock_scheduler.get_schedules = AsyncMock(side_effect=RuntimeError("scheduler crashed"))
         with (
@@ -117,10 +123,7 @@ class TestHealthEndpoint:
         ):
             mock_settings.SCHEDULER_ENABLED = True
             app.state.scheduler = mock_scheduler
-            try:
-                resp = client.get("/health")
-            finally:
-                del app.state.scheduler
+            resp = client.get("/health")
         assert resp.status_code == 503
         body = resp.json()
         assert body["status"] == "degraded"
