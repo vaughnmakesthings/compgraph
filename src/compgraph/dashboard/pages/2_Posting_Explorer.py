@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from compgraph.dashboard.db import get_session
+from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
     get_companies,
     get_posting_detail,
@@ -15,6 +16,8 @@ from compgraph.dashboard.queries import (
 
 st.set_page_config(page_title="Posting Explorer", layout="wide")
 st.title("Posting Explorer")
+
+render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=120)

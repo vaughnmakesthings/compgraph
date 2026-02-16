@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from compgraph.dashboard.db import get_session
+from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
     get_enrichment_coverage,
     get_error_summary,
@@ -12,6 +13,8 @@ from compgraph.dashboard.queries import (
 
 st.set_page_config(page_title="Pipeline Health", layout="wide")
 st.title("Pipeline Health")
+
+render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=60)

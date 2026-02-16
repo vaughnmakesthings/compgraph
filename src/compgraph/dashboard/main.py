@@ -1,15 +1,28 @@
 """CompGraph Dashboard — landing page and Streamlit entrypoint."""
 
+import logging
+
 import pandas as pd
 import streamlit as st
 
 from compgraph.dashboard.db import get_session
+from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import get_enrichment_coverage, get_per_company_counts
+
+# Configure structured logging for journalctl
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logging.getLogger("compgraph.dashboard").setLevel(logging.DEBUG)
 
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 
 st.title("CompGraph Dashboard")
 st.caption("Competitive intelligence — pipeline overview")
+
+render_diagnostics_sidebar()
 
 
 @st.cache_data(ttl=60)
