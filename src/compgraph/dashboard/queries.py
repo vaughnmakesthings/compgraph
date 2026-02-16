@@ -76,7 +76,7 @@ def get_recent_scrape_runs(session: Session, limit: int = 20) -> list[dict]:
         errors_json = row.ScrapeRun.errors
         has_errors = False
         has_warnings = False
-        if errors_json is not None:
+        if isinstance(errors_json, dict):
             has_errors = bool(errors_json.get("errors"))
             has_warnings = bool(errors_json.get("warnings"))
         results.append(
@@ -330,7 +330,16 @@ def get_last_scrape_timestamps(session: Session) -> list[dict]:
     return results
 
 
+FRESHNESS_ICONS: dict[str, str] = {
+    "green": ":green_circle:",
+    "yellow": ":yellow_circle:",
+    "red": ":red_circle:",
+    "gray": ":white_circle:",
+}
+
+
 def freshness_color(last_scraped_at: datetime | None) -> str:
+    """Return color based on age: green <24h, yellow 24-72h, red >72h, gray never."""
     if last_scraped_at is None:
         return "gray"
     age = datetime.now(UTC) - last_scraped_at

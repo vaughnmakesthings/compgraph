@@ -12,19 +12,13 @@ from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
+    FRESHNESS_ICONS,
     freshness_color,
     get_enrichment_coverage,
     get_error_summary,
     get_last_scrape_timestamps,
     get_recent_scrape_runs,
 )
-
-_FRESHNESS_ICONS = {
-    "green": ":green_circle:",
-    "yellow": ":yellow_circle:",
-    "red": ":red_circle:",
-    "gray": ":white_circle:",
-}
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -69,7 +63,7 @@ try:
         for col, entry in zip(cols, company_entries, strict=True):
             ts = entry["last_scraped_at"]
             color = freshness_color(ts)
-            icon = _FRESHNESS_ICONS[color]
+            icon = FRESHNESS_ICONS[color]
             ts_str = ts.strftime("%Y-%m-%d %H:%M UTC") if ts else "Never"
             col.markdown(f"{icon} **{entry['name']}**")
             col.caption(f"Last scraped: {ts_str}")

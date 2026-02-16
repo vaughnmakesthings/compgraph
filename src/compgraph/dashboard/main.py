@@ -12,18 +12,12 @@ from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
+    FRESHNESS_ICONS,
     freshness_color,
     get_enrichment_coverage,
     get_last_scrape_timestamps,
     get_per_company_counts,
 )
-
-_FRESHNESS_ICONS = {
-    "green": ":green_circle:",
-    "yellow": ":yellow_circle:",
-    "red": ":red_circle:",
-    "gray": ":white_circle:",
-}
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -60,7 +54,7 @@ try:
     global_entry = next((e for e in freshness_data if e["slug"] == "__global__"), None)
     global_ts = global_entry["last_scraped_at"] if global_entry else None
     color = freshness_color(global_ts)
-    icon = _FRESHNESS_ICONS[color]
+    icon = FRESHNESS_ICONS[color]
     ts_str = global_ts.strftime("%Y-%m-%d %H:%M UTC") if global_ts else "Never"
     st.markdown(f"{icon} **Data as of:** {ts_str}")
 except Exception:
