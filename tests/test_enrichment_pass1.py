@@ -527,6 +527,40 @@ class TestEnrichmentOrchestrator:
 # ---------------------------------------------------------------------------
 
 
+class TestStripMarkdownFences:
+    def test_strips_json_fence(self):
+        from compgraph.enrichment.client import strip_markdown_fences
+
+        text = '```json\n{"key": "value"}\n```'
+        assert strip_markdown_fences(text) == '{"key": "value"}'
+
+    def test_strips_plain_fence(self):
+        from compgraph.enrichment.client import strip_markdown_fences
+
+        text = '```\n{"key": "value"}\n```'
+        assert strip_markdown_fences(text) == '{"key": "value"}'
+
+    def test_passes_through_raw_json(self):
+        from compgraph.enrichment.client import strip_markdown_fences
+
+        text = '{"key": "value"}'
+        assert strip_markdown_fences(text) == '{"key": "value"}'
+
+    def test_strips_with_surrounding_whitespace(self):
+        from compgraph.enrichment.client import strip_markdown_fences
+
+        text = '  \n```json\n{"key": "value"}\n```\n  '
+        assert strip_markdown_fences(text) == '{"key": "value"}'
+
+    def test_preserves_multiline_json(self):
+        from compgraph.enrichment.client import strip_markdown_fences
+
+        text = '```json\n{\n  "role": "merchandiser",\n  "pay": 19.0\n}\n```'
+        result = strip_markdown_fences(text)
+        assert '"role": "merchandiser"' in result
+        assert '"pay": 19.0' in result
+
+
 class TestClientFactory:
     def test_singleton_returns_same_client(self):
         from compgraph.enrichment.client import get_anthropic_client, reset_client
