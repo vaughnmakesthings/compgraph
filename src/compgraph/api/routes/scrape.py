@@ -1,4 +1,4 @@
-"""Scrape pipeline API endpoints: trigger runs and check status."""
+"""Scrape pipeline API endpoints: trigger runs, check status, and control execution."""
 
 from __future__ import annotations
 
@@ -12,8 +12,10 @@ from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
     PipelineRun,
     PipelineStatus,
+    _pipeline_orchestrators,
     _store_run,
     get_latest_run,
+    get_orchestrator,
     get_run,
 )
 
@@ -44,6 +46,7 @@ class PipelineRunResponse(BaseModel):
     companies_succeeded: int
     companies_failed: int
     company_results: dict[str, CompanyResultResponse]
+    company_states: dict[str, str]
 
 
 class TriggerResponse(BaseModel):
@@ -51,7 +54,13 @@ class TriggerResponse(BaseModel):
     message: str
 
 
-# --- Helper ---
+class ControlResponse(BaseModel):
+    run_id: uuid.UUID
+    status: PipelineStatus
+    message: str
+
+
+# --- Helpers ---
 
 
 def _run_to_response(run: PipelineRun) -> PipelineRunResponse:
@@ -77,7 +86,27 @@ def _run_to_response(run: PipelineRun) -> PipelineRunResponse:
             )
             for slug, r in run.company_results.items()
         },
+        company_states={k: v.value for k, v in run.company_states.items()},
     )
+
+
+def _get_active_run_and_orchestrator() -> tuple[PipelineRun, PipelineOrchestrator]:
+    """Find the latest active run and its orchestrator, or raise HTTP errors."""
+    run = get_latest_run()
+    if run is None:
+        raise HTTPException(status_code=404, detail="No pipeline runs found")
+    if run.status not in (PipelineStatus.RUNNING, PipelineStatus.PAUSED):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Pipeline is not active (status={run.status})",
+        )
+    orch = get_orchestrator(run.run_id)
+    if orch is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Orchestrator not found for this run",
+        )
+    return run, orch
 
 
 # --- Endpoints ---
@@ -93,9 +122,13 @@ async def trigger_scrape(background_tasks: BackgroundTasks) -> TriggerResponse:
     _store_run(pipeline_run)
 
     orchestrator = PipelineOrchestrator()
+    _pipeline_orchestrators[pipeline_run.run_id] = orchestrator
 
     async def _run_pipeline() -> None:
-        await orchestrator.run(pipeline_run)
+        try:
+            await orchestrator.run(pipeline_run)
+        finally:
+            _pipeline_orchestrators.pop(pipeline_run.run_id, None)
 
     background_tasks.add_task(_run_pipeline)
 
@@ -121,3 +154,69 @@ async def scrape_status_by_id(run_id: uuid.UUID) -> PipelineRunResponse:
     if run is None:
         raise HTTPException(status_code=404, detail=f"Pipeline run {run_id} not found")
     return _run_to_response(run)
+
+
+@router.post("/pause", response_model=ControlResponse)
+async def pause_scrape() -> ControlResponse:
+    """Pause the running scrape pipeline. Companies mid-scrape will finish their current page."""
+    run, orch = _get_active_run_and_orchestrator()
+    if run.status != PipelineStatus.RUNNING:
+        raise HTTPException(status_code=409, detail="Pipeline is not running (cannot pause)")
+    orch.pause(run)
+    return ControlResponse(
+        run_id=run.run_id,
+        status=run.status,
+        message="Pipeline paused. Use /api/scrape/resume to continue.",
+    )
+
+
+@router.post("/resume", response_model=ControlResponse)
+async def resume_scrape() -> ControlResponse:
+    """Resume a paused scrape pipeline."""
+    run, orch = _get_active_run_and_orchestrator()
+    if run.status != PipelineStatus.PAUSED:
+        raise HTTPException(status_code=409, detail="Pipeline is not paused (cannot resume)")
+    orch.resume(run)
+    return ControlResponse(
+        run_id=run.run_id,
+        status=run.status,
+        message="Pipeline resumed.",
+    )
+
+
+@router.post("/stop", response_model=ControlResponse)
+async def stop_scrape() -> ControlResponse:
+    """Gracefully stop the scrape pipeline. Running companies finish, pending are skipped."""
+    run, orch = _get_active_run_and_orchestrator()
+    orch.stop(run)
+    return ControlResponse(
+        run_id=run.run_id,
+        status=run.status,
+        message="Pipeline stopping gracefully. Running companies will finish.",
+    )
+
+
+@router.post("/force-stop", response_model=ControlResponse)
+async def force_stop_scrape() -> ControlResponse:
+    """Force stop the scrape pipeline. All tasks are cancelled immediately."""
+    run = get_latest_run()
+    if run is None:
+        raise HTTPException(status_code=404, detail="No pipeline runs found")
+    if run.status not in (
+        PipelineStatus.RUNNING,
+        PipelineStatus.PAUSED,
+        PipelineStatus.STOPPING,
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Pipeline is not active (status={run.status})",
+        )
+    orch = get_orchestrator(run.run_id)
+    if orch is None:
+        raise HTTPException(status_code=409, detail="Orchestrator not found for this run")
+    orch.force_stop(run)
+    return ControlResponse(
+        run_id=run.run_id,
+        status=run.status,
+        message="Pipeline force-stopped. All tasks cancelled.",
+    )
