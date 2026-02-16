@@ -10,12 +10,15 @@ import pytest
 
 from compgraph.scrapers.base import ScrapeResult
 from compgraph.scrapers.orchestrator import (
+    BASELINE_DROP_THRESHOLD,
+    BASELINE_LOOKBACK,
     MAX_STORED_RUNS,
     PipelineOrchestrator,
     PipelineRun,
     PipelineStatus,
     _pipeline_runs,
     _store_run,
+    check_baseline_anomaly,
     get_latest_run,
     get_run,
 )
@@ -456,3 +459,83 @@ class TestPipelineRunProperties:
         assert run.total_errors == 0
         assert run.companies_succeeded == 0
         assert run.companies_failed == 0
+
+
+# --- Baseline Anomaly Detection Tests ---
+
+
+def _mock_session_with_historical(historical_counts: list[int]) -> AsyncMock:
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = historical_counts
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    return mock_session
+
+
+class TestCheckBaselineAnomaly:
+    async def test_zero_results_with_baseline_triggers_warning(self):
+        session = _mock_session_with_historical([50, 48, 52, 49, 51])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=0)
+
+        assert len(warnings) == 1
+        assert "Zero results detected" in warnings[0]
+        assert "baseline average" in warnings[0]
+
+    async def test_significant_drop_triggers_warning(self):
+        session = _mock_session_with_historical([100, 100, 100, 100, 100])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=10)
+
+        assert len(warnings) == 1
+        assert "Significant drop detected" in warnings[0]
+        assert str(BASELINE_DROP_THRESHOLD) in warnings[0] or "50%" in warnings[0]
+
+    async def test_new_company_no_history_skips_check(self):
+        session = _mock_session_with_historical([])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=0)
+
+        assert warnings == []
+
+    async def test_normal_run_no_warning(self):
+        session = _mock_session_with_historical([50, 48, 52, 49, 51])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=45)
+
+        assert warnings == []
+
+    async def test_at_threshold_no_warning(self):
+        session = _mock_session_with_historical([100, 100, 100])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=50)
+
+        assert warnings == []
+
+    async def test_just_below_threshold_triggers_warning(self):
+        session = _mock_session_with_historical([100, 100, 100])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=49)
+
+        assert len(warnings) == 1
+        assert "Significant drop" in warnings[0]
+
+    async def test_zero_baseline_zero_current_no_warning(self):
+        session = _mock_session_with_historical([0, 0, 0])
+        company_id = uuid.uuid4()
+
+        warnings = await check_baseline_anomaly(session, company_id, current_jobs_found=0)
+
+        assert warnings == []
+
+    async def test_lookback_constant_matches_query(self):
+        assert BASELINE_LOOKBACK == 7
+
+    async def test_drop_threshold_constant(self):
+        assert BASELINE_DROP_THRESHOLD == 0.50
