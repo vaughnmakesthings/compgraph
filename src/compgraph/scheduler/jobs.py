@@ -22,6 +22,9 @@ from compgraph.scrapers.orchestrator import (
 
 logger = logging.getLogger(__name__)
 
+# In-process state — resets on server restart. After restart, missed-run
+# detection will not trigger until the first pipeline run completes.
+# Upgrade to persistent store (SQLAlchemy data store) in M6 if needed.
 _last_pipeline_finished_at: datetime | None = None
 _last_pipeline_success: bool = False
 
