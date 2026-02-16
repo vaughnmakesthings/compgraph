@@ -60,6 +60,14 @@ def upgrade() -> None:
             )
         """)
     )
+    op.execute(
+        sa.text("""
+            DELETE FROM scrape_runs
+            WHERE company_id IN (
+                SELECT id FROM companies WHERE slug IN ('acosta', 'advantage')
+            )
+        """)
+    )
     op.execute(sa.text("DELETE FROM companies WHERE slug IN ('acosta', 'advantage')"))
 
     # --- Insert new competitors ---
