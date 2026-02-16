@@ -6,12 +6,16 @@ import asyncio
 import json
 import logging
 import uuid
+from typing import TYPE_CHECKING, cast
 
 import anthropic
 
 from compgraph.config import settings
 from compgraph.enrichment.prompts import PASS1_SYSTEM_PROMPT, build_pass1_messages
 from compgraph.enrichment.schemas import Pass1Result
+
+if TYPE_CHECKING:
+    from anthropic.types import MessageParam
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +55,7 @@ async def enrich_posting_pass1(
         anthropic.APIError: After exhausting retries.
         ValueError: If response cannot be parsed into Pass1Result.
     """
-    messages = build_pass1_messages(title, location, full_text)
+    messages = cast("list[MessageParam]", build_pass1_messages(title, location, full_text))
 
     last_error: Exception | None = None
     for attempt in range(_MAX_RETRIES):
@@ -77,8 +81,14 @@ async def enrich_posting_pass1(
                     posting_id,
                 )
 
-            # Extract text content from response
-            text_content = response.content[0].text
+            # Extract text content from response (first block is always TextBlock)
+            content_block = response.content[0]
+            if not hasattr(content_block, "text"):
+                raise ValueError(
+                    f"Unexpected content block type for posting {posting_id}: "
+                    f"{type(content_block).__name__}"
+                )
+            text_content: str = content_block.text  # type: ignore[union-attr]
 
             # Parse JSON response into Pass1Result
             try:
