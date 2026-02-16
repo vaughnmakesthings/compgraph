@@ -621,8 +621,9 @@ class TestICIMSAdapter:
         assert result.success
 
     @pytest.mark.asyncio
-    async def test_scrape_multi_url_deduplicates(self) -> None:
-        """Multi-URL scraping fetches from all URLs and deduplicates by job_id."""
+    @pytest.mark.asyncio
+    async def test_scrape_multi_url_cross_portal(self) -> None:
+        """Cross-portal jobs with same IDs are treated as distinct (per-portal dedup)."""
         from unittest.mock import patch as _patch
 
         from compgraph.scrapers.icims import ICIMSAdapter as _ICIMSAdapter
@@ -654,10 +655,15 @@ class TestICIMSAdapter:
 
         mock_session = AsyncMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
-        # Each persist: 3 calls. 2 unique jobs from listing_page_2 (same jobs from both URLs,
-        # but dedup means only 2 unique jobs)
+        # 2 portals x 2 jobs each = 4 entries (iCIMS IDs are per-tenant, not global)
         mock_session.execute = AsyncMock(
             side_effect=[
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
+                posting_upsert_result,
+                snapshot_hash_result,
+                MagicMock(),
                 posting_upsert_result,
                 snapshot_hash_result,
                 MagicMock(),
@@ -679,9 +685,9 @@ class TestICIMSAdapter:
             result = await adapter.scrape(company, mock_session)
 
         assert result.success
-        # Both search URLs return same 2 jobs — dedup keeps only 2
-        assert result.postings_found == 2
-        assert result.snapshots_created == 2
+        # Same IDs on different portals are distinct jobs
+        assert result.postings_found == 4
+        assert result.snapshots_created == 4
 
     @pytest.mark.asyncio
     async def test_scrape_multi_url_empty(self) -> None:

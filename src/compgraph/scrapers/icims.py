@@ -457,11 +457,14 @@ class ICIMSAdapter:
         delay_min: float,
         delay_max: float,
     ) -> tuple[list[tuple[dict[str, str], str]], list[str]]:
-        """Fetch listings from multiple search URLs, deduplicating by job_id.
+        """Fetch listings from multiple search URLs, deduplicating by (base_url, job_id).
+
+        Dedup is scoped per-portal (base_url) since iCIMS job IDs are per-tenant.
+        The same numeric ID on different portals represents different jobs.
 
         Returns (entries, failed_urls) where failed_urls lists URLs that raised exceptions.
         """
-        seen_job_ids: set[str] = set()
+        seen: set[tuple[str, str]] = set()  # (base_url, job_id)
         entries: list[tuple[dict[str, str], str]] = []
         failed_urls: list[str] = []
 
@@ -481,13 +484,15 @@ class ICIMSAdapter:
                 failed_urls.append(search_url)
                 continue
             for job in jobs:
-                if job["job_id"] not in seen_job_ids:
-                    seen_job_ids.add(job["job_id"])
+                key = (base_url, job["job_id"])
+                if key not in seen:
+                    seen.add(key)
                     entries.append((job, base_url))
                 else:
                     logger.debug(
-                        "Dedup: skipping job %s already seen from another URL",
+                        "Dedup: skipping job %s on %s (already seen)",
                         job["job_id"],
+                        base_url,
                     )
 
         return entries, failed_urls
