@@ -364,6 +364,7 @@ class EnrichmentOrchestrator:
                                     await save_session.commit()
                                 outcomes.append((True, posting_id))
                             except Exception:
+                                api_calls += 1  # Count failed follower attempt
                                 logger.exception("Pass 1 failed for posting %s", posting_id)
                                 outcomes.append((False, posting_id))
                     return outcomes
@@ -653,6 +654,7 @@ class EnrichmentOrchestrator:
                                     await save_session.commit()
                                 outcomes.append((True, posting_id))
                             except Exception:
+                                api_calls += 1  # Count failed follower attempt
                                 logger.exception("Pass 2 failed for posting %s", posting_id)
                                 outcomes.append((False, posting_id))
                     return outcomes
