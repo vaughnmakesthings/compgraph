@@ -277,14 +277,26 @@ class EnrichmentOrchestrator:
                             )
                             api_calls += 1
                         except Exception:
+                            api_calls += 1  # Count the failed attempt
                             logger.warning(
                                 "Pass 1 leader %s failed, fallback for %d followers (hash=%s...)",
                                 leader_id,
                                 len(group) - 1,
                                 content_hash[:12],
                             )
-                            # Leader failed — fall back to individual processing
-                            return await _fallback_individual(group, content_hash)
+                            # Release semaphore before fallback to avoid deadlock
+                            leader_failed = True
+                        else:
+                            leader_failed = False
+
+                    if leader_failed:
+                        # Skip leader (already failed), process followers only
+                        followers = group[1:]
+                        follower_outcomes = await _fallback_individual(
+                            followers,
+                            content_hash,
+                        )
+                        return [(False, leader_id), *follower_outcomes]
 
                     # Cache the result for future batches within this run
                     content_cache[content_hash] = pass1_result
@@ -559,13 +571,24 @@ class EnrichmentOrchestrator:
                             )
                             api_calls += 1
                         except Exception:
+                            api_calls += 1  # Count the failed attempt
                             logger.warning(
                                 "Pass 2 leader %s failed, fallback for %d followers (hash=%s...)",
                                 leader_id,
                                 len(group) - 1,
                                 content_hash[:12],
                             )
-                            return await _fallback_individual_pass2(group, content_hash)
+                            leader_failed = True
+                        else:
+                            leader_failed = False
+
+                    if leader_failed:
+                        followers = group[1:]
+                        follower_outcomes = await _fallback_individual_pass2(
+                            followers,
+                            content_hash,
+                        )
+                        return [(False, leader_id), *follower_outcomes]
 
                     content_cache_p2[content_hash] = pass2_result
 

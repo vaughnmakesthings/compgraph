@@ -104,6 +104,27 @@ class TestComputeContentHash:
         assert len(h) == 64
         assert all(c in "0123456789abcdef" for c in h)
 
+    def test_role_prefixes_not_stripped(self):
+        """Different role prefixes should produce different hashes.
+
+        Unlike fingerprinting, the content hash preserves role prefixes
+        because a Field Rep and a Merchandiser are distinct roles even
+        with the same body text.
+        """
+        h1 = compute_content_hash("Field Rep: Samsung", "Visit stores.")
+        h2 = compute_content_hash("Merchandiser: Samsung", "Visit stores.")
+        assert h1 != h2
+
+    def test_delimiter_collision_resistant(self):
+        """Pipe characters in content should not cause hash collisions.
+
+        Uses null-byte separator internally so 'A|B' + 'C' differs
+        from 'A' + 'B|C'.
+        """
+        h1 = compute_content_hash("Software|Engineer", "Remote")
+        h2 = compute_content_hash("Software", "Engineer|Remote")
+        assert h1 != h2
+
 
 # ---------------------------------------------------------------------------
 # Pass 1 dedup orchestrator tests
@@ -307,7 +328,7 @@ class TestPass1Dedup:
 
     @pytest.mark.asyncio
     async def test_leader_failure_fallback(self):
-        """When leader fails, all postings in the group fall back to individual processing."""
+        """When leader fails, followers are processed individually (leader not retried)."""
         postings = [
             _make_posting(title="Samsung BA", full_text="Visit stores."),
             _make_posting(title="Samsung BA", full_text="Visit stores."),
@@ -352,11 +373,12 @@ class TestPass1Dedup:
             run = EnrichmentRun()
             result = await orch.run_pass1(run)
 
-        # Leader failed, then 2 individual calls attempted (1 fail + 1 success per posting)
-        assert call_count == 3  # 1 leader fail + 2 individual fallbacks
-        assert result.succeeded == 2  # both succeeded in fallback
-        assert result.failed == 0
-        # No dedup savings when fallback fires — all postings got individual API calls
+        # Leader failed (1 call), 1 follower processed individually (1 call)
+        # Leader is NOT retried — avoids wasting API call on likely persistent error
+        assert call_count == 2  # 1 leader fail + 1 follower
+        assert result.succeeded == 1  # follower succeeded
+        assert result.failed == 1  # leader failed
+        # No dedup savings when fallback fires
         assert result.skipped == 0
 
     @pytest.mark.asyncio
