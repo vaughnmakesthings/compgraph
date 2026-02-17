@@ -1,0 +1,76 @@
+================================================================================
+CODE REVIEW SUMMARY FOR PR #84
+================================================================================
+
+Pull Request: https://github.com/vaughnmakesthings/compgraph/pull/84
+Status: ⚠️ 3 CRITICAL BUGS FOUND - DO NOT MERGE
+Full Review: See PR84_CODE_REVIEW_FINDINGS.md
+
+================================================================================
+CRITICAL BUGS
+================================================================================
+
+BUG 1 [HIGH]: Incorrect Index Creation Syntax
+Location: alembic/versions/b52ab5ef6cf1_add_enrichment_runs_table.py:54
+Impact: Migration will fail or create broken index
+Fix: Change ["status", sa.literal_column("started_at DESC")] 
+     to ["status", "started_at"]
+
+BUG 2 [HIGH]: Broken Counter Update Logic  
+Location: src/compgraph/enrichment/orchestrator.py:146
+Impact: Counter tracking completely broken - core feature won't work
+Fix: Change getattr(EnrichmentRunDB, k): getattr(EnrichmentRunDB, k) + v
+     to k: getattr(EnrichmentRunDB, k) + v
+
+BUG 3 [MEDIUM]: Missing updated_at Handling
+Location: src/compgraph/enrichment/orchestrator.py:145-156
+Impact: Timestamp tracking inconsistent
+Fix: Add values["updated_at"] = datetime.now(UTC) before update
+
+================================================================================
+QUICK FIXES
+================================================================================
+
+File: alembic/versions/b52ab5ef6cf1_add_enrichment_runs_table.py
+
+Line 54, change from:
+    ["status", sa.literal_column("started_at DESC")],
+
+To:
+    ["status", "started_at"],
+
+---
+
+File: src/compgraph/enrichment/orchestrator.py
+
+Line 145-149, change from:
+    values = {
+        getattr(EnrichmentRunDB, k): getattr(EnrichmentRunDB, k) + v
+        for k, v in counters.items()
+        if v != 0
+    }
+
+To:
+    values = {
+        k: getattr(EnrichmentRunDB, k) + v
+        for k, v in counters.items()
+        if v != 0
+    }
+
+And add after line 150:
+    values["updated_at"] = datetime.now(UTC)
+
+================================================================================
+TESTING CHECKLIST AFTER FIXES
+================================================================================
+
+[ ] Run alembic upgrade head on test database (verify no errors)
+[ ] Test counter increments actually update the database
+[ ] Verify updated_at timestamp changes on counter updates
+[ ] Run full test suite (393 tests should pass)
+[ ] Manual QA on dev server
+
+================================================================================
+
+Review conducted by: Claude (Copilot Code Review Agent)
+Date: 2026-02-17
