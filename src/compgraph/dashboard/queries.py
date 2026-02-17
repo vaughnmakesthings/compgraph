@@ -225,6 +225,7 @@ def get_enrichment_pass_breakdown(session: Session) -> dict:
     fully_enriched = session.execute(
         select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
             PostingEnrichment.posting_id.in_(active_ids),
+            PostingEnrichment.enrichment_version.isnot(None),
             PostingEnrichment.enrichment_version.contains("pass2"),
         )
     ).scalar_one()
