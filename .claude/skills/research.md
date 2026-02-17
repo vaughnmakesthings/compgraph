@@ -1,3 +1,8 @@
+---
+name: research
+description: Structured codebase or web research with explicit scope boundaries
+---
+
 # Research
 
 Structured codebase or web research with explicit scope boundaries. Prevents unbounded exploration sessions.

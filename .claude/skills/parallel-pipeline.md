@@ -1,3 +1,8 @@
+---
+name: parallel-pipeline
+description: Decompose a GitHub issue into subtasks, dispatch parallel agents in worktrees, assemble result
+---
+
 # Parallel Agent Pipeline
 
 Decomposes a GitHub issue into independent subtasks, dispatches parallel agents in isolated worktrees, and assembles the combined result.

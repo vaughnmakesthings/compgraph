@@ -1,3 +1,8 @@
+---
+name: pr-feedback-cycle
+description: Triage and resolve GitHub bot review comments on a PR — fetch, classify, fix/defer/reject, push, repeat
+---
+
 # PR Feedback Cycle
 
 Automates triage and resolution of GitHub bot review comments on a PR. Fetches unresolved bot threads, classifies severity, fixes/defers/rejects each, pushes, waits for CI + bots to re-review, and repeats until clean or max cycles reached.

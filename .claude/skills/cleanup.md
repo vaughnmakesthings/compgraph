@@ -1,3 +1,8 @@
+---
+name: cleanup
+description: Clean up merged branches and their associated worktrees
+---
+
 # Branch & Worktree Cleanup
 
 Cleans up merged branches and their associated worktrees.
