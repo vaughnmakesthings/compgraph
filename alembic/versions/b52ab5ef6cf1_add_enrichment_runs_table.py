@@ -52,7 +52,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_enrichment_runs_status_started",
         "enrichment_runs",
-        ["status", sa.literal_column("started_at DESC")],
+        [sa.text("status"), sa.text("started_at DESC")],
         unique=False,
     )
 

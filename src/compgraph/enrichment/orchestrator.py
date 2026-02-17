@@ -138,17 +138,14 @@ async def increment_enrichment_counter(
     run_id: uuid.UUID,
     **counters: int,
 ) -> None:
-    from sqlalchemy import update
+    from sqlalchemy import func, update
 
     from compgraph.db.models import EnrichmentRunDB
 
-    values = {
-        getattr(EnrichmentRunDB, k): getattr(EnrichmentRunDB, k) + v
-        for k, v in counters.items()
-        if v != 0
-    }
+    values = {k: getattr(EnrichmentRunDB, k) + v for k, v in counters.items() if v != 0}
     if not values:
         return
+    values["updated_at"] = func.now()
     async with async_session_factory() as session:
         await session.execute(
             update(EnrichmentRunDB).where(EnrichmentRunDB.id == run_id).values(**values)
