@@ -31,4 +31,5 @@ work/
 *.log
 htmlcov/
 .coverage
+.worktrees/
 
