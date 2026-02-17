@@ -17,7 +17,6 @@ from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
     get_enrichment_coverage,
     get_last_scrape_timestamps,
-    get_per_company_counts,
 )
 
 configure_logging()
@@ -207,12 +206,6 @@ def _load_freshness() -> list[dict[str, Any]]:
 def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
         return dict(get_enrichment_coverage(session))
-
-
-@st.cache_data(ttl=60)
-def _load_company_counts() -> list[dict[str, Any]]:
-    with get_session() as session:
-        return list(get_per_company_counts(session))
 
 
 try:
