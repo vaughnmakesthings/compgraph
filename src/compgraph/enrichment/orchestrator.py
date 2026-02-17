@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 from compgraph.config import settings
 from compgraph.db.session import async_session_factory
 from compgraph.enrichment.client import get_anthropic_client
+from compgraph.enrichment.fingerprint import compute_content_hash
 from compgraph.enrichment.pass1 import enrich_posting_pass1
 from compgraph.enrichment.pass2 import enrich_posting_pass2
 from compgraph.enrichment.queries import (
@@ -24,6 +26,7 @@ from compgraph.enrichment.queries import (
     save_enrichment,
 )
 from compgraph.enrichment.resolver import resolve_entity, save_brand_mentions
+from compgraph.enrichment.schemas import Pass1Result, Pass2Result
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +141,11 @@ async def _mark_pass2_complete(
 
 
 class EnrichmentOrchestrator:
-    """Orchestrates batch enrichment with concurrency control."""
+    """Orchestrates batch enrichment with concurrency control.
+
+    Uses run-scoped content caching to deduplicate LLM calls for postings
+    with identical content (e.g., same job posted to multiple cities).
+    """
 
     def __init__(
         self,
@@ -158,12 +165,16 @@ class EnrichmentOrchestrator:
 
         Processes in batches, with a semaphore limiting concurrent API calls.
         Each posting is isolated — one failure doesn't stop the batch.
+        Uses content-based deduplication to avoid redundant LLM calls for
+        postings with identical title+body (e.g., same job in multiple cities).
         """
         run.status = EnrichmentStatus.RUNNING
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
         failed_ids: set[uuid.UUID] = set()
+        content_cache: dict[str, Pass1Result] = {}
+        api_calls = 0
 
         while True:
             async with async_session_factory() as session:
@@ -177,22 +188,111 @@ class EnrichmentOrchestrator:
                 if not batch:
                     break
 
-                async def _process_posting(
-                    posting_id: uuid.UUID,
-                    snapshot_id: uuid.UUID,
-                    title: str,
-                    location: str,
-                    full_text: str,
-                ) -> tuple[bool, uuid.UUID]:
+                # Group batch by content hash for deduplication
+                groups: dict[str, list[tuple[uuid.UUID, uuid.UUID, str, str, str]]] = defaultdict(
+                    list
+                )
+                for posting, snapshot in batch:
+                    title = snapshot.title_raw or ""
+                    full_text = snapshot.full_text_raw or ""
+                    content_hash = compute_content_hash(title, full_text)
+                    logger.debug(
+                        "Content hash posting_id=%s hash=%s title=%.60s len=%d",
+                        posting.id,
+                        content_hash[:12],
+                        title,
+                        len(full_text),
+                    )
+                    groups[content_hash].append(
+                        (posting.id, snapshot.id, title, snapshot.location_raw or "", full_text)
+                    )
+
+                unique_groups = len(groups)
+                total_in_batch = len(batch)
+                api_calls_before = api_calls
+                logger.info(
+                    "Pass 1 batch dedup: %d postings -> %d unique groups",
+                    total_in_batch,
+                    unique_groups,
+                )
+
+                async def _process_group(
+                    content_hash: str,
+                    group: list[tuple[uuid.UUID, uuid.UUID, str, str, str]],
+                ) -> list[tuple[bool, uuid.UUID]]:
+                    """Process a group of postings with identical content.
+
+                    Calls the LLM once for the leader, then copies the result
+                    to all followers in the group.
+                    """
+                    nonlocal api_calls
+
+                    # Check run-scoped cache first
+                    if content_hash in content_cache:
+                        cached = content_cache[content_hash]
+                        outcomes: list[tuple[bool, uuid.UUID]] = []
+                        for posting_id, snapshot_id, *_ in group:
+                            try:
+                                logger.info(
+                                    "Pass 1 cache hit: posting %s reusing result (hash=%s...)",
+                                    posting_id,
+                                    content_hash[:12],
+                                )
+                                async with async_session_factory() as save_session:
+                                    await save_enrichment(
+                                        save_session,
+                                        posting_id,
+                                        snapshot_id,
+                                        cached,
+                                        model=settings.ENRICHMENT_MODEL_PASS1,
+                                        version="pass1-v1",
+                                    )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception(
+                                    "Pass 1 failed saving cached result for posting %s",
+                                    posting_id,
+                                )
+                                outcomes.append((False, posting_id))
+                        return outcomes
+
+                    # Cache miss — call LLM for the leader posting
+                    leader_id, _leader_snap, leader_title, leader_location, leader_text = group[0]
+                    logger.debug(
+                        "Pass 1 cache miss: %s leader for hash=%s... (size=%d)",
+                        leader_id,
+                        content_hash[:12],
+                        len(group),
+                    )
+
                     async with semaphore:
                         try:
                             pass1_result = await enrich_posting_pass1(
                                 self.client,
-                                posting_id,
-                                title or "",
-                                location or "",
-                                full_text or "",
+                                leader_id,
+                                leader_title,
+                                leader_location,
+                                leader_text,
                             )
+                            api_calls += 1
+                        except Exception:
+                            logger.warning(
+                                "Pass 1 leader %s failed, fallback for %d followers (hash=%s...)",
+                                leader_id,
+                                len(group) - 1,
+                                content_hash[:12],
+                            )
+                            # Leader failed — fall back to individual processing
+                            return await _fallback_individual(group, content_hash)
+
+                    # Cache the result for future batches within this run
+                    content_cache[content_hash] = pass1_result
+
+                    # Save for leader + all followers
+                    outcomes = []
+                    for i, (posting_id, snapshot_id, *_) in enumerate(group):
+                        try:
                             async with async_session_factory() as save_session:
                                 await save_enrichment(
                                     save_session,
@@ -203,45 +303,130 @@ class EnrichmentOrchestrator:
                                     version="pass1-v1",
                                 )
                                 await save_session.commit()
-                            return True, posting_id
+                            if i > 0:
+                                logger.debug(
+                                    "Pass 1 follower: copied enrichment %s from leader %s",
+                                    posting_id,
+                                    leader_id,
+                                )
+                            outcomes.append((True, posting_id))
                         except Exception:
-                            logger.exception("Pass 1 failed for posting %s", posting_id)
-                            return False, posting_id
+                            logger.exception(
+                                "Pass 1 failed saving enrichment for posting %s", posting_id
+                            )
+                            outcomes.append((False, posting_id))
+                    return outcomes
 
-                tasks = [
-                    _process_posting(
-                        posting.id,
-                        snapshot.id,
-                        snapshot.title_raw or "",
-                        snapshot.location_raw or "",
-                        snapshot.full_text_raw or "",
-                    )
-                    for posting, snapshot in batch
-                ]
+                async def _fallback_individual(
+                    group: list[tuple[uuid.UUID, uuid.UUID, str, str, str]],
+                    content_hash: str,
+                ) -> list[tuple[bool, uuid.UUID]]:
+                    """Process each posting individually when leader fails."""
+                    nonlocal api_calls
+                    cached_on_fallback = False
+                    outcomes: list[tuple[bool, uuid.UUID]] = []
+                    for posting_id, snapshot_id, title, location, full_text in group:
+                        async with semaphore:
+                            try:
+                                p1 = await enrich_posting_pass1(
+                                    self.client,
+                                    posting_id,
+                                    title,
+                                    location,
+                                    full_text,
+                                )
+                                api_calls += 1
+                                # Cache the first successful fallback result for later batches
+                                if not cached_on_fallback:
+                                    content_cache[content_hash] = p1
+                                    cached_on_fallback = True
+                                async with async_session_factory() as save_session:
+                                    await save_enrichment(
+                                        save_session,
+                                        posting_id,
+                                        snapshot_id,
+                                        p1,
+                                        model=settings.ENRICHMENT_MODEL_PASS1,
+                                        version="pass1-v1",
+                                    )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception("Pass 1 failed for posting %s", posting_id)
+                                outcomes.append((False, posting_id))
+                    return outcomes
 
-                outcomes = await asyncio.gather(*tasks)
-                for success, pid in outcomes:
-                    if success:
-                        result.succeeded += 1
-                    else:
-                        result.failed += 1
-                        failed_ids.add(pid)
+                # Process all groups concurrently
+                group_tasks = [_process_group(ch, grp) for ch, grp in groups.items()]
+                group_outcomes = await asyncio.gather(*group_tasks)
+
+                for outcomes in group_outcomes:
+                    for success, pid in outcomes:
+                        if success:
+                            result.succeeded += 1
+                        else:
+                            result.failed += 1
+                            failed_ids.add(pid)
+
+                # Track actual dedup savings (accounts for fallback paths)
+                api_calls_this_batch = api_calls - api_calls_before
+                actual_saved = total_in_batch - api_calls_this_batch
+                result.skipped += max(0, actual_saved)
 
                 total_processed += len(batch)
                 if total_processed % 10 == 0 or len(batch) < self.batch_size:
                     logger.info(
-                        "Pass 1 progress: %d processed (%d succeeded, %d failed)",
+                        "Pass 1 progress: %d processed (%d succeeded, %d failed, %d dedup saved)",
                         total_processed,
                         result.succeeded,
                         result.failed,
+                        actual_saved,
                     )
 
                 # If batch was smaller than batch_size, we've exhausted all postings
                 if len(batch) < self.batch_size:
                     break
 
+        logger.info(
+            "Pass 1 done: %d total, %d API, %d dedup, %d failed. Cache: %d",
+            result.succeeded + result.failed,
+            api_calls,
+            result.skipped,
+            result.failed,
+            len(content_cache),
+        )
         run.finish(result)
         return result
+
+    @staticmethod
+    async def _resolve_and_save_pass2(
+        save_session: AsyncSession,
+        posting_id: uuid.UUID,
+        enrichment_id: uuid.UUID,
+        pass2_result: Pass2Result,
+    ) -> None:
+        """Resolve entities and save brand mentions for a single posting.
+
+        Extracted to avoid duplicating entity resolution logic across
+        cache-hit, leader+follower, and fallback code paths.
+        """
+        if pass2_result.entities:
+            resolved = []
+            for entity in pass2_result.entities:
+                resolution = await resolve_entity(
+                    save_session,
+                    entity.entity_name,
+                    entity.entity_type,
+                )
+                resolved.append(resolution)
+            await save_brand_mentions(
+                save_session,
+                posting_id,
+                enrichment_id,
+                pass2_result.entities,
+                resolved,
+            )
+        await _mark_pass2_complete(save_session, enrichment_id)
 
     async def run_pass2(
         self,
@@ -252,12 +437,15 @@ class EnrichmentOrchestrator:
 
         For each posting: extract entities via Sonnet, resolve against Brand/Retailer
         tables, and create PostingBrandMention records.
+        Uses content-based deduplication to avoid redundant LLM calls.
         """
         run.status = EnrichmentStatus.RUNNING
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
         failed_ids: set[uuid.UUID] = set()
+        content_cache_p2: dict[str, Pass2Result] = {}
+        api_calls = 0
 
         while True:
             async with async_session_factory() as session:
@@ -271,89 +459,219 @@ class EnrichmentOrchestrator:
                 if not batch:
                     break
 
-                async def _process_posting_pass2(
-                    posting_id: uuid.UUID,
-                    enrichment_id: uuid.UUID,
-                    title: str,
-                    location: str,
-                    content_role_specific: str | None,
-                    full_text: str,
-                ) -> tuple[bool, uuid.UUID]:
+                # Group batch by content hash for deduplication
+                # Pass 2 uses content_role_specific (from Pass 1) if available
+                groups: dict[
+                    str,
+                    list[tuple[uuid.UUID, uuid.UUID, str, str, str | None, str]],
+                ] = defaultdict(list)
+                for posting, snapshot, enrichment in batch:
+                    title = snapshot.title_raw or ""
+                    # Use the same text Pass 2 sends to the LLM
+                    p2_text = enrichment.content_role_specific or snapshot.full_text_raw or ""
+                    content_hash = compute_content_hash(title, p2_text)
+                    logger.debug(
+                        "Pass 2 content hash computed posting_id=%s hash=%s",
+                        posting.id,
+                        content_hash[:12],
+                    )
+                    groups[content_hash].append(
+                        (
+                            posting.id,
+                            enrichment.id,
+                            title,
+                            snapshot.location_raw or "",
+                            enrichment.content_role_specific,
+                            snapshot.full_text_raw or "",
+                        )
+                    )
+
+                unique_groups = len(groups)
+                total_in_batch = len(batch)
+                api_calls_before = api_calls
+                logger.info(
+                    "Pass 2 batch dedup: %d postings -> %d unique groups",
+                    total_in_batch,
+                    unique_groups,
+                )
+
+                async def _process_group_pass2(
+                    content_hash: str,
+                    group: list[tuple[uuid.UUID, uuid.UUID, str, str, str | None, str]],
+                ) -> list[tuple[bool, uuid.UUID]]:
+                    """Process a group of postings with identical content for Pass 2."""
+                    nonlocal api_calls
+
+                    # Check run-scoped cache first
+                    if content_hash in content_cache_p2:
+                        cached = content_cache_p2[content_hash]
+                        outcomes: list[tuple[bool, uuid.UUID]] = []
+                        for posting_id, enrichment_id, *_ in group:
+                            try:
+                                logger.info(
+                                    "Pass 2 cache hit: posting %s reusing result (hash=%s...)",
+                                    posting_id,
+                                    content_hash[:12],
+                                )
+                                async with async_session_factory() as save_session:
+                                    await self._resolve_and_save_pass2(
+                                        save_session,
+                                        posting_id,
+                                        enrichment_id,
+                                        cached,
+                                    )
+                                    if cached.entities:
+                                        logger.debug(
+                                            "Pass 2 copying %d entities to follower %s",
+                                            len(cached.entities),
+                                            posting_id,
+                                        )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception(
+                                    "Pass 2 failed saving cached result for posting %s",
+                                    posting_id,
+                                )
+                                outcomes.append((False, posting_id))
+                        return outcomes
+
+                    # Cache miss — call LLM for the leader
+                    leader_id, _leader_eid, leader_title, leader_loc, leader_crs, leader_ft = group[
+                        0
+                    ]
+                    logger.debug(
+                        "Pass 2 cache miss: %s leader for hash=%s... (size=%d)",
+                        leader_id,
+                        content_hash[:12],
+                        len(group),
+                    )
+
                     async with semaphore:
                         try:
                             pass2_result = await enrich_posting_pass2(
                                 self.client,
-                                posting_id,
-                                title,
-                                location,
-                                content_role_specific,
-                                full_text,
+                                leader_id,
+                                leader_title,
+                                leader_loc,
+                                leader_crs,
+                                leader_ft,
                             )
+                            api_calls += 1
+                        except Exception:
+                            logger.warning(
+                                "Pass 2 leader %s failed, fallback for %d followers (hash=%s...)",
+                                leader_id,
+                                len(group) - 1,
+                                content_hash[:12],
+                            )
+                            return await _fallback_individual_pass2(group, content_hash)
 
+                    content_cache_p2[content_hash] = pass2_result
+
+                    # Save for leader + all followers
+                    outcomes = []
+                    for i, (posting_id, enrichment_id, *_rest) in enumerate(group):
+                        try:
                             async with async_session_factory() as save_session:
-                                if pass2_result.entities:
-                                    # Resolve each entity against dimension tables
-                                    resolved = []
-                                    for entity in pass2_result.entities:
-                                        resolution = await resolve_entity(
-                                            save_session,
-                                            entity.entity_name,
-                                            entity.entity_type,
-                                        )
-                                        resolved.append(resolution)
+                                await self._resolve_and_save_pass2(
+                                    save_session,
+                                    posting_id,
+                                    enrichment_id,
+                                    pass2_result,
+                                )
+                                if i > 0 and pass2_result.entities:
+                                    logger.debug(
+                                        "Pass 2 copying %d entities from leader %s to %s",
+                                        len(pass2_result.entities),
+                                        leader_id,
+                                        posting_id,
+                                    )
+                                await save_session.commit()
+                            outcomes.append((True, posting_id))
+                        except Exception:
+                            logger.exception(
+                                "Pass 2 failed saving enrichment for posting %s", posting_id
+                            )
+                            outcomes.append((False, posting_id))
+                    return outcomes
 
-                                    # Save brand mentions and update enrichment
-                                    await save_brand_mentions(
+                async def _fallback_individual_pass2(
+                    group: list[tuple[uuid.UUID, uuid.UUID, str, str, str | None, str]],
+                    content_hash: str,
+                ) -> list[tuple[bool, uuid.UUID]]:
+                    """Process each posting individually when leader fails."""
+                    nonlocal api_calls
+                    cached_on_fallback = False
+                    outcomes: list[tuple[bool, uuid.UUID]] = []
+                    for posting_id, enrichment_id, title, location, crs, full_text in group:
+                        async with semaphore:
+                            try:
+                                p2 = await enrich_posting_pass2(
+                                    self.client,
+                                    posting_id,
+                                    title,
+                                    location,
+                                    crs,
+                                    full_text,
+                                )
+                                api_calls += 1
+                                # Cache the first successful fallback result for later batches
+                                if not cached_on_fallback:
+                                    content_cache_p2[content_hash] = p2
+                                    cached_on_fallback = True
+                                async with async_session_factory() as save_session:
+                                    await self._resolve_and_save_pass2(
                                         save_session,
                                         posting_id,
                                         enrichment_id,
-                                        pass2_result.entities,
-                                        resolved,
+                                        p2,
                                     )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception("Pass 2 failed for posting %s", posting_id)
+                                outcomes.append((False, posting_id))
+                    return outcomes
 
-                                # Always mark Pass 2 complete on enrichment
-                                # to prevent infinite re-processing of postings
-                                # with no extractable entities
-                                await _mark_pass2_complete(save_session, enrichment_id)
-                                await save_session.commit()
+                # Process all groups concurrently
+                group_tasks = [_process_group_pass2(ch, grp) for ch, grp in groups.items()]
+                group_outcomes = await asyncio.gather(*group_tasks)
 
-                            return True, posting_id
-                        except Exception:
-                            logger.exception("Pass 2 failed for posting %s", posting_id)
-                            return False, posting_id
+                for outcomes in group_outcomes:
+                    for success, pid in outcomes:
+                        if success:
+                            result.succeeded += 1
+                        else:
+                            result.failed += 1
+                            failed_ids.add(pid)
 
-                tasks = [
-                    _process_posting_pass2(
-                        posting.id,
-                        enrichment.id,
-                        snapshot.title_raw or "",
-                        snapshot.location_raw or "",
-                        enrichment.content_role_specific,
-                        snapshot.full_text_raw or "",
-                    )
-                    for posting, snapshot, enrichment in batch
-                ]
-
-                outcomes = await asyncio.gather(*tasks)
-                for success, pid in outcomes:
-                    if success:
-                        result.succeeded += 1
-                    else:
-                        result.failed += 1
-                        failed_ids.add(pid)
+                # Track actual dedup savings (accounts for fallback paths)
+                api_calls_this_batch = api_calls - api_calls_before
+                actual_saved = total_in_batch - api_calls_this_batch
+                result.skipped += max(0, actual_saved)
 
                 total_processed += len(batch)
                 if total_processed % 10 == 0 or len(batch) < self.batch_size:
                     logger.info(
-                        "Pass 2 progress: %d processed (%d succeeded, %d failed)",
+                        "Pass 2 progress: %d processed (%d succeeded, %d failed, %d dedup saved)",
                         total_processed,
                         result.succeeded,
                         result.failed,
+                        actual_saved,
                     )
 
                 if len(batch) < self.batch_size:
                     break
 
+        logger.info(
+            "Pass 2 done: %d total, %d API, %d dedup, %d failed. Cache: %d",
+            result.succeeded + result.failed,
+            api_calls,
+            result.skipped,
+            result.failed,
+            len(content_cache_p2),
+        )
         run.finish_pass2(result)
         return result
 
@@ -362,7 +680,7 @@ class EnrichmentOrchestrator:
         run: EnrichmentRun,
         company_id: uuid.UUID | None = None,
     ) -> tuple[EnrichResult, EnrichResult]:
-        """Run the full enrichment pipeline: Pass 1 → Pass 2 → Fingerprinting.
+        """Run the full enrichment pipeline: Pass 1 -> Pass 2 -> Fingerprinting.
 
         Returns tuple of (pass1_result, pass2_result).
         """

@@ -50,6 +50,19 @@ def normalize_location(location: str) -> str:
     return normalized
 
 
+def compute_content_hash(title: str, full_text: str) -> str:
+    """Hash title + body for enrichment deduplication. Excludes location.
+
+    Two postings with the same title and body but different locations
+    (e.g., same job posted to Dallas and Houston) will produce the same
+    hash, allowing the orchestrator to call the LLM only once per
+    unique content.
+    """
+    norm_title = normalize_title(title)
+    norm_body = re.sub(r"\s+", " ", full_text.strip().lower())
+    return hashlib.sha256(f"{norm_title}|{norm_body}".encode()).hexdigest()
+
+
 def generate_fingerprint(title: str, location: str, brand_slug: str | None) -> str:
     """Generate a composite fingerprint hash.
 
