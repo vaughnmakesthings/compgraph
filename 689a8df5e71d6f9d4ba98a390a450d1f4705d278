@@ -1,0 +1,23 @@
+src/compgraph/dashboard/queries.py
+  2cee51b4737cb9be 318,329
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "689a8df5e71d6f9d4ba98a390a450d1f4705d278",
+  "prompts": {
+    "2cee51b4737cb9be": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7cc6ec9e-e186-4b58-8b91-a52a539a8ad1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 24,
+      "total_deletions": 17,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    }
+  }
+}
