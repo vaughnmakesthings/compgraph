@@ -139,7 +139,7 @@ if pipeline is not None:
                 st.caption("Pass 1: starting...")
 
             if p2_total > 0:
-                st.progress(p2_done / p2_total, text=f"Pass 2: {p2_done}/{p2_total}")
+                st.progress(min(p2_done / p2_total, 1.0), text=f"Pass 2: {p2_done}/{p2_total}")
             elif p2_done > 0:
                 st.metric("Pass 2 Processed", p2_done)
         elif enrich["last_completed_at"]:
