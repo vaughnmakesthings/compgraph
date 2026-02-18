@@ -352,7 +352,7 @@ async def persist_posting(
     stmt = stmt.on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
     result = await session.execute(stmt)
 
-    return result.rowcount > 0  # type: ignore[union-attr]
+    return result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
 
 
 def _base_url_from_search_url(search_url: str) -> str:
