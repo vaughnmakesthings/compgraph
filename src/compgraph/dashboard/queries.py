@@ -17,11 +17,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from compgraph.db.models import (
+    Brand,
     Company,
     Posting,
     PostingBrandMention,
     PostingEnrichment,
     PostingSnapshot,
+    Retailer,
     ScrapeRun,
 )
 
@@ -497,8 +499,6 @@ def get_role_archetypes(session: Session) -> list[str]:
 @_timed_query
 def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
     """Client brands mentioned in active postings for a company."""
-    from compgraph.db.models import Brand as Brand
-
     stmt = (
         select(
             func.coalesce(Brand.name, PostingBrandMention.entity_name).label("name"),
@@ -530,8 +530,6 @@ def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
 @_timed_query
 def get_retailer_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
     """Retailers mentioned in active postings for a company."""
-    from compgraph.db.models import Retailer as Retailer
-
     stmt = (
         select(
             func.coalesce(Retailer.name, PostingBrandMention.entity_name).label("name"),
