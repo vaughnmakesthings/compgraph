@@ -1,0 +1,31 @@
+tests/fixtures/icims_listing_new_layout.html
+  b77422c4593ded17 1-23
+src/compgraph/scrapers/icims.py
+  b77422c4593ded17 31-38
+src/compgraph/api/routes/pipeline.py
+  b77422c4593ded17 35,82
+src/compgraph/dashboard/main.py
+  b77422c4593ded17 98-99,231
+tests/test_icims_adapter.py
+  b77422c4593ded17 88-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "a6d3b0d1b8489931b34d2c47504b640fc4bc0aa5",
+  "prompts": {
+    "b77422c4593ded17": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cc9223f-2773-407f-9f08-44e4ed7e0026",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 45,
+      "total_deletions": 2,
+      "accepted_lines": 45,
+      "overriden_lines": 0
+    }
+  }
+}
