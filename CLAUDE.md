@@ -127,6 +127,7 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - Don't skip the enrichment 2-pass pattern — Haiku alone misses edge cases, Sonnet alone is too expensive.
 - Don't use `session.rollback()` in entity creation — use `session.begin_nested()` savepoints to preserve prior work.
 - Don't check Pass 2 completion via `PostingBrandMention` existence — use `enrichment_version` containing "pass2".
+- Don't add MCP servers to `.mcp.json` that are already provided by plugins — this causes ~10K tokens of context waste and auth warnings. Plugins are the authoritative source.
 - Don't forget `exclude_ids` for failed postings in batch loops — prevents livelock on persistent failures.
 
 ## Platform Gotchas
