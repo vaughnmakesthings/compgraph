@@ -40,3 +40,4 @@ class TestDbPersistenceFunctions:
         assert (
             len([p for p in sig.parameters.values() if p.default is inspect.Parameter.empty]) == 0
         )
+        assert sig.return_annotation == "dict | None"
