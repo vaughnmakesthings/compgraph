@@ -82,4 +82,4 @@ class TestGetLatestPipelineStatus:
         assert result is not None
         assert result["status"] == "running"
         assert result["company_states"]["t-roc"] == "completed"
-        assert result["company_states"]["2020"] == "pending"
+        assert result["company_states"]["2020"] == "running"

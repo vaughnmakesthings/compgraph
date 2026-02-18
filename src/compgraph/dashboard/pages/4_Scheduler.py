@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 import requests
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Scheduler", layout="wide")
 st.title("Scheduler")
+st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
 
 API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
@@ -121,7 +123,8 @@ if last_finished:
     color = "green" if last_success else "red"
     label = "SUCCESS" if last_success else "FAILED"
     st.markdown(f"**Result:** :{color}[{label}]")
-    st.text(f"Completed at: {last_finished[:19]}")
+    finished_str = last_finished[:16] if isinstance(last_finished, str) else last_finished
+    st.text(f"Completed at: {finished_str}")
 else:
     st.info("No pipeline runs recorded yet.")
 
