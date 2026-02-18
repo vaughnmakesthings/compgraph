@@ -353,10 +353,12 @@ class PipelineOrchestrator:
                 raise
             finally:
                 if result is not None:
-                    # Update company state based on result
+                    # Update company state and results immediately so the
+                    # API reflects partial progress during long scrapes
                     pipeline_run.company_states[company.slug] = (
                         CompanyState.COMPLETED if result.success else CompanyState.FAILED
                     )
+                    pipeline_run.company_results[company.slug] = result
                     try:
                         await asyncio.shield(self._finalize_scrape_run(scrape_run, result))
                     except asyncio.CancelledError:
