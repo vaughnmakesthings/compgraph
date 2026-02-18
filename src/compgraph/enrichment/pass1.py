@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 _RATE_LIMIT_BASE_DELAY = 60.0
 _MAX_RETRIES = 3
 _PERMANENT_STATUS_CODES = frozenset({400, 401, 403, 422})
-_PERMANENT_STATUS_CODES = frozenset({400, 401, 403, 422})
 
 
 async def _retry_sleep(delay: float) -> None:
