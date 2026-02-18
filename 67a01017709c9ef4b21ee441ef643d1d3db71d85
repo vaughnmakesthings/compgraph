@@ -1,0 +1,25 @@
+tests/test_pipeline_status.py
+  9bb0e06f8922eff7 186-212
+src/compgraph/api/routes/pipeline.py
+  9bb0e06f8922eff7 186-190,192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "67a01017709c9ef4b21ee441ef643d1d3db71d85",
+  "prompts": {
+    "9bb0e06f8922eff7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "732e3add-c198-403b-99f8-13795eb2ff2c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 33,
+      "total_deletions": 1,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  }
+}
