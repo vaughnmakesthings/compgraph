@@ -315,6 +315,7 @@ def search_postings(
             PostingBrandMention.posting_id == Posting.id,
             PostingBrandMention.entity_type == "client_brand",
         )
+        .order_by(PostingBrandMention.entity_name)
         .correlate(Posting)
         .scalar_subquery()
         .label("brands")
@@ -325,6 +326,7 @@ def search_postings(
             PostingBrandMention.posting_id == Posting.id,
             PostingBrandMention.entity_type == "retailer",
         )
+        .order_by(PostingBrandMention.entity_name)
         .correlate(Posting)
         .scalar_subquery()
         .label("retailers")
