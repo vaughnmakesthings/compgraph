@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ENRICHMENT_MODEL_PASS1: str = "claude-haiku-4-5-20251001"
     ENRICHMENT_MODEL_PASS2: str = "claude-sonnet-4-5-20250929"
 
+    # Alembic (optional override — used when direct host DNS fails)
+    ALEMBIC_DATABASE_URL: str | None = None
+
     # Scheduler
     SCHEDULER_ENABLED: bool = False
     SCHEDULER_PIPELINE_CRON: str = "0 2 * * 1,3,5"  # Mon/Wed/Fri 2am
