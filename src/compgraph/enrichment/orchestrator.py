@@ -422,6 +422,33 @@ class EnrichmentOrchestrator:
                     cached_on_fallback = False
                     outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, snapshot_id, title, location, full_text in group:
+                        # Reuse cached result from first successful follower
+                        if cached_on_fallback:
+                            try:
+                                logger.info(
+                                    "Pass 1 fallback cache hit: reused for posting %s (hash=%s...)",
+                                    posting_id,
+                                    content_hash[:12],
+                                )
+                                async with async_session_factory() as save_session:
+                                    await save_enrichment(
+                                        save_session,
+                                        posting_id,
+                                        snapshot_id,
+                                        content_cache[content_hash],
+                                        model=settings.ENRICHMENT_MODEL_PASS1,
+                                        version="pass1-v1",
+                                    )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception(
+                                    "Pass 1 failed saving cached fallback for posting %s",
+                                    posting_id,
+                                )
+                                outcomes.append((False, posting_id))
+                            continue
+
                         async with semaphore:
                             try:
                                 p1 = await enrich_posting_pass1(
@@ -432,10 +459,8 @@ class EnrichmentOrchestrator:
                                     full_text,
                                 )
                                 api_calls += 1
-                                # Cache the first successful fallback result for later batches
-                                if not cached_on_fallback:
-                                    content_cache[content_hash] = p1
-                                    cached_on_fallback = True
+                                content_cache[content_hash] = p1
+                                cached_on_fallback = True
                                 async with async_session_factory() as save_session:
                                     await save_enrichment(
                                         save_session,
@@ -499,6 +524,7 @@ class EnrichmentOrchestrator:
 
         update_fields: dict[str, object] = {
             "pass1_total": result.succeeded + result.failed + result.skipped,
+            "pass1_skipped": result.skipped,
         }
         if finalize:
             update_fields["status"] = (
@@ -740,6 +766,31 @@ class EnrichmentOrchestrator:
                     cached_on_fallback = False
                     outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, enrichment_id, title, location, crs, full_text in group:
+                        # Reuse cached result from first successful follower
+                        if cached_on_fallback:
+                            try:
+                                logger.info(
+                                    "Pass 2 fallback cache hit: reused for posting %s (hash=%s...)",
+                                    posting_id,
+                                    content_hash[:12],
+                                )
+                                async with async_session_factory() as save_session:
+                                    await self._resolve_and_save_pass2(
+                                        save_session,
+                                        posting_id,
+                                        enrichment_id,
+                                        content_cache_p2[content_hash],
+                                    )
+                                    await save_session.commit()
+                                outcomes.append((True, posting_id))
+                            except Exception:
+                                logger.exception(
+                                    "Pass 2 failed saving cached fallback for posting %s",
+                                    posting_id,
+                                )
+                                outcomes.append((False, posting_id))
+                            continue
+
                         async with semaphore:
                             try:
                                 p2 = await enrich_posting_pass2(
@@ -751,10 +802,8 @@ class EnrichmentOrchestrator:
                                     full_text,
                                 )
                                 api_calls += 1
-                                # Cache the first successful fallback result for later batches
-                                if not cached_on_fallback:
-                                    content_cache_p2[content_hash] = p2
-                                    cached_on_fallback = True
+                                content_cache_p2[content_hash] = p2
+                                cached_on_fallback = True
                                 async with async_session_factory() as save_session:
                                     await self._resolve_and_save_pass2(
                                         save_session,
@@ -825,6 +874,7 @@ class EnrichmentOrchestrator:
         await update_enrichment_run_record(
             run.run_id,
             pass2_total=result.succeeded + result.failed + result.skipped,
+            pass2_skipped=result.skipped,
             status=final_status,
             finished_at=run.finished_at,
             error_summary=error_msg,

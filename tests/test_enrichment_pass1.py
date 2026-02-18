@@ -305,7 +305,7 @@ class TestEnrichPostingPass1:
 
     @pytest.mark.asyncio
     async def test_api_status_error_retry(self):
-        """Should retry on APIStatusError."""
+        """Should retry on APIStatusError (5xx)."""
         import anthropic
 
         client = AsyncMock()
@@ -326,6 +326,51 @@ class TestEnrichPostingPass1:
 
         assert result.role_archetype == "field_rep"
         assert client.messages.create.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_permanent_error_no_retry(self):
+        """Should NOT retry on permanent errors (400, 401, 403, 422)."""
+        import anthropic
+
+        for status_code in (400, 401, 403, 422):
+            client = AsyncMock()
+            api_error = anthropic.APIStatusError(
+                message=f"Error {status_code}",
+                response=MagicMock(status_code=status_code, headers={}),
+                body=None,
+            )
+            client.messages.create = AsyncMock(side_effect=api_error)
+
+            with (
+                patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock),
+                pytest.raises(anthropic.APIStatusError),
+            ):
+                await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+            # Only 1 attempt — no retries for permanent errors
+            assert client.messages.create.await_count == 1, f"Status {status_code} should not retry"
+
+    @pytest.mark.asyncio
+    async def test_transient_500_still_retries(self):
+        """500 errors should still retry (not permanent)."""
+        import anthropic
+
+        client = AsyncMock()
+        api_error = anthropic.APIStatusError(
+            message="Internal Server Error",
+            response=MagicMock(status_code=500, headers={}),
+            body=None,
+        )
+        client.messages.create = AsyncMock(side_effect=api_error)
+
+        with (
+            patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(anthropic.APIStatusError),
+        ):
+            await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        # All 3 retry attempts for transient 500
+        assert client.messages.create.await_count == 3
 
 
 # ---------------------------------------------------------------------------

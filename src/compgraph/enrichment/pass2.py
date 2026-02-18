@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # Retry configuration
 _RATE_LIMIT_BASE_DELAY = 60.0
 _MAX_RETRIES = 3
+_PERMANENT_STATUS_CODES = frozenset({400, 401, 403, 422})
 
 
 async def _retry_sleep(delay: float) -> None:
@@ -122,6 +123,13 @@ async def enrich_posting_pass2(
 
         except anthropic.APIStatusError as e:
             last_error = e
+            if e.status_code in _PERMANENT_STATUS_CODES:
+                logger.error(
+                    "Permanent API error %d for posting %s, not retrying",
+                    e.status_code,
+                    posting_id,
+                )
+                break
             if attempt < _MAX_RETRIES - 1:
                 delay = 2.0 * (2**attempt)
                 logger.warning(
