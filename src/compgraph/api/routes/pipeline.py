@@ -32,6 +32,7 @@ class ScrapeCurrentRun(BaseModel):
     total_snapshots_created: int
     companies_succeeded: int
     companies_failed: int
+    total_companies: int
 
 
 class EnrichCurrentRun(BaseModel):
@@ -78,6 +79,7 @@ def _scrape_stage_status(run: PipelineRun | None) -> StageStatus:
                 total_snapshots_created=run.total_snapshots_created,
                 companies_succeeded=run.companies_succeeded,
                 companies_failed=run.companies_failed,
+                total_companies=len(run.company_states),
             ),
         )
 

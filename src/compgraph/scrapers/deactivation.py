@@ -1,4 +1,4 @@
-"""Posting deactivation: marks postings as inactive after 3 consecutive missed scrape runs."""
+"""Posting deactivation: marks postings as inactive after consecutive missed scrape runs."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from compgraph.db.models import Posting, ScrapeRun, ScrapeRunStatus
 
 logger = logging.getLogger(__name__)
 
-GRACE_PERIOD_RUNS = 3
+GRACE_PERIOD_RUNS = 1
 
 
 async def deactivate_stale_postings(
@@ -20,16 +20,16 @@ async def deactivate_stale_postings(
     company_id: uuid.UUID,
     scrape_run_id: uuid.UUID,
 ) -> int:
-    """Deactivate postings not seen since the 3rd-most-recent completed scrape run.
+    """Deactivate postings not seen since the most recent completed scrape run.
 
-    Uses a grace period of 3 completed runs. We order by completed_at to correctly
+    Uses a grace period of 1 completed run. We order by completed_at to correctly
     identify which runs completed most recently (handles overlapping runs), but use
     started_at as the cutoff value since last_seen_at is recorded during the run
     (after started_at but before completed_at).
 
     Returns the number of postings deactivated.
     """
-    # Get the started_at of the 3rd-most-recent completed run (ordered by completion)
+    # Get the started_at of the most recent completed run (ordered by completion)
     cutoff_query = (
         select(ScrapeRun.started_at)
         .where(

@@ -28,7 +28,14 @@ def parse_listing_page(html: str) -> list[dict[str, str]]:
     soup = BeautifulSoup(html, "html.parser")
     jobs: list[dict[str, str]] = []
 
-    for row in soup.select(".iCIMS_JobListingRow"):
+    # Try legacy iCIMS layout first, then new .row-based layout
+    rows = soup.select(".iCIMS_JobListingRow")
+    if not rows:
+        jobs_table = soup.select_one(".iCIMS_JobsTable")
+        if jobs_table:
+            rows = jobs_table.select(":scope > .row")
+
+    for row in rows:
         link = row.select_one('a[href*="/jobs/"]')
         if not link:
             continue
