@@ -62,6 +62,44 @@ class TestParseJsonLd:
         assert data is not None
         assert data["title"] == "Graph Job"
 
+    def test_handles_job_location_as_list(self) -> None:
+        html = """<script type="application/ld+json">
+        {
+          "@type": "JobPosting",
+          "title": "Merchandiser",
+          "description": "A merch role",
+          "jobLocation": [
+            {
+              "@type": "Place",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "West Hollywood",
+                "addressRegion": "CA",
+                "addressCountry": "US"
+              }
+            }
+          ],
+          "url": "/jobs/50001/merchandiser/job"
+        }
+        </script>"""
+        data = parse_json_ld(html)
+        assert data is not None
+        assert data["location"] == "West Hollywood, CA, US"
+
+    def test_handles_empty_job_location_list(self) -> None:
+        html = """<script type="application/ld+json">
+        {
+          "@type": "JobPosting",
+          "title": "Remote Role",
+          "description": "Remote work",
+          "jobLocation": [],
+          "url": "/jobs/50002/remote/job"
+        }
+        </script>"""
+        data = parse_json_ld(html)
+        assert data is not None
+        assert data["location"] == ""
+
 
 class TestParseListingPage:
     def test_extracts_job_links(self) -> None:

@@ -82,6 +82,8 @@ def parse_json_ld(html: str) -> dict[str, str | int | None] | None:
             continue
 
         location_data = data.get("jobLocation", {})
+        if isinstance(location_data, list):
+            location_data = location_data[0] if location_data else {}
         if isinstance(location_data, dict):
             address = location_data.get("address", {})
             if isinstance(address, dict):
