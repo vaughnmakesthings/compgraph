@@ -487,3 +487,74 @@ def get_role_archetypes(session: Session) -> list[str]:
     )
     rows = session.execute(stmt).scalars().all()
     return [r for r in rows if r is not None]
+
+
+# ---------------------------------------------------------------------------
+# Brand Intel
+# ---------------------------------------------------------------------------
+
+
+@_timed_query
+def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
+    """Client brands mentioned in active postings for a company."""
+    from compgraph.db.models import Brand as Brand
+
+    stmt = (
+        select(
+            func.coalesce(Brand.name, PostingBrandMention.entity_name).label("name"),
+            func.count(func.distinct(Posting.id)).label("active_postings"),
+            func.min(Posting.first_seen_at).label("first_seen"),
+        )
+        .select_from(PostingBrandMention)
+        .join(Posting, Posting.id == PostingBrandMention.posting_id)
+        .outerjoin(Brand, Brand.id == PostingBrandMention.resolved_brand_id)
+        .where(
+            Posting.company_id == company_id,
+            Posting.is_active.is_(True),
+            PostingBrandMention.entity_type == "client_brand",
+        )
+        .group_by(func.coalesce(Brand.name, PostingBrandMention.entity_name))
+        .order_by(func.count(func.distinct(Posting.id)).desc())
+    )
+    rows = session.execute(stmt).all()
+    return [
+        {
+            "name": row.name,
+            "active_postings": row.active_postings,
+            "first_seen": row.first_seen,
+        }
+        for row in rows
+    ]
+
+
+@_timed_query
+def get_retailer_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
+    """Retailers mentioned in active postings for a company."""
+    from compgraph.db.models import Retailer as Retailer
+
+    stmt = (
+        select(
+            func.coalesce(Retailer.name, PostingBrandMention.entity_name).label("name"),
+            func.count(func.distinct(Posting.id)).label("active_postings"),
+            func.min(Posting.first_seen_at).label("first_seen"),
+        )
+        .select_from(PostingBrandMention)
+        .join(Posting, Posting.id == PostingBrandMention.posting_id)
+        .outerjoin(Retailer, Retailer.id == PostingBrandMention.resolved_retailer_id)
+        .where(
+            Posting.company_id == company_id,
+            Posting.is_active.is_(True),
+            PostingBrandMention.entity_type == "retailer",
+        )
+        .group_by(func.coalesce(Retailer.name, PostingBrandMention.entity_name))
+        .order_by(func.count(func.distinct(Posting.id)).desc())
+    )
+    rows = session.execute(stmt).all()
+    return [
+        {
+            "name": row.name,
+            "active_postings": row.active_postings,
+            "first_seen": row.first_seen,
+        }
+        for row in rows
+    ]
