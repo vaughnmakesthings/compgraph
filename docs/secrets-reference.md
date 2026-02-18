@@ -6,6 +6,7 @@ All secrets managed via 1Password. Never hardcode.
 |---------|-------------------|---------|
 | `DATABASE_URL` | `op://DEV/SUPABASE_COMPGRAPH_DBPW/password` (embedded in connection string) | SQLAlchemy async engine (session mode pooler) |
 | `DATABASE_URL_DIRECT` | `op://DEV/SUPABASE_COMPGRAPH_DBPW/password` (embedded in connection string) | Alembic migrations (direct connection) |
+| `ALEMBIC_DATABASE_URL` | Full asyncpg connection string (optional override) | Alembic only — use pooler URL when direct host DNS fails |
 | `ANTHROPIC_API_KEY` | `op://DEV/ANTHROPIC_API_KEY/credential` | LLM enrichment (Haiku + Sonnet) |
 | `SUPABASE_URL` | `op://DEV/COMPGRAPH_SUPABASE/url` | Supabase client (if used directly) |
 | `SUPABASE_KEY` | `op://DEV/COMPGRAPH_SUPABASE/anon-key` | Supabase client (if used directly) |
@@ -33,8 +34,11 @@ op run --env-file=.env -- uv run compgraph
 # Or populate .env from template (gitignored)
 op inject -i .env.example -o .env
 
-# Run migrations with secrets
+# Run migrations with secrets (direct connection)
 op run --env-file=.env -- uv run alembic upgrade head
+
+# If direct host DNS fails (IPv6 issue), use pooler URL override:
+ALEMBIC_DATABASE_URL="postgresql+asyncpg://..." op run --env-file=.env -- uv run alembic upgrade head
 
 # Run tests (DATABASE_URL has fallback in conftest.py)
 uv run pytest

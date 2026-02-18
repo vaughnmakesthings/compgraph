@@ -4,6 +4,32 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-17 — M3 Parallel Sprint: 5 PRs Merged + Deployed
+
+**Goal:** Complete all unblocked M3 tasks via parallel agent pipeline.
+
+**What happened:**
+- Dispatched 4 parallel agents to isolated git worktrees (WS1–WS4)
+- All 4 produced passing code (450 tests total on combined main)
+- PRs #112–#116 created, CI passed, merged to main in order
+- Deployed to dev server (Pi via Tailscale), health check green
+- Ran 4 pending Alembic migrations on live Supabase DB
+
+**PRs merged:**
+- **#112** — BDS location parsing + category-specific iCIMS URLs (#98, #111)
+- **#113** — Dashboard state fixes: pending→running, auto-refresh, scheduler DB fallback (#97, #99, #100, #91, #55)
+- **#114** — DB hardening: enrichment_runs default, append-only triggers, FK indexes (#88, #47, #45)
+- **#115** — iCIMS redirect domain validation (#65)
+- **#116** — Alembic direct DB connection + env override (#46)
+
+**Issues resolved:** #45, #46, #47, #55, #65, #88, #91, #97, #98, #99, #100, #111
+
+**Key discovery:** `db.*.supabase.co` direct host doesn't resolve from Pi (IPv6) OR macOS (DNS). Added `ALEMBIC_DATABASE_URL` env override to server `.env` pointing at the session-mode pooler. Documented in `docs/secrets-reference.md`.
+
+**State:** M3 ~80% complete. 450 tests, all green. 12 issues closed this session. Next: data quality review, remaining open issues.
+
+---
+
 ## 2026-02-15 (Session 9) — Dashboard, Scrape Controls, Enrichment Fix, M3 Kickoff
 
 ### Completed
