@@ -1,0 +1,42 @@
+src/compgraph/scrapers/icims.py
+  0d31f7bd073e581a 352-353,355
+tests/test_brand_intel_queries.py
+  5680c23e38e289e7 1-68,70-72,74-124
+src/compgraph/dashboard/queries.py
+  5680c23e38e289e7 490-560
+src/compgraph/dashboard/pages/5_Brand_Intel.py
+  5680c23e38e289e7 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "3f863001bc41d785e7911d84efe8a3668e7db590",
+  "prompts": {
+    "0d31f7bd073e581a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "73d42bf4-97b4-4dfb-9027-b2950f288643",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "5680c23e38e289e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ed092ef-c1fb-4ec8-8141-76c9587959b3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 309,
+      "total_deletions": 15,
+      "accepted_lines": 292,
+      "overriden_lines": 0
+    }
+  }
+}
