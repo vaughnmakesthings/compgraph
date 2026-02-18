@@ -1,0 +1,37 @@
+src/compgraph/enrichment/pass2.py
+  f95e6976fd2f9a48 26,126-132
+src/compgraph/enrichment/orchestrator.py
+  f95e6976fd2f9a48 425-451,527,769-793,877
+src/compgraph/enrichment/pass1.py
+  f95e6976fd2f9a48 26-27,123-129
+tests/test_enrichment_pass1.py
+  f95e6976fd2f9a48 308,330-373
+src/compgraph/api/routes/pipeline.py
+  f95e6976fd2f9a48 44,47,114,117,140,143
+tests/test_enrichment_pass2.py
+  f95e6976fd2f9a48 229-271
+tests/test_enrichment_dedup.py
+  f95e6976fd2f9a48 385-441,895-1081
+tests/test_pipeline_status.py
+  f95e6976fd2f9a48 237-298
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "588ef8628636a3875acb0ba4787a22812850b6ca",
+  "prompts": {
+    "f95e6976fd2f9a48": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "45128427-e04e-4d1f-a2ee-1a72f538c942",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 606,
+      "total_deletions": 138,
+      "accepted_lines": 473,
+      "overriden_lines": 0
+    }
+  }
+}
