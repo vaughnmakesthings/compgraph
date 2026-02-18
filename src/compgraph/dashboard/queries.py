@@ -14,6 +14,7 @@ from functools import wraps
 from typing import Any
 
 from sqlalchemy import func, literal_column, select
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.orm import Session
 
 from compgraph.db.models import (
@@ -309,24 +310,23 @@ def search_postings(
     """Search postings with filters, joined to latest snapshot and enrichment."""
     latest = _latest_snapshot_subquery()
 
+    sep = aggregate_order_by(literal_column("', '"), PostingBrandMention.entity_name)
     brands_sub = (
-        select(func.string_agg(PostingBrandMention.entity_name, literal_column("', '")))
+        select(func.string_agg(PostingBrandMention.entity_name, sep))
         .where(
             PostingBrandMention.posting_id == Posting.id,
             PostingBrandMention.entity_type == "client_brand",
         )
-        .order_by(PostingBrandMention.entity_name)
         .correlate(Posting)
         .scalar_subquery()
         .label("brands")
     )
     retailers_sub = (
-        select(func.string_agg(PostingBrandMention.entity_name, literal_column("', '")))
+        select(func.string_agg(PostingBrandMention.entity_name, sep))
         .where(
             PostingBrandMention.posting_id == Posting.id,
             PostingBrandMention.entity_type == "retailer",
         )
-        .order_by(PostingBrandMention.entity_name)
         .correlate(Posting)
         .scalar_subquery()
         .label("retailers")
