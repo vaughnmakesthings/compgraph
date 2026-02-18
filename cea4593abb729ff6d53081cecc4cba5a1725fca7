@@ -1,0 +1,25 @@
+src/compgraph/scrapers/deactivation.py
+  b77422c4593ded17 1,15,23,25,32
+tests/test_deactivation.py
+  b77422c4593ded17 112-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "cea4593abb729ff6d53081cecc4cba5a1725fca7",
+  "prompts": {
+    "b77422c4593ded17": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cc9223f-2773-407f-9f08-44e4ed7e0026",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  }
+}
