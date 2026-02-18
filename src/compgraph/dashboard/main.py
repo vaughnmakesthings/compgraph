@@ -132,7 +132,7 @@ if pipeline is not None:
             p2_done = cr.get("pass2_succeeded", 0)
 
             if p1_total > 0:
-                st.progress(p1_done / p1_total, text=f"Pass 1: {p1_done}/{p1_total}")
+                st.progress(min(p1_done / p1_total, 1.0), text=f"Pass 1: {p1_done}/{p1_total}")
             elif p1_done > 0:
                 st.metric("Pass 1 Processed", p1_done)
             else:
