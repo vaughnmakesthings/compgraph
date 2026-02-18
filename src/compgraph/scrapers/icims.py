@@ -24,6 +24,21 @@ from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 logger = logging.getLogger(__name__)
 
 
+def _validate_redirect_domain(response: httpx.Response, expected_url: str) -> None:
+    if not response.history:
+        return
+
+    final_domain = urlparse(str(response.url)).netloc.lower().split(":")[0]
+    expected_domain = urlparse(expected_url).netloc.lower().split(":")[0]
+
+    if final_domain != expected_domain:
+        chain = " -> ".join(str(r.url) for r in response.history) + f" -> {response.url}"
+        raise ValueError(
+            f"Redirected to unexpected domain '{final_domain}' "
+            f"(expected '{expected_domain}'). Chain: {chain}"
+        )
+
+
 def parse_listing_page(html: str) -> list[dict[str, str]]:
     soup = BeautifulSoup(html, "html.parser")
     jobs: list[dict[str, str]] = []
@@ -213,6 +228,7 @@ class ICIMSFetcher:
             await self._delay()
             response = await self.client.get(url)
             response.raise_for_status()
+            _validate_redirect_domain(response, url)
 
             html = response.text
             jobs = parse_listing_page(html)
@@ -240,6 +256,8 @@ class ICIMSFetcher:
                 logger.warning("HTTP %d for job %s", response.status_code, job_id)
                 self._record_failure()
                 return None
+
+            _validate_redirect_domain(response, url)
 
             html = response.text
             data = parse_json_ld(html)
