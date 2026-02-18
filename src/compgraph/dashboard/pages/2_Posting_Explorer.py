@@ -147,25 +147,30 @@ if len(results) == 100:
 
 if results:
     df = pd.DataFrame(results)
-    df["pay_min"] = df["pay_min"].apply(lambda x: f"${x:,.2f}" if pd.notna(x) else "")
-    df["pay_max"] = df["pay_max"].apply(lambda x: f"${x:,.2f}" if pd.notna(x) else "")
     df["first_seen_at"] = pd.to_datetime(df["first_seen_at"]).dt.strftime("%Y-%m-%d")
-    df = df.rename(
-        columns={
-            "title": "Title",
-            "company": "Company",
-            "location": "Location",
-            "role_archetype": "Role",
-            "brands": "Brands",
-            "retailers": "Retailers",
-            "pay_min": "Pay Min",
-            "pay_max": "Pay Max",
-            "is_active": "Active",
-            "first_seen_at": "First Seen",
-            "posting_id": "ID",
-        }
+    column_map = {
+        "title": "Title",
+        "company": "Company",
+        "location": "Location",
+        "role_archetype": "Role",
+        "brands": "Brands",
+        "retailers": "Retailers",
+        "pay_min": "Pay Min",
+        "pay_max": "Pay Max",
+        "is_active": "Active",
+        "first_seen_at": "First Seen",
+        "posting_id": "ID",
+    }
+    df = df.rename(columns=column_map)[list(column_map.values())]
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Pay Min": st.column_config.NumberColumn(format="$%.2f"),
+            "Pay Max": st.column_config.NumberColumn(format="$%.2f"),
+        },
     )
-    st.dataframe(df, use_container_width=True, hide_index=True)
 
     # --- Detail expanders (single session to avoid N+1) ---
     st.subheader("Posting Details")
