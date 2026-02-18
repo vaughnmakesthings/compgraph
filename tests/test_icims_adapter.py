@@ -379,9 +379,12 @@ class TestPersistPosting:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(
-            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+            side_effect=[posting_upsert_result, snapshot_hash_result, snapshot_insert_result]
         )
 
         company_id = uuid.uuid4()
@@ -406,9 +409,12 @@ class TestPersistPosting:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(
-            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()],
+            side_effect=[posting_upsert_result, snapshot_hash_result, snapshot_insert_result],
         )
 
         raw: dict[str, str | int | None] = {
@@ -444,9 +450,12 @@ class TestPersistPosting:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(
-            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+            side_effect=[posting_upsert_result, snapshot_hash_result, snapshot_insert_result]
         )
 
         raw: dict[str, str | int | None] = {
@@ -481,9 +490,12 @@ class TestPersistPosting:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = "oldhash123"
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(
-            side_effect=[posting_upsert_result, snapshot_hash_result, MagicMock()]
+            side_effect=[posting_upsert_result, snapshot_hash_result, snapshot_insert_result]
         )
 
         raw: dict[str, str | int | None] = {
@@ -499,8 +511,8 @@ class TestPersistPosting:
         assert mock_session.execute.call_count == 3
 
     @pytest.mark.asyncio
-    async def test_same_job_twice_same_day_uses_upsert(self) -> None:
-        """Second call for same job hits ON CONFLICT on posting upsert."""
+    async def test_same_job_twice_same_day_skips_duplicate_snapshot(self) -> None:
+        """Second call for same job updates last_seen_at but skips snapshot (do_nothing)."""
         posting_id = uuid.uuid4()
 
         # Both calls return the same posting_id via ON CONFLICT DO UPDATE
@@ -508,6 +520,8 @@ class TestPersistPosting:
         posting_result_1.scalar_one.return_value = posting_id
         snapshot_hash_1 = MagicMock()
         snapshot_hash_1.scalar_one_or_none.return_value = None
+        snapshot_insert_1 = MagicMock()
+        snapshot_insert_1.rowcount = 1  # New snapshot inserted
 
         posting_result_2 = MagicMock()
         posting_result_2.scalar_one.return_value = posting_id
@@ -515,16 +529,18 @@ class TestPersistPosting:
         snapshot_hash_2.scalar_one_or_none.return_value = (
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         )
+        snapshot_insert_2 = MagicMock()
+        snapshot_insert_2.rowcount = 0  # Conflict — do nothing
 
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(
             side_effect=[
                 posting_result_1,  # 1st call: posting upsert (insert)
                 snapshot_hash_1,  # 1st call: snapshot hash lookup (none)
-                MagicMock(),  # 1st call: snapshot upsert
+                snapshot_insert_1,  # 1st call: snapshot insert (new)
                 posting_result_2,  # 2nd call: posting upsert (on conflict update)
                 snapshot_hash_2,  # 2nd call: snapshot hash lookup (found)
-                MagicMock(),  # 2nd call: snapshot upsert (on conflict)
+                snapshot_insert_2,  # 2nd call: snapshot insert (conflict, do nothing)
             ]
         )
 
@@ -538,10 +554,10 @@ class TestPersistPosting:
         }
 
         result1 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
-        assert result1 is True
+        assert result1 is True  # New snapshot created
 
         result2 = await persist_posting(mock_session, raw, company_id, "https://test.icims.com")
-        assert result2 is True
+        assert result2 is False  # Snapshot already existed, do nothing
 
         # 3 executes per call x 2 calls = 6
         assert mock_session.execute.call_count == 6
@@ -575,17 +591,20 @@ class TestICIMSAdapter:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
-        # Each persist_posting call: posting upsert, snapshot hash, snapshot upsert
+        # Each persist_posting call: posting upsert, snapshot hash, snapshot insert
         mock_session.execute = AsyncMock(
             side_effect=[
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snapshot_insert_result,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snapshot_insert_result,
             ]
         )
 
@@ -703,6 +722,9 @@ class TestICIMSAdapter:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snap_ok = MagicMock()
+        snap_ok.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
         # 2 portals x 2 jobs each = 4 entries (iCIMS IDs are per-tenant, not global)
@@ -710,16 +732,16 @@ class TestICIMSAdapter:
             side_effect=[
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
             ]
         )
 
@@ -819,6 +841,9 @@ class TestICIMSAdapter:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snap_ok = MagicMock()
+        snap_ok.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
         # Same portal, dedup means only 2 unique jobs (not 4)
@@ -826,10 +851,10 @@ class TestICIMSAdapter:
             side_effect=[
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
             ]
         )
 
@@ -891,16 +916,19 @@ class TestICIMSAdapter:
         snapshot_hash_result = MagicMock()
         snapshot_hash_result.scalar_one_or_none.return_value = None
 
+        snap_ok = MagicMock()
+        snap_ok.rowcount = 1
+
         mock_session = AsyncMock()
         mock_session.begin_nested = MagicMock(return_value=AsyncMock())
         mock_session.execute = AsyncMock(
             side_effect=[
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
                 posting_upsert_result,
                 snapshot_hash_result,
-                MagicMock(),
+                snap_ok,
             ]
         )
 

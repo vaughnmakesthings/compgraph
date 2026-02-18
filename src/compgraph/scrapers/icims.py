@@ -349,21 +349,10 @@ async def persist_posting(
         full_text_hash=full_text_hash,
         content_changed=content_changed,
     )
-    stmt = stmt.on_conflict_do_update(
-        constraint="uq_snapshots_posting_date",
-        set_={
-            "title_raw": str(raw.get("title", "")),
-            "location_raw": str(raw.get("location", "")),
-            "url": str(url),
-            "full_text_raw": full_text,
-            "full_text_hash": full_text_hash,
-            "content_changed": stmt.excluded.content_changed
-            | PostingSnapshot.__table__.c.content_changed,
-        },
-    )
-    await session.execute(stmt)
+    stmt = stmt.on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
+    result = await session.execute(stmt)
 
-    return True
+    return result.rowcount > 0  # type: ignore[union-attr]
 
 
 def _base_url_from_search_url(search_url: str) -> str:
