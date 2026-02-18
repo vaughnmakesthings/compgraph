@@ -234,6 +234,68 @@ class TestPipelineStatusEndpoint:
             data = resp.json()
             assert data["system_state"] == "scraping"
 
+    def test_enrich_db_fallback_includes_skipped(self, client):
+        """DB fallback for running enrichment should include skipped counts."""
+        db_enrich = {
+            "run_id": str(uuid.uuid4()),
+            "status": "running",
+            "started_at": datetime.now(UTC).isoformat(),
+            "finished_at": None,
+            "pass1_total": 50,
+            "pass1_succeeded": 40,
+            "pass1_failed": 2,
+            "pass1_skipped": 8,
+            "pass2_total": 0,
+            "pass2_succeeded": 0,
+            "pass2_failed": 0,
+            "pass2_skipped": 0,
+            "error_summary": None,
+        }
+        with (
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_enrichment_run_from_db",
+                new_callable=AsyncMock,
+                return_value=db_enrich,
+            ),
+        ):
+            resp = client.get("/api/pipeline/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            current = data["enrich"]["current_run"]
+            assert current is not None
+            assert current["pass1_skipped"] == 8
+            assert current["pass2_skipped"] == 0
+
+    def test_enrich_memory_includes_skipped(self, client):
+        """In-memory enrichment run should include skipped counts."""
+        from compgraph.enrichment.orchestrator import (
+            EnrichResult,
+        )
+        from compgraph.enrichment.orchestrator import (
+            _store_run as store_enrich,
+        )
+
+        enrich_run = EnrichmentRun(status=EnrichmentStatus.RUNNING)
+        enrich_run.pass1_result = EnrichResult(succeeded=40, failed=2, skipped=8)
+        store_enrich(enrich_run)
+        with patch(
+            "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            resp = client.get("/api/pipeline/status")
+            assert resp.status_code == 200
+            data = resp.json()
+            current = data["enrich"]["current_run"]
+            assert current is not None
+            assert current["pass1_skipped"] == 8
+            assert current["pass2_skipped"] == 0
+
     def test_enrich_db_fallback(self, client):
         db_enrich = {
             "run_id": str(uuid.uuid4()),

@@ -382,6 +382,64 @@ class TestPass1Dedup:
         assert result.skipped == 0
 
     @pytest.mark.asyncio
+    async def test_fallback_cache_reuse_skips_api(self):
+        """After first follower succeeds in fallback, remaining followers reuse cache (no API)."""
+        postings = [
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+        ]
+
+        call_count = 0
+
+        async def _failing_then_succeeding(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise RuntimeError("API error")
+            return _make_pass1_result()
+
+        mock_save = AsyncMock()
+        mock_fetch = AsyncMock(side_effect=[postings, []])
+
+        mock_session = AsyncMock()
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "compgraph.enrichment.orchestrator.async_session_factory",
+                return_value=mock_session_ctx,
+            ),
+            patch(
+                "compgraph.enrichment.orchestrator.enrich_posting_pass1",
+                side_effect=_failing_then_succeeding,
+            ),
+            patch("compgraph.enrichment.orchestrator.save_enrichment", mock_save),
+            patch("compgraph.enrichment.orchestrator.get_anthropic_client"),
+            patch("compgraph.enrichment.orchestrator.fetch_unenriched_postings", mock_fetch),
+        ):
+            from compgraph.enrichment.orchestrator import (
+                EnrichmentOrchestrator,
+                EnrichmentRun,
+            )
+
+            orch = EnrichmentOrchestrator(batch_size=10, concurrency=5)
+            run = EnrichmentRun()
+            result = await orch.run_pass1(run)
+
+        # Leader failed (1 call), first follower succeeds via API (1 call),
+        # remaining 2 followers reuse cache — only 2 API calls total
+        assert call_count == 2
+        # 3 followers succeeded (1 via API + 2 via cache), leader failed
+        assert result.succeeded == 3
+        assert result.failed == 1
+        # 3 saves for followers (all 3 succeed)
+        assert mock_save.call_count == 3
+
+    @pytest.mark.asyncio
     async def test_single_posting_no_overhead(self):
         """A single posting should work normally with no grouping overhead."""
         postings = [
@@ -834,3 +892,190 @@ class TestPass2FallbackChain:
         assert mock_enrich.call_count == 2
         assert result.succeeded == 2
         assert result.skipped == 0
+
+
+# ---------------------------------------------------------------------------
+# Pass 2 fallback cache reuse test
+# ---------------------------------------------------------------------------
+
+
+class TestPass2FallbackCacheReuse:
+    """Verify Pass 2 fallback reuses first successful result for remaining followers."""
+
+    @pytest.mark.asyncio
+    async def test_fallback_cache_reuse_skips_api_pass2(self):
+        """After first follower succeeds in Pass 2 fallback, remaining reuse cache."""
+        postings = [
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+        ]
+
+        call_count = 0
+
+        async def _failing_then_succeeding(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise RuntimeError("API error")
+            return _make_pass2_result()
+
+        mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
+        mock_save_mentions = AsyncMock()
+        mock_mark_p2 = AsyncMock()
+        mock_fetch = AsyncMock(side_effect=[postings, []])
+
+        mock_session = AsyncMock()
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "compgraph.enrichment.orchestrator.async_session_factory",
+                return_value=mock_session_ctx,
+            ),
+            patch(
+                "compgraph.enrichment.orchestrator.enrich_posting_pass2",
+                side_effect=_failing_then_succeeding,
+            ),
+            patch("compgraph.enrichment.orchestrator.resolve_entity", mock_resolve),
+            patch("compgraph.enrichment.orchestrator.save_brand_mentions", mock_save_mentions),
+            patch("compgraph.enrichment.orchestrator._mark_pass2_complete", mock_mark_p2),
+            patch("compgraph.enrichment.orchestrator.get_anthropic_client"),
+            patch("compgraph.enrichment.orchestrator.fetch_pass1_complete_postings", mock_fetch),
+        ):
+            from compgraph.enrichment.orchestrator import (
+                EnrichmentOrchestrator,
+                EnrichmentRun,
+            )
+
+            orch = EnrichmentOrchestrator(batch_size=10, concurrency=5)
+            run = EnrichmentRun()
+            run.pass1_result = MagicMock()
+            run.pass1_result.failed = 0
+            run.pass1_result.succeeded = 4
+            result = await orch.run_pass2(run)
+
+        # Leader failed (1 call), first follower succeeds via API (1 call),
+        # remaining 2 followers reuse cache — only 2 API calls total
+        assert call_count == 2
+        # 3 followers succeeded (1 via API + 2 via cache), leader failed
+        assert result.succeeded == 3
+        assert result.failed == 1
+        # All 3 successful followers get brand mentions
+        assert mock_save_mentions.call_count == 3
+        assert mock_mark_p2.call_count == 3
+
+
+# ---------------------------------------------------------------------------
+# Skipped persistence tests
+# ---------------------------------------------------------------------------
+
+
+class TestSkippedPersistence:
+    """Verify that dedup savings (skipped counts) are persisted to DB at finalization."""
+
+    @pytest.mark.asyncio
+    async def test_pass1_persists_skipped_count(self):
+        """Finalization calls update_enrichment_run_record with pass1_skipped."""
+        postings = [
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+            _make_posting(title="Samsung BA", full_text="Visit stores."),
+        ]
+
+        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_save = AsyncMock()
+        mock_fetch = AsyncMock(side_effect=[postings, []])
+        mock_update = AsyncMock()
+
+        mock_session = AsyncMock()
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "compgraph.enrichment.orchestrator.async_session_factory",
+                return_value=mock_session_ctx,
+            ),
+            patch("compgraph.enrichment.orchestrator.enrich_posting_pass1", mock_enrich),
+            patch("compgraph.enrichment.orchestrator.save_enrichment", mock_save),
+            patch("compgraph.enrichment.orchestrator.get_anthropic_client"),
+            patch("compgraph.enrichment.orchestrator.fetch_unenriched_postings", mock_fetch),
+            patch("compgraph.enrichment.orchestrator.update_enrichment_run_record", mock_update),
+            patch("compgraph.enrichment.orchestrator.create_enrichment_run_record", AsyncMock()),
+            patch("compgraph.enrichment.orchestrator.increment_enrichment_counter", AsyncMock()),
+        ):
+            from compgraph.enrichment.orchestrator import (
+                EnrichmentOrchestrator,
+                EnrichmentRun,
+            )
+
+            orch = EnrichmentOrchestrator(batch_size=10, concurrency=5)
+            run = EnrichmentRun()
+            await orch.run_pass1(run)
+
+        # The final update_enrichment_run_record call must include pass1_skipped=2
+        # (3 postings, 1 API call, 2 dedup-saved)
+        mock_update.assert_called_once()
+        call_kwargs = mock_update.call_args.kwargs
+        assert "pass1_skipped" in call_kwargs
+        assert call_kwargs["pass1_skipped"] == 2
+
+    @pytest.mark.asyncio
+    async def test_pass2_persists_skipped_count(self):
+        """Finalization calls update_enrichment_run_record with pass2_skipped."""
+        postings = [
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+            _make_pass2_posting(title="Samsung BA", content_role_specific="Visit stores."),
+        ]
+
+        pass2_result = _make_pass2_result()
+        mock_enrich = AsyncMock(return_value=pass2_result)
+        mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
+        mock_save_mentions = AsyncMock()
+        mock_mark_p2 = AsyncMock()
+        mock_fetch = AsyncMock(side_effect=[postings, []])
+        mock_update = AsyncMock()
+
+        mock_session = AsyncMock()
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "compgraph.enrichment.orchestrator.async_session_factory",
+                return_value=mock_session_ctx,
+            ),
+            patch("compgraph.enrichment.orchestrator.enrich_posting_pass2", mock_enrich),
+            patch("compgraph.enrichment.orchestrator.resolve_entity", mock_resolve),
+            patch("compgraph.enrichment.orchestrator.save_brand_mentions", mock_save_mentions),
+            patch("compgraph.enrichment.orchestrator._mark_pass2_complete", mock_mark_p2),
+            patch("compgraph.enrichment.orchestrator.get_anthropic_client"),
+            patch("compgraph.enrichment.orchestrator.fetch_pass1_complete_postings", mock_fetch),
+            patch("compgraph.enrichment.orchestrator.update_enrichment_run_record", mock_update),
+            patch("compgraph.enrichment.orchestrator.create_enrichment_run_record", AsyncMock()),
+            patch("compgraph.enrichment.orchestrator.increment_enrichment_counter", AsyncMock()),
+        ):
+            from compgraph.enrichment.orchestrator import (
+                EnrichmentOrchestrator,
+                EnrichmentRun,
+            )
+
+            orch = EnrichmentOrchestrator(batch_size=10, concurrency=5)
+            run = EnrichmentRun()
+            run.pass1_result = MagicMock()
+            run.pass1_result.failed = 0
+            run.pass1_result.succeeded = 2
+            await orch.run_pass2(run)
+
+        # The final update_enrichment_run_record call must include pass2_skipped=1
+        # (2 postings, 1 API call, 1 dedup-saved)
+        mock_update.assert_called_once()
+        call_kwargs = mock_update.call_args.kwargs
+        assert "pass2_skipped" in call_kwargs
+        assert call_kwargs["pass2_skipped"] == 1

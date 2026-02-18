@@ -41,8 +41,10 @@ class EnrichCurrentRun(BaseModel):
     started_at: datetime
     pass1_total: int
     pass1_succeeded: int
+    pass1_skipped: int = 0
     pass2_total: int
     pass2_succeeded: int
+    pass2_skipped: int = 0
 
 
 class StageStatus(BaseModel):
@@ -109,8 +111,10 @@ def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
                 started_at=run.started_at,
                 pass1_total=0,
                 pass1_succeeded=p1.succeeded if p1 else 0,
+                pass1_skipped=p1.skipped if p1 else 0,
                 pass2_total=0,
                 pass2_succeeded=p2.succeeded if p2 else 0,
+                pass2_skipped=p2.skipped if p2 else 0,
             ),
         )
 
@@ -133,8 +137,10 @@ def _enrich_stage_from_db(db_run: dict) -> StageStatus:
                 started_at=db_run["started_at"],
                 pass1_total=db_run["pass1_total"],
                 pass1_succeeded=db_run["pass1_succeeded"],
+                pass1_skipped=db_run["pass1_skipped"],
                 pass2_total=db_run["pass2_total"],
                 pass2_succeeded=db_run["pass2_succeeded"],
+                pass2_skipped=db_run["pass2_skipped"],
             ),
         )
 
