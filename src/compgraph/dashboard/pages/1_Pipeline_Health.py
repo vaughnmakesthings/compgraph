@@ -106,6 +106,12 @@ try:
     p4.metric("Pass 1 + 2 (Complete)", breakdown["fully_enriched"])
 except Exception:
     logger.exception("Failed to load enrichment pass breakdown")
+    st.error("Failed to load enrichment pass breakdown. Check server logs for details.")
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Total Active", "—")
+    p2.metric("Unenriched", "—")
+    p3.metric("Pass 1 Only", "—")
+    p4.metric("Pass 1 + 2 (Complete)", "—")
 
 # --- Active enrichment run (best-effort API call) ---
 try:
