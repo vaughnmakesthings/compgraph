@@ -88,6 +88,12 @@ def _scrape_stage_status(run: PipelineRun | None) -> StageStatus:
     )
 
 
+_ENRICH_STATUS_MAP = {
+    EnrichmentStatus.SUCCESS: "completed",
+    EnrichmentStatus.PARTIAL: "completed",
+}
+
+
 def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
     if run.status == EnrichmentStatus.RUNNING:
         p1 = run.pass1_result
@@ -97,7 +103,7 @@ def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
             last_completed_at=None,
             current_run=EnrichCurrentRun(
                 run_id=run.run_id,
-                status=run.status.value,
+                status="running",
                 started_at=run.started_at,
                 pass1_total=0,
                 pass1_succeeded=p1.succeeded if p1 else 0,
@@ -106,8 +112,9 @@ def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
             ),
         )
 
+    normalized = _ENRICH_STATUS_MAP.get(run.status, run.status.value)
     return StageStatus(
-        status=run.status.value,
+        status=normalized,
         last_completed_at=run.finished_at,
         current_run=None,
     )
