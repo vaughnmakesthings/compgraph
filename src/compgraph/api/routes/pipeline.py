@@ -183,8 +183,13 @@ async def pipeline_status(request: Request) -> PipelineStatusResponse:
     if scrape_run is None:
         db_scrape = await get_latest_scrape_run_from_db()
         if db_scrape is not None:
+            # DB uses "pending" for in-progress runs; normalize to "running"
+            # so _derive_system_state correctly detects active scrapes
+            db_status = db_scrape["status"]
+            if db_status == "pending":
+                db_status = "running"
             scrape_stage = StageStatus(
-                status=db_scrape["status"],
+                status=db_status,
                 last_completed_at=db_scrape["finished_at"],
                 current_run=None,
             )

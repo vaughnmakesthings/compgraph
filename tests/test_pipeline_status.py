@@ -183,6 +183,33 @@ class TestPipelineStatusEndpoint:
             assert data["scrape"]["status"] == "completed"
             assert data["system_state"] == "idle"
 
+    def test_db_fallback_pending_scrape_shows_scraping(self, client):
+        """DB 'pending' status should be normalized to 'running' so system_state is 'scraping'."""
+        db_scrape = {
+            "run_id": "00000000-0000-0000-0000-000000000002",
+            "status": "pending",
+            "started_at": datetime.now(UTC),
+            "finished_at": None,
+            "jobs_found": 0,
+            "snapshots_created": 0,
+        }
+        with (
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+                new_callable=AsyncMock,
+                return_value=db_scrape,
+            ),
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_enrichment_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+        ):
+            resp = client.get("/api/pipeline/status")
+            data = resp.json()
+            assert data["scrape"]["status"] == "running"
+            assert data["system_state"] == "scraping"
+
     def test_scraping_takes_priority_over_enriching(self, client):
         from compgraph.enrichment.orchestrator import _store_run as store_enrich
 
