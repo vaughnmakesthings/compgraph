@@ -219,6 +219,13 @@ def get_enrichment_pass_breakdown(session: Session) -> dict:
             PostingEnrichment.posting_id.in_(active_ids),
             PostingEnrichment.enrichment_version.isnot(None),
             ~PostingEnrichment.enrichment_version.contains("pass2"),
+            PostingEnrichment.posting_id.notin_(
+                select(PostingEnrichment.posting_id).where(
+                    PostingEnrichment.posting_id.in_(active_ids),
+                    PostingEnrichment.enrichment_version.isnot(None),
+                    PostingEnrichment.enrichment_version.contains("pass2"),
+                )
+            ),
         )
     ).scalar_one()
 
