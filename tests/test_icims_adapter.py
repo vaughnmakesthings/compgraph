@@ -85,6 +85,15 @@ class TestParseListingPage:
         jobs = parse_listing_page(html)
         assert len(jobs) == 2
 
+    def test_new_layout_extracts_jobs(self) -> None:
+        """New iCIMS layout uses .iCIMS_JobsTable > .row instead of .iCIMS_JobListingRow."""
+        html = (FIXTURES / "icims_listing_new_layout.html").read_text()
+        jobs = parse_listing_page(html)
+        assert len(jobs) == 3
+        assert jobs[0]["job_id"] == "47939"
+        assert jobs[0]["slug"] == "motorola-retail-territory-representative"
+        assert jobs[2]["job_id"] == "47936"
+
 
 class TestHasNextPage:
     def test_has_next_when_present(self) -> None:

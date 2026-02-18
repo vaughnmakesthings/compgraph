@@ -95,7 +95,8 @@ if pipeline is not None:
             st.metric("Postings Found", cr.get("total_postings_found", 0))
             co_done = cr.get("companies_succeeded", 0)
             co_fail = cr.get("companies_failed", 0)
-            st.metric("Companies Done", f"{co_done}/{co_done + co_fail}")
+            co_total = cr.get("total_companies", co_done + co_fail)
+            st.metric("Companies Done", f"{co_done + co_fail}/{co_total}")
         elif scrape["last_completed_at"]:
             try:
                 dt = datetime.fromisoformat(scrape["last_completed_at"])
@@ -227,6 +228,7 @@ except Exception:
     logger.exception("Failed to load freshness data")
 
 # --- Enrichment coverage ---
+st.subheader("Enrichment Coverage")
 try:
     coverage = _load_coverage()
     c1, c2, c3, c4 = st.columns(4)
