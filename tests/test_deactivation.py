@@ -109,8 +109,8 @@ class TestDeactivateStalePostings:
         assert company_id.hex in compiled
 
     def test_grace_period_constant(self) -> None:
-        """Grace period should be 3 runs."""
-        assert GRACE_PERIOD_RUNS == 3
+        """Grace period should be 1 run for fast stale-posting cleanup."""
+        assert GRACE_PERIOD_RUNS == 1
 
 
 class TestScrapeResultPostingsClosed:
