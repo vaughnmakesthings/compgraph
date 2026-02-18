@@ -167,8 +167,8 @@ if results:
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Pay Min": st.column_config.NumberColumn(format="$%.2f"),
-            "Pay Max": st.column_config.NumberColumn(format="$%.2f"),
+            "Pay Min": st.column_config.NumberColumn(format="$%,.2f"),
+            "Pay Max": st.column_config.NumberColumn(format="$%,.2f"),
         },
     )
 
