@@ -29,6 +29,17 @@ render_diagnostics_sidebar()
 API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 
+def _format_elapsed(started_at: str) -> str:
+    """Format an ISO timestamp into a human-readable elapsed string like ' (3m 12s)'."""
+    try:
+        dt = datetime.fromisoformat(started_at)
+        secs = (datetime.now(UTC) - dt).total_seconds()
+        mins = int(secs // 60)
+        return f" ({mins}m {int(secs % 60)}s)"
+    except (ValueError, TypeError):
+        return ""
+
+
 def _api_get(path: str) -> dict[str, Any] | None:
     try:
         resp = requests.get(f"{API_BASE}{path}", timeout=5)
@@ -55,27 +66,11 @@ if pipeline is not None:
         st.success("System Idle")
     elif state == "scraping":
         started = pipeline["scrape"].get("current_run", {}).get("started_at")
-        elapsed = ""
-        if started:
-            try:
-                dt = datetime.fromisoformat(started)
-                secs = (datetime.now(UTC) - dt).total_seconds()
-                mins = int(secs // 60)
-                elapsed = f" ({mins}m {int(secs % 60)}s)"
-            except (ValueError, TypeError):
-                pass
+        elapsed = _format_elapsed(started) if started else ""
         st.info(f"Scraping...{elapsed}")
     elif state == "enriching":
         started = pipeline["enrich"].get("current_run", {}).get("started_at")
-        elapsed = ""
-        if started:
-            try:
-                dt = datetime.fromisoformat(started)
-                secs = (datetime.now(UTC) - dt).total_seconds()
-                mins = int(secs // 60)
-                elapsed = f" ({mins}m {int(secs % 60)}s)"
-            except (ValueError, TypeError):
-                pass
+        elapsed = _format_elapsed(started) if started else ""
         st.info(f"Enriching...{elapsed}")
     elif state == "error":
         st.error("Error — last pipeline run failed")
