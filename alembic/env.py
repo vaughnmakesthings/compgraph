@@ -17,13 +17,13 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    """Get migration connection URL. Uses session mode pooler (IPv4-safe).
-    Direct connection (IPv6-only) is available via database_url_direct if your
-    network supports IPv6."""
     try:
         from compgraph.config import settings
 
-        return settings.database_url
+        env_override = os.environ.get("ALEMBIC_DATABASE_URL")
+        if env_override:
+            return env_override
+        return settings.database_url_direct
     except Exception:
         return os.environ.get("DATABASE_URL", config.get_main_option("sqlalchemy.url", ""))
 
