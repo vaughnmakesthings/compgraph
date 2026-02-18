@@ -499,10 +499,13 @@ def get_role_archetypes(session: Session) -> list[str]:
 @_timed_query
 def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
     """Client brands mentioned in active postings for a company."""
+    from sqlalchemy import case as case
+
+    active_count = func.count(func.distinct(case((Posting.is_active.is_(True), Posting.id))))
     stmt = (
         select(
             func.coalesce(Brand.name, PostingBrandMention.entity_name).label("name"),
-            func.count(func.distinct(Posting.id)).label("active_postings"),
+            active_count.label("active_postings"),
             func.min(Posting.first_seen_at).label("first_seen"),
         )
         .select_from(PostingBrandMention)
@@ -510,11 +513,11 @@ def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
         .outerjoin(Brand, Brand.id == PostingBrandMention.resolved_brand_id)
         .where(
             Posting.company_id == company_id,
-            Posting.is_active.is_(True),
             PostingBrandMention.entity_type == "client_brand",
         )
         .group_by(func.coalesce(Brand.name, PostingBrandMention.entity_name))
-        .order_by(func.count(func.distinct(Posting.id)).desc())
+        .having(active_count > 0)
+        .order_by(active_count.desc())
     )
     rows = session.execute(stmt).all()
     return [
@@ -530,10 +533,13 @@ def get_brand_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
 @_timed_query
 def get_retailer_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
     """Retailers mentioned in active postings for a company."""
+    from sqlalchemy import case as case
+
+    active_count = func.count(func.distinct(case((Posting.is_active.is_(True), Posting.id))))
     stmt = (
         select(
             func.coalesce(Retailer.name, PostingBrandMention.entity_name).label("name"),
-            func.count(func.distinct(Posting.id)).label("active_postings"),
+            active_count.label("active_postings"),
             func.min(Posting.first_seen_at).label("first_seen"),
         )
         .select_from(PostingBrandMention)
@@ -541,11 +547,11 @@ def get_retailer_intel(session: Session, company_id: uuid.UUID) -> list[dict]:
         .outerjoin(Retailer, Retailer.id == PostingBrandMention.resolved_retailer_id)
         .where(
             Posting.company_id == company_id,
-            Posting.is_active.is_(True),
             PostingBrandMention.entity_type == "retailer",
         )
         .group_by(func.coalesce(Retailer.name, PostingBrandMention.entity_name))
-        .order_by(func.count(func.distinct(Posting.id)).desc())
+        .having(active_count > 0)
+        .order_by(active_count.desc())
     )
     rows = session.execute(stmt).all()
     return [
