@@ -7,7 +7,10 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from compgraph.scheduler.app import SCHEDULE_ID
-from compgraph.scheduler.jobs import get_last_pipeline_finished_at, get_last_pipeline_success
+from compgraph.scheduler.jobs import (
+    get_last_pipeline_finished_at,
+    get_last_pipeline_success,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +88,20 @@ async def scheduler_status(request: Request) -> SchedulerStatusResponse:
             logger.exception("Failed to fetch schedules from scheduler")
 
     last_finished = get_last_pipeline_finished_at()
+    last_success = get_last_pipeline_success()
+
+    if last_finished is None:
+        from compgraph.scheduler.jobs import get_last_pipeline_run_from_db
+
+        try:
+            db_result = await get_last_pipeline_run_from_db()
+            db_finished = db_result["finished_at"]
+            if isinstance(db_finished, datetime):
+                last_finished = db_finished
+                last_success = bool(db_result["success"])
+        except Exception:
+            logger.debug("DB fallback for last pipeline run failed", exc_info=True)
+
     missed = False
     if last_finished is not None:
         hours_since = (datetime.now(UTC) - last_finished).total_seconds() / 3600
@@ -96,7 +113,7 @@ async def scheduler_status(request: Request) -> SchedulerStatusResponse:
         enabled=enabled,
         schedules=schedules,
         last_pipeline_finished_at=last_finished,
-        last_pipeline_success=get_last_pipeline_success(),
+        last_pipeline_success=last_success,
         missed_run=missed,
     )
 

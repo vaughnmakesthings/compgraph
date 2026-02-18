@@ -59,6 +59,7 @@ pipeline = _api_get("/api/pipeline/status")
 
 # --- System State Banner ---
 st.title("CompGraph Dashboard")
+st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
 
 if pipeline is not None:
     state = pipeline["system_state"]
@@ -191,14 +192,17 @@ if pipeline is not None:
 st.divider()
 st.subheader("Data Freshness")
 
+is_active = pipeline is not None and pipeline["system_state"] in ("scraping", "enriching")
+_cache_ttl = 5 if is_active else 60
 
-@st.cache_data(ttl=60)
+
+@st.cache_data(ttl=_cache_ttl)
 def _load_freshness() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_last_scrape_timestamps(session))
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=_cache_ttl)
 def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
         return dict(get_enrichment_coverage(session))
@@ -242,8 +246,11 @@ except Exception:
 
 # --- Auto-refresh ---
 st.divider()
-is_active = pipeline is not None and pipeline["system_state"] in ("scraping", "enriching")
-auto_refresh = st.checkbox("Auto-refresh", value=is_active)
+
+if "auto_refresh" not in st.session_state:
+    st.session_state.auto_refresh = is_active
+auto_refresh = st.checkbox("Auto-refresh", key="auto_refresh")
+
 refresh_interval = 5 if is_active else 30
 
 col_refresh, _ = st.columns([1, 3])
@@ -256,3 +263,15 @@ if auto_refresh:
     time.sleep(refresh_interval)
     st.cache_data.clear()
     st.rerun()
+
+
+@st.fragment(run_every=30)
+def _status_monitor() -> None:
+    status = _api_get("/api/pipeline/status")
+    if status is not None and status["system_state"] in ("scraping", "enriching"):
+        if not st.session_state.get("auto_refresh", False):
+            st.session_state.auto_refresh = True
+            st.rerun(scope="app")
+
+
+_status_monitor()

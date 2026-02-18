@@ -154,8 +154,14 @@ def get_latest_pipeline_status(session: Session) -> dict | None:
             failed += 1
             total_errors += 1
 
+    has_incomplete = any(r.completed_at is None for r in rows)
+    if has_incomplete:
+        for slug, status in company_states.items():
+            if status == "pending":
+                company_states[slug] = "running"
+
     statuses = set(company_states.values())
-    if "pending" in statuses:
+    if "pending" in statuses or "running" in statuses:
         overall = "running"
     elif failed == len(rows):
         overall = "failed"

@@ -67,10 +67,17 @@ class TestPipelineStatusEndpoint:
 
         enrich_run = EnrichmentRun(status=EnrichmentStatus.RUNNING)
         store_enrich(enrich_run)
-        with patch(
-            "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
-            new_callable=AsyncMock,
-            return_value=None,
+        with (
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_scrape_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch(
+                "compgraph.api.routes.pipeline.get_latest_enrichment_run_from_db",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
         ):
             resp = client.get("/api/pipeline/status")
             assert resp.status_code == 200

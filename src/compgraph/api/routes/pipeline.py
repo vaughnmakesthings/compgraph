@@ -98,10 +98,23 @@ _ENRICH_STATUS_MAP = {
 }
 
 
-def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
+async def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
     if run.status == EnrichmentStatus.RUNNING:
         p1 = run.pass1_result
         p2 = run.pass2_result
+        pass1_succeeded = p1.succeeded if p1 else 0
+        pass1_skipped = p1.skipped if p1 else 0
+        pass2_succeeded = p2.succeeded if p2 else 0
+        pass2_skipped = p2.skipped if p2 else 0
+
+        pass1_total = 0
+        pass2_total = 0
+
+        if pass1_succeeded == 0 and pass2_succeeded == 0:
+            db_run = await get_latest_enrichment_run_from_db()
+            if db_run is not None and db_run["status"] == "running":
+                return _enrich_stage_from_db(db_run)
+
         return StageStatus(
             status="running",
             last_completed_at=None,
@@ -109,12 +122,12 @@ def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
                 run_id=run.run_id,
                 status="running",
                 started_at=run.started_at,
-                pass1_total=0,
-                pass1_succeeded=p1.succeeded if p1 else 0,
-                pass1_skipped=p1.skipped if p1 else 0,
-                pass2_total=0,
-                pass2_succeeded=p2.succeeded if p2 else 0,
-                pass2_skipped=p2.skipped if p2 else 0,
+                pass1_total=pass1_total,
+                pass1_succeeded=pass1_succeeded,
+                pass1_skipped=pass1_skipped,
+                pass2_total=pass2_total,
+                pass2_succeeded=pass2_succeeded,
+                pass2_skipped=pass2_skipped,
             ),
         )
 
@@ -204,7 +217,7 @@ async def pipeline_status(request: Request) -> PipelineStatusResponse:
 
     enrich_run = get_latest_enrichment_run()
     if enrich_run is not None:
-        enrich_stage = _enrich_stage_from_memory(enrich_run)
+        enrich_stage = await _enrich_stage_from_memory(enrich_run)
     else:
         db_enrich = await get_latest_enrichment_run_from_db()
         if db_enrich is not None:

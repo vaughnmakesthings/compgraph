@@ -37,6 +37,26 @@ def get_last_pipeline_success() -> bool:
     return _last_pipeline_success
 
 
+async def get_last_pipeline_run_from_db() -> dict[str, datetime | bool | None]:
+    from sqlalchemy import select
+
+    from compgraph.db.models import ScrapeRun
+    from compgraph.db.session import async_session_factory
+
+    async with async_session_factory() as session:
+        stmt = (
+            select(ScrapeRun.completed_at, ScrapeRun.status)
+            .where(ScrapeRun.status == "completed")
+            .order_by(ScrapeRun.completed_at.desc())
+            .limit(1)
+        )
+        result = await session.execute(stmt)
+        row = result.first()
+        if row is None:
+            return {"finished_at": None, "success": False}
+        return {"finished_at": row.completed_at, "success": True}
+
+
 async def pipeline_job() -> None:
     global _last_pipeline_finished_at, _last_pipeline_success
 

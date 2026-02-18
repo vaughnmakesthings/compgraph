@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
+import requests as _req
 import streamlit as st
 
 from compgraph.dashboard import configure_logging
@@ -27,35 +29,46 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Pipeline Health", layout="wide")
 st.title("Pipeline Health")
+st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
 
 render_diagnostics_sidebar()
 
+_api_base = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
+_is_active = False
+try:
+    _pipeline_resp = _req.get(f"{_api_base}/api/pipeline/status", timeout=3)
+    if _pipeline_resp.status_code == 200:
+        _is_active = _pipeline_resp.json().get("system_state") in ("scraping", "enriching")
+except Exception:
+    logger.debug("Pipeline status check failed for TTL decision", exc_info=True)
+_cache_ttl = 5 if _is_active else 60
 
-@st.cache_data(ttl=60)
+
+@st.cache_data(ttl=_cache_ttl)
 def _load_scrape_runs() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_recent_scrape_runs(session))
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=_cache_ttl)
 def _load_coverage() -> dict[str, Any]:
     with get_session() as session:
         return dict(get_enrichment_coverage(session))
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=_cache_ttl)
 def _load_pass_breakdown() -> dict[str, Any]:
     with get_session() as session:
         return dict(get_enrichment_pass_breakdown(session))
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=_cache_ttl)
 def _load_errors() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_error_summary(session))
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=_cache_ttl)
 def _load_freshness() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_last_scrape_timestamps(session))
@@ -115,9 +128,6 @@ except Exception:
 
 # --- Active enrichment run (best-effort API call) ---
 try:
-    import requests as _req
-
-    _api_base = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
     _enrich_resp = _req.get(f"{_api_base}/api/enrich/status", timeout=3)
     if _enrich_resp.status_code == 200:
         _enrich_data = _enrich_resp.json()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Pipeline Controls", layout="wide")
 st.title("Pipeline Controls")
+st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
 
 API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
