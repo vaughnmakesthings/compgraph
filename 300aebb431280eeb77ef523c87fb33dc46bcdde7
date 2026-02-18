@@ -1,0 +1,25 @@
+.mcp.json
+  31c8ca5799bee388 2
+CLAUDE.md
+  31c8ca5799bee388 130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "300aebb431280eeb77ef523c87fb33dc46bcdde7",
+  "prompts": {
+    "31c8ca5799bee388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a1464ef-ac2c-43d9-a027-6a19e7a70612",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 16,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
