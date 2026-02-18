@@ -333,7 +333,11 @@ class EnrichmentOrchestrator:
             "pass1_total": result.succeeded + result.failed + result.skipped,
         }
         if finalize:
-            update_fields["status"] = DBStatus.COMPLETED if result.failed == 0 else DBStatus.FAILED
+            update_fields["status"] = (
+                DBStatus.COMPLETED
+                if run.status in (EnrichmentStatus.SUCCESS, EnrichmentStatus.PARTIAL)
+                else DBStatus.FAILED
+            )
             update_fields["finished_at"] = run.finished_at
         else:
             update_fields["status"] = DBStatus.RUNNING
