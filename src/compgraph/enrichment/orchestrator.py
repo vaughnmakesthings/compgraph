@@ -118,6 +118,87 @@ def get_latest_enrichment_run() -> EnrichmentRun | None:
     return max(_runs.values(), key=lambda r: r.started_at)
 
 
+# ---------------------------------------------------------------------------
+# DB persistence (enrichment_runs table) — supplements in-memory state
+# ---------------------------------------------------------------------------
+
+
+async def create_enrichment_run_record(run_id: uuid.UUID) -> None:
+    from compgraph.db.models import EnrichmentRunDB
+    from compgraph.db.models import EnrichmentRunStatus as DBStatus
+
+    async with async_session_factory() as session:
+        db_run = EnrichmentRunDB(
+            id=run_id,
+            status=DBStatus.RUNNING,
+            started_at=datetime.now(UTC),
+        )
+        session.add(db_run)
+        await session.commit()
+
+
+async def increment_enrichment_counter(
+    run_id: uuid.UUID,
+    **counters: int,
+) -> None:
+    from sqlalchemy import func, update
+
+    from compgraph.db.models import EnrichmentRunDB
+
+    values = {k: getattr(EnrichmentRunDB, k) + v for k, v in counters.items() if v != 0}
+    if not values:
+        return
+    values["updated_at"] = func.now()
+    async with async_session_factory() as session:
+        await session.execute(
+            update(EnrichmentRunDB).where(EnrichmentRunDB.id == run_id).values(**values)
+        )
+        await session.commit()
+
+
+async def update_enrichment_run_record(
+    run_id: uuid.UUID,
+    **fields: object,
+) -> None:
+    from sqlalchemy import update
+
+    from compgraph.db.models import EnrichmentRunDB
+
+    async with async_session_factory() as session:
+        await session.execute(
+            update(EnrichmentRunDB).where(EnrichmentRunDB.id == run_id).values(**fields)
+        )
+        await session.commit()
+
+
+async def get_latest_enrichment_run_from_db() -> dict | None:
+    from sqlalchemy import select as sa_select
+
+    from compgraph.db.models import EnrichmentRunDB
+
+    async with async_session_factory() as session:
+        stmt = sa_select(EnrichmentRunDB).order_by(EnrichmentRunDB.started_at.desc()).limit(1)
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return {
+            "run_id": row.id,
+            "status": row.status,
+            "started_at": row.started_at,
+            "finished_at": row.finished_at,
+            "pass1_total": row.pass1_total,
+            "pass1_succeeded": row.pass1_succeeded,
+            "pass1_failed": row.pass1_failed,
+            "pass1_skipped": row.pass1_skipped,
+            "pass2_total": row.pass2_total,
+            "pass2_succeeded": row.pass2_succeeded,
+            "pass2_failed": row.pass2_failed,
+            "pass2_skipped": row.pass2_skipped,
+            "error_summary": row.error_summary,
+        }
+
+
 async def _mark_pass2_complete(
     session: AsyncSession,
     enrichment_id: uuid.UUID,
@@ -160,6 +241,8 @@ class EnrichmentOrchestrator:
         self,
         run: EnrichmentRun,
         company_id: uuid.UUID | None = None,
+        *,
+        finalize: bool = True,
     ) -> EnrichResult:
         """Run Pass 1 enrichment on all unenriched postings.
 
@@ -169,6 +252,7 @@ class EnrichmentOrchestrator:
         postings with identical title+body (e.g., same job in multiple cities).
         """
         run.status = EnrichmentStatus.RUNNING
+        await create_enrichment_run_record(run.run_id)
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
@@ -377,8 +461,10 @@ class EnrichmentOrchestrator:
                     for success, pid in outcomes:
                         if success:
                             result.succeeded += 1
+                            await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
                         else:
                             result.failed += 1
+                            await increment_enrichment_counter(run.run_id, pass1_failed=1)
                             failed_ids.add(pid)
 
                 # Track actual dedup savings (accounts for fallback paths)
@@ -409,6 +495,21 @@ class EnrichmentOrchestrator:
             len(content_cache),
         )
         run.finish(result)
+        from compgraph.db.models import EnrichmentRunStatus as DBStatus
+
+        update_fields: dict[str, object] = {
+            "pass1_total": result.succeeded + result.failed + result.skipped,
+        }
+        if finalize:
+            update_fields["status"] = (
+                DBStatus.COMPLETED
+                if run.status in (EnrichmentStatus.SUCCESS, EnrichmentStatus.PARTIAL)
+                else DBStatus.FAILED
+            )
+            update_fields["finished_at"] = run.finished_at
+        else:
+            update_fields["status"] = DBStatus.RUNNING
+        await update_enrichment_run_record(run.run_id, **update_fields)
         return result
 
     @staticmethod
@@ -453,6 +554,16 @@ class EnrichmentOrchestrator:
         Uses content-based deduplication to avoid redundant LLM calls.
         """
         run.status = EnrichmentStatus.RUNNING
+        from sqlalchemy import select as sa_select
+
+        from compgraph.db.models import EnrichmentRunDB
+
+        async with async_session_factory() as _check_session:
+            _exists = await _check_session.execute(
+                sa_select(EnrichmentRunDB.id).where(EnrichmentRunDB.id == run.run_id)
+            )
+            if _exists.scalar_one_or_none() is None:
+                await create_enrichment_run_record(run.run_id)
         result = EnrichResult()
         semaphore = asyncio.Semaphore(self.concurrency)
         total_processed = 0
@@ -667,8 +778,10 @@ class EnrichmentOrchestrator:
                     for success, pid in outcomes:
                         if success:
                             result.succeeded += 1
+                            await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
                         else:
                             result.failed += 1
+                            await increment_enrichment_counter(run.run_id, pass2_failed=1)
                             failed_ids.add(pid)
 
                 # Track actual dedup savings (accounts for fallback paths)
@@ -698,6 +811,24 @@ class EnrichmentOrchestrator:
             len(content_cache_p2),
         )
         run.finish_pass2(result)
+        from compgraph.db.models import EnrichmentRunStatus as DBStatus
+
+        final_status = (
+            DBStatus.COMPLETED
+            if run.status in (EnrichmentStatus.SUCCESS, EnrichmentStatus.PARTIAL)
+            else DBStatus.FAILED
+        )
+        error_msg = None
+        if run.status == EnrichmentStatus.FAILED:
+            p1_failed = run.pass1_result.failed if run.pass1_result else 0
+            error_msg = f"pass1: {p1_failed}fail, pass2: {result.failed}fail"
+        await update_enrichment_run_record(
+            run.run_id,
+            pass2_total=result.succeeded + result.failed + result.skipped,
+            status=final_status,
+            finished_at=run.finished_at,
+            error_summary=error_msg,
+        )
         return result
 
     async def run_full(
@@ -711,7 +842,7 @@ class EnrichmentOrchestrator:
         """
         from compgraph.enrichment.fingerprint import detect_reposts
 
-        pass1_result = await self.run_pass1(run, company_id=company_id)
+        pass1_result = await self.run_pass1(run, company_id=company_id, finalize=False)
         pass2_result = await self.run_pass2(run, company_id=company_id)
 
         # Run fingerprinting after entity resolution provides brand_slug

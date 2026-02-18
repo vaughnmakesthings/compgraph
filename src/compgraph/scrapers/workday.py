@@ -122,6 +122,7 @@ class WorkdayFetcher:
     circuit_breaker_threshold: int = CIRCUIT_BREAKER_THRESHOLD
     _consecutive_failures: int = field(default=0, init=False, repr=False)
     _circuit_open: bool = field(default=False, init=False, repr=False)
+    pages_fetched: int = field(default=0, init=False, repr=False)
 
     def _record_success(self) -> None:
         self._consecutive_failures = 0
@@ -178,6 +179,7 @@ class WorkdayFetcher:
 
             if not result.postings:
                 break
+            self.pages_fetched += 1
 
             for posting in result.postings:
                 if posting.external_path not in seen_paths:
@@ -359,6 +361,7 @@ class WorkdayAdapter:
                     return result
 
                 result.postings_found = len(search_postings)
+                result.pages_scraped = fetcher.pages_fetched
 
                 external_paths = [p.external_path for p in search_postings]
                 try:

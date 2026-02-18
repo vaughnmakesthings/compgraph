@@ -1,22 +1,22 @@
-"""CompGraph Dashboard — landing page and Streamlit entrypoint."""
+"""CompGraph Dashboard — System Status landing page."""
 
 from __future__ import annotations
 
 import logging
+import os
+import time
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import pandas as pd
+import requests
 import streamlit as st
 
 from compgraph.dashboard import configure_logging
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
-    FRESHNESS_ICONS,
-    freshness_color,
     get_enrichment_coverage,
     get_last_scrape_timestamps,
-    get_per_company_counts,
 )
 
 configure_logging()
@@ -24,22 +24,171 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 
-st.title("CompGraph Dashboard")
-st.caption("Competitive intelligence — pipeline overview")
-
 render_diagnostics_sidebar()
 
-
-@st.cache_data(ttl=60)
-def _load_coverage() -> dict[str, Any]:
-    with get_session() as session:
-        return dict(get_enrichment_coverage(session))
+API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 
-@st.cache_data(ttl=60)
-def _load_company_counts() -> list[dict[str, Any]]:
-    with get_session() as session:
-        return list(get_per_company_counts(session))
+def _format_elapsed(started_at: str) -> str:
+    """Format an ISO timestamp into a human-readable elapsed string like ' (3m 12s)'."""
+    try:
+        dt = datetime.fromisoformat(started_at)
+        secs = (datetime.now(UTC) - dt).total_seconds()
+        mins = int(secs // 60)
+        return f" ({mins}m {int(secs % 60)}s)"
+    except (ValueError, TypeError):
+        return ""
+
+
+def _api_get(path: str) -> dict[str, Any] | None:
+    try:
+        resp = requests.get(f"{API_BASE}{path}", timeout=5)
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        return result
+    except requests.RequestException as exc:
+        logger.warning("API request failed: %s", exc)
+        return None
+
+
+# --- Fetch pipeline status ---
+pipeline = _api_get("/api/pipeline/status")
+
+
+# --- System State Banner ---
+st.title("CompGraph Dashboard")
+
+if pipeline is not None:
+    state = pipeline["system_state"]
+    if state == "idle":
+        st.success("System Idle")
+    elif state == "scraping":
+        started = pipeline["scrape"].get("current_run", {}).get("started_at")
+        elapsed = _format_elapsed(started) if started else ""
+        st.info(f"Scraping...{elapsed}")
+    elif state == "enriching":
+        started = pipeline["enrich"].get("current_run", {}).get("started_at")
+        elapsed = _format_elapsed(started) if started else ""
+        st.info(f"Enriching...{elapsed}")
+    elif state == "error":
+        st.error("Error — last pipeline run failed")
+    else:
+        st.warning(f"Unknown state: {state}")
+else:
+    st.warning("Cannot reach API — status unavailable")
+
+
+# --- Stage Cards ---
+if pipeline is not None:
+    col_scrape, col_enrich = st.columns(2)
+
+    with col_scrape:
+        st.subheader("Scrape")
+        scrape = pipeline["scrape"]
+        scrape_status = scrape["status"]
+
+        if scrape_status == "running" and scrape.get("current_run"):
+            cr = scrape["current_run"]
+            st.markdown("**Status:** :blue[RUNNING]")
+            st.metric("Postings Found", cr.get("total_postings_found", 0))
+            co_done = cr.get("companies_succeeded", 0)
+            co_fail = cr.get("companies_failed", 0)
+            st.metric("Companies Done", f"{co_done}/{co_done + co_fail}")
+        elif scrape["last_completed_at"]:
+            try:
+                dt = datetime.fromisoformat(scrape["last_completed_at"])
+                age = datetime.now(UTC) - dt
+                if age > timedelta(hours=1):
+                    age_str = f"{int(age.total_seconds() // 3600)}h ago"
+                else:
+                    age_str = f"{int(age.total_seconds() // 60)}m ago"
+            except (ValueError, TypeError):
+                age_str = "unknown"
+            is_ok = scrape_status in ("success", "completed")
+            color = "green" if is_ok else "red"
+            st.markdown(f"**Status:** :{color}[{scrape_status.upper()}]")
+            st.caption(f"Completed {age_str}")
+        else:
+            st.markdown("**Status:** :gray[NO RUNS]")
+
+    with col_enrich:
+        st.subheader("Enrichment")
+        enrich = pipeline["enrich"]
+        enrich_status = enrich["status"]
+
+        if enrich_status == "running" and enrich.get("current_run"):
+            cr = enrich["current_run"]
+            st.markdown("**Status:** :blue[RUNNING]")
+            p1_total = cr.get("pass1_total", 0)
+            p1_done = cr.get("pass1_succeeded", 0)
+            p2_total = cr.get("pass2_total", 0)
+            p2_done = cr.get("pass2_succeeded", 0)
+
+            if p1_total > 0:
+                st.progress(min(p1_done / p1_total, 1.0), text=f"Pass 1: {p1_done}/{p1_total}")
+            elif p1_done > 0:
+                st.metric("Pass 1 Processed", p1_done)
+            else:
+                st.caption("Pass 1: starting...")
+
+            if p2_total > 0:
+                st.progress(min(p2_done / p2_total, 1.0), text=f"Pass 2: {p2_done}/{p2_total}")
+            elif p2_done > 0:
+                st.metric("Pass 2 Processed", p2_done)
+        elif enrich["last_completed_at"]:
+            try:
+                dt = datetime.fromisoformat(enrich["last_completed_at"])
+                age = datetime.now(UTC) - dt
+                if age > timedelta(hours=1):
+                    age_str = f"{int(age.total_seconds() // 3600)}h ago"
+                else:
+                    age_str = f"{int(age.total_seconds() // 60)}m ago"
+            except (ValueError, TypeError):
+                age_str = "unknown"
+            is_ok = enrich_status in ("success", "completed")
+            color = "green" if is_ok else "red"
+            st.markdown(f"**Status:** :{color}[{enrich_status.upper()}]")
+            st.caption(f"Completed {age_str}")
+        else:
+            st.markdown("**Status:** :gray[NO RUNS]")
+
+
+# --- Scheduler Row ---
+if pipeline is not None:
+    st.divider()
+    sched = pipeline["scheduler"]
+    sched_col1, sched_col2 = st.columns(2)
+    with sched_col1:
+        if sched["enabled"]:
+            next_run = sched.get("next_run_at")
+            if next_run:
+                st.markdown(f"**Scheduler:** Enabled — next run at `{next_run}`")
+            else:
+                st.markdown("**Scheduler:** Enabled — no upcoming run")
+        else:
+            st.markdown("**Scheduler:** Disabled")
+    with sched_col2:
+        if sched["enabled"]:
+            if st.button("Trigger Now"):
+                trigger_result = _api_get("/api/scheduler/status")
+                if trigger_result and trigger_result.get("schedules"):
+                    schedule_id = trigger_result["schedules"][0]["schedule_id"]
+                    try:
+                        url = f"{API_BASE}/api/scheduler/jobs/{schedule_id}/trigger"
+                        resp = requests.post(url, timeout=10)
+                        if resp.ok:
+                            st.success("Pipeline triggered!")
+                            time.sleep(1)
+                            st.rerun()
+                    except requests.RequestException as exc:
+                        st.error(f"Failed to trigger: {exc}")
+
+
+# --- Data Freshness ---
+st.divider()
+st.subheader("Data Freshness")
 
 
 @st.cache_data(ttl=60)
@@ -48,48 +197,60 @@ def _load_freshness() -> list[dict[str, Any]]:
         return list(get_last_scrape_timestamps(session))
 
 
-# --- Data freshness ---
+@st.cache_data(ttl=60)
+def _load_coverage() -> dict[str, Any]:
+    with get_session() as session:
+        return dict(get_enrichment_coverage(session))
+
+
 try:
     freshness_data = _load_freshness()
-    global_entry = next((e for e in freshness_data if e["slug"] == "__global__"), None)
-    global_ts = global_entry["last_scraped_at"] if global_entry else None
-    color = freshness_color(global_ts)
-    icon = FRESHNESS_ICONS[color]
-    ts_str = global_ts.strftime("%Y-%m-%d %H:%M UTC") if global_ts else "Never"
-    st.markdown(f"{icon} **Data as of:** {ts_str}")
+    company_entries = [e for e in freshness_data if e["slug"] != "__global__"]
+    if company_entries:
+        cols = st.columns(len(company_entries))
+        for col, entry in zip(cols, company_entries, strict=True):
+            ts = entry["last_scraped_at"]
+            if ts is None:
+                icon, ts_str = "\u26aa", "Never"
+            else:
+                age = datetime.now(UTC) - ts
+                if age < timedelta(hours=24):
+                    icon = "\U0001f7e2"  # green circle
+                elif age < timedelta(hours=72):
+                    icon = "\U0001f7e1"  # yellow circle
+                else:
+                    icon = "\U0001f534"  # red circle
+                ts_str = ts.strftime("%Y-%m-%d %H:%M UTC")
+            col.markdown(f"{icon} **{entry['name']}**")
+            col.caption(f"Last scraped: {ts_str}")
 except Exception:
-    logger.exception("Failed to load freshness timestamps")
+    logger.exception("Failed to load freshness data")
 
-# --- Metrics row ---
+# --- Enrichment coverage ---
 try:
     coverage = _load_coverage()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Active", coverage["total_active"])
+    c2.metric("Enriched", coverage["enriched"])
+    c3.metric("With Brands", coverage["with_brands"])
+    c4.metric("Unenriched", coverage["unenriched"])
 except Exception:
     logger.exception("Failed to load enrichment coverage")
-    st.error("Failed to load enrichment coverage. Check server logs for details.")
-    coverage = {"total_active": "—", "enriched": "—", "with_brands": "—", "unenriched": "—"}
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total Active", coverage["total_active"])
-c2.metric("Enriched", coverage["enriched"])
-c3.metric("With Brands", coverage["with_brands"])
-c4.metric("Unenriched", coverage["unenriched"])
 
-# --- Per-company bar chart ---
-st.subheader("Active Postings by Company")
-try:
-    company_data = _load_company_counts()
-except Exception:
-    logger.exception("Failed to load company counts")
-    st.error("Failed to load company counts. Check server logs for details.")
-    company_data = []
+# --- Auto-refresh ---
+st.divider()
+is_active = pipeline is not None and pipeline["system_state"] in ("scraping", "enriching")
+auto_refresh = st.checkbox("Auto-refresh", value=is_active)
+refresh_interval = 5 if is_active else 30
 
-if company_data:
-    df = pd.DataFrame(company_data).set_index("company")
-    st.bar_chart(df["count"])
-else:
-    st.info("No posting data yet. Run the scraper to populate.")
+col_refresh, _ = st.columns([1, 3])
+with col_refresh:
+    if st.button("Refresh Now"):
+        st.cache_data.clear()
+        st.rerun()
 
-# --- Refresh ---
-if st.button("Refresh"):
+if auto_refresh:
+    time.sleep(refresh_interval)
     st.cache_data.clear()
     st.rerun()

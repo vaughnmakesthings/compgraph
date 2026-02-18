@@ -1,3 +1,8 @@
+---
+name: worktree
+description: Set up an isolated git worktree for a GitHub issue with venv and test baseline
+---
+
 # Worktree Setup
 
 Sets up an isolated git worktree for a GitHub issue with venv, dependencies, and test baseline.

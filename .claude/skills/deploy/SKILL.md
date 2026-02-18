@@ -1,3 +1,8 @@
+---
+name: deploy
+description: Deploy current main branch to the Raspberry Pi dev server
+---
+
 # Deploy to Dev Server
 
 Deploys the current main branch to the Raspberry Pi dev server at 192.168.1.69.

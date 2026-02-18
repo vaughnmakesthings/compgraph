@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+import logging
+import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+
+from compgraph.enrichment.orchestrator import (
+    EnrichmentRun,
+    EnrichmentStatus,
+    get_latest_enrichment_run,
+    get_latest_enrichment_run_from_db,
+)
+from compgraph.scrapers.orchestrator import (
+    PipelineRun,
+    PipelineStatus,
+    get_latest_run,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
+
+
+class ScrapeCurrentRun(BaseModel):
+    run_id: uuid.UUID
+    status: str
+    started_at: datetime
+    total_postings_found: int
+    total_snapshots_created: int
+    companies_succeeded: int
+    companies_failed: int
+
+
+class EnrichCurrentRun(BaseModel):
+    run_id: uuid.UUID
+    status: str
+    started_at: datetime
+    pass1_total: int
+    pass1_succeeded: int
+    pass2_total: int
+    pass2_succeeded: int
+
+
+class StageStatus(BaseModel):
+    status: str
+    last_completed_at: datetime | None
+    current_run: ScrapeCurrentRun | EnrichCurrentRun | None
+
+
+class SchedulerSummary(BaseModel):
+    enabled: bool
+    next_run_at: datetime | None
+
+
+class PipelineStatusResponse(BaseModel):
+    system_state: str
+    scrape: StageStatus
+    enrich: StageStatus
+    scheduler: SchedulerSummary
+
+
+def _scrape_stage_status(run: PipelineRun | None) -> StageStatus:
+    if run is None:
+        return StageStatus(status="idle", last_completed_at=None, current_run=None)
+
+    if run.status == PipelineStatus.RUNNING:
+        return StageStatus(
+            status="running",
+            last_completed_at=None,
+            current_run=ScrapeCurrentRun(
+                run_id=run.run_id,
+                status=run.status.value,
+                started_at=run.started_at,
+                total_postings_found=run.total_postings_found,
+                total_snapshots_created=run.total_snapshots_created,
+                companies_succeeded=run.companies_succeeded,
+                companies_failed=run.companies_failed,
+            ),
+        )
+
+    return StageStatus(
+        status=run.status.value,
+        last_completed_at=run.finished_at,
+        current_run=None,
+    )
+
+
+_ENRICH_STATUS_MAP = {
+    EnrichmentStatus.SUCCESS: "completed",
+    EnrichmentStatus.PARTIAL: "completed",
+}
+
+
+def _enrich_stage_from_memory(run: EnrichmentRun) -> StageStatus:
+    if run.status == EnrichmentStatus.RUNNING:
+        p1 = run.pass1_result
+        p2 = run.pass2_result
+        return StageStatus(
+            status="running",
+            last_completed_at=None,
+            current_run=EnrichCurrentRun(
+                run_id=run.run_id,
+                status="running",
+                started_at=run.started_at,
+                pass1_total=0,
+                pass1_succeeded=p1.succeeded if p1 else 0,
+                pass2_total=0,
+                pass2_succeeded=p2.succeeded if p2 else 0,
+            ),
+        )
+
+    normalized = _ENRICH_STATUS_MAP.get(run.status, run.status.value)
+    return StageStatus(
+        status=normalized,
+        last_completed_at=run.finished_at,
+        current_run=None,
+    )
+
+
+def _enrich_stage_from_db(db_run: dict) -> StageStatus:
+    if db_run["status"] == "running":
+        return StageStatus(
+            status="running",
+            last_completed_at=None,
+            current_run=EnrichCurrentRun(
+                run_id=db_run["run_id"],
+                status=db_run["status"],
+                started_at=db_run["started_at"],
+                pass1_total=db_run["pass1_total"],
+                pass1_succeeded=db_run["pass1_succeeded"],
+                pass2_total=db_run["pass2_total"],
+                pass2_succeeded=db_run["pass2_succeeded"],
+            ),
+        )
+
+    return StageStatus(
+        status=db_run["status"],
+        last_completed_at=db_run["finished_at"],
+        current_run=None,
+    )
+
+
+def _derive_system_state(scrape: StageStatus, enrich: StageStatus) -> str:
+    if scrape.status == "running":
+        return "scraping"
+    if enrich.status == "running":
+        return "enriching"
+    if scrape.status == "failed" or enrich.status == "failed":
+        return "error"
+    return "idle"
+
+
+async def get_latest_scrape_run_from_db() -> dict | None:
+    from sqlalchemy import select
+
+    from compgraph.db.models import ScrapeRun
+    from compgraph.db.session import async_session_factory
+
+    async with async_session_factory() as session:
+        stmt = select(ScrapeRun).order_by(ScrapeRun.started_at.desc()).limit(1)
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return {
+            "run_id": row.id,
+            "status": row.status,
+            "started_at": row.started_at,
+            "finished_at": row.completed_at,
+            "jobs_found": row.jobs_found,
+            "snapshots_created": row.snapshots_created,
+        }
+
+
+@router.get("/status", response_model=PipelineStatusResponse)
+async def pipeline_status(request: Request) -> PipelineStatusResponse:
+    scrape_run = get_latest_run()
+    scrape_stage = _scrape_stage_status(scrape_run)
+
+    if scrape_run is None:
+        db_scrape = await get_latest_scrape_run_from_db()
+        if db_scrape is not None:
+            # DB uses "pending" for in-progress runs; normalize to "running"
+            # so _derive_system_state correctly detects active scrapes
+            db_status = db_scrape["status"]
+            if db_status == "pending":
+                db_status = "running"
+            scrape_stage = StageStatus(
+                status=db_status,
+                last_completed_at=db_scrape["finished_at"],
+                current_run=None,
+            )
+
+    enrich_run = get_latest_enrichment_run()
+    if enrich_run is not None:
+        enrich_stage = _enrich_stage_from_memory(enrich_run)
+    else:
+        db_enrich = await get_latest_enrichment_run_from_db()
+        if db_enrich is not None:
+            enrich_stage = _enrich_stage_from_db(db_enrich)
+        else:
+            enrich_stage = StageStatus(status="idle", last_completed_at=None, current_run=None)
+
+    scheduler = getattr(request.app.state, "scheduler", None)
+    enabled = scheduler is not None
+    next_run: datetime | None = None
+    if enabled and scheduler is not None:
+        try:
+            schedules = await scheduler.get_schedules()
+            if schedules and not schedules[0].paused:
+                next_run = schedules[0].next_fire_time
+        except Exception:
+            logger.debug("Failed to fetch scheduler schedules", exc_info=True)
+
+    return PipelineStatusResponse(
+        system_state=_derive_system_state(scrape_stage, enrich_stage),
+        scrape=scrape_stage,
+        enrich=enrich_stage,
+        scheduler=SchedulerSummary(enabled=enabled, next_run_at=next_run),
+    )

@@ -58,6 +58,9 @@ op run --env-file=.env -- uv run streamlit run src/compgraph/dashboard/main.py  
 - **anthropic** — AsyncAnthropic client for LLM enrichment (Haiku + Sonnet)
 - **rapidfuzz** — fuzzy string matching for entity resolution
 - **python-slugify** — slug generation for brand/retailer matching
+- **httpx** + **beautifulsoup4** — HTTP client + HTML parsing for scrapers
+- **streamlit** + **pandas** — dashboard UI at `:8501`
+- **apscheduler** (v4 alpha) — scheduled pipeline jobs
 
 ## Architecture
 
@@ -68,6 +71,8 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - **Scrape**: 4 adapters (iCIMS×2, Workday CXS×2). Each isolated — one failing doesn't block others. Output: `postings` + `posting_snapshots` (append-only).
 - **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
 - **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert.
+- **Scheduler**: APScheduler v4 cron jobs trigger scrape→enrich→aggregate pipeline. Config in `src/compgraph/scheduler/`.
+- **Dashboard**: Streamlit multi-page app — Pipeline Health, Posting Explorer, Pipeline Controls, Scheduler. Source in `src/compgraph/dashboard/`.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
 ### Database Schema (13 tables)
@@ -213,8 +218,28 @@ Project-level agents in `.claude/agents/` have deep CompGraph context:
 - `code-reviewer` — quality gate (plan alignment, async patterns, append-only rules)
 - `pytest-validator` — test audit (hollow assertions, DB isolation)
 - `spec-reviewer` — scope gate (goal achievement vs product spec)
+- `database-optimizer` — query/index/schema optimization
+- `python-pro` — Python 3.12+ async patterns and idioms
+- `dx-optimizer` — developer experience and tooling improvements
+- `enrichment-monitor` — enrichment pipeline health checks
+- `agent-organizer` — multi-agent orchestration and delegation
 
 Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
+
+## Skills
+
+Custom skills in `.claude/skills/` (invoke via `/skillname`):
+- `/commit` — lint, test, diff review, commit, push
+- `/pr` — create PR with validation and CI awareness
+- `/deploy` — deploy main to Raspberry Pi dev server
+- `/merge-guardian` — enforce CI pass + review before merge
+- `/pr-feedback-cycle` — triage and resolve bot review comments
+- `/research` — structured codebase/web research with scope boundaries
+- `/worktree` — isolated git worktree for issue work
+- `/parallel-pipeline` — decompose issue into parallel agent subtasks
+- `/cleanup` — clean up merged branches and worktrees
+- `/enrich-status` — check enrichment pipeline status on dev server
+- `/migrate` — generate/run Alembic migrations
 
 ## Code Standards
 

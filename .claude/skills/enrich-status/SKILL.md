@@ -1,3 +1,8 @@
+---
+name: enrich-status
+description: Check enrichment pipeline status on the dev server
+---
+
 # Enrichment Status
 
 Checks the current enrichment pipeline status on the dev server.

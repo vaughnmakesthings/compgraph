@@ -1,3 +1,8 @@
+---
+name: pr
+description: Create a pull request with validation, CI awareness, and issue linking
+---
+
 # PR Creation
 
 Creates a pull request with validation, CI awareness, and issue linking.

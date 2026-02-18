@@ -109,6 +109,51 @@ class ScrapeRun(Base):
     __table_args__ = (Index("ix_scrape_runs_company_started", "company_id", started_at.desc()),)
 
 
+class EnrichmentRunStatus(enum.StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class EnrichmentRunDB(Base):
+    __tablename__ = "enrichment_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=EnrichmentRunStatus.PENDING
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pass1_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    pass1_succeeded: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    pass1_failed: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    pass1_skipped: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    pass2_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    pass2_succeeded: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    pass2_failed: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    pass2_skipped: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (Index("ix_enrichment_runs_status_started", "status", started_at.desc()),)
+
+
 class Posting(Base):
     __tablename__ = "postings"
 

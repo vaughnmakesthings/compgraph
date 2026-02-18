@@ -11,6 +11,9 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from compgraph.dashboard.db import get_session
+from compgraph.dashboard.queries import get_latest_pipeline_status
+
 logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Pipeline Controls", layout="wide")
@@ -31,11 +34,11 @@ STATUS_COLORS: dict[str, str] = {
 }
 
 COMPANY_STATE_ICONS: dict[str, str] = {
-    "pending": ":hourglass_flowing_sand:",
-    "running": ":runner:",
-    "completed": ":white_check_mark:",
-    "failed": ":x:",
-    "skipped": ":next_track_button:",
+    "pending": "\u23f3",
+    "running": "\U0001f3c3",
+    "completed": "\u2705",
+    "failed": "\u274c",
+    "skipped": "\u23ed\ufe0f",
 }
 
 
@@ -65,8 +68,9 @@ def _api_post(path: str) -> dict[str, Any] | None:
         return None
 
 
-# --- Fetch current status ---
-status_data = _api_get("/api/scrape/status")
+# --- Fetch current status from DB (works for both API and scheduler triggers) ---
+with get_session() as _db_session:
+    status_data = get_latest_pipeline_status(_db_session)
 
 if status_data is None:
     st.info("No pipeline runs found. Start a scrape to begin.")

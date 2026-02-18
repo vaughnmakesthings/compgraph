@@ -1,3 +1,8 @@
+---
+name: commit
+description: End-of-task ceremony — lint, test, diff review, commit, push
+---
+
 # Commit
 
 Bundles end-of-task ceremony: lint, test, diff review, commit, push. Prevents the pattern of scattered git operations across a session.

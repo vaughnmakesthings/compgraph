@@ -1,3 +1,8 @@
+---
+name: merge-guardian
+description: Review PR merge readiness — enforce all checks pass, then merge with cleanup
+---
+
 # Merge Guardian
 
 Reviews a PR for merge readiness. Enforces that ALL checks pass before allowing merge. Handles post-merge cleanup.
