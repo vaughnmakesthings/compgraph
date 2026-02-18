@@ -234,6 +234,8 @@ class EnrichmentOrchestrator:
         self,
         run: EnrichmentRun,
         company_id: uuid.UUID | None = None,
+        *,
+        finalize: bool = True,
     ) -> EnrichResult:
         """Run Pass 1 enrichment on all unenriched postings.
 
@@ -325,11 +327,17 @@ class EnrichmentOrchestrator:
                     break
 
         run.finish(result)
-        await update_enrichment_run_record(
-            run.run_id,
-            pass1_total=result.succeeded + result.failed + result.skipped,
-            status="running",
-        )
+        from compgraph.db.models import EnrichmentRunStatus as DBStatus
+
+        update_fields: dict[str, object] = {
+            "pass1_total": result.succeeded + result.failed + result.skipped,
+        }
+        if finalize:
+            update_fields["status"] = DBStatus.COMPLETED if result.failed == 0 else DBStatus.FAILED
+            update_fields["finished_at"] = run.finished_at
+        else:
+            update_fields["status"] = DBStatus.RUNNING
+        await update_enrichment_run_record(run.run_id, **update_fields)
         return result
 
     async def run_pass2(
@@ -487,7 +495,7 @@ class EnrichmentOrchestrator:
         """
         from compgraph.enrichment.fingerprint import detect_reposts
 
-        pass1_result = await self.run_pass1(run, company_id=company_id)
+        pass1_result = await self.run_pass1(run, company_id=company_id, finalize=False)
         pass2_result = await self.run_pass2(run, company_id=company_id)
 
         # Run fingerprinting after entity resolution provides brand_slug
