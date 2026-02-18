@@ -923,3 +923,85 @@ class TestICIMSAdapter:
         # Both URLs failed — errors should be reported
         assert len(result.errors) == 2
         assert not result.success
+
+
+class TestValidateRedirectDomain:
+    def test_no_redirects_passes(self) -> None:
+        from compgraph.scrapers.icims import _validate_redirect_domain
+
+        response = httpx.Response(
+            200,
+            request=httpx.Request("GET", "https://careers-bds.icims.com/jobs/search"),
+        )
+        _validate_redirect_domain(response, "https://careers-bds.icims.com/jobs/search")
+
+    def test_same_domain_redirect_passes(self) -> None:
+        from compgraph.scrapers.icims import _validate_redirect_domain
+
+        redirect_resp = httpx.Response(
+            301,
+            request=httpx.Request("GET", "https://careers-bds.icims.com/jobs/search"),
+            headers={"Location": "https://careers-bds.icims.com/jobs/search?pr=0"},
+        )
+        final_resp = httpx.Response(
+            200,
+            request=httpx.Request("GET", "https://careers-bds.icims.com/jobs/search?pr=0"),
+            history=[redirect_resp],
+        )
+        _validate_redirect_domain(final_resp, "https://careers-bds.icims.com/jobs/search")
+
+    def test_different_domain_raises(self) -> None:
+        from compgraph.scrapers.icims import _validate_redirect_domain
+
+        redirect_resp = httpx.Response(
+            301,
+            request=httpx.Request("GET", "https://careers.advantagesolutions.net/jobs/search"),
+            headers={"Location": "https://careers.youradv.com/"},
+        )
+        final_resp = httpx.Response(
+            200,
+            request=httpx.Request("GET", "https://careers.youradv.com/"),
+            history=[redirect_resp],
+        )
+        with pytest.raises(ValueError, match="unexpected domain"):
+            _validate_redirect_domain(
+                final_resp, "https://careers.advantagesolutions.net/jobs/search"
+            )
+
+    def test_error_message_includes_chain(self) -> None:
+        from compgraph.scrapers.icims import _validate_redirect_domain
+
+        hop1 = httpx.Response(
+            301,
+            request=httpx.Request("GET", "https://old.example.com/a"),
+            headers={"Location": "https://mid.example.com/b"},
+        )
+        hop2 = httpx.Response(
+            302,
+            request=httpx.Request("GET", "https://mid.example.com/b"),
+            headers={"Location": "https://new.example.com/c"},
+        )
+        final = httpx.Response(
+            200,
+            request=httpx.Request("GET", "https://new.example.com/c"),
+            history=[hop1, hop2],
+        )
+        with pytest.raises(
+            ValueError, match=r"old\.example\.com.*mid\.example\.com.*new\.example\.com"
+        ):
+            _validate_redirect_domain(final, "https://old.example.com/a")
+
+    def test_port_stripped_for_comparison(self) -> None:
+        from compgraph.scrapers.icims import _validate_redirect_domain
+
+        redirect_resp = httpx.Response(
+            301,
+            request=httpx.Request("GET", "https://careers-bds.icims.com:443/jobs"),
+            headers={"Location": "https://careers-bds.icims.com/jobs"},
+        )
+        final_resp = httpx.Response(
+            200,
+            request=httpx.Request("GET", "https://careers-bds.icims.com/jobs"),
+            history=[redirect_resp],
+        )
+        _validate_redirect_domain(final_resp, "https://careers-bds.icims.com:443/jobs")
