@@ -10,6 +10,8 @@ MIGRATION_CHAIN = [
     ("aa88b1c2d3e4", "f8a9b0c1d2e3"),
     ("bb47c2d3e4f5", "aa88b1c2d3e4"),
     ("cc45d3e4f5a6", "bb47c2d3e4f5"),
+    ("dd56e4f5a6b7", "cc45d3e4f5a6"),
+    ("ee67f5a6b7c8", "dd56e4f5a6b7"),
 ]
 
 VERSIONS_DIR = pathlib.Path(__file__).parent.parent / "alembic" / "versions"
@@ -46,3 +48,34 @@ def test_fk_indexes_cover_critical_columns() -> None:
     index_specs = {(t, tuple(c)) for _, t, c in mod.FK_INDEXES}
     assert ("posting_enrichments", ("posting_id",)) in index_specs
     assert ("posting_brand_mentions", ("posting_id",)) in index_specs
+
+
+def test_osl_migration_has_correct_config() -> None:
+    """Verify OSL company migration has correct iCIMS multi-portal config."""
+    import inspect
+    import textwrap
+
+    mod = _load_migration("ee67f5a6b7c8")
+    assert mod.revision == "ee67f5a6b7c8"
+    assert mod.down_revision == "dd56e4f5a6b7"
+
+    # Check upgrade contains the key config values
+    source = textwrap.dedent(inspect.getsource(mod.upgrade))
+    assert "'osl'" in source
+    assert "'icims'" in source
+    assert "uscareers-oslrs.icims.com" in source
+    assert "canadaengcareers-oslrs.icims.com" in source
+    assert "search_urls" in source
+    assert "ON CONFLICT" in source
+
+    # Check downgrade cascades through all dependent tables
+    down_source = textwrap.dedent(inspect.getsource(mod.downgrade))
+    for table in [
+        "posting_brand_mentions",
+        "posting_enrichments",
+        "posting_snapshots",
+        "postings",
+        "scrape_runs",
+        "companies",
+    ]:
+        assert table in down_source, f"downgrade missing cleanup for {table}"
