@@ -1,0 +1,23 @@
+src/compgraph/scrapers/icims.py
+  5e70ab9c98b1a285 80,84-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f9a91009f53aa56d10447fd4afdeba90023004aa",
+  "prompts": {
+    "5e70ab9c98b1a285": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ba4b403e-5d5c-44ae-9198-6a9918265ed2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 6,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
