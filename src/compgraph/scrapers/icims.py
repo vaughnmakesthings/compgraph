@@ -69,11 +69,23 @@ def parse_listing_page(html: str) -> list[dict[str, str]]:
 
 def has_next_page(html: str) -> bool:
     soup = BeautifulSoup(html, "html.parser")
+    # Legacy: exact "Next" text
     next_link = soup.find("a", string=re.compile(r"^\s*Next\s*$", re.IGNORECASE))  # type: ignore[call-overload]
     if next_link:
         return True
+    # Legacy: class or title-based selectors
     next_link = soup.select_one('a.iCIMS_PagingNext, a[title="Next"]')
-    return next_link is not None
+    if next_link:
+        return True
+    # Modern iCIMS: "Next page of results" inside sr-only span within paging div
+    paging = soup.select_one(".iCIMS_Paging")
+    if paging:
+        for a in paging.find_all("a"):
+            if "next" in a.get_text(strip=True).lower():
+                # Ensure it's not the invisible "previous" link
+                if "invisible" not in (a.get("class") or []):
+                    return True
+    return False
 
 
 def parse_json_ld(html: str) -> dict[str, str | int | None] | None:

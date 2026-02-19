@@ -149,6 +149,58 @@ class TestHasNextPage:
         )
         assert has_next_page(html) is False
 
+    def test_modern_icims_paging_with_sr_only_next(self) -> None:
+        """Modern iCIMS uses 'Next page of results' in sr-only span."""
+        html = """
+        <html><body>
+        <div class="iCIMS_Paging text-center">
+            <a class="invisible" href="/jobs/search?pr=0">
+                <span class="sr-only">First page of results</span>
+            </a>
+            <a class="glyph invisible" href="/jobs/search?pr=0">
+                <span class="sr-only">Previous page of results</span>
+            </a>
+            <div class="iCIMS_PagingBatch">
+                <a class="selected" href="/jobs/search?pr=0">1</a>
+                <a href="/jobs/search?pr=1">2</a>
+            </div>
+            <a class="glyph" href="/jobs/search?pr=1">
+                <span class="sr-only">Next page of results</span>
+            </a>
+            <a href="/jobs/search?pr=39">
+                <span class="sr-only">Last page of results</span>
+            </a>
+        </div>
+        </body></html>
+        """
+        assert has_next_page(html) is True
+
+    def test_modern_icims_last_page_no_next(self) -> None:
+        """On last page, Next link gets 'invisible' class."""
+        html = """
+        <html><body>
+        <div class="iCIMS_Paging text-center">
+            <a href="/jobs/search?pr=0">
+                <span class="sr-only">First page of results</span>
+            </a>
+            <a class="glyph" href="/jobs/search?pr=38">
+                <span class="sr-only">Previous page of results</span>
+            </a>
+            <div class="iCIMS_PagingBatch">
+                <a href="/jobs/search?pr=38">39</a>
+                <a class="selected" href="/jobs/search?pr=39">40</a>
+            </div>
+            <a class="glyph invisible" href="/jobs/search?pr=39">
+                <span class="sr-only">Next page of results</span>
+            </a>
+            <a class="invisible" href="/jobs/search?pr=39">
+                <span class="sr-only">Last page of results</span>
+            </a>
+        </div>
+        </body></html>
+        """
+        assert has_next_page(html) is False
+
 
 class TestParseHtmlFallback:
     def test_extracts_basic_fields(self) -> None:
