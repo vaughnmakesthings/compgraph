@@ -1,0 +1,31 @@
+src/compgraph/dashboard/queries.py
+  61a5868297899bc2 225-226,232
+src/compgraph/api/routes/enrich.py
+  61a5868297899bc2 77-79,86-88
+src/compgraph/dashboard/main.py
+  61a5868297899bc2 43,163
+src/compgraph/enrichment/retry.py
+  61a5868297899bc2 107
+src/compgraph/dashboard/pages/1_Pipeline_Health.py
+  61a5868297899bc2 13,35-36,38,126-127,133,144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "cc8c0d378c0e70ef21403d2ea68b7f4d287f9e5e",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 40,
+      "total_deletions": 40,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
