@@ -1,0 +1,23 @@
+docs/references/osl-careers-research.md
+  abf33c4be60510f6 85-96,101-102,104,128,130-133,137-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "84dc9fd235a8c59cfc60be31976bc384779e9ae3",
+  "prompts": {
+    "abf33c4be60510f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7782f122-43e0-46b1-a8fd-76d91b768dd1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 25,
+      "total_deletions": 8,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
