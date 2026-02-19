@@ -1,0 +1,23 @@
+docs/plans/2026-02-19-llm-eval-tool-design.md
+  abf33c4be60510f6 1-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "167ffedefa03a59d97fe8e59751c5395e89fdfc5",
+  "prompts": {
+    "abf33c4be60510f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7782f122-43e0-46b1-a8fd-76d91b768dd1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 187,
+      "total_deletions": 0,
+      "accepted_lines": 187,
+      "overriden_lines": 0
+    }
+  }
+}
