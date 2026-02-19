@@ -73,11 +73,9 @@ class TestFuzzyThresholds:
     def test_thresholds_defined(self):
         from compgraph.enrichment.resolver import (
             AUTO_ACCEPT_THRESHOLD,
-            EXACT_THRESHOLD,
             REVIEW_THRESHOLD,
         )
 
-        assert EXACT_THRESHOLD == 100
         assert AUTO_ACCEPT_THRESHOLD == 85
         assert REVIEW_THRESHOLD == 70
         assert AUTO_ACCEPT_THRESHOLD > REVIEW_THRESHOLD

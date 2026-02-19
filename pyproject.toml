@@ -86,6 +86,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "--cov=compgraph --cov-report=term-missing --cov-fail-under=50"
 markers = [
     "integration: requires live database connection",

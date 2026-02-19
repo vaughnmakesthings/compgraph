@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from helpers import make_mock_client as _make_mock_client
+from helpers import make_mock_response as _make_mock_response
 
 from compgraph.enrichment.pass1 import enrich_posting_pass1
 from compgraph.enrichment.prompts import (
@@ -79,23 +80,6 @@ SAMPLE_MANAGER_RESPONSE = {
     "kpis_mentioned": ["team retention", "territory coverage"],
     "store_count": None,
 }
-
-
-def _make_mock_response(data: dict, stop_reason: str = "end_turn") -> MagicMock:
-    """Create a mock Anthropic API response."""
-    content_block = MagicMock()
-    content_block.text = json.dumps(data)
-    response = MagicMock()
-    response.content = [content_block]
-    response.stop_reason = stop_reason
-    return response
-
-
-def _make_mock_client(response_data: dict, stop_reason: str = "end_turn") -> AsyncMock:
-    """Create a mock AsyncAnthropic client."""
-    client = AsyncMock()
-    client.messages.create = AsyncMock(return_value=_make_mock_response(response_data, stop_reason))
-    return client
 
 
 # ---------------------------------------------------------------------------
@@ -276,7 +260,7 @@ class TestEnrichPostingPass1:
             ]
         )
 
-        with patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock):
+        with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
             result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
         assert result.role_archetype == "field_rep"
@@ -296,7 +280,7 @@ class TestEnrichPostingPass1:
         client.messages.create = AsyncMock(side_effect=rate_limit_error)
 
         with (
-            patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
             pytest.raises(anthropic.RateLimitError),
         ):
             await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
@@ -321,7 +305,7 @@ class TestEnrichPostingPass1:
             ]
         )
 
-        with patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock):
+        with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
             result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
         assert result.role_archetype == "field_rep"
@@ -342,7 +326,7 @@ class TestEnrichPostingPass1:
             client.messages.create = AsyncMock(side_effect=api_error)
 
             with (
-                patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock),
+                patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
                 pytest.raises(anthropic.APIStatusError),
             ):
                 await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
@@ -364,7 +348,7 @@ class TestEnrichPostingPass1:
         client.messages.create = AsyncMock(side_effect=api_error)
 
         with (
-            patch("compgraph.enrichment.pass1._retry_sleep", new_callable=AsyncMock),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
             pytest.raises(anthropic.APIStatusError),
         ):
             await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")

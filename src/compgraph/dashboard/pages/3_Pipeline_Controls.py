@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 from datetime import UTC, datetime
-from typing import Any
 
 import pandas as pd
-import requests
 import streamlit as st
 
+from compgraph.dashboard.api import api_post
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.queries import get_latest_pipeline_status
 
@@ -20,8 +18,6 @@ logger = logging.getLogger(__name__)
 st.set_page_config(page_title="Pipeline Controls", layout="wide")
 st.title("Pipeline Controls")
 st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
-
-API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 # --- Status color mapping ---
 STATUS_COLORS: dict[str, str] = {
@@ -42,32 +38,6 @@ COMPANY_STATE_ICONS: dict[str, str] = {
     "failed": "\u274c",
     "skipped": "\u23ed\ufe0f",
 }
-
-
-def _api_get(path: str) -> dict[str, Any] | None:
-    """GET from FastAPI, return JSON or None on error."""
-    try:
-        resp = requests.get(f"{API_BASE}{path}", timeout=5)
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
-    except requests.RequestException as exc:
-        st.error(f"API error: {exc}")
-        return None
-
-
-def _api_post(path: str) -> dict[str, Any] | None:
-    """POST to FastAPI, return JSON or None on error."""
-    try:
-        resp = requests.post(f"{API_BASE}{path}", timeout=10)
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
-    except requests.RequestException as exc:
-        st.error(f"API error: {exc}")
-        return None
 
 
 # --- Fetch current status from DB (works for both API and scheduler triggers) ---
@@ -126,7 +96,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     if st.button("Start Scrape", disabled=not is_terminal, type="primary"):
-        result = _api_post("/api/scrape/trigger")
+        result = api_post("/api/scrape/trigger")
         if result:
             st.success(f"Started run {result['run_id'][:8]}...")
             time.sleep(0.5)
@@ -135,14 +105,14 @@ with col1:
 with col2:
     if pipeline_status == "running":
         if st.button("Pause"):
-            result = _api_post("/api/scrape/pause")
+            result = api_post("/api/scrape/pause")
             if result:
                 st.info(result["message"])
                 time.sleep(0.5)
                 st.rerun()
     elif pipeline_status == "paused":
         if st.button("Resume"):
-            result = _api_post("/api/scrape/resume")
+            result = api_post("/api/scrape/resume")
             if result:
                 st.info(result["message"])
                 time.sleep(0.5)
@@ -150,7 +120,7 @@ with col2:
 
 with col3:
     if st.button("Stop", disabled=pipeline_status not in ("running", "paused")):
-        result = _api_post("/api/scrape/stop")
+        result = api_post("/api/scrape/stop")
         if result:
             st.warning(result["message"])
             time.sleep(0.5)
@@ -161,7 +131,7 @@ with col4:
         "Force Stop",
         disabled=pipeline_status not in ("running", "paused", "stopping"),
     ):
-        result = _api_post("/api/scrape/force-stop")
+        result = api_post("/api/scrape/force-stop")
         if result:
             st.error(result["message"])
             time.sleep(0.5)

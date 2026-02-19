@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from helpers import make_mock_client as _make_mock_client
+from helpers import make_mock_response as _make_mock_response
 
 from compgraph.enrichment.pass2 import enrich_posting_pass2
 from compgraph.enrichment.prompts import (
@@ -51,21 +52,6 @@ SAMPLE_AMBIGUOUS_ENTITY = {
         },
     ]
 }
-
-
-def _make_mock_response(data: dict, stop_reason: str = "end_turn") -> MagicMock:
-    content_block = MagicMock()
-    content_block.text = json.dumps(data)
-    response = MagicMock()
-    response.content = [content_block]
-    response.stop_reason = stop_reason
-    return response
-
-
-def _make_mock_client(response_data: dict) -> AsyncMock:
-    client = AsyncMock()
-    client.messages.create = AsyncMock(return_value=_make_mock_response(response_data))
-    return client
 
 
 # ---------------------------------------------------------------------------
@@ -220,7 +206,7 @@ class TestEnrichPostingPass2:
             ]
         )
 
-        with patch("compgraph.enrichment.pass2._retry_sleep", new_callable=AsyncMock):
+        with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
             result = await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
 
         assert len(result.entities) == 3
@@ -241,7 +227,7 @@ class TestEnrichPostingPass2:
             client.messages.create = AsyncMock(side_effect=api_error)
 
             with (
-                patch("compgraph.enrichment.pass2._retry_sleep", new_callable=AsyncMock),
+                patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
                 pytest.raises(anthropic.APIStatusError),
             ):
                 await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
@@ -262,7 +248,7 @@ class TestEnrichPostingPass2:
         client.messages.create = AsyncMock(side_effect=api_error)
 
         with (
-            patch("compgraph.enrichment.pass2._retry_sleep", new_callable=AsyncMock),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
             pytest.raises(anthropic.APIStatusError),
         ):
             await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")

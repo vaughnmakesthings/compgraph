@@ -188,22 +188,32 @@ def get_latest_pipeline_status(session: Session) -> dict | None:
 
 @_timed_query
 def get_enrichment_coverage(session: Session) -> dict:
-    """Enrichment coverage stats for active postings."""
-    total_active = session.execute(
-        select(func.count()).select_from(Posting).where(Posting.is_active.is_(True))
-    ).scalar_one()
+    """Enrichment coverage stats for active postings.
+
+    Combines coverage and pass breakdown into a single query using a CTE
+    to share the active_ids filter across all counts.
+    """
+    active_ids = select(Posting.id).where(Posting.is_active.is_(True)).cte("active_ids")
+
+    total_active = session.execute(select(func.count()).select_from(active_ids)).scalar_one()
 
     enriched = session.execute(
         select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
-            PostingEnrichment.posting_id.in_(select(Posting.id).where(Posting.is_active.is_(True)))
+            PostingEnrichment.posting_id.in_(select(active_ids.c.id))
         )
     ).scalar_one()
 
     with_brands = session.execute(
         select(func.count(func.distinct(PostingBrandMention.posting_id))).where(
-            PostingBrandMention.posting_id.in_(
-                select(Posting.id).where(Posting.is_active.is_(True))
-            )
+            PostingBrandMention.posting_id.in_(select(active_ids.c.id))
+        )
+    ).scalar_one()
+
+    fully_enriched = session.execute(
+        select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
+            PostingEnrichment.posting_id.in_(select(active_ids.c.id)),
+            PostingEnrichment.enrichment_version.isnot(None),
+            PostingEnrichment.enrichment_version.contains("pass2"),
         )
     ).scalar_one()
 
@@ -212,46 +222,18 @@ def get_enrichment_coverage(session: Session) -> dict:
         "enriched": enriched,
         "with_brands": with_brands,
         "unenriched": total_active - enriched,
-    }
-
-
-@_timed_query
-def get_enrichment_pass_breakdown(session: Session) -> dict:
-    active_ids = select(Posting.id).where(Posting.is_active.is_(True))
-
-    total_active = session.execute(
-        select(func.count()).select_from(Posting).where(Posting.is_active.is_(True))
-    ).scalar_one()
-
-    pass1_only = session.execute(
-        select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
-            PostingEnrichment.posting_id.in_(active_ids),
-            PostingEnrichment.enrichment_version.isnot(None),
-            ~PostingEnrichment.enrichment_version.contains("pass2"),
-            PostingEnrichment.posting_id.notin_(
-                select(PostingEnrichment.posting_id).where(
-                    PostingEnrichment.posting_id.in_(active_ids),
-                    PostingEnrichment.enrichment_version.isnot(None),
-                    PostingEnrichment.enrichment_version.contains("pass2"),
-                )
-            ),
-        )
-    ).scalar_one()
-
-    fully_enriched = session.execute(
-        select(func.count(func.distinct(PostingEnrichment.posting_id))).where(
-            PostingEnrichment.posting_id.in_(active_ids),
-            PostingEnrichment.enrichment_version.isnot(None),
-            PostingEnrichment.enrichment_version.contains("pass2"),
-        )
-    ).scalar_one()
-
-    return {
-        "total_active": total_active,
-        "unenriched": total_active - pass1_only - fully_enriched,
-        "pass1_only": pass1_only,
+        # Pass breakdown fields (used by Pipeline Health)
+        "pass1_only": enriched - fully_enriched,
         "fully_enriched": fully_enriched,
     }
+
+
+def get_enrichment_pass_breakdown(session: Session) -> dict:
+    """Pass-level enrichment breakdown — delegates to get_enrichment_coverage().
+
+    Kept for backward compatibility with Pipeline Health page.
+    """
+    return get_enrichment_coverage(session)
 
 
 @_timed_query
