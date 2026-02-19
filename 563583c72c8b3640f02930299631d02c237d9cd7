@@ -1,0 +1,23 @@
+docs/references/canadian-portals-research.md
+  abf33c4be60510f6 1-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "563583c72c8b3640f02930299631d02c237d9cd7",
+  "prompts": {
+    "abf33c4be60510f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7782f122-43e0-46b1-a8fd-76d91b768dd1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 72,
+      "total_deletions": 0,
+      "accepted_lines": 72,
+      "overriden_lines": 0
+    }
+  }
+}
