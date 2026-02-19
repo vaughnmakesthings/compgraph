@@ -72,7 +72,7 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
 - **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert.
 - **Scheduler**: APScheduler v4 cron jobs trigger scrape→enrich→aggregate pipeline. Config in `src/compgraph/scheduler/`.
-- **Dashboard**: Streamlit multi-page app — Pipeline Health, Posting Explorer, Pipeline Controls, Scheduler. Source in `src/compgraph/dashboard/`.
+- **Dashboard**: Streamlit multi-page app — Pipeline Health, Posting Explorer, Pipeline Controls, Scheduler, Brand Intel. Source in `src/compgraph/dashboard/`.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
 ### Database Schema (13 tables)
@@ -86,7 +86,7 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 
 ### Key Design Decisions
 
-- **Append-only** — never UPDATE/DELETE fact tables. Snapshots accumulate. Enrichments are versioned.
+- **Append-only snapshots** — never UPDATE/DELETE `posting_snapshots`. Enrichments are versioned (append-only trigger removed in PR #118; prefer INSERT but UPDATEs allowed).
 - **Per-company adapter isolation** — scrapers share an interface but run independently.
 - **Sequential pipeline stages** — scrape completes before enrichment starts. Parallelism is WITHIN stages, not between.
 - **UUID PKs everywhere** — no serial IDs.
@@ -95,13 +95,15 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 ## Conventions
 
 - All database operations must be async. No sync SQLAlchemy calls anywhere.
-- No mutable operations on `posting_snapshots` or `posting_enrichments` — append-only.
+- No mutable operations on `posting_snapshots` — strict append-only. `posting_enrichments` allows updates (trigger dropped in PR #118 due to iCIMS conflicts).
 - All timestamps use timezone-aware datetime (`DateTime(timezone=True)`).
 - UUIDs for all primary keys (`UUID(as_uuid=True)`, `default=uuid.uuid4`).
 - FastAPI dependency injection via `get_db()` in `src/compgraph/api/deps.py`.
 - Enrichment Pass 2 completion tracked via `enrichment_version` column containing "pass2" (not PostingBrandMention existence).
 - Entity resolution uses savepoints (`begin_nested()`) for concurrent-safe creation.
 - Anthropic SDK types (`MessageParam`) imported under `TYPE_CHECKING` guard, used via `cast()` at runtime.
+- In Streamlit dataframes, use `column_config.NumberColumn(format=...)` for numeric display — string conversion breaks column sorting.
+- SQL `string_agg()` subqueries must include `ORDER BY` for deterministic results.
 
 ## Tests
 

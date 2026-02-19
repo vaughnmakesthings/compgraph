@@ -4,6 +4,51 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-19 — Posting Explorer UI Polish + Hotfix
+
+**Goal:** Merge Posting Explorer improvements, resolve bot review feedback, deploy.
+
+**What happened:**
+- PR #123 merged — Posting Explorer UI: brand/retailer columns via `string_agg` subqueries, `column_config` for pay formatting, human-readable headers, explicit column ordering
+- PR #124 merged — Hotfix: `$%,.2f` sprintf comma format unsupported by Streamlit on dev server, reverted to `$ %.2f`
+- 5 bot review comments resolved across 3 cycles (Gemini, Cubic, Cursor):
+  - Explicit `column_map` for rename+reorder (Gemini)
+  - `aggregate_order_by()` for deterministic `string_agg` ordering (Cursor — caught that SELECT-level ORDER BY is a no-op for aggregates)
+  - `column_config.NumberColumn` to preserve numeric sorting (Cubic)
+  - Comma thousands separator format (Cubic — worked in theory, not in practice)
+- Both PRs deployed to dev server
+
+**Key decisions:**
+- `aggregate_order_by` from `sqlalchemy.dialects.postgresql` is the correct way to order within `string_agg` — `.order_by()` on the select is a no-op for scalar aggregate subqueries
+- Streamlit `column_config.NumberColumn` preferred over string formatting for pay columns — preserves sorting
+
+**Lessons learned:**
+- Streamlit's sprintf doesn't support `%,` comma separator (at least not the version on the Pi). Stick to `$ %.2f` or implement a custom formatter
+- Ruff PostToolUse hook strips imports before code references them — edit function bodies first, then add imports
+
+**State:** M3 ~95% complete. 458 tests, all green. All dashboard pages operational. Next: data quality review, remaining M3 items.
+
+---
+
+## 2026-02-18 — Brand Intel Dashboard + Posting Explorer Improvements
+
+**Goal:** Ship Brand Intel dashboard page, resolve enrichment trigger issue, improve Posting Explorer UI.
+
+**What happened:**
+- PR #117 merged — Brand Intel dashboard page (live SQL brand/retailer intel, company relationships, active posting counts)
+- PR #118 merged — Dropped append-only trigger from `posting_enrichments` (was causing iCIMS snapshot conflicts and mass deactivation)
+- PR #123 created — Posting Explorer UI improvements (readability, pay formatting via `column_config`, explicit column ordering, deterministic `string_agg` ordering)
+- Bot review feedback cycles completed for all 3 PRs (Cursor, Gemini, Copilot)
+- Deployed Brand Intel + trigger fix to dev server
+
+**Key decisions:**
+- Brand Intel uses live SQL queries against fact tables (not aggregation tables) — acceptable for current data volume
+- `posting_enrichments` no longer strictly append-only at DB level — trigger dropped, application convention relaxed
+
+**State:** M3 ~90% complete. 458 tests, all green. PR #123 open for Posting Explorer polish. Next: data quality review, remaining M3 items.
+
+---
+
 ## 2026-02-17 — M3 Parallel Sprint: 5 PRs Merged + Deployed
 
 **Goal:** Complete all unblocked M3 tasks via parallel agent pipeline.

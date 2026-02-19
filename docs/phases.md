@@ -1,8 +1,8 @@
 # Implementation Phases
 
-## Current State (2026-02-15)
+## Current State (2026-02-19)
 
-**M3 in progress (Day 1).** Dashboard (PRs #56-#58), scrape controls (pause/stop/force-stop), and enrichment JSON fence fix (PR #62) all merged. First T-ROC scrape: 98 postings, 98/98 enriched. 4 of 5 scrapers have broken URLs (career site changes). 309 tests passing, 69% coverage. Dev server + dashboard running at 192.168.1.69:8000/:8501.
+**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). 458 tests passing. Dev server + dashboard running at 192.168.1.69:8000/:8501. Remaining: data quality review, prompt tuning.
 
 See `docs/changelog.md` for session-by-session history.
 
@@ -56,11 +56,13 @@ Goal: 10-14 days of daily pipeline runs on autopilot. No new features — valida
 | Dashboard + diagnostics | Streamlit app, Pipeline Health, Posting Explorer, diagnostics sidebar | Done (PRs #56-#57) |
 | Scrape controls | Pause/stop/force-stop API + dashboard page | Done (PR #58) |
 | Enrichment fence fix | `strip_markdown_fences()` for Haiku JSON responses | Done (PR #62) |
-| Fix broken scraper URLs | Advantage, Acosta, BDS, MarketSource career sites changed | TODO |
-| Daily pipeline runs | Monitor scrape + enrichment, flag failures | In progress (Day 1) |
-| Day 3-4: data quality review | SQL queries on enrichment accuracy | Pending |
-| Day 7: comprehensive audit | Entity resolution, fingerprints, archetype distribution | Pending |
-| Day 10-14: analysis session | What views matter most? Revise use case priorities | Pending |
+| Fix broken scraper URLs | BDS + MarketSource fixed; Acosta + Advantage dropped (DNS dead) | Done (PRs #112, #115) |
+| DB hardening | Server defaults, FK indexes, Alembic direct connection | Done (PRs #114, #116) |
+| Drop enrichments trigger | Append-only trigger causing iCIMS conflicts | Done (PR #118) |
+| Brand Intel dashboard | Live SQL brand/retailer intel page | Done (PR #117) |
+| Posting Explorer improvements | Brand/retailer columns, pay formatting, column ordering | Done (PRs #123, #124) |
+| Daily pipeline runs | Monitor scrape + enrichment, flag failures | In progress |
+| Data quality review | SQL queries on enrichment accuracy | Pending |
 | Tune enrichment prompts | Based on observed errors | Pending |
 
 **Exit criteria:** 10+ days of clean snapshots. Enrichment accuracy validated. Use case priorities revised from real data.
@@ -155,7 +157,7 @@ Enrichment Pass 1 (Haiku)          ✅ M2
   ↓
 Enrichment Pass 2 (Sonnet)         ✅ M2
   ↓
-Data collection period (10-14 days) ← YOU ARE HERE (M3)
+Data collection period (10-14 days) ← YOU ARE HERE (M3, ~90%)
   ↓
 Aggregation + API                   ← dashboard-ready (M4)
 ```

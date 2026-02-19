@@ -344,6 +344,20 @@ Observed and anticipated failure modes from pipeline development, E2E runs, and 
 
 ---
 
+### DASH-2: Streamlit sprintf Format Incompatibility
+
+**Trigger**: Using `%,` comma thousands separator in `st.column_config.NumberColumn(format=...)`. Streamlit's internal sprintf library doesn't support this modifier.
+
+**Blast radius**: Per-column. Affected columns show raw unformatted numbers with a console error tooltip.
+
+**Symptoms**: Dashboard shows tooltip "Failed to format the number based on the provided format configuration: ($%,.2f). Error: SyntaxError: [sprintf] unexpected placeholder". Numbers display without formatting.
+
+**Mitigation**: Use `$ %.2f` (no comma) or implement custom string formatting on the DataFrame before display. Trade-off: string formatting breaks numeric column sorting.
+
+**Status**: **Observed and fixed.** Hit Feb 19 2026 after PR #123 followed bot review suggestion to use `$%,.2f`. Fixed in PR #124 by reverting to `$ %.2f`.
+
+---
+
 ## Template for New Patterns
 
 ```markdown
