@@ -77,14 +77,14 @@ def has_next_page(html: str) -> bool:
     next_link = soup.select_one('a.iCIMS_PagingNext, a[title="Next"]')
     if next_link:
         return True
-    # Modern iCIMS: "Next page of results" inside sr-only span within paging div
+    # Modern iCIMS: sr-only span "Next page of results" inside paging div
     paging = soup.select_one(".iCIMS_Paging")
     if paging:
         for a in paging.find_all("a"):
-            if "next" in a.get_text(strip=True).lower():
-                # Ensure it's not the invisible "previous" link
-                if "invisible" not in (a.get("class") or []):
-                    return True
+            next_re = re.compile(r"next page", re.IGNORECASE)
+            sr_span = a.find("span", class_="sr-only", string=next_re)  # type: ignore[call-overload]
+            if sr_span and "invisible" not in (a.get("class") or []):
+                return True
     return False
 
 
