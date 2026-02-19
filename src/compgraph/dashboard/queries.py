@@ -235,7 +235,7 @@ def get_enrichment_pass_breakdown(session: Session) -> dict:
 
     Kept for backward compatibility with Pipeline Health page.
     """
-    return get_enrichment_coverage(session)
+    return get_enrichment_coverage(session)  # type: ignore[no-any-return]
 
 
 @_timed_query
