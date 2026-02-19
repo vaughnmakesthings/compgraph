@@ -82,14 +82,26 @@ Adding OSL requires **zero new scraper code**. The implementation is purely a da
 1. Insert OSL into the `companies` dimension table with `ats_platform = "iCIMS"` and `career_site_url = "https://uscareers-oslrs.icims.com"`
 2. The existing iCIMS adapter will handle listing, pagination, and detail scraping automatically
 
+### OSL has THREE separate iCIMS portals
+
+| Portal | Subdomain | Language | Postings | Geography |
+|--------|-----------|----------|----------|-----------|
+| US | `uscareers-oslrs.icims.com` | English | ~600 (40 pages) | US only |
+| Canada EN | `canadaengcareers-oslrs.icims.com` | English | ~100 (7 pages) | ON, BC, NB, AB, etc. |
+| Canada FR | `canadafrcareers-oslrs.icims.com` | French | ~45 (3 pages) | QC (French Canada) |
+
+**Important:** The Canada EN and Canada FR portals likely contain overlapping job IDs for bilingual regions. Scraping only the EN portals (US + Canada EN) avoids French-language duplicate processing while capturing all unique postings. The FR portal is primarily Quebec-only postings that may also appear in EN on the Canada EN portal.
+
+**Portals that do NOT exist** (confirmed 404): `cacareers-oslrs`, `careers-oslrs`, `canadaencareers-oslrs`, `canadacareers-oslrs`.
+
 ### Key differences from existing iCIMS targets
 
 | Aspect | MarketSource/BDS | OSL |
 |--------|-----------------|-----|
-| iCIMS subdomain | `careers-marketsource` / varies | `uscareers-oslrs` |
-| Scale | ~200-400 postings | ~604 postings (larger) |
+| iCIMS subdomains | `careers-marketsource` / varies | 3 portals (see above) |
+| Scale | ~200-400 postings | ~750 total across portals |
 | Categories | Varies | 6 categories (Wireless dominant) |
-| Geography | US only | US + Canada (bilingual) |
+| Geography | US only | US + Canada (bilingual, multi-portal) |
 | Job IDs | Standard iCIMS numeric | Standard iCIMS numeric |
 | Pay data | In description body | In description body |
 
@@ -113,12 +125,17 @@ Adding OSL requires **zero new scraper code**. The implementation is purely a da
   - Some postings span multiple locations (e.g., "US-GA-VALDOSTA | US-GA-THOMASVILLE") — verify multi-location parsing
 - [ ] **Optional: WordPress frontend fallback** — if iCIMS ever blocks direct access, `oslcareers.com/browse-jobs/` can serve as an alternative data source with GET-based pagination. This would require a new lightweight HTML scraper but the same data is available.
 
-## Open Questions
+## Open Questions (Updated)
 
-- **French-language postings**: Some postings may be duplicated in French (the site supports EN/FR). Should we scrape only the EN locale, or both? The iCIMS endpoint defaults to English.
-- **WordPress vs iCIMS pagination**: The WordPress frontend shows 604 results but iCIMS shows ~600 across 40 pages. The slight discrepancy may be due to caching or locale differences. Scraping iCIMS directly is the recommended approach.
-- **Canadian postings**: OSL operates in Canada too. Are Canadian postings on a separate iCIMS portal (e.g., `cacareers-oslrs.icims.com`) or mixed into the US portal? The `uscareers-oslrs` prefix suggests US-only; Canadian postings may need a separate portal URL.
+- ~~**Canadian postings**: Are they on a separate portal?~~ **RESOLVED:** Yes — three portals discovered (US, Canada EN, Canada FR). See findings above.
+- **FR portal dedup**: The Canada FR portal (~45 postings) may overlap with Canada EN (~100 postings) for bilingual regions. Recommend scraping US + Canada EN only initially, then adding Canada FR if Quebec-only postings are missed.
+- **WordPress vs iCIMS pagination**: The WordPress frontend shows 604 results but iCIMS US shows ~600 across 40 pages. The slight discrepancy may be due to caching. Scraping iCIMS directly is the recommended approach.
+- **Multi-portal company record**: The `companies` table has a single `career_site_url` per company. OSL has 2-3 portals. The iCIMS scraper already supports multi-portal scraping via multiple search URLs — verify this works with the company record design.
 
 ## Implementation Effort Estimate
 
-**Trivial** — no code changes required. One database INSERT + one test scrape. Estimated implementation: a single commit with a migration adding the company record.
+**Low** — no new scraper code required. Need to:
+1. Add OSL company record (may need 1-2 records depending on multi-portal support)
+2. Configure the 2 English iCIMS portal URLs (`uscareers-oslrs` + `canadaengcareers-oslrs`)
+3. Run a test scrape to validate parsing
+4. Single commit with a migration adding the company record(s)
