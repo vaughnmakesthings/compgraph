@@ -1,0 +1,61 @@
+tests/test_health.py
+  61a5868297899bc2 13-14,17,19-24,27,29,32,35-38
+tests/test_enrichment_pass2.py
+  61a5868297899bc2 9-10,209,230,251
+src/compgraph/dashboard/pages/3_Pipeline_Controls.py
+  61a5868297899bc2 12,99,108,115,123,134
+src/compgraph/dashboard/api.py
+  61a5868297899bc2 1-48
+src/compgraph/config.py
+  61a5868297899bc2 33-36
+src/compgraph/enrichment/resolver.py
+  61a5868297899bc2 14,20-25,39-40,42,44-45,48,51,53-55,59,61-63,65-66,68,71-73,76,79,82-83,87,92-93,95,97,103-104,107,111,115-116,118,120-122,145,148,152,155,159-160,174
+src/compgraph/dashboard/queries.py
+  61a5868297899bc2 191-196,198,202,208,214,222-226,231-236
+src/compgraph/api/routes/enrich.py
+  61a5868297899bc2 77-80,82,87,89-90,92,94,97-103,109-113,119-122
+src/compgraph/dashboard/main.py
+  61a5868297899bc2 13,17-18,43,163,166-167,200-202,244
+src/compgraph/enrichment/retry.py
+  61a5868297899bc2 1-150
+tests/test_enrichment_breakdown.py
+  61a5868297899bc2 11-12,15-18,23-24,31
+src/compgraph/scrapers/icims.py
+  61a5868297899bc2 283,291-293
+src/compgraph/enrichment/fingerprint.py
+  61a5868297899bc2 10,13,113-115,117,119-123,125-133,135-137,139-145,147-150,154,166
+pyproject.toml
+  61a5868297899bc2 89
+src/compgraph/enrichment/pass2.py
+  61a5868297899bc2 11,45-54
+src/compgraph/enrichment/schemas.py
+  61a5868297899bc2 5-6,8,10-42,52,60,64,71,76,80-105,148,156-164
+src/compgraph/dashboard/pages/4_Scheduler.py
+  61a5868297899bc2 9-10,19,66,74,82
+src/compgraph/enrichment/pass1.py
+  61a5868297899bc2 11,43-45,48,50-51
+tests/helpers.py
+  61a5868297899bc2 1-23
+tests/test_enrichment_pass1.py
+  61a5868297899bc2 9-10,263,283,308,329,351
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "1268cc117e9ee4dff7fd5a2bd9034eb6357796ed",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 699,
+      "total_deletions": 765,
+      "accepted_lines": 546,
+      "overriden_lines": 0
+    }
+  }
+}
