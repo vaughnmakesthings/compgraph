@@ -4,6 +4,39 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-19 (Session 2) — Scaling Strategy + LLM Eval Tool Design
+
+**Goal:** Research scaling path, design an LLM evaluation tool for prompt/model testing.
+
+**What happened:**
+- Scaling analysis for 50 companies: Hetzner VPS ($4-11/mo) + Vercel frontend + Supabase Pro = ~$30-50/mo total infra
+- LLM cost analysis: $110/mo unoptimized → $16-27/mo with content dedup (PR #86) + Anthropic Batch API (50% discount)
+- Provider-agnostic enrichment research: LiteLLM drop-in (~half day), coupling surface is only 3-4 files (client.py, pass1.py, pass2.py, prompts.py)
+- Designed standalone LLM eval tool (brainstorming skill → approved design → implementation plan):
+  - Standalone `compgraph-eval/` Streamlit app with SQLite, LiteLLM, Elo ranking
+  - 3 pages: Run Tests, Side-by-Side Review, Leaderboard
+  - Versioned prompt modules, auto-discovered, edit in editor
+  - 12 tasks, ~15 files, ~32 tests
+- Created GitHub Issue #128 to track the workstream
+- All findings saved to `memory/scaling-plan.md`
+
+**Key decisions:**
+- Single VPS over PaaS for small scale — systemd is simpler, cheaper, already proven on Pi
+- Replace APScheduler with arq (async Redis task queue) when scaling to 50 companies
+- Test Haiku for Pass 2 BEFORE adding provider complexity — zero code change, potential 5x cost reduction
+- LLM eval tool is prerequisite for any provider migration — test quality before switching
+- Eval tool uses copied schemas (~60 lines) rather than CompGraph package dependency
+
+**Docs created:**
+- `docs/plans/2026-02-19-llm-eval-tool-design.md` — approved design
+- `docs/plans/2026-02-19-llm-eval-tool-plan.md` — 12-task implementation plan
+- `docs/references/canadian-portals-research.md` — competitor Canadian portal analysis (from session 1)
+- `docs/references/osl-careers-research.md` — OSL competitor research (from session 1)
+
+**State:** M3 ~95% complete. Scaling roadmap documented. LLM eval tool planned and tracked as Issue #128. Ready for implementation when prioritized.
+
+---
+
 ## 2026-02-19 — Posting Explorer UI Polish + Hotfix
 
 **Goal:** Merge Posting Explorer improvements, resolve bot review feedback, deploy.
