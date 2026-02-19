@@ -13,7 +13,8 @@ from datetime import UTC, datetime, timedelta
 from functools import wraps
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, literal_column, select
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.orm import Session
 
 from compgraph.db.models import (
@@ -309,6 +310,28 @@ def search_postings(
     """Search postings with filters, joined to latest snapshot and enrichment."""
     latest = _latest_snapshot_subquery()
 
+    sep: Any = aggregate_order_by(literal_column("', '"), PostingBrandMention.entity_name)
+    brands_sub = (
+        select(func.string_agg(PostingBrandMention.entity_name, sep))
+        .where(
+            PostingBrandMention.posting_id == Posting.id,
+            PostingBrandMention.entity_type == "client_brand",
+        )
+        .correlate(Posting)
+        .scalar_subquery()
+        .label("brands")
+    )
+    retailers_sub = (
+        select(func.string_agg(PostingBrandMention.entity_name, sep))
+        .where(
+            PostingBrandMention.posting_id == Posting.id,
+            PostingBrandMention.entity_type == "retailer",
+        )
+        .correlate(Posting)
+        .scalar_subquery()
+        .label("retailers")
+    )
+
     stmt = (
         select(
             Posting.id,
@@ -318,6 +341,8 @@ def search_postings(
             PostingEnrichment.role_archetype,
             PostingEnrichment.pay_min,
             PostingEnrichment.pay_max,
+            brands_sub,
+            retailers_sub,
             Posting.is_active,
             Posting.first_seen_at,
         )
@@ -343,15 +368,17 @@ def search_postings(
     rows = session.execute(stmt).all()
     return [
         {
-            "posting_id": str(row.id),
             "title": row.title_raw,
-            "location": row.location_raw,
             "company": row.company,
+            "location": row.location_raw,
             "role_archetype": row.role_archetype,
+            "brands": row.brands or "",
+            "retailers": row.retailers or "",
             "pay_min": row.pay_min,
             "pay_max": row.pay_max,
             "is_active": row.is_active,
             "first_seen_at": row.first_seen_at,
+            "posting_id": str(row.id),
         }
         for row in rows
     ]
