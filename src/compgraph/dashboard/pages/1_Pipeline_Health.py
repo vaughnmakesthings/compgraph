@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import logging
-import os
 from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
-import requests as _req
 import streamlit as st
 
 from compgraph.dashboard import configure_logging
+from compgraph.dashboard.api import api_get
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
@@ -33,14 +32,11 @@ st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}"
 
 render_diagnostics_sidebar()
 
-_api_base = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
-_is_active = False
-try:
-    _pipeline_resp = _req.get(f"{_api_base}/api/pipeline/status", timeout=3)
-    if _pipeline_resp.status_code == 200:
-        _is_active = _pipeline_resp.json().get("system_state") in ("scraping", "enriching")
-except Exception:
-    logger.debug("Pipeline status check failed for TTL decision", exc_info=True)
+_pipeline_status = api_get("/api/pipeline/status", on_error="log")
+_is_active = _pipeline_status is not None and _pipeline_status.get("system_state") in (
+    "scraping",
+    "enriching",
+)
 _cache_ttl = 5 if _is_active else 60
 
 
@@ -127,30 +123,26 @@ except Exception:
     p4.metric("Pass 1 + 2 (Complete)", "—")
 
 # --- Active enrichment run (best-effort API call) ---
-try:
-    _enrich_resp = _req.get(f"{_api_base}/api/enrich/status", timeout=3)
-    if _enrich_resp.status_code == 200:
-        _enrich_data = _enrich_resp.json()
-        _enrich_status = _enrich_data.get("status", "idle")
-        if _enrich_status not in ("idle", "completed", "failed"):
-            st.info(
-                f"Enrichment: **{_enrich_status.upper()}** "
-                f"(started {_enrich_data.get('started_at', 'unknown')})"
+_enrich_data = api_get("/api/enrich/status", on_error="log")
+if _enrich_data is not None:
+    _enrich_status = _enrich_data.get("status", "idle")
+    if _enrich_status not in ("idle", "completed", "failed"):
+        st.info(
+            f"Enrichment: **{_enrich_status.upper()}** "
+            f"(started {_enrich_data.get('started_at', 'unknown')})"
+        )
+        if _enrich_data.get("pass1_result"):
+            _p1r = _enrich_data["pass1_result"]
+            st.caption(
+                f"Pass 1: {_p1r['succeeded']} succeeded, "
+                f"{_p1r['failed']} failed, {_p1r['skipped']} skipped"
             )
-            if _enrich_data.get("pass1_result"):
-                _p1r = _enrich_data["pass1_result"]
-                st.caption(
-                    f"Pass 1: {_p1r['succeeded']} succeeded, "
-                    f"{_p1r['failed']} failed, {_p1r['skipped']} skipped"
-                )
-            if _enrich_data.get("pass2_result"):
-                _p2r = _enrich_data["pass2_result"]
-                st.caption(
-                    f"Pass 2: {_p2r['succeeded']} succeeded, "
-                    f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
-                )
-except Exception:
-    logger.debug("Enrichment status API unavailable", exc_info=True)
+        if _enrich_data.get("pass2_result"):
+            _p2r = _enrich_data["pass2_result"]
+            st.caption(
+                f"Pass 2: {_p2r['succeeded']} succeeded, "
+                f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
+            )
 
 # --- Recent scrape runs ---
 st.subheader("Recent Scrape Runs")

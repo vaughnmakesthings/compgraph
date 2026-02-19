@@ -104,7 +104,7 @@ async def call_llm_with_retry(  # noqa: UP047
                 cleaned = strip_markdown_fences(text_content)
                 data = json.loads(cleaned)
                 return result_type.model_validate(data)
-            except (json.JSONDecodeError, Exception) as parse_err:
+            except Exception as parse_err:
                 raise ValueError(
                     f"Failed to parse {pass_label} response for posting {posting_id}: {parse_err}"
                 ) from parse_err

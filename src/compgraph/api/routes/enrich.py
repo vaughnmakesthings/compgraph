@@ -74,12 +74,18 @@ def _run_to_response(run: EnrichmentRun) -> EnrichmentRunResponse:
 # --- Endpoints ---
 
 
+_TRIGGER_METHODS = {"run_pass1", "run_pass2", "run_full"}
+
+
 def _trigger_enrichment(
     background_tasks: BackgroundTasks,
     method_name: str,
     message: str,
 ) -> TriggerResponse:
     """Shared setup for all enrichment trigger endpoints."""
+    if method_name not in _TRIGGER_METHODS:
+        raise ValueError(f"Unknown enrichment method: {method_name}")
+
     enrichment_run = EnrichmentRun()
     _store_run(enrichment_run)
 

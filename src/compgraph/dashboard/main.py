@@ -40,7 +40,7 @@ def _format_elapsed(started_at: str) -> str:
 
 
 # --- Fetch pipeline status ---
-pipeline = api_get("/api/pipeline/status")
+pipeline = api_get("/api/pipeline/status", on_error="log")
 
 
 # --- System State Banner ---
@@ -160,7 +160,7 @@ if pipeline is not None:
     with sched_col2:
         if sched["enabled"]:
             if st.button("Trigger Now"):
-                trigger_result = api_get("/api/scheduler/status")
+                trigger_result = api_get("/api/scheduler/status", on_error="log")
                 if trigger_result and trigger_result.get("schedules"):
                     schedule_id = trigger_result["schedules"][0]["schedule_id"]
                     result = api_post(f"/api/scheduler/jobs/{schedule_id}/trigger")

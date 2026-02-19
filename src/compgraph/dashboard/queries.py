@@ -222,12 +222,14 @@ def get_enrichment_coverage(session: Session) -> dict:
         "enriched": enriched,
         "with_brands": with_brands,
         "unenriched": total_active - enriched,
-        # Pass breakdown fields (used by Pipeline Health)
+        # Pass breakdown: pass1_only includes any enriched posting not yet at pass2,
+        # including edge-case records with NULL enrichment_version (if any exist).
         "pass1_only": enriched - fully_enriched,
         "fully_enriched": fully_enriched,
     }
 
 
+@_timed_query
 def get_enrichment_pass_breakdown(session: Session) -> dict:
     """Pass-level enrichment breakdown — delegates to get_enrichment_coverage().
 
