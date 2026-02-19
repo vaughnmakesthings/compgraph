@@ -1,0 +1,27 @@
+docs/changelog.md
+  2cee51b4737cb9be 7-32,40
+docs/failure-patterns.md
+  2cee51b4737cb9be 347-360
+docs/phases.md
+  2cee51b4737cb9be 3,5,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b90b978b51c1e99717b53f3bcf8337f045ae1d4b",
+  "prompts": {
+    "2cee51b4737cb9be": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7cc6ec9e-e186-4b58-8b91-a52a539a8ad1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 44,
+      "total_deletions": 4,
+      "accepted_lines": 44,
+      "overriden_lines": 0
+    }
+  }
+}
