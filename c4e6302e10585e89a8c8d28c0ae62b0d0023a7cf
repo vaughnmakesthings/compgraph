@@ -1,0 +1,25 @@
+tests/test_icims_adapter.py
+  5e70ab9c98b1a285 152-203
+src/compgraph/scrapers/icims.py
+  5e70ab9c98b1a285 72,76,78-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "c4e6302e10585e89a8c8d28c0ae62b0d0023a7cf",
+  "prompts": {
+    "5e70ab9c98b1a285": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ba4b403e-5d5c-44ae-9198-6a9918265ed2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 65,
+      "total_deletions": 1,
+      "accepted_lines": 65,
+      "overriden_lines": 0
+    }
+  }
+}
