@@ -68,7 +68,7 @@ def test_osl_migration_has_correct_config() -> None:
     assert "search_urls" in source
     assert "ON CONFLICT" in source
 
-    # Check downgrade cascades through all dependent tables
+    # Check downgrade cascades through all dependent tables (including agg tables with company_id FK)
     down_source = textwrap.dedent(inspect.getsource(mod.downgrade))
     for table in [
         "posting_brand_mentions",
@@ -76,6 +76,10 @@ def test_osl_migration_has_correct_config() -> None:
         "posting_snapshots",
         "postings",
         "scrape_runs",
+        "agg_daily_velocity",
+        "agg_brand_timeline",
+        "agg_pay_benchmarks",
+        "agg_posting_lifecycle",
         "companies",
     ]:
         assert table in down_source, f"downgrade missing cleanup for {table}"

@@ -91,4 +91,19 @@ def downgrade() -> None:
             )
         """)
     )
+    # Aggregation tables also have company_id FK (non-cascading)
+    for agg_table in [
+        "agg_daily_velocity",
+        "agg_brand_timeline",
+        "agg_pay_benchmarks",
+        "agg_posting_lifecycle",
+    ]:
+        op.execute(
+            sa.text(f"""
+                DELETE FROM {agg_table}
+                WHERE company_id IN (
+                    SELECT id FROM companies WHERE slug = 'osl'
+                )
+            """)
+        )
     op.execute(sa.text("DELETE FROM companies WHERE slug = 'osl'"))
