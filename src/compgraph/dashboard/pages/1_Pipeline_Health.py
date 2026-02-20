@@ -126,7 +126,7 @@ except Exception:
 _enrich_data = api_get("/api/enrich/status", on_error="log")
 if _enrich_data is not None:
     _enrich_status = _enrich_data.get("status", "idle")
-    if _enrich_status not in ("idle", "completed", "failed"):
+    if _enrich_status not in ("idle", "success", "partial", "failed"):
         st.info(
             f"Enrichment: **{_enrich_status.upper()}** "
             f"(started {_enrich_data.get('started_at', 'unknown')})"
@@ -158,7 +158,7 @@ if _enrich_data is not None:
             st.warning(
                 f"Circuit breaker tripped: {_enrich_data.get('error_summary', 'unknown reason')}"
             )
-    elif _enrich_status in ("completed", "failed"):
+    elif _enrich_status in ("success", "partial", "failed"):
         with st.expander(
             f"Last enrichment run: {_enrich_status.upper()} "
             f"({_enrich_data.get('finished_at', 'unknown')})"
