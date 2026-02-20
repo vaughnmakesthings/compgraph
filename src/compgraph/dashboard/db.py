@@ -23,10 +23,9 @@ _sync_url = settings.database_url.replace("postgresql+asyncpg", "postgresql+psyc
 
 engine = create_engine(
     _sync_url,
-    pool_size=settings.DASHBOARD_DB_POOL_SIZE,
-    max_overflow=settings.DASHBOARD_DB_MAX_OVERFLOW,
-    pool_timeout=settings.DASHBOARD_DB_POOL_TIMEOUT,
-    pool_recycle=settings.DASHBOARD_DB_POOL_RECYCLE,
+    pool_size=2,
+    max_overflow=1,
+    pool_recycle=300,
     pool_pre_ping=True,
     connect_args={"sslmode": "require"},
 )

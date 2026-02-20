@@ -229,11 +229,11 @@ def get_enrichment_coverage(session: Session) -> dict:
     }
 
 
+@_timed_query
 def get_enrichment_pass_breakdown(session: Session) -> dict:
     """Pass-level enrichment breakdown — delegates to get_enrichment_coverage().
 
     Kept for backward compatibility with Pipeline Health page.
-    No @_timed_query here — get_enrichment_coverage() already logs timing.
     """
     return get_enrichment_coverage(session)  # type: ignore[no-any-return]
 

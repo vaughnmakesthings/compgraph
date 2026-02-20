@@ -70,12 +70,15 @@ class TestEntityMentionSchema:
 
 
 class TestFuzzyThresholds:
-    def test_thresholds_from_settings(self):
-        from compgraph.config import settings
+    def test_thresholds_defined(self):
+        from compgraph.enrichment.resolver import (
+            AUTO_ACCEPT_THRESHOLD,
+            REVIEW_THRESHOLD,
+        )
 
-        assert settings.ENTITY_AUTO_ACCEPT_THRESHOLD == 85
-        assert settings.ENTITY_REVIEW_THRESHOLD == 70
-        assert settings.ENTITY_AUTO_ACCEPT_THRESHOLD > settings.ENTITY_REVIEW_THRESHOLD
+        assert AUTO_ACCEPT_THRESHOLD == 85
+        assert REVIEW_THRESHOLD == 70
+        assert AUTO_ACCEPT_THRESHOLD > REVIEW_THRESHOLD
 
     def test_rapidfuzz_token_sort_ratio(self):
         """Verify rapidfuzz produces expected scores for our use cases."""

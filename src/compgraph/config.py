@@ -45,18 +45,6 @@ class Settings(BaseSettings):
     SCHEDULER_PIPELINE_CRON: str = "0 2 * * 1,3,5"  # Mon/Wed/Fri 2am
     SCHEDULER_TIMEZONE: str = "America/New_York"
 
-    # Connection pool
-    DB_POOL_SIZE: int = 5
-    DB_MAX_OVERFLOW: int = 3
-    DB_POOL_TIMEOUT: int = 30
-    DB_POOL_RECYCLE: int = 300
-
-    # Dashboard connection pool (sync, smaller)
-    DASHBOARD_DB_POOL_SIZE: int = 2
-    DASHBOARD_DB_MAX_OVERFLOW: int = 1
-    DASHBOARD_DB_POOL_TIMEOUT: int = 30
-    DASHBOARD_DB_POOL_RECYCLE: int = 300
-
     # App config
     ENVIRONMENT: str = "dev"
     HOST: str = "0.0.0.0"

@@ -17,6 +17,7 @@ from compgraph.dashboard.queries import (
     FRESHNESS_ICONS,
     freshness_color,
     get_enrichment_coverage,
+    get_enrichment_pass_breakdown,
     get_error_summary,
     get_last_scrape_timestamps,
     get_recent_scrape_runs,
@@ -52,6 +53,12 @@ def _load_coverage() -> dict[str, Any]:
 
 
 @st.cache_data(ttl=_cache_ttl)
+def _load_pass_breakdown() -> dict[str, Any]:
+    with get_session() as session:
+        return dict(get_enrichment_pass_breakdown(session))
+
+
+@st.cache_data(ttl=_cache_ttl)
 def _load_errors() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_error_summary(session))
@@ -61,33 +68,6 @@ def _load_errors() -> list[dict[str, Any]]:
 def _load_freshness() -> list[dict[str, Any]]:
     with get_session() as session:
         return list(get_last_scrape_timestamps(session))
-
-
-def _render_enrichment_details(data: dict[str, Any]) -> None:
-    p1r = data.get("pass1_result")
-    if isinstance(p1r, dict):
-        st.caption(
-            f"Pass 1: {p1r.get('succeeded', 0)} succeeded, "
-            f"{p1r.get('failed', 0)} failed, {p1r.get('skipped', 0)} skipped"
-        )
-    p2r = data.get("pass2_result")
-    if isinstance(p2r, dict):
-        st.caption(
-            f"Pass 2: {p2r.get('succeeded', 0)} succeeded, "
-            f"{p2r.get('failed', 0)} failed, {p2r.get('skipped', 0)} skipped"
-        )
-    tok_in = data.get("total_input_tokens", 0) or 0
-    tok_out = data.get("total_output_tokens", 0) or 0
-    api_calls = data.get("total_api_calls", 0) or 0
-    dedup_saved = data.get("total_dedup_saved", 0) or 0
-    if tok_in or tok_out or api_calls:
-        t1, t2, t3, t4 = st.columns(4)
-        t1.metric("Input Tokens", f"{tok_in:,}")
-        t2.metric("Output Tokens", f"{tok_out:,}")
-        t3.metric("API Calls", f"{api_calls:,}")
-        t4.metric("Dedup Saved", f"{dedup_saved:,}")
-    if data.get("circuit_breaker_tripped"):
-        st.warning(f"Circuit breaker tripped: {data.get('error_summary', 'unknown reason')}")
 
 
 # --- Data freshness per company ---
@@ -120,17 +100,27 @@ except Exception:
     coverage = {"total_active": "—", "enriched": "—", "with_brands": "—", "unenriched": "—"}
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total Active", coverage.get("total_active", "—"))
-c2.metric("Enriched", coverage.get("enriched", "—"))
-c3.metric("With Brands", coverage.get("with_brands", "—"))
-c4.metric("Unenriched", coverage.get("unenriched", "—"))
+c1.metric("Total Active", coverage["total_active"])
+c2.metric("Enriched", coverage["enriched"])
+c3.metric("With Brands", coverage["with_brands"])
+c4.metric("Unenriched", coverage["unenriched"])
 
-# --- Enrichment pass breakdown (uses same cached coverage data) ---
-p1, p2, p3, p4 = st.columns(4)
-p1.metric("Total Active", coverage.get("total_active", "—"))
-p2.metric("Unenriched", coverage.get("unenriched", "—"))
-p3.metric("Pass 1 Only", coverage.get("pass1_only", "—"))
-p4.metric("Pass 1 + 2 (Complete)", coverage.get("fully_enriched", "—"))
+# --- Enrichment pass breakdown ---
+try:
+    breakdown = _load_pass_breakdown()
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Total Active", breakdown["total_active"])
+    p2.metric("Unenriched", breakdown["unenriched"])
+    p3.metric("Pass 1 Only", breakdown["pass1_only"])
+    p4.metric("Pass 1 + 2 (Complete)", breakdown["fully_enriched"])
+except Exception:
+    logger.exception("Failed to load enrichment pass breakdown")
+    st.error("Failed to load enrichment pass breakdown. Check server logs for details.")
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Total Active", "—")
+    p2.metric("Unenriched", "—")
+    p3.metric("Pass 1 Only", "—")
+    p4.metric("Pass 1 + 2 (Complete)", "—")
 
 # --- Active enrichment run (best-effort API call) ---
 _enrich_data = api_get("/api/enrich/status", on_error="log")
@@ -141,13 +131,65 @@ if _enrich_data is not None:
             f"Enrichment: **{_enrich_status.upper()}** "
             f"(started {_enrich_data.get('started_at', 'unknown')})"
         )
-        _render_enrichment_details(_enrich_data)
+        if _enrich_data.get("pass1_result"):
+            _p1r = _enrich_data["pass1_result"]
+            st.caption(
+                f"Pass 1: {_p1r['succeeded']} succeeded, "
+                f"{_p1r['failed']} failed, {_p1r['skipped']} skipped"
+            )
+        if _enrich_data.get("pass2_result"):
+            _p2r = _enrich_data["pass2_result"]
+            st.caption(
+                f"Pass 2: {_p2r['succeeded']} succeeded, "
+                f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
+            )
+        # Token usage metrics
+        _tok_in = _enrich_data.get("total_input_tokens", 0)
+        _tok_out = _enrich_data.get("total_output_tokens", 0)
+        _api_calls = _enrich_data.get("total_api_calls", 0)
+        _dedup_saved = _enrich_data.get("total_dedup_saved", 0)
+        if _tok_in or _tok_out or _api_calls:
+            t1, t2, t3, t4 = st.columns(4)
+            t1.metric("Input Tokens", f"{_tok_in:,}")
+            t2.metric("Output Tokens", f"{_tok_out:,}")
+            t3.metric("API Calls", f"{_api_calls:,}")
+            t4.metric("Dedup Saved", f"{_dedup_saved:,}")
+        if _enrich_data.get("circuit_breaker_tripped"):
+            st.warning(
+                f"Circuit breaker tripped: {_enrich_data.get('error_summary', 'unknown reason')}"
+            )
     elif _enrich_status in ("success", "partial", "failed"):
         with st.expander(
             f"Last enrichment run: {_enrich_status.upper()} "
             f"({_enrich_data.get('finished_at', 'unknown')})"
         ):
-            _render_enrichment_details(_enrich_data)
+            if _enrich_data.get("pass1_result"):
+                _p1r = _enrich_data["pass1_result"]
+                st.caption(
+                    f"Pass 1: {_p1r['succeeded']} succeeded, "
+                    f"{_p1r['failed']} failed, {_p1r['skipped']} skipped"
+                )
+            if _enrich_data.get("pass2_result"):
+                _p2r = _enrich_data["pass2_result"]
+                st.caption(
+                    f"Pass 2: {_p2r['succeeded']} succeeded, "
+                    f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
+                )
+            _tok_in = _enrich_data.get("total_input_tokens", 0)
+            _tok_out = _enrich_data.get("total_output_tokens", 0)
+            _api_calls = _enrich_data.get("total_api_calls", 0)
+            _dedup_saved = _enrich_data.get("total_dedup_saved", 0)
+            if _tok_in or _tok_out or _api_calls:
+                t1, t2, t3, t4 = st.columns(4)
+                t1.metric("Input Tokens", f"{_tok_in:,}")
+                t2.metric("Output Tokens", f"{_tok_out:,}")
+                t3.metric("API Calls", f"{_api_calls:,}")
+                t4.metric("Dedup Saved", f"{_dedup_saved:,}")
+            if _enrich_data.get("circuit_breaker_tripped"):
+                st.warning(
+                    f"Circuit breaker tripped: "
+                    f"{_enrich_data.get('error_summary', 'unknown reason')}"
+                )
             if _enrich_data.get("error_summary") and not _enrich_data.get(
                 "circuit_breaker_tripped"
             ):
