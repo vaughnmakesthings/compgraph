@@ -7,7 +7,7 @@
 
 1. **Supabase + Metabase works out of the box** — Supabase has official docs for connecting Metabase directly to Postgres. Self-hosted via Docker on a DO Droplet is straightforward.
 
-2. **OSS tier is severely limited for user-facing use** — Free tier only supports "guest embedding" (iframes without SSO, no drill-through, no data segregation, no advanced theming). The React Embedding SDK for proper Next.js integration is Pro/Enterprise only ($12/user/month).
+2. **OSS tier is severely limited for user-facing use** — Free tier only supports "guest embedding" (iframes without SSO, no drill-through, no data segregation, no advanced theming). The React Embedding SDK for proper Next.js integration is Pro/Enterprise only ($575/month base for 10 users + $12/user/month additional).
 
 3. **Customization ceiling is low** — Even on paid tiers, Metabase embeds look like Metabase. Theming limited to colors/fonts. Always feels like a third-party tool, not a native experience.
 
@@ -39,7 +39,7 @@
 
 ## OSS vs Pro Feature Comparison (relevant to CompGraph)
 
-| Feature | OSS (Free) | Pro ($12/user/mo) |
+| Feature | OSS (Free) | Pro ($575/mo base + $12/user/mo) |
 |---------|-----------|-------------------|
 | Direct Postgres queries | Yes | Yes |
 | Custom SQL | Yes | Yes |
@@ -55,7 +55,7 @@
 ## Open Questions
 
 - Would leadership accept Metabase's native UI, or do they expect a branded product?
-- Is $12/user/month Pro tier viable for proper embedding + SSO?
+- Is $575/month + $12/user Pro tier viable for proper embedding + SSO?
 - Could Metabase handle "explore" views while Next.js handles operational dashboards?
 
 ## Sources
