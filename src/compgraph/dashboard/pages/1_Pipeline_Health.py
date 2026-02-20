@@ -143,6 +143,57 @@ if _enrich_data is not None:
                 f"Pass 2: {_p2r['succeeded']} succeeded, "
                 f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
             )
+        # Token usage metrics
+        _tok_in = _enrich_data.get("total_input_tokens", 0)
+        _tok_out = _enrich_data.get("total_output_tokens", 0)
+        _api_calls = _enrich_data.get("total_api_calls", 0)
+        _dedup_saved = _enrich_data.get("total_dedup_saved", 0)
+        if _tok_in or _tok_out or _api_calls:
+            t1, t2, t3, t4 = st.columns(4)
+            t1.metric("Input Tokens", f"{_tok_in:,}")
+            t2.metric("Output Tokens", f"{_tok_out:,}")
+            t3.metric("API Calls", f"{_api_calls:,}")
+            t4.metric("Dedup Saved", f"{_dedup_saved:,}")
+        if _enrich_data.get("circuit_breaker_tripped"):
+            st.warning(
+                f"Circuit breaker tripped: {_enrich_data.get('error_summary', 'unknown reason')}"
+            )
+    elif _enrich_status in ("completed", "failed"):
+        with st.expander(
+            f"Last enrichment run: {_enrich_status.upper()} "
+            f"({_enrich_data.get('finished_at', 'unknown')})"
+        ):
+            if _enrich_data.get("pass1_result"):
+                _p1r = _enrich_data["pass1_result"]
+                st.caption(
+                    f"Pass 1: {_p1r['succeeded']} succeeded, "
+                    f"{_p1r['failed']} failed, {_p1r['skipped']} skipped"
+                )
+            if _enrich_data.get("pass2_result"):
+                _p2r = _enrich_data["pass2_result"]
+                st.caption(
+                    f"Pass 2: {_p2r['succeeded']} succeeded, "
+                    f"{_p2r['failed']} failed, {_p2r['skipped']} skipped"
+                )
+            _tok_in = _enrich_data.get("total_input_tokens", 0)
+            _tok_out = _enrich_data.get("total_output_tokens", 0)
+            _api_calls = _enrich_data.get("total_api_calls", 0)
+            _dedup_saved = _enrich_data.get("total_dedup_saved", 0)
+            if _tok_in or _tok_out or _api_calls:
+                t1, t2, t3, t4 = st.columns(4)
+                t1.metric("Input Tokens", f"{_tok_in:,}")
+                t2.metric("Output Tokens", f"{_tok_out:,}")
+                t3.metric("API Calls", f"{_api_calls:,}")
+                t4.metric("Dedup Saved", f"{_dedup_saved:,}")
+            if _enrich_data.get("circuit_breaker_tripped"):
+                st.warning(
+                    f"Circuit breaker tripped: "
+                    f"{_enrich_data.get('error_summary', 'unknown reason')}"
+                )
+            if _enrich_data.get("error_summary") and not _enrich_data.get(
+                "circuit_breaker_tripped"
+            ):
+                st.error(f"Error: {_enrich_data['error_summary']}")
 
 # --- Recent scrape runs ---
 st.subheader("Recent Scrape Runs")

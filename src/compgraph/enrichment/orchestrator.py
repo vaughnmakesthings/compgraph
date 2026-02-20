@@ -53,6 +53,8 @@ class EnrichResult:
     skipped: int = 0
     total_input_tokens: int = 0
     total_output_tokens: int = 0
+    total_api_calls: int = 0
+    total_dedup_saved: int = 0
 
 
 @dataclass
@@ -65,6 +67,8 @@ class EnrichmentRun:
     finished_at: datetime | None = None
     pass1_result: EnrichResult | None = None
     pass2_result: EnrichResult | None = None
+    circuit_breaker_tripped: bool = False
+    error_summary: str | None = None
 
     def finish(self, result: EnrichResult) -> None:
         self.pass1_result = result
@@ -234,7 +238,14 @@ async def get_latest_enrichment_run_from_db() -> dict | None:
             "pass2_succeeded": row.pass2_succeeded,
             "pass2_failed": row.pass2_failed,
             "pass2_skipped": row.pass2_skipped,
+            "total_input_tokens": row.total_input_tokens,
+            "total_output_tokens": row.total_output_tokens,
+            "total_api_calls": row.total_api_calls,
+            "total_dedup_saved": row.total_dedup_saved,
             "error_summary": row.error_summary,
+            "circuit_breaker_tripped": bool(
+                row.error_summary and "circuit breaker" in row.error_summary.lower()
+            ),
         }
 
 
@@ -347,22 +358,21 @@ class EnrichmentOrchestrator:
                 async def _process_group(
                     content_hash: str,
                     group: list[tuple[uuid.UUID, uuid.UUID, str, str, str]],
-                ) -> list[tuple[bool, uuid.UUID]]:
+                ) -> None:
                     """Process a group of postings with identical content.
 
                     Calls the LLM once for the leader, then copies the result
                     to all followers in the group.
                     """
-                    nonlocal api_calls
+                    nonlocal api_calls, failed_ids
 
                     # Circuit breaker — skip if tripped by another group
                     if breaker.tripped:
-                        return []
+                        return
 
                     # Check run-scoped cache first
                     if content_hash in content_cache:
                         cached = content_cache[content_hash]
-                        outcomes: list[tuple[bool, uuid.UUID]] = []
                         for posting_id, snapshot_id, *_ in group:
                             try:
                                 logger.info(
@@ -380,14 +390,17 @@ class EnrichmentOrchestrator:
                                         version="pass1-v1",
                                     )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
                             except Exception:
                                 logger.exception(
                                     "Pass 1 failed saving cached result for posting %s",
                                     posting_id,
                                 )
-                                outcomes.append((False, posting_id))
-                        return outcomes
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass1_failed=1)
+                        return
 
                     # Cache miss — call LLM for the leader posting
                     leader_id, _leader_snap, leader_title, leader_location, leader_text = group[0]
@@ -400,7 +413,7 @@ class EnrichmentOrchestrator:
 
                     async with semaphore:
                         if breaker.tripped:
-                            return []
+                            return
 
                         try:
                             llm_result = await enrich_posting_pass1(
@@ -445,21 +458,23 @@ class EnrichmentOrchestrator:
                             leader_failed = False
 
                     if leader_failed:
+                        result.failed += 1
+                        failed_ids.add(leader_id)
+                        await increment_enrichment_counter(run.run_id, pass1_failed=1)
                         if breaker.tripped:
-                            return [(False, leader_id)]
+                            return
                         # Skip leader (already failed), process followers only
                         followers = group[1:]
-                        follower_outcomes = await _fallback_individual(
+                        await _fallback_individual(
                             followers,
                             content_hash,
                         )
-                        return [(False, leader_id), *follower_outcomes]
+                        return
 
                     # Cache the result for future batches within this run
                     content_cache[content_hash] = pass1_result
 
                     # Save for leader + all followers
-                    outcomes = []
                     for i, (posting_id, snapshot_id, *_) in enumerate(group):
                         try:
                             async with async_session_factory() as save_session:
@@ -478,22 +493,23 @@ class EnrichmentOrchestrator:
                                     posting_id,
                                     leader_id,
                                 )
-                            outcomes.append((True, posting_id))
+                            result.succeeded += 1
+                            await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
                         except Exception:
                             logger.exception(
                                 "Pass 1 failed saving enrichment for posting %s", posting_id
                             )
-                            outcomes.append((False, posting_id))
-                    return outcomes
+                            result.failed += 1
+                            failed_ids.add(posting_id)
+                            await increment_enrichment_counter(run.run_id, pass1_failed=1)
 
                 async def _fallback_individual(
                     group: list[tuple[uuid.UUID, uuid.UUID, str, str, str]],
                     content_hash: str,
-                ) -> list[tuple[bool, uuid.UUID]]:
+                ) -> None:
                     """Process each posting individually when leader fails."""
-                    nonlocal api_calls
+                    nonlocal api_calls, failed_ids
                     cached_on_fallback = False
-                    outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, snapshot_id, title, location, full_text in group:
                         if breaker.tripped:
                             break
@@ -516,13 +532,16 @@ class EnrichmentOrchestrator:
                                         version="pass1-v1",
                                     )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
                             except Exception:
                                 logger.exception(
                                     "Pass 1 failed saving cached fallback for posting %s",
                                     posting_id,
                                 )
-                                outcomes.append((False, posting_id))
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass1_failed=1)
                             continue
 
                         async with semaphore:
@@ -553,7 +572,8 @@ class EnrichmentOrchestrator:
                                         version="pass1-v1",
                                     )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
                             except EnrichmentAPIError as e:
                                 api_calls += 1
                                 breaker.record_api_failure(e.category)
@@ -567,26 +587,19 @@ class EnrichmentOrchestrator:
                                     posting_id,
                                     e.category,
                                 )
-                                outcomes.append((False, posting_id))
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass1_failed=1)
                             except Exception:
                                 api_calls += 1
                                 logger.exception("Pass 1 failed for posting %s", posting_id)
-                                outcomes.append((False, posting_id))
-                    return outcomes
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass1_failed=1)
 
                 # Process all groups concurrently
                 group_tasks = [_process_group(ch, grp) for ch, grp in groups.items()]
-                group_outcomes = await asyncio.gather(*group_tasks)
-
-                for outcomes in group_outcomes:
-                    for success, pid in outcomes:
-                        if success:
-                            result.succeeded += 1
-                            await increment_enrichment_counter(run.run_id, pass1_succeeded=1)
-                        else:
-                            result.failed += 1
-                            await increment_enrichment_counter(run.run_id, pass1_failed=1)
-                            failed_ids.add(pid)
+                await asyncio.gather(*group_tasks)
 
                 # Circuit breaker check — abort batch loop
                 if breaker.tripped:
@@ -615,6 +628,8 @@ class EnrichmentOrchestrator:
                 if len(batch) < self.batch_size:
                     break
 
+        result.total_api_calls = api_calls
+        result.total_dedup_saved = result.skipped
         logger.info(
             "Pass 1 done: %d total, %d API, %d dedup, %d failed, %d in_tok, %d out_tok",
             result.succeeded + result.failed,
@@ -624,12 +639,19 @@ class EnrichmentOrchestrator:
             result.total_input_tokens,
             result.total_output_tokens,
         )
+        if breaker.tripped:
+            run.circuit_breaker_tripped = True
+            run.error_summary = f"circuit breaker triggered: {breaker.trip_reason}"
         run.finish(result)
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
 
         update_fields: dict[str, object] = {
             "pass1_total": result.succeeded + result.failed + result.skipped,
             "pass1_skipped": result.skipped,
+            "total_input_tokens": result.total_input_tokens,
+            "total_output_tokens": result.total_output_tokens,
+            "total_api_calls": result.total_api_calls,
+            "total_dedup_saved": result.total_dedup_saved,
         }
         if finalize:
             update_fields["status"] = (
@@ -758,17 +780,16 @@ class EnrichmentOrchestrator:
                 async def _process_group_pass2(
                     content_hash: str,
                     group: list[tuple[uuid.UUID, uuid.UUID, str, str, str | None, str]],
-                ) -> list[tuple[bool, uuid.UUID]]:
+                ) -> None:
                     """Process a group of postings with identical content for Pass 2."""
-                    nonlocal api_calls
+                    nonlocal api_calls, failed_ids
 
                     if breaker.tripped:
-                        return []
+                        return
 
                     # Check run-scoped cache first
                     if content_hash in content_cache_p2:
                         cached = content_cache_p2[content_hash]
-                        outcomes: list[tuple[bool, uuid.UUID]] = []
                         for posting_id, enrichment_id, *_ in group:
                             try:
                                 logger.info(
@@ -790,14 +811,17 @@ class EnrichmentOrchestrator:
                                             posting_id,
                                         )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
                             except Exception:
                                 logger.exception(
                                     "Pass 2 failed saving cached result for posting %s",
                                     posting_id,
                                 )
-                                outcomes.append((False, posting_id))
-                        return outcomes
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass2_failed=1)
+                        return
 
                     # Cache miss — call LLM for the leader
                     leader_id, _leader_eid, leader_title, leader_loc, leader_crs, leader_ft = group[
@@ -812,7 +836,7 @@ class EnrichmentOrchestrator:
 
                     async with semaphore:
                         if breaker.tripped:
-                            return []
+                            return
 
                         try:
                             llm_result = await enrich_posting_pass2(
@@ -858,19 +882,21 @@ class EnrichmentOrchestrator:
                             leader_failed = False
 
                     if leader_failed:
+                        result.failed += 1
+                        failed_ids.add(leader_id)
+                        await increment_enrichment_counter(run.run_id, pass2_failed=1)
                         if breaker.tripped:
-                            return [(False, leader_id)]
+                            return
                         followers = group[1:]
-                        follower_outcomes = await _fallback_individual_pass2(
+                        await _fallback_individual_pass2(
                             followers,
                             content_hash,
                         )
-                        return [(False, leader_id), *follower_outcomes]
+                        return
 
                     content_cache_p2[content_hash] = pass2_result
 
                     # Save for leader + all followers
-                    outcomes = []
                     for i, (posting_id, enrichment_id, *_rest) in enumerate(group):
                         try:
                             async with async_session_factory() as save_session:
@@ -888,22 +914,23 @@ class EnrichmentOrchestrator:
                                         posting_id,
                                     )
                                 await save_session.commit()
-                            outcomes.append((True, posting_id))
+                            result.succeeded += 1
+                            await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
                         except Exception:
                             logger.exception(
                                 "Pass 2 failed saving enrichment for posting %s", posting_id
                             )
-                            outcomes.append((False, posting_id))
-                    return outcomes
+                            result.failed += 1
+                            failed_ids.add(posting_id)
+                            await increment_enrichment_counter(run.run_id, pass2_failed=1)
 
                 async def _fallback_individual_pass2(
                     group: list[tuple[uuid.UUID, uuid.UUID, str, str, str | None, str]],
                     content_hash: str,
-                ) -> list[tuple[bool, uuid.UUID]]:
+                ) -> None:
                     """Process each posting individually when leader fails."""
-                    nonlocal api_calls
+                    nonlocal api_calls, failed_ids
                     cached_on_fallback = False
-                    outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, enrichment_id, title, location, crs, full_text in group:
                         if breaker.tripped:
                             break
@@ -924,13 +951,16 @@ class EnrichmentOrchestrator:
                                         content_cache_p2[content_hash],
                                     )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
                             except Exception:
                                 logger.exception(
                                     "Pass 2 failed saving cached fallback for posting %s",
                                     posting_id,
                                 )
-                                outcomes.append((False, posting_id))
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass2_failed=1)
                             continue
 
                         async with semaphore:
@@ -960,7 +990,8 @@ class EnrichmentOrchestrator:
                                         p2,
                                     )
                                     await save_session.commit()
-                                outcomes.append((True, posting_id))
+                                result.succeeded += 1
+                                await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
                             except EnrichmentAPIError as e:
                                 api_calls += 1
                                 breaker.record_api_failure(e.category)
@@ -974,26 +1005,19 @@ class EnrichmentOrchestrator:
                                     posting_id,
                                     e.category,
                                 )
-                                outcomes.append((False, posting_id))
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass2_failed=1)
                             except Exception:
                                 api_calls += 1
                                 logger.exception("Pass 2 failed for posting %s", posting_id)
-                                outcomes.append((False, posting_id))
-                    return outcomes
+                                result.failed += 1
+                                failed_ids.add(posting_id)
+                                await increment_enrichment_counter(run.run_id, pass2_failed=1)
 
                 # Process all groups concurrently
                 group_tasks = [_process_group_pass2(ch, grp) for ch, grp in groups.items()]
-                group_outcomes = await asyncio.gather(*group_tasks)
-
-                for outcomes in group_outcomes:
-                    for success, pid in outcomes:
-                        if success:
-                            result.succeeded += 1
-                            await increment_enrichment_counter(run.run_id, pass2_succeeded=1)
-                        else:
-                            result.failed += 1
-                            await increment_enrichment_counter(run.run_id, pass2_failed=1)
-                            failed_ids.add(pid)
+                await asyncio.gather(*group_tasks)
 
                 # Circuit breaker check — abort batch loop
                 if breaker.tripped:
@@ -1021,6 +1045,8 @@ class EnrichmentOrchestrator:
                 if len(batch) < self.batch_size:
                     break
 
+        result.total_api_calls = api_calls
+        result.total_dedup_saved = result.skipped
         logger.info(
             "Pass 2 done: %d total, %d API, %d dedup, %d failed, %d in_tok, %d out_tok",
             result.succeeded + result.failed,
@@ -1030,6 +1056,9 @@ class EnrichmentOrchestrator:
             result.total_input_tokens,
             result.total_output_tokens,
         )
+        if breaker.tripped:
+            run.circuit_breaker_tripped = True
+            run.error_summary = f"circuit breaker triggered: {breaker.trip_reason}"
         run.finish_pass2(result)
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
 
@@ -1038,16 +1067,26 @@ class EnrichmentOrchestrator:
             if run.status in (EnrichmentStatus.SUCCESS, EnrichmentStatus.PARTIAL)
             else DBStatus.FAILED
         )
-        error_msg = None
-        if breaker.tripped:
-            error_msg = f"circuit breaker triggered: {breaker.trip_reason}"
-        elif run.status == EnrichmentStatus.FAILED:
+        error_msg = run.error_summary
+        if not error_msg and run.status == EnrichmentStatus.FAILED:
             p1_failed = run.pass1_result.failed if run.pass1_result else 0
             error_msg = f"pass1: {p1_failed}fail, pass2: {result.failed}fail"
+
+        # Accumulate token counts from both passes
+        p1 = run.pass1_result
+        total_in = result.total_input_tokens + (p1.total_input_tokens if p1 else 0)
+        total_out = result.total_output_tokens + (p1.total_output_tokens if p1 else 0)
+        total_api = result.total_api_calls + (p1.total_api_calls if p1 else 0)
+        total_dedup = result.total_dedup_saved + (p1.total_dedup_saved if p1 else 0)
+
         await update_enrichment_run_record(
             run.run_id,
             pass2_total=result.succeeded + result.failed + result.skipped,
             pass2_skipped=result.skipped,
+            total_input_tokens=total_in,
+            total_output_tokens=total_out,
+            total_api_calls=total_api,
+            total_dedup_saved=total_dedup,
             status=final_status,
             finished_at=run.finished_at,
             error_summary=error_msg,
