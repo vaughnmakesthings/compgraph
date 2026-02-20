@@ -15,7 +15,7 @@ M3 (data collection) → M4 (aggregation + API) → M5 (dashboard via API) → M
 
 | Feature | Deferred To | Rationale |
 |---------|-------------|-----------|
-| Auth (Supabase Auth, magic link) | M4 (Step 4d) | API must exist first |
+| Auth (Supabase Auth, invite via magic link + password login) | M4 (Step 4d) | API must exist first |
 | arq (replace APScheduler) | M6 | Current scheduler works; migration is operational hardening |
 | LiteLLM (provider abstraction) | M6 | Needs LLM eval tool (Issue #128) to validate quality first |
 | Frontend framework (Next.js) | M7 | Streamlit validates views cheaply before committing to framework |
@@ -34,7 +34,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 - **Dashboard migration (M5):** Streamlit pages migrate from direct DB queries to API calls
 - **Enrichment:** 2-pass stays (Haiku + Sonnet), model swap only after LLM eval tool validates quality
 - **Entity resolution:** 3-tier (exact/slug/fuzzy) stays, thresholds tunable via config
-- **Auth:** Supabase Auth — magic link, invite-only, admin/user roles. No public sign-up, no custom JWT.
+- **Auth:** Supabase Auth — invite via magic link, user sets up username/password during profile setup. Admin/user roles. No public sign-up, no custom JWT.
 - **Frontend data access:** Pure API consumer — Next.js calls FastAPI endpoints, no direct DB access, no Prisma
 - **Database platform:** Supabase Postgres through M6. Evaluate DO Managed Postgres for M7 if needed.
 
@@ -156,7 +156,7 @@ Goal: Query layer serving dashboard views from pre-computed aggregation tables, 
 
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| Supabase Auth integration | Magic link + invite flow, admin/user roles, JWT verification middleware (Issue #59) | Users table exists | Pending |
+| Supabase Auth integration | Invite via magic link, profile setup with username/password, admin/user roles, JWT verification middleware (Issue #59) | Users table exists | Pending |
 | Role-based access control | Admin: invite, pipeline control, full access. User: read-only dashboard, export | Supabase Auth | Pending |
 | `GET /api/scrape/status` | Pipeline status | — | Done (PR #58) |
 | `POST /api/scrape/trigger` | Manual trigger (admin) | — | Done (PR #58) |
@@ -254,7 +254,7 @@ Goal: Production-ready frontend with auth, export, and deployment on Digital Oce
 | Dashboard views | Rebuild Streamlit views: velocity, brand intel, posting explorer, alerts | Scaffold | Pending |
 | Data tables (AG Grid) | Sorting, filtering, column grouping for posting/brand/company views | Scaffold | Pending |
 | Charts (Recharts) | Velocity line charts, brand timeline, pay distribution | Scaffold | Pending |
-| Auth flow | Next.js middleware + Supabase Auth, invite flow, role-based route protection | Supabase Auth (M4) | Pending |
+| Auth flow | Next.js middleware + Supabase Auth, password login, role-based route protection | Supabase Auth (M4) | Pending |
 | Export/PDF capability | Download reports, charts, filtered data | Production views | Pending |
 | DO production deploy | Droplet provisioning, Caddy reverse proxy, CI/CD, domain, SSL | All above | Pending |
 | Scraper expansion (full) | Scale to 50 companies using proven adapters | Pipeline validated at 10+ companies | Pending |
