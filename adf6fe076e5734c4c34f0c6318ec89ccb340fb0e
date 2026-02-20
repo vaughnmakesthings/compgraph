@@ -1,0 +1,77 @@
+tests/test_enrichment_run_model.py
+  28d449100c988e42 22-43
+src/compgraph/enrichment/resolver.py
+  28d449100c988e42 8,21-25,27-28,58-59,67-68,77-79,82,84,86,88,121,129-131
+src/compgraph/dashboard/queries.py
+  28d449100c988e42 236
+src/compgraph/enrichment/retry.py
+  28d449100c988e42 14,167-171,191,197-203
+src/compgraph/config.py
+  28d449100c988e42 48-59
+src/compgraph/dashboard/db.py
+  28d449100c988e42 26-29
+src/compgraph/enrichment/orchestrator.py
+  28d449100c988e42 246-249,658-659,1097
+src/compgraph/db/models.py
+  28d449100c988e42 8,161-163,178,207,231,275-283,290,296,299
+tests/test_resolver.py
+  28d449100c988e42 73-74,76-78
+pyproject.toml
+  28d449100c988e42 90
+src/compgraph/dashboard/api.py
+  28d449100c988e42 7,17
+src/compgraph/db/session.py
+  28d449100c988e42 8-11
+scripts/rls_policies.sql
+  28d449100c988e42 1-78
+src/compgraph/dashboard/pages/1_Pipeline_Health.py
+  28d449100c988e42 66-90,92,123-128,130-133,144,150
+tests/test_migrations.py
+  28d449100c988e42 5,84-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "adf6fe076e5734c4c34f0c6318ec89ccb340fb0e",
+  "prompts": {
+    "28d449100c988e42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4502a733-e27f-4f56-8dc8-7c08bbd30a44",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 291,
+      "total_deletions": 160,
+      "accepted_lines": 254,
+      "overriden_lines": 0
+    },
+    "6b99906f96cd906f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5988e122-4bd9-4195-944a-4d713ad1ecd9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 40,
+      "overriden_lines": 0
+    },
+    "d5421e1bd7a35f91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6067db20-994f-42e6-9847-18ae9a04a60e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 3,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
