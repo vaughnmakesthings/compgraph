@@ -1,0 +1,52 @@
+src/compgraph/enrichment/orchestrator.py
+  76022a34e8d0523b 29-33,127-159,268-269,294-295,305,358-360,402-404,406,414-434,448-449,498-500,529-530,532,540-543,557-570,591-597,619,624-625,641-642,688-689,708,765-767,814-816,818,827-831,833-847,861-862,908-910,937-938,940,949-952,964-977,998-1004,1025,1030-1031,1042-1044
+src/compgraph/enrichment/pass1.py
+  76022a34e8d0523b 11,21,35,38
+src/compgraph/enrichment/pass2.py
+  76022a34e8d0523b 11,22,38,41
+src/compgraph/config.py
+  76022a34e8d0523b 33-35
+src/compgraph/enrichment/retry.py
+  76022a34e8d0523b 9-11,30-32,34-93,110,126,129,134,151-156,169,171-172,180-184,187-190,193-195,198,202,204,211,221-226,241-245
+tests/test_enrichment_pass2.py
+  76022a34e8d0523b 18-22,107-113,163,172-176,183,192,195-202,204-206,213,216,219,239-241,246-266,284,288,306,310
+tests/helpers.py
+  76022a34e8d0523b 11-13,15,18-20,24,30-32,37
+tests/test_enrichment_dedup.py
+  76022a34e8d0523b 179-185,210,256,301,351,408,456,520-572,629,685,741,797,859,916,982,1049,1097
+tests/test_enrichment_pass1.py
+  76022a34e8d0523b 18-23,186,190-196,204,208-210,217,221-230,232-233,244,246,250-251,258,261,264-265,286,288,293,306,310,332,334,353,357,376,380,385-542,544-556,681-682,826-830
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "29bf455654f0849fce45fa3dc6eaf2e4668c579b",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 102,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    },
+    "76022a34e8d0523b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04e000d4-f65b-4f0d-a1eb-50738a14cdfa",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 711,
+      "total_deletions": 106,
+      "accepted_lines": 695,
+      "overriden_lines": 0
+    }
+  }
+}
