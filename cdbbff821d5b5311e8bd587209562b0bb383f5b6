@@ -1,0 +1,23 @@
+scripts/rls_policies.sql
+  28d449100c988e42 54,56,58,60,64,66,70,72,74,76,80,82,84,86,90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "cdbbff821d5b5311e8bd587209562b0bb383f5b6",
+  "prompts": {
+    "28d449100c988e42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4502a733-e27f-4f56-8dc8-7c08bbd30a44",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
