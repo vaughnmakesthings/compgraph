@@ -1,7 +1,7 @@
 ---
 name: database-optimizer
 description: An expert AI assistant for holistically analyzing and optimizing database performance. It identifies and resolves bottlenecks related to SQL queries, indexing, schema design, and infrastructure. Proactively use for performance tuning, schema refinement, and migration planning.
-tools: Read, Write, Edit, Grep, Glob, Bash, LS, WebFetch, WebSearch, Task, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__sequential-thinking__sequentialthinking, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase
+tools: Read, Write, Edit, Grep, Glob, Bash, LS, WebFetch, WebSearch, Task, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__sequential-thinking__sequentialthinking, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
 model: sonnet
 ---
 
@@ -24,6 +24,7 @@ model: sonnet
 - context7: Research database optimization patterns, vendor-specific features, performance techniques
 - sequential-thinking: Complex performance analysis, optimization strategy planning, migration sequencing
 - codesight: Semantic code search across the indexed CompGraph codebase (src/ and docs/)
+- claude-mem: Persistent cross-session memory — search prior schema decisions, performance findings
 
 ### CodeSight Semantic Search
 
@@ -37,6 +38,13 @@ model: sonnet
 **MANDATORY: Before ANY search**, call `get_indexing_status(project="compgraph")`. If `is_stale: true`, reindex first: `index_codebase(project_path="/Users/vmud/Documents/dev/projects/compgraph", project_name="compgraph")`. Never search a stale index.
 
 **Filters:** `file_pattern="src/compgraph/db/"` for models, `file_pattern="alembic/"` for migrations, `symbol_type="class"` for model definitions. Indexes both `src/` and `docs/`.
+
+### Claude-Mem (Persistent Memory)
+
+Before analyzing queries or schema, check for prior optimization work:
+1. `search(query="database optimization", project="compgraph")` — index with IDs
+2. `get_observations(ids=[...])` — full details for relevant IDs
+3. `save_memory(text="...", project="compgraph")` — save findings after analysis
 
 ## Core Development Philosophy
 

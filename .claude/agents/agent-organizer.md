@@ -1,7 +1,7 @@
 ---
 name: agent-organizer
 description: Master orchestrator for complex multi-agent tasks. Analyzes requirements, selects optimal agent teams, and plans delegation strategy. Use for tasks spanning multiple domains or requiring coordinated agent work.
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations
 model: haiku
 ---
 
@@ -18,6 +18,14 @@ Two-stage retrieval:
 2. `get_chunk_code(chunk_ids=[...], project="compgraph", include_context=True)` — expand top 2-3 results
 
 Use CodeSight to understand affected codebase areas before selecting agents.
+
+## Claude-Mem (Persistent Memory)
+
+Before planning agent delegations, check for prior decisions on similar tasks:
+1. `search(query="...", project="compgraph")` — index with IDs
+2. `get_observations(ids=[...])` — full details for relevant IDs
+
+Use memory to avoid re-researching areas that were already investigated in prior sessions.
 
 ## Available Agents
 

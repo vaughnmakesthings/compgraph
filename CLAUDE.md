@@ -153,13 +153,15 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - Don't check Pass 2 completion via `PostingBrandMention` existence — use `enrichment_version` containing "pass2".
 - Don't add MCP servers to `.mcp.json` that are already provided by plugins — this causes ~10K tokens of context waste and auth warnings. Plugins are the authoritative source.
 - Don't forget `exclude_ids` for failed postings in batch loops — prevents livelock on persistent failures.
+- Don't test mock behavior — test real behavior. Don't add test-only methods to production classes. Mock minimally and only after understanding the dependency chain.
 
 ## Platform Gotchas
 
 - **macOS `find`**: Use `fd` or `Glob` tool instead — macOS `find` has different flag syntax than GNU `find` (e.g., `-regex` behavior differs).
 - **Docker**: Requires OrbStack on macOS dev machines (not Docker Desktop). The GitHub MCP server is a Go-based Docker image, not an npm package.
-- **`claude plugins uninstall`**: Unreliable — may silently fail. Verify removal by checking `~/.claude/plugins/` directly.
+- **`claude plugins uninstall`**: Verify removal by checking `~/.claude/plugins/installed_plugins.json` directly.
 - **Ruff PostToolUse hook**: Strips imports it considers unused. After editing files with `TYPE_CHECKING` imports or `cast()` patterns, verify the imports survived.
+- **Skills format**: Must use `.claude/skills/<name>/SKILL.md` (directory-based, not flat files).
 
 ## Deployment
 
@@ -184,7 +186,10 @@ Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.1
 
 ## Git Workflow
 
+- **NEVER merge to main without explicit user approval.** Poll the user, don't assume.
+- **NEVER leave unactioned code review feedback before merge.** Fix, defer to issue, or explicitly reject with rationale.
 - Never merge a PR until ALL CI checks pass. Poll `gh pr checks <number>` if unsure.
+- 4 review bots active on PRs: Gemini, Cursor, Copilot, AND Cubic. Wait for all before merging.
 - Git hooks: pre-commit (ruff check+format), pre-push (pytest). Install via `bash scripts/setup-hooks.sh`.
 - Only use `--no-verify` for documentation-only pushes with explicit justification.
 
@@ -207,11 +212,11 @@ All hooks MUST have a fallback/escape condition. If an external tool call fails 
 
 The project is indexed with CodeSight MCP for semantic search across code and docs.
 
-**MANDATORY: Before ANY CodeSight search**, call `get_indexing_status(project="compgraph")`. If `is_stale: true`, reindex first:
+**MANDATORY SESSION START:** Always reindex at the beginning of every session — no exceptions, no conditional check:
 ```
 index_codebase(project_path="/Users/vmud/Documents/dev/projects/compgraph", project_name="compgraph")
 ```
-This is incremental (~2-4s) and skips unchanged files. Never search a stale index.
+This is incremental (~2-4s for no changes, ~15s for many). Do it once at session start, then search freely.
 
 **Two-stage retrieval pattern:**
 1. `search_code(query, project="compgraph")` — returns metadata only (~40 tokens/result)
@@ -224,17 +229,30 @@ This is incremental (~2-4s) and skips unchanged files. Never search a stale inde
 
 **Indexed content:** All Python source, tests, and docs (design.md, product-spec, plans/, references/, failure-patterns, etc.). Research findings and architecture decisions are searchable alongside implementation code.
 
-**When to use:** Prefer CodeSight over speculative file reads when exploring unfamiliar areas or when subagents need targeted context without loading entire files.
+**When to use:** CodeSight is the **default** exploration tool — use it BEFORE Read/Glob/Grep when exploring unfamiliar code. Only fall back to direct file reads for exact line-level content that CodeSight already pointed you to.
 
 ## Context Loading
+
+**Exploration hierarchy (follow this order — do NOT skip to step 3):**
+1. **Claude-Mem** — search persistent memory for prior research and decisions: `search(query="<topic>", project="compgraph")` → `get_observations(ids=[...])` for details. If memory answers the question, stop here.
+2. **CodeSight** — semantic search across code and docs: `search_code(query="<topic>", project="compgraph")` → `get_chunk_code(chunk_ids)` for source. If CodeSight locates the relevant code, read only that file.
+3. **Targeted reads** — Glob/Grep/Read for specific files identified by steps 1-2. Do NOT speculatively read files hoping to find something — that's what steps 1-2 are for.
+
+**Anti-pattern:** Opening 5+ files with Read/Glob before trying Claude-Mem or CodeSight. If you catch yourself doing this, stop and use the tools above first.
 
 Read `docs/changelog.md` (latest entry only) for session continuity. The Roadmap section above provides milestone awareness at Tier 0. Load context packs from `docs/context-packs.md` based on task type — use Pack R for planning sessions. Never load all of `docs/design.md` at once (~5.5K tokens).
 
 ## Session Discipline
 
-- Spend no more than 30% of session effort on codebase exploration before producing actionable output (plan, code, or specific questions).
+**Hard limits on exploration before producing output:**
+- **Max 5 tool calls** for initial exploration (claude-mem + CodeSight + targeted reads). After 5 calls, you MUST produce a deliverable: a summary, a proposed approach, or a specific question.
+- **If you need more exploration**, tell the user what you've found so far and ask if you should continue. Do NOT silently keep reading files.
+- **Never open more than 3 files** in a single exploration pass without producing intermediate output.
+
+**Behavioral rules:**
 - If the user interrupts or redirects, immediately pivot — do not continue the current exploration path.
-- Every exploration phase must end with a concrete deliverable: a bullet-point summary, a proposed approach, or a direct question.
+- Every exploration phase must end with a concrete deliverable, even if incomplete.
+- When the user says "implement", start writing code within your first 5 tool calls. Use claude-mem and CodeSight to get oriented, then produce code — not a 10-call research phase.
 
 ## Agent Crew
 
@@ -274,7 +292,8 @@ When scaffolding new modules, create fully-implemented files — never empty stu
 ## Session Wrap-Up
 
 Before ending a non-trivial session, write a structured summary instead of running parallel observer agents:
-- Use `claude-mem save_memory` (if available) or append to `docs/changelog.md`
+- Save key decisions and findings to claude-mem: `save_memory(text="...", project="compgraph")` — this is the primary persistence method
+- Also append to `docs/changelog.md` for file-based continuity
 - Include: date, goal, files changed, key decisions, and open questions
 - Keep summaries concise — 5-10 lines maximum
 - **Roadmap checkpoint:** If milestone progress changed, update `docs/phases.md` Current State line and the Roadmap section above
