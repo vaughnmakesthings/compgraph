@@ -1,0 +1,40 @@
+docs/phases.md
+  f242d8c695768f4d 38
+docs/cheat-sheet.md
+  f242d8c695768f4d 35-41,118,120
+docs/context-packs.md
+  f242d8c695768f4d 285,287-291
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "a32e9e4a658c560fc79b3de4c0720224114b7f0f",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    },
+    "f242d8c695768f4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d19c9a3a-f608-42fb-9a3f-4625f4b7b290",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 4,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
