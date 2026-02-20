@@ -828,3 +828,88 @@ class TestEnrichmentConfig:
         from compgraph.config import settings
 
         assert settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD == 3
+
+
+# ---------------------------------------------------------------------------
+# Observability fields
+# ---------------------------------------------------------------------------
+
+
+class TestObservabilityFields:
+    def test_enrichment_run_defaults(self):
+        from compgraph.enrichment.orchestrator import EnrichmentRun
+
+        run = EnrichmentRun()
+        assert run.circuit_breaker_tripped is False
+        assert run.error_summary is None
+
+    def test_enrich_result_includes_api_and_dedup(self):
+        from compgraph.enrichment.orchestrator import EnrichResult
+
+        result = EnrichResult()
+        assert result.total_api_calls == 0
+        assert result.total_dedup_saved == 0
+
+    def test_status_includes_token_fields(self, client):
+        from unittest.mock import AsyncMock, patch
+
+        with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
+            mock_orch = AsyncMock()
+            mock_orch_cls.return_value = mock_orch
+            client.post("/api/enrich/pass1/trigger")
+
+        response = client.get("/api/enrich/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "total_input_tokens" in data
+        assert "total_output_tokens" in data
+        assert "total_api_calls" in data
+        assert "total_dedup_saved" in data
+        assert "circuit_breaker_tripped" in data
+        assert "error_summary" in data
+
+    def test_status_with_token_data(self, client):
+        from compgraph.enrichment.orchestrator import (
+            EnrichmentRun,
+            EnrichResult,
+            _store_run,
+        )
+
+        run = EnrichmentRun()
+        result = EnrichResult(
+            succeeded=5,
+            total_input_tokens=1000,
+            total_output_tokens=500,
+            total_api_calls=5,
+            total_dedup_saved=3,
+        )
+        run.finish(result)
+        _store_run(run)
+
+        response = client.get(f"/api/enrich/status/{run.run_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_input_tokens"] == 1000
+        assert data["total_output_tokens"] == 500
+        assert data["total_api_calls"] == 5
+        assert data["total_dedup_saved"] == 3
+
+    def test_status_circuit_breaker_flag(self, client):
+        from compgraph.enrichment.orchestrator import (
+            EnrichmentRun,
+            EnrichResult,
+            _store_run,
+        )
+
+        run = EnrichmentRun()
+        run.circuit_breaker_tripped = True
+        run.error_summary = "circuit breaker triggered: 3 consecutive API failures"
+        result = EnrichResult(succeeded=2, failed=3)
+        run.finish(result)
+        _store_run(run)
+
+        response = client.get(f"/api/enrich/status/{run.run_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["circuit_breaker_tripped"] is True
+        assert "circuit breaker" in data["error_summary"]

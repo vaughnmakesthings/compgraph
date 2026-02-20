@@ -235,6 +235,30 @@ Use when implementing alert generation or delivery.
 
 ---
 
+### Pack R: Roadmap & Phase Planning
+
+Use when planning work, assessing scope, transitioning milestones, or delegating multi-agent tasks.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/phases.md` → Roadmap Summary section | Current milestone, constraints, pre-commitments | ~500 |
+| `docs/phases.md` → current + next phase sections | Task tables, dependencies, exit criteria | ~1K |
+| `docs/compgraph-product-spec.md` → milestones section | Original requirements per milestone | ~800 |
+| `docs/changelog.md` (latest entry) | What happened last session | ~500 |
+
+**Tier 2 escalation (load for scaling/infra planning):**
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/phases.md` → M6c (Scaling Prep) tasks | LLM eval, LiteLLM, Batch API, arq details | ~500 |
+| Scaling strategy from `docs/changelog.md` | Infrastructure decisions, cost projections | ~500 |
+
+**Total: ~3K core + ~1K Tier 2**
+
+**Recommended agents:** `agent-organizer` (always loads Pack R), `spec-reviewer` (loads Roadmap Summary for scope checks).
+
+---
+
 ## Tier 2: Reference Documents (Load On Demand)
 
 These are NOT loaded by default. Pull them in only when needed.
@@ -258,8 +282,13 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/supabase-alembic-migrations.md` | Connection strings, schema isolation, pool config, migration safety | Database setup, Alembic config |
 | `docs/references/icims-scraping.md` | iframe bypass, JSON-LD extraction, pagination, anti-scraping, portal types | iCIMS scraper (BDS, MarketSource) |
 | `docs/references/workday-cxs-api.md` | CXS API endpoints, search/detail schemas, pagination, rate limits, tenant variations | Workday scraper (2020 Companies) |
-| `docs/references/proxy-provider-comparison.md` | Provider evaluation, pricing, feature comparison | Proxy infrastructure |
+| `docs/references/proxy-provider-comparison.md` <!-- MISSING --> | Provider evaluation, pricing, feature comparison | Proxy infrastructure |
 | `docs/references/similar-projects-research.md` | Open-source project patterns, tooling decisions, anti-bot signals | Scraper design, enrichment tooling, pipeline architecture |
+| `docs/references/canadian-portals-research.md` | Canadian job portal research | Scraper expansion |
+| `docs/references/multi-component-scraper-patterns.md` | Multi-component scraper architecture | Scraper design patterns |
+| `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
+| `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
+| `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 
@@ -314,10 +343,11 @@ When launching a project-level agent via the orchestrator or manually, inject th
 
 | Agent | Default Pack | Always Include |
 |-------|-------------|----------------|
-| `python-backend-developer` | Pack matching current task (A-H) | Tier 0 (CLAUDE.md auto-loaded) |
+| `python-backend-developer` | Pack matching current task (A-H) | Tier 0 (CLAUDE.md auto-loaded, includes Roadmap) |
 | `code-reviewer` | Pack matching reviewed code + full `docs/design.md` section | changelog latest entry |
 | `pytest-validator` | Test files + source files under test | Models for type checking |
-| `spec-reviewer` | `docs/compgraph-product-spec.md` (relevant sections) | changelog latest entry |
+| `spec-reviewer` | `docs/compgraph-product-spec.md` (relevant sections) | Roadmap Summary from `phases.md` |
+| `agent-organizer` | Pack R (Roadmap & Phase Planning) | Tier 0 + changelog latest entry |
 
 ### Voltagent Specialist Injection
 

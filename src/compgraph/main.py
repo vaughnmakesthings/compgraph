@@ -1,3 +1,5 @@
+import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,6 +12,12 @@ from compgraph.api.routes.scheduler import router as scheduler_router
 from compgraph.api.routes.scrape import router as scrape_router
 from compgraph.config import settings
 from compgraph.db.session import engine
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    stream=sys.stderr,
+)
 
 
 @asynccontextmanager

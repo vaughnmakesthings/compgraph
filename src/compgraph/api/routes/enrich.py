@@ -36,6 +36,12 @@ class EnrichmentRunResponse(BaseModel):
     finished_at: datetime | None
     pass1_result: EnrichResultResponse | None
     pass2_result: EnrichResultResponse | None
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_api_calls: int = 0
+    total_dedup_saved: int = 0
+    circuit_breaker_tripped: bool = False
+    error_summary: str | None = None
 
 
 class TriggerResponse(BaseModel):
@@ -61,6 +67,16 @@ def _run_to_response(run: EnrichmentRun) -> EnrichmentRunResponse:
             failed=run.pass2_result.failed,
             skipped=run.pass2_result.skipped,
         )
+    total_in = 0
+    total_out = 0
+    total_api = 0
+    total_dedup = 0
+    for r in (run.pass1_result, run.pass2_result):
+        if r:
+            total_in += r.total_input_tokens
+            total_out += r.total_output_tokens
+            total_api += r.total_api_calls
+            total_dedup += r.total_dedup_saved
     return EnrichmentRunResponse(
         run_id=run.run_id,
         status=run.status,
@@ -68,6 +84,12 @@ def _run_to_response(run: EnrichmentRun) -> EnrichmentRunResponse:
         finished_at=run.finished_at,
         pass1_result=pass1,
         pass2_result=pass2,
+        total_input_tokens=total_in,
+        total_output_tokens=total_out,
+        total_api_calls=total_api,
+        total_dedup_saved=total_dedup,
+        circuit_breaker_tripped=run.circuit_breaker_tripped,
+        error_summary=run.error_summary,
     )
 
 

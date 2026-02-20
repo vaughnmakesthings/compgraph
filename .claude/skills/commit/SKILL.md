@@ -27,7 +27,12 @@ Optional arguments:
    ```
    If tests fail, stop and report failures. Do not commit broken code.
 
-3. **Diff review** — understand what's being committed:
+3. **Doc-sync check** — only if `docs/references/` or `.claude/skills/` files appear in the diff:
+   - If a **new file** was added to `docs/references/`: check `docs/context-packs.md` Tier 2 "External Research" table. If the file is not listed, warn: "New reference doc not indexed in context-packs.md — add a row before committing."
+   - If a **new skill directory** was added to `.claude/skills/`: check `CLAUDE.md` Skills section and `docs/cheat-sheet.md` Custom Skills table. If missing from either, warn: "New skill not listed in CLAUDE.md or cheat-sheet.md — add entries before committing."
+   - These are warnings, not blockers. Note them in the diff summary so the user can decide.
+
+4. **Diff review** — understand what's being committed:
    ```bash
    git status
    git diff --stat
@@ -35,7 +40,7 @@ Optional arguments:
    ```
    Summarize changes in 2-3 bullet points for the user.
 
-4. **Stage and commit**:
+5. **Stage and commit**:
    - Stage relevant files by name (not `git add -A` — avoid secrets/binaries)
    - Generate a conventional commit message from the diff:
      - Format: `type: short description` (feat/fix/docs/refactor/test/chore)
@@ -43,7 +48,7 @@ Optional arguments:
    - Show proposed message to user for confirmation
    - Commit with the confirmed message
 
-5. **Push** (unless `--no-push`):
+6. **Push** (unless `--no-push`):
    ```bash
    git push origin HEAD
    ```

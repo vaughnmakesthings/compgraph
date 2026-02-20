@@ -84,6 +84,23 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 | **Aggregation** | `agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle` | Pre-computed dashboard metrics |
 | **Auth** | `users` | Invite-only access control |
 
+## Roadmap
+
+**Current:** M3 — Data Collection (~95%). Remaining: data quality review, prompt fixes, security (#130/#131).
+**Next:** M4 — Aggregation & API (4 agg rebuild jobs → dashboard/detail endpoints → Supabase Auth).
+
+**Do NOT build yet:**
+- Auth (Supabase Auth, invite via magic link, password login) → M4d. Custom JWT → never.
+- arq (replace APScheduler) → M6
+- LiteLLM (provider abstraction) → M6 (needs LLM eval tool first)
+- Frontend framework (Next.js) → M7
+- Digital Ocean production deploy → M7 (dev migration in M5)
+- Prisma / second ORM → never (frontend is pure API consumer)
+
+**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Dashboard migration (M5) = Streamlit → API calls. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (invite via magic link, password login, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres through M6.
+
+See `docs/phases.md` for full roadmap with task tables. Load Pack R from `docs/context-packs.md` for planning sessions.
+
 ### Key Design Decisions
 
 - **Append-only snapshots** — never UPDATE/DELETE `posting_snapshots`. Enrichments are versioned (append-only trigger removed in PR #118; prefer INSERT but UPDATEs allowed).
@@ -146,6 +163,12 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 
 ## Deployment
 
+### Infrastructure Platform: Digital Ocean
+- **Platform**: Digital Ocean for all production and dev infrastructure
+- **CLI**: `doctl` (v1.150.0) — installed, authenticated via 1Password plugin (`op plugin run -- doctl`)
+- **Management**: Use `doctl` CLI for all infrastructure operations (droplets, databases, networking, firewalls)
+
+### Current Dev Server (Raspberry Pi)
 Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.168.1.69`.
 
 - **SSH**: `ssh compgraph-dev` (alias in `~/.ssh/config`, uses 1Password SSH agent)
@@ -205,7 +228,7 @@ This is incremental (~2-4s) and skips unchanged files. Never search a stale inde
 
 ## Context Loading
 
-Read `docs/changelog.md` (latest entry only) for session continuity. Load context packs from `docs/context-packs.md` based on task type. Never load all of `docs/design.md` at once (~5.5K tokens).
+Read `docs/changelog.md` (latest entry only) for session continuity. The Roadmap section above provides milestone awareness at Tier 0. Load context packs from `docs/context-packs.md` based on task type — use Pack R for planning sessions. Never load all of `docs/design.md` at once (~5.5K tokens).
 
 ## Session Discipline
 
@@ -242,6 +265,7 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/cleanup` — clean up merged branches and worktrees
 - `/enrich-status` — check enrichment pipeline status on dev server
 - `/migrate` — generate/run Alembic migrations
+- `/docs-audit` — validate doc freshness, cross-doc consistency, and research gaps
 
 ## Code Standards
 
@@ -253,4 +277,5 @@ Before ending a non-trivial session, write a structured summary instead of runni
 - Use `claude-mem save_memory` (if available) or append to `docs/changelog.md`
 - Include: date, goal, files changed, key decisions, and open questions
 - Keep summaries concise — 5-10 lines maximum
+- **Roadmap checkpoint:** If milestone progress changed, update `docs/phases.md` Current State line and the Roadmap section above
 - This replaces the need for dedicated observer agent sessions

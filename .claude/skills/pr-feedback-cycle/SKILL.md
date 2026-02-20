@@ -17,18 +17,63 @@ gh pr view --json number -q .number
 ## Constants
 
 ```
-BOT_LOGINS    = gemini-code-assist[bot], cursor[bot], copilot-pull-request-review[bot]
-BOT_API_NAMES = gemini-code-assist, cursor, copilot-pull-request-reviewer
+BOT_LOGINS    = gemini-code-assist[bot], cursor[bot], copilot-pull-request-review[bot], cubic-dev-ai[bot]
+BOT_API_NAMES = gemini-code-assist, cursor, copilot-pull-request-reviewer, cubic-dev-ai
 (Note: GraphQL author.login omits [bot] suffix. Copilot uses "reviewer" not "review".)
-(All 3 bots confirmed active on PR #86, Feb 2026.)
+(4 bots confirmed active Feb 2026. Copilot is intermittent — may not review every PR.)
 MAX_CYCLES    = 5
 CI_POLL       = 30s interval, 15 min timeout
-BOT_SETTLE    = 2 min after CI passes (mandatory — prevents false "clean" exit)
+BOT_WAIT      = Poll for bot reviews after CI passes (see Step 0). 10 min timeout.
 ```
+
+### Bot Timing (observed across PRs #123, #126, #129)
+
+| Bot | Typical Delay | Notes |
+|-----|---------------|-------|
+| `gemini-code-assist[bot]` | < 1 min | Nearly instant after push |
+| `cubic-dev-ai[bot]` | 5-7 min | Consistent |
+| `cursor[bot]` | 30s - 28 min | Highly variable |
+| `copilot-pull-request-review[bot]` | 1-3 min | Intermittent — may skip PRs entirely |
+
+**Implication:** A fixed wait is unreliable. The skill MUST poll for bot review presence before triaging.
 
 ## Core Loop
 
 Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.
+
+### Step 0 — Wait for bot reviews
+
+**This step is mandatory before the first triage cycle.** Slow bots (Cubic, Cursor) take 5-28 minutes to post reviews. Without this wait, the skill will falsely report "clean" and exit.
+
+1. Poll CI status first (same as Step 5):
+   ```bash
+   gh pr checks $PR_NUMBER
+   ```
+   Wait until CI passes (30s interval, 15 min timeout). If CI fails, stop and report.
+
+2. Once CI passes, poll for bot reviews:
+   ```bash
+   gh api repos/vaughnmakesthings/compgraph/pulls/$PR_NUMBER/reviews \
+     --jq '.[].user.login' | sort -u
+   ```
+
+3. Compare detected bot logins against `BOT_LOGINS`. Track which bots have posted at least one review.
+
+4. Re-poll every 60 seconds until **all bots** have posted OR **10 minutes** have elapsed since CI passed.
+
+5. After timeout or all bots detected, report status:
+   ```
+   Bot readiness (waited Xm Ys):
+     ✓ gemini-code-assist[bot] — detected
+     ✓ cubic-dev-ai[bot] — detected
+     ✗ cursor[bot] — not detected (timed out)
+     ✗ copilot-pull-request-review[bot] — not detected (timed out)
+   Proceeding with available reviews.
+   ```
+
+6. Proceed to Step 1 with whatever reviews are available. Missing bots are NOT an error — some bots skip PRs entirely.
+
+**Skip Step 0** on cycle 2+ (re-triage after pushing fixes). For re-triage, use a simpler 3-minute wait after CI passes, since bots only need to re-analyze the diff delta.
 
 ### Step 1 — Fetch unresolved bot comments
 
@@ -77,6 +122,7 @@ Each bot uses a different format. Extract severity from the **first comment body
 | `gemini-code-assist` | `![critical]` or `![high]` or `![security` in image alt text (`![alt](url)` format) | `![medium]` | `![low]` |
 | `cursor` | `**Critical Severity**` or `**High Severity**` | `**Medium Severity**` | `**Low Severity**` |
 | `copilot-pull-request-reviewer` | Body contains `critical` or `bug` keywords prominently | Default (no explicit severity) | `suggestion`, `nitpick`, `nit` keywords |
+| `cubic-dev-ai` | Body starts with `P1:` | Body starts with `P2:` | Body starts with `P3:` or `P4:` |
 
 **Gemini format note**: Gemini embeds severity as a markdown image: `![medium](https://www.gstatic.com/codereviewagent/medium-priority.svg)`. Extract the alt text between `![` and `]` — match against `critical`, `high`, `medium`, `low`, `security`. Do NOT search for `medium-priority` in the body text.
 
@@ -235,7 +281,7 @@ Only execute this step if any Accepts were made (commits exist to push).
 
 4. If CI fails, **stop the cycle and report**. Do not attempt to fix CI failures automatically — report what failed and exit.
 
-5. **Wait 2 minutes** after CI passes for bots to re-analyze. This is mandatory — without it the next fetch may falsely report zero new threads.
+5. **Wait for bots to re-analyze** after CI passes. Poll the reviews API (same as Step 0) for 3 minutes, checking every 60 seconds for new bot reviews posted after the push timestamp. This is shorter than Step 0's 10-minute timeout because bots only need to re-analyze the diff delta, not the full PR.
 
 ### Step 6 — Cycle detection
 
@@ -286,6 +332,6 @@ If status is **Clean**, suggest: "Ready for `/merge-guardian` when you're satisf
 - **Maximum 5 cycles** — hard stop, report remaining threads
 - **One commit per fix** — keeps history reviewable and revertable
 - **Verify TYPE_CHECKING imports** survive ruff after each edit (known ruff pitfall)
-- **Bot settle wait is mandatory** — 2 minutes after CI, no exceptions
+- **Bot readiness polling is mandatory** — Step 0 (10 min) on first cycle, 3 min on subsequent cycles. Never skip.
 - **If GraphQL fails** (thread resolution, reply), log the error and continue — do not abort the cycle
 - **Ambiguous severity → Defer** — never silently skip a comment
