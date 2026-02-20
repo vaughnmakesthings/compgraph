@@ -87,7 +87,7 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["tests"]
-addopts = "--cov=compgraph --cov-report=term-missing --cov-fail-under=50"
+addopts = "-m 'not integration' --cov=compgraph --cov-report=term-missing --cov-fail-under=50"
 markers = [
     "integration: requires live database connection",
 ]

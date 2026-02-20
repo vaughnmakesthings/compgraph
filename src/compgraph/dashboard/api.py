@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, Literal
 
 import requests
 import streamlit as st
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 
-def api_get(path: str, *, on_error: str = "st") -> dict[str, Any] | None:
+def api_get(path: str, *, on_error: Literal["st", "log"] = "st") -> dict[str, Any] | None:
     """GET from FastAPI, return JSON or None on error.
 
     Args:
