@@ -2,6 +2,7 @@
 
 import importlib.util
 import pathlib
+import subprocess
 import types
 
 import pytest
@@ -51,7 +52,6 @@ def test_fk_indexes_cover_critical_columns() -> None:
 
 
 def test_osl_migration_has_correct_config() -> None:
-    """Verify OSL company migration has correct iCIMS multi-portal config."""
     import inspect
     import textwrap
 
@@ -59,7 +59,6 @@ def test_osl_migration_has_correct_config() -> None:
     assert mod.revision == "ee67f5a6b7c8"
     assert mod.down_revision == "dd56e4f5a6b7"
 
-    # Check upgrade contains the key config values
     source = textwrap.dedent(inspect.getsource(mod.upgrade))
     assert "'osl'" in source
     assert "'icims'" in source
@@ -68,7 +67,6 @@ def test_osl_migration_has_correct_config() -> None:
     assert "search_urls" in source
     assert "ON CONFLICT" in source
 
-    # Check downgrade cascades through all dependent tables (including agg tables with company_id FK)
     down_source = textwrap.dedent(inspect.getsource(mod.downgrade))
     for table in [
         "posting_brand_mentions",
@@ -83,3 +81,20 @@ def test_osl_migration_has_correct_config() -> None:
         "companies",
     ]:
         assert table in down_source, f"downgrade missing cleanup for {table}"
+
+
+@pytest.mark.integration
+def test_no_pending_migrations() -> None:
+    result = subprocess.run(
+        ["uv", "run", "alembic", "check"],  # noqa: S607
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        pytest.fail(
+            f"Migration drift detected. Run "
+            f"'alembic revision --autogenerate' to generate missing migrations.\n"
+            f"stdout: {result.stdout}\n"
+            f"stderr: {result.stderr}"
+        )
