@@ -198,7 +198,7 @@ async def call_llm_with_retry(  # noqa: UP047
                 raise EnrichmentAPIError(
                     f"Unexpected error parsing {pass_label} response "
                     f"for posting {posting_id}: {unexpected_err}",
-                    category=ErrorCategory.TRANSIENT,
+                    category=ErrorCategory.PARSE_ERROR,
                     original=unexpected_err,
                 ) from unexpected_err
 
