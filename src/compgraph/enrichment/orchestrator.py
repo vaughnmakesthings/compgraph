@@ -244,8 +244,8 @@ async def get_latest_enrichment_run_from_db() -> dict | None:
             "total_dedup_saved": row.total_dedup_saved,
             "error_summary": row.error_summary,
             "circuit_breaker_tripped": (
-                row.circuit_breaker_tripped
-                if row.circuit_breaker_tripped is not None
+                cb_val
+                if (cb_val := getattr(row, "circuit_breaker_tripped", None)) is not None
                 else bool(row.error_summary and "circuit breaker" in row.error_summary.lower())
             ),
         }
