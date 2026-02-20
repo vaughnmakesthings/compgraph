@@ -264,6 +264,7 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/cleanup` — clean up merged branches and worktrees
 - `/enrich-status` — check enrichment pipeline status on dev server
 - `/migrate` — generate/run Alembic migrations
+- `/docs-audit` — validate doc freshness, cross-doc consistency, and research gaps
 
 ## Code Standards
 
