@@ -1,0 +1,23 @@
+src/compgraph/enrichment/retry.py
+  28d449100c988e42 201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f675766a523693d3e7a8cf6d005711ef72504bec",
+  "prompts": {
+    "28d449100c988e42": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4502a733-e27f-4f56-8dc8-7c08bbd30a44",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 3,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
