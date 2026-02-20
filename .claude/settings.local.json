@@ -49,7 +49,14 @@
       "Bash(for b in feat/issue-2 feat/issue-3 feat/issue-32)",
       "Bash(do echo \"Deleting $b...\")",
       "mcp__codesight__get_indexing_status",
-      "mcp__codesight__index_codebase"
+      "mcp__codesight__index_codebase",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(python3:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(curl:*)"
     ]
   }
 }

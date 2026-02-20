@@ -22,6 +22,15 @@ Optional arguments:
    ```
 
 2. **Quick test run** — abort if tests fail:
+   First, check if only non-code files changed (docs, config, markdown):
+   ```bash
+   git diff --name-only HEAD  # unstaged
+   git diff --name-only --cached  # staged
+   ```
+   If ALL changed files match `\.(md|txt|rst|yaml|yml|json|toml)$`, skip tests:
+   > "Docs-only changes, skipping tests."
+
+   Otherwise, run tests:
    ```bash
    uv run pytest --no-cov -q --tb=short
    ```
