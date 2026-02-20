@@ -7,10 +7,10 @@ import logging
 import re
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from compgraph.db.models import Posting, PostingEnrichment
+from compgraph.db.models import Brand, Posting, PostingEnrichment, PostingSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -110,32 +110,48 @@ async def detect_reposts(session: AsyncSession, company_id: uuid.UUID | None = N
     result = await session.execute(stmt)
     rows = result.all()
 
+    if not rows:
+        logger.info("Fingerprinting complete: 0 reposts detected")
+        return 0
+
+    posting_ids = [posting.id for posting, _ in rows]
+
+    # Batch-load latest snapshots (1 query instead of N)
+    latest_snapshot = (
+        select(
+            PostingSnapshot.posting_id,
+            func.max(PostingSnapshot.created_at).label("max_created"),
+        )
+        .where(PostingSnapshot.posting_id.in_(posting_ids))
+        .group_by(PostingSnapshot.posting_id)
+        .subquery()
+    )
+    snapshot_stmt = select(PostingSnapshot).join(
+        latest_snapshot,
+        (PostingSnapshot.posting_id == latest_snapshot.c.posting_id)
+        & (PostingSnapshot.created_at == latest_snapshot.c.max_created),
+    )
+    snapshot_result = await session.execute(snapshot_stmt)
+    snapshot_map: dict[uuid.UUID, PostingSnapshot] = {
+        s.posting_id: s for s in snapshot_result.scalars().all()
+    }
+
+    # Batch-load brand slugs (1 query instead of up to N)
+    brand_ids = {e.brand_id for _, e in rows if e.brand_id is not None}
+    brand_slug_map: dict[uuid.UUID, str] = {}
+    if brand_ids:
+        brand_stmt = select(Brand.id, Brand.slug).where(Brand.id.in_(brand_ids))
+        brand_result = await session.execute(brand_stmt)
+        brand_slug_map = dict(brand_result.all())  # type: ignore[arg-type]
+
     reposts_detected = 0
 
     for posting, enrichment in rows:
-        # Get title and location from the posting's latest snapshot
-        from compgraph.db.models import PostingSnapshot
-
-        snapshot_stmt = (
-            select(PostingSnapshot)
-            .where(PostingSnapshot.posting_id == posting.id)
-            .order_by(PostingSnapshot.created_at.desc())
-            .limit(1)
-        )
-        snapshot_result = await session.execute(snapshot_stmt)
-        snapshot = snapshot_result.scalar_one_or_none()
-
+        snapshot = snapshot_map.get(posting.id)
         if not snapshot:
             continue
 
-        # Get brand_slug if a brand is linked
-        brand_slug = None
-        if enrichment.brand_id:
-            from compgraph.db.models import Brand
-
-            brand_stmt = select(Brand.slug).where(Brand.id == enrichment.brand_id)
-            brand_result = await session.execute(brand_stmt)
-            brand_slug = brand_result.scalar_one_or_none()
+        brand_slug = brand_slug_map.get(enrichment.brand_id) if enrichment.brand_id else None
 
         fingerprint = generate_fingerprint(
             snapshot.title_raw or "",
@@ -147,6 +163,7 @@ async def detect_reposts(session: AsyncSession, company_id: uuid.UUID | None = N
         posting.fingerprint_hash = fingerprint
 
         # Check for existing postings with same fingerprint and company
+        # (still per-posting — fingerprint is computed above so can't be batch-checked)
         existing_stmt = (
             select(Posting)
             .where(Posting.fingerprint_hash == fingerprint)

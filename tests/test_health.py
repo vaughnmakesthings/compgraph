@@ -10,34 +10,32 @@ from compgraph.api.deps import get_db
 from compgraph.main import app
 
 
-@pytest.fixture
-def _mock_db_success():
-    mock_session = AsyncMock()
-    mock_session.execute = AsyncMock(return_value=MagicMock())
-    app.dependency_overrides[get_db] = lambda: mock_session
-    yield
-    app.dependency_overrides.clear()
+def _make_db_fixture(execute_behavior):
+    """Factory for DB mock fixtures with shared setup/teardown."""
+
+    @pytest.fixture
+    def _fixture():
+        mock_session = AsyncMock()
+        if callable(execute_behavior) and not isinstance(execute_behavior, (AsyncMock, MagicMock)):
+            mock_session.execute = execute_behavior
+        elif isinstance(execute_behavior, Exception):
+            mock_session.execute = AsyncMock(side_effect=execute_behavior)
+        else:
+            mock_session.execute = AsyncMock(return_value=execute_behavior)
+        app.dependency_overrides[get_db] = lambda: mock_session
+        yield
+        app.dependency_overrides.clear()
+
+    return _fixture
 
 
-@pytest.fixture
-def _mock_db_failure():
-    mock_session = AsyncMock()
-    mock_session.execute = AsyncMock(side_effect=ConnectionRefusedError("connection refused"))
-    app.dependency_overrides[get_db] = lambda: mock_session
-    yield
-    app.dependency_overrides.clear()
+async def _slow_execute(*args, **kwargs):
+    await asyncio.sleep(10)
 
 
-@pytest.fixture
-def _mock_db_timeout():
-    async def slow_execute(*args, **kwargs):
-        await asyncio.sleep(10)
-
-    mock_session = AsyncMock()
-    mock_session.execute = slow_execute
-    app.dependency_overrides[get_db] = lambda: mock_session
-    yield
-    app.dependency_overrides.clear()
+_mock_db_success = _make_db_fixture(MagicMock())
+_mock_db_failure = _make_db_fixture(ConnectionRefusedError("connection refused"))
+_mock_db_timeout = _make_db_fixture(_slow_execute)
 
 
 @pytest.fixture(autouse=False)

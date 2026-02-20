@@ -11,15 +11,18 @@ from slugify import slugify
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.config import settings
 from compgraph.db.models import Brand, PostingBrandMention, PostingEnrichment, Retailer
 from compgraph.enrichment.schemas import EntityMention
 
 logger = logging.getLogger(__name__)
 
-# Fuzzy matching thresholds
-EXACT_THRESHOLD = 100
-AUTO_ACCEPT_THRESHOLD = 85
-REVIEW_THRESHOLD = 70
+# Type alias for dimension models with name/slug/id (Brand and Retailer)
+DimensionModel = type[Brand] | type[Retailer]
+
+# Fuzzy matching thresholds (configurable via Settings for model experiment tuning)
+AUTO_ACCEPT_THRESHOLD = settings.ENTITY_AUTO_ACCEPT_THRESHOLD
+REVIEW_THRESHOLD = settings.ENTITY_REVIEW_THRESHOLD
 
 
 def normalize_entity_name(name: str) -> str:
@@ -33,146 +36,90 @@ def normalize_entity_name(name: str) -> str:
     return name
 
 
-async def _find_brand(session: AsyncSession, entity_name: str) -> tuple[uuid.UUID | None, float]:
-    """Find a matching brand by name, slug, or fuzzy match.
+async def _find_entity(
+    session: AsyncSession, entity_name: str, model: DimensionModel
+) -> tuple[uuid.UUID | None, float]:
+    """Find a matching entity by name, slug, or fuzzy match.
 
-    Returns (brand_id, match_score) or (None, 0.0) if no match.
+    Works for both Brand and Retailer models (identical schema structure).
+    Returns (entity_id, match_score) or (None, 0.0) if no match.
     """
     normalized = normalize_entity_name(entity_name)
+    label = model.__name__  # "Brand" or "Retailer"
 
     # Tier 1: Exact name match (case-insensitive)
-    stmt = select(Brand).where(func.lower(Brand.name) == normalized.lower())
+    stmt = select(model).where(func.lower(model.name) == normalized.lower())
     result = await session.execute(stmt)
-    brand = result.scalar_one_or_none()
-    if brand:
-        return brand.id, 100.0
+    entity = result.scalar_one_or_none()
+    if entity:
+        return entity.id, 100.0  # type: ignore[attr-defined]
 
     # Tier 2: Slug match
     entity_slug = slugify(normalized)
-    stmt = select(Brand).where(Brand.slug == entity_slug)
+    stmt = select(model).where(model.slug == entity_slug)
     result = await session.execute(stmt)
-    brand = result.scalar_one_or_none()
-    if brand:
-        return brand.id, 95.0
+    entity = result.scalar_one_or_none()
+    if entity:
+        return entity.id, 95.0  # type: ignore[attr-defined]
 
-    # Tier 3: Fuzzy match against all brands
-    stmt = select(Brand)
+    # Tier 3: Fuzzy match against all entities
+    stmt = select(model)
     result = await session.execute(stmt)
-    all_brands = result.scalars().all()
+    all_entities = result.scalars().all()
 
     best_score = 0.0
-    best_brand_id: uuid.UUID | None = None
-    for brand in all_brands:
-        score = fuzz.token_sort_ratio(normalized.lower(), brand.name.lower())
+    best_id: uuid.UUID | None = None
+    for entity in all_entities:
+        score = fuzz.token_sort_ratio(normalized.lower(), entity.name.lower())  # type: ignore[attr-defined]
         if score > best_score:
             best_score = score
-            best_brand_id = brand.id
+            best_id = entity.id  # type: ignore[attr-defined]
 
     if best_score >= AUTO_ACCEPT_THRESHOLD:
-        return best_brand_id, best_score
+        return best_id, best_score
     if best_score >= REVIEW_THRESHOLD:
         logger.info(
-            "Fuzzy brand match for '%s' (score=%.1f) — accepted but flagged for review",
+            "Fuzzy %s match for '%s' (score=%.1f) — accepted but flagged for review",
+            label,
             entity_name,
             best_score,
         )
-        return best_brand_id, best_score
+        return best_id, best_score
 
     return None, 0.0
 
 
-async def _find_retailer(session: AsyncSession, entity_name: str) -> tuple[uuid.UUID | None, float]:
-    """Find a matching retailer by name, slug, or fuzzy match.
+async def _create_entity(
+    session: AsyncSession, entity_name: str, model: DimensionModel
+) -> uuid.UUID:
+    """Create a new dimension record. Uses savepoint for concurrent duplicate handling.
 
-    Returns (retailer_id, match_score) or (None, 0.0) if no match.
+    Works for both Brand and Retailer models (identical schema structure).
     """
-    normalized = normalize_entity_name(entity_name)
-
-    # Tier 1: Exact name match (case-insensitive)
-    stmt = select(Retailer).where(func.lower(Retailer.name) == normalized.lower())
-    result = await session.execute(stmt)
-    retailer = result.scalar_one_or_none()
-    if retailer:
-        return retailer.id, 100.0
-
-    # Tier 2: Slug match
-    entity_slug = slugify(normalized)
-    stmt = select(Retailer).where(Retailer.slug == entity_slug)
-    result = await session.execute(stmt)
-    retailer = result.scalar_one_or_none()
-    if retailer:
-        return retailer.id, 95.0
-
-    # Tier 3: Fuzzy match against all retailers
-    stmt = select(Retailer)
-    result = await session.execute(stmt)
-    all_retailers = result.scalars().all()
-
-    best_score = 0.0
-    best_retailer_id: uuid.UUID | None = None
-    for retailer in all_retailers:
-        score = fuzz.token_sort_ratio(normalized.lower(), retailer.name.lower())
-        if score > best_score:
-            best_score = score
-            best_retailer_id = retailer.id
-
-    if best_score >= AUTO_ACCEPT_THRESHOLD:
-        return best_retailer_id, best_score
-    if best_score >= REVIEW_THRESHOLD:
-        logger.info(
-            "Fuzzy retailer match for '%s' (score=%.1f) — accepted but flagged for review",
-            entity_name,
-            best_score,
-        )
-        return best_retailer_id, best_score
-
-    return None, 0.0
-
-
-async def _create_brand(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Brand record. Uses savepoint for concurrent duplicate handling."""
     from sqlalchemy.exc import IntegrityError
 
     normalized = normalize_entity_name(entity_name)
     entity_slug = slugify(normalized)
-    brand = Brand(name=normalized, slug=entity_slug)
+    label = model.__name__  # "Brand" or "Retailer"
+    entity = model(name=normalized, slug=entity_slug)
     try:
         async with session.begin_nested():
-            session.add(brand)
+            session.add(entity)
             await session.flush()
     except IntegrityError:
         # Savepoint rolled back, session state preserved — re-query
-        stmt = select(Brand).where(Brand.slug == entity_slug)
-        result = await session.execute(stmt)
-        existing = result.scalar_one()
-        logger.info("Brand already exists (concurrent create): %s (id=%s)", normalized, existing.id)
-        return existing.id
-    logger.info("Created new brand: %s (id=%s)", normalized, brand.id)
-    return brand.id
-
-
-async def _create_retailer(session: AsyncSession, entity_name: str) -> uuid.UUID:
-    """Create a new Retailer record. Uses savepoint for concurrent duplicate handling."""
-    from sqlalchemy.exc import IntegrityError
-
-    normalized = normalize_entity_name(entity_name)
-    entity_slug = slugify(normalized)
-    retailer = Retailer(name=normalized, slug=entity_slug)
-    try:
-        async with session.begin_nested():
-            session.add(retailer)
-            await session.flush()
-    except IntegrityError:
-        # Savepoint rolled back, session state preserved — re-query
-        stmt = select(Retailer).where(Retailer.slug == entity_slug)
+        stmt = select(model).where(model.slug == entity_slug)
         result = await session.execute(stmt)
         existing = result.scalar_one()
         logger.info(
-            "Retailer already exists (concurrent create): %s (id=%s)", normalized, existing.id
+            "%s already exists (concurrent create): %s (id=%s)",
+            label,
+            normalized,
+            existing.id,  # type: ignore[attr-defined]
         )
-        return existing.id
-    logger.info("Created new retailer: %s (id=%s)", normalized, retailer.id)
-    return retailer.id
+        return existing.id  # type: ignore[attr-defined, no-any-return]
+    logger.info("Created new %s: %s (id=%s)", label, normalized, entity.id)
+    return entity.id
 
 
 async def resolve_entity(
@@ -195,24 +142,22 @@ async def resolve_entity(
         Only one of brand_id/retailer_id will be non-None (unless ambiguous resolved to both).
     """
     if entity_type == "client_brand":
-        brand_id, _score = await _find_brand(session, entity_name)
+        brand_id, _score = await _find_entity(session, entity_name, Brand)
         if brand_id:
             return brand_id, None, False
-        # No match — create new brand
-        new_id = await _create_brand(session, entity_name)
+        new_id = await _create_entity(session, entity_name, Brand)
         return new_id, None, True
 
     if entity_type == "retailer":
-        retailer_id, _score = await _find_retailer(session, entity_name)
+        retailer_id, _score = await _find_entity(session, entity_name, Retailer)
         if retailer_id:
             return None, retailer_id, False
-        # No match — create new retailer
-        new_id = await _create_retailer(session, entity_name)
+        new_id = await _create_entity(session, entity_name, Retailer)
         return None, new_id, True
 
     # Ambiguous: try both, prefer higher confidence match
-    brand_id, brand_score = await _find_brand(session, entity_name)
-    retailer_id, retailer_score = await _find_retailer(session, entity_name)
+    brand_id, brand_score = await _find_entity(session, entity_name, Brand)
+    retailer_id, retailer_score = await _find_entity(session, entity_name, Retailer)
 
     if brand_id and retailer_id:
         # Both matched — pick the higher score
@@ -226,7 +171,7 @@ async def resolve_entity(
         return None, retailer_id, False
 
     # Neither matched — default to brand for ambiguous
-    new_id = await _create_brand(session, entity_name)
+    new_id = await _create_entity(session, entity_name, Brand)
     return new_id, None, True
 
 

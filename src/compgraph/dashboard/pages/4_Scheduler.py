@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 from datetime import UTC, datetime
-from typing import Any
 
-import requests
 import streamlit as st
+
+from compgraph.dashboard.api import api_get, api_post
 
 logger = logging.getLogger(__name__)
 
@@ -15,35 +14,9 @@ st.set_page_config(page_title="Scheduler", layout="wide")
 st.title("Scheduler")
 st.caption(f"Last refreshed: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
 
-API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
-
-
-def _api_get(path: str) -> dict[str, Any] | None:
-    try:
-        resp = requests.get(f"{API_BASE}{path}", timeout=5)
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
-    except requests.RequestException as exc:
-        st.error(f"API error: {exc}")
-        return None
-
-
-def _api_post(path: str) -> dict[str, Any] | None:
-    try:
-        resp = requests.post(f"{API_BASE}{path}", timeout=10)
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
-    except requests.RequestException as exc:
-        st.error(f"API error: {exc}")
-        return None
-
 
 # --- Fetch scheduler status ---
-status = _api_get("/api/scheduler/status")
+status = api_get("/api/scheduler/status")
 
 if status is None:
     st.error("Could not connect to the API server.")
@@ -90,7 +63,7 @@ for schedule in status["schedules"]:
 
     with col_trigger:
         if st.button("Trigger Now", key=f"trigger_{sid}", type="primary"):
-            result = _api_post(f"/api/scheduler/jobs/{sid}/trigger")
+            result = api_post(f"/api/scheduler/jobs/{sid}/trigger")
             if result:
                 st.success(f"Pipeline triggered: job {result['job_id'][:8]}...")
                 time.sleep(0.5)
@@ -98,7 +71,7 @@ for schedule in status["schedules"]:
 
     with col_pause:
         if st.button("Pause", key=f"pause_{sid}", disabled=paused):
-            result = _api_post(f"/api/scheduler/jobs/{sid}/pause")
+            result = api_post(f"/api/scheduler/jobs/{sid}/pause")
             if result:
                 st.info(result["message"])
                 time.sleep(0.5)
@@ -106,7 +79,7 @@ for schedule in status["schedules"]:
 
     with col_resume:
         if st.button("Resume", key=f"resume_{sid}", disabled=not paused):
-            result = _api_post(f"/api/scheduler/jobs/{sid}/resume")
+            result = api_post(f"/api/scheduler/jobs/{sid}/resume")
             if result:
                 st.info(result["message"])
                 time.sleep(0.5)

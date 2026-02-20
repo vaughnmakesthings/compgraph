@@ -26,6 +26,11 @@ from compgraph.enrichment.queries import (
     save_enrichment,
 )
 from compgraph.enrichment.resolver import resolve_entity, save_brand_mentions
+from compgraph.enrichment.retry import (
+    API_FAILURE_CATEGORIES,
+    EnrichmentAPIError,
+    ErrorCategory,
+)
 from compgraph.enrichment.schemas import Pass1Result, Pass2Result
 
 logger = logging.getLogger(__name__)
@@ -116,6 +121,40 @@ def get_latest_enrichment_run() -> EnrichmentRun | None:
     if not _runs:
         return None
     return max(_runs.values(), key=lambda r: r.started_at)
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker — aborts batch loop on systemic API failures
+# ---------------------------------------------------------------------------
+
+
+class CircuitBreaker:
+    """Tracks consecutive API failures to abort batch processing early.
+
+    Only counts failures in API_FAILURE_CATEGORIES (rate limit, quota, transient).
+    Parse errors and permanent errors do NOT trip the breaker since they indicate
+    per-posting issues, not systemic API problems.
+    """
+
+    def __init__(self, threshold: int) -> None:
+        self.threshold = threshold
+        self.consecutive_failures = 0
+        self.tripped = False
+        self.trip_reason: str | None = None
+
+    def record_api_failure(self, category: ErrorCategory) -> None:
+        """Record an API failure. Trips the breaker if threshold is reached."""
+        if category in API_FAILURE_CATEGORIES:
+            self.consecutive_failures += 1
+            if self.consecutive_failures >= self.threshold:
+                self.tripped = True
+                self.trip_reason = (
+                    f"{self.consecutive_failures} consecutive API failures (last: {category})"
+                )
+
+    def record_success(self) -> None:
+        """Reset the failure counter on a successful API call."""
+        self.consecutive_failures = 0
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +265,8 @@ class EnrichmentOrchestrator:
 
     Uses run-scoped content caching to deduplicate LLM calls for postings
     with identical content (e.g., same job posted to multiple cities).
+    Includes a circuit breaker that aborts the batch loop when consecutive
+    API failures indicate a systemic issue (quota exhaustion, rate limits).
     """
 
     def __init__(
@@ -250,6 +291,8 @@ class EnrichmentOrchestrator:
         Each posting is isolated — one failure doesn't stop the batch.
         Uses content-based deduplication to avoid redundant LLM calls for
         postings with identical title+body (e.g., same job in multiple cities).
+        Includes a circuit breaker that aborts when consecutive API failures
+        indicate systemic issues (e.g., quota exhaustion).
         """
         run.status = EnrichmentStatus.RUNNING
         await create_enrichment_run_record(run.run_id)
@@ -259,6 +302,7 @@ class EnrichmentOrchestrator:
         failed_ids: set[uuid.UUID] = set()
         content_cache: dict[str, Pass1Result] = {}
         api_calls = 0
+        breaker = CircuitBreaker(settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD)
 
         while True:
             async with async_session_factory() as session:
@@ -311,6 +355,10 @@ class EnrichmentOrchestrator:
                     """
                     nonlocal api_calls
 
+                    # Circuit breaker — skip if tripped by another group
+                    if breaker.tripped:
+                        return []
+
                     # Check run-scoped cache first
                     if content_hash in content_cache:
                         cached = content_cache[content_hash]
@@ -351,8 +399,11 @@ class EnrichmentOrchestrator:
                     )
 
                     async with semaphore:
+                        if breaker.tripped:
+                            return []
+
                         try:
-                            pass1_result = await enrich_posting_pass1(
+                            llm_result = await enrich_posting_pass1(
                                 self.client,
                                 leader_id,
                                 leader_title,
@@ -360,20 +411,42 @@ class EnrichmentOrchestrator:
                                 leader_text,
                             )
                             api_calls += 1
+                            pass1_result = llm_result.result
+                            result.total_input_tokens += llm_result.input_tokens
+                            result.total_output_tokens += llm_result.output_tokens
+                            breaker.record_success()
+                        except EnrichmentAPIError as e:
+                            api_calls += 1
+                            breaker.record_api_failure(e.category)
+                            if breaker.tripped:
+                                logger.error(
+                                    "Circuit breaker tripped during Pass 1: %s",
+                                    breaker.trip_reason,
+                                )
+                            logger.warning(
+                                "Pass 1 leader %s failed (%s), "
+                                "fallback for %d followers (hash=%s...)",
+                                leader_id,
+                                e.category,
+                                len(group) - 1,
+                                content_hash[:12],
+                            )
+                            leader_failed = True
                         except Exception:
-                            api_calls += 1  # Count the failed attempt
+                            api_calls += 1
                             logger.warning(
                                 "Pass 1 leader %s failed, fallback for %d followers (hash=%s...)",
                                 leader_id,
                                 len(group) - 1,
                                 content_hash[:12],
                             )
-                            # Release semaphore before fallback to avoid deadlock
                             leader_failed = True
                         else:
                             leader_failed = False
 
                     if leader_failed:
+                        if breaker.tripped:
+                            return [(False, leader_id)]
                         # Skip leader (already failed), process followers only
                         followers = group[1:]
                         follower_outcomes = await _fallback_individual(
@@ -422,6 +495,9 @@ class EnrichmentOrchestrator:
                     cached_on_fallback = False
                     outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, snapshot_id, title, location, full_text in group:
+                        if breaker.tripped:
+                            break
+
                         # Reuse cached result from first successful follower
                         if cached_on_fallback:
                             try:
@@ -450,8 +526,10 @@ class EnrichmentOrchestrator:
                             continue
 
                         async with semaphore:
+                            if breaker.tripped:
+                                break
                             try:
-                                p1 = await enrich_posting_pass1(
+                                llm_result = await enrich_posting_pass1(
                                     self.client,
                                     posting_id,
                                     title,
@@ -459,6 +537,10 @@ class EnrichmentOrchestrator:
                                     full_text,
                                 )
                                 api_calls += 1
+                                p1 = llm_result.result
+                                result.total_input_tokens += llm_result.input_tokens
+                                result.total_output_tokens += llm_result.output_tokens
+                                breaker.record_success()
                                 content_cache[content_hash] = p1
                                 cached_on_fallback = True
                                 async with async_session_factory() as save_session:
@@ -472,8 +554,22 @@ class EnrichmentOrchestrator:
                                     )
                                     await save_session.commit()
                                 outcomes.append((True, posting_id))
+                            except EnrichmentAPIError as e:
+                                api_calls += 1
+                                breaker.record_api_failure(e.category)
+                                if breaker.tripped:
+                                    logger.error(
+                                        "Circuit breaker tripped during Pass 1 fallback: %s",
+                                        breaker.trip_reason,
+                                    )
+                                logger.exception(
+                                    "Pass 1 failed for posting %s (%s)",
+                                    posting_id,
+                                    e.category,
+                                )
+                                outcomes.append((False, posting_id))
                             except Exception:
-                                api_calls += 1  # Count failed follower attempt
+                                api_calls += 1
                                 logger.exception("Pass 1 failed for posting %s", posting_id)
                                 outcomes.append((False, posting_id))
                     return outcomes
@@ -491,6 +587,14 @@ class EnrichmentOrchestrator:
                             result.failed += 1
                             await increment_enrichment_counter(run.run_id, pass1_failed=1)
                             failed_ids.add(pid)
+
+                # Circuit breaker check — abort batch loop
+                if breaker.tripped:
+                    logger.error(
+                        "Pass 1 aborting: circuit breaker tripped — %s",
+                        breaker.trip_reason,
+                    )
+                    break
 
                 # Track actual dedup savings (accounts for fallback paths)
                 api_calls_this_batch = api_calls - api_calls_before
@@ -512,12 +616,13 @@ class EnrichmentOrchestrator:
                     break
 
         logger.info(
-            "Pass 1 done: %d total, %d API, %d dedup, %d failed. Cache: %d",
+            "Pass 1 done: %d total, %d API, %d dedup, %d failed, %d in_tok, %d out_tok",
             result.succeeded + result.failed,
             api_calls,
             result.skipped,
             result.failed,
-            len(content_cache),
+            result.total_input_tokens,
+            result.total_output_tokens,
         )
         run.finish(result)
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
@@ -533,6 +638,8 @@ class EnrichmentOrchestrator:
                 else DBStatus.FAILED
             )
             update_fields["finished_at"] = run.finished_at
+            if breaker.tripped:
+                update_fields["error_summary"] = f"circuit breaker triggered: {breaker.trip_reason}"
         else:
             update_fields["status"] = DBStatus.RUNNING
         await update_enrichment_run_record(run.run_id, **update_fields)
@@ -578,6 +685,8 @@ class EnrichmentOrchestrator:
         For each posting: extract entities via Sonnet, resolve against Brand/Retailer
         tables, and create PostingBrandMention records.
         Uses content-based deduplication to avoid redundant LLM calls.
+        Includes a circuit breaker that aborts when consecutive API failures
+        indicate systemic issues.
         """
         run.status = EnrichmentStatus.RUNNING
         from sqlalchemy import select as sa_select
@@ -596,6 +705,7 @@ class EnrichmentOrchestrator:
         failed_ids: set[uuid.UUID] = set()
         content_cache_p2: dict[str, Pass2Result] = {}
         api_calls = 0
+        breaker = CircuitBreaker(settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD)
 
         while True:
             async with async_session_factory() as session:
@@ -652,6 +762,9 @@ class EnrichmentOrchestrator:
                     """Process a group of postings with identical content for Pass 2."""
                     nonlocal api_calls
 
+                    if breaker.tripped:
+                        return []
+
                     # Check run-scoped cache first
                     if content_hash in content_cache_p2:
                         cached = content_cache_p2[content_hash]
@@ -698,8 +811,11 @@ class EnrichmentOrchestrator:
                     )
 
                     async with semaphore:
+                        if breaker.tripped:
+                            return []
+
                         try:
-                            pass2_result = await enrich_posting_pass2(
+                            llm_result = await enrich_posting_pass2(
                                 self.client,
                                 leader_id,
                                 leader_title,
@@ -708,8 +824,29 @@ class EnrichmentOrchestrator:
                                 leader_ft,
                             )
                             api_calls += 1
+                            pass2_result = llm_result.result
+                            result.total_input_tokens += llm_result.input_tokens
+                            result.total_output_tokens += llm_result.output_tokens
+                            breaker.record_success()
+                        except EnrichmentAPIError as e:
+                            api_calls += 1
+                            breaker.record_api_failure(e.category)
+                            if breaker.tripped:
+                                logger.error(
+                                    "Circuit breaker tripped during Pass 2: %s",
+                                    breaker.trip_reason,
+                                )
+                            logger.warning(
+                                "Pass 2 leader %s failed (%s), "
+                                "fallback for %d followers (hash=%s...)",
+                                leader_id,
+                                e.category,
+                                len(group) - 1,
+                                content_hash[:12],
+                            )
+                            leader_failed = True
                         except Exception:
-                            api_calls += 1  # Count the failed attempt
+                            api_calls += 1
                             logger.warning(
                                 "Pass 2 leader %s failed, fallback for %d followers (hash=%s...)",
                                 leader_id,
@@ -721,6 +858,8 @@ class EnrichmentOrchestrator:
                             leader_failed = False
 
                     if leader_failed:
+                        if breaker.tripped:
+                            return [(False, leader_id)]
                         followers = group[1:]
                         follower_outcomes = await _fallback_individual_pass2(
                             followers,
@@ -766,6 +905,9 @@ class EnrichmentOrchestrator:
                     cached_on_fallback = False
                     outcomes: list[tuple[bool, uuid.UUID]] = []
                     for posting_id, enrichment_id, title, location, crs, full_text in group:
+                        if breaker.tripped:
+                            break
+
                         # Reuse cached result from first successful follower
                         if cached_on_fallback:
                             try:
@@ -792,8 +934,10 @@ class EnrichmentOrchestrator:
                             continue
 
                         async with semaphore:
+                            if breaker.tripped:
+                                break
                             try:
-                                p2 = await enrich_posting_pass2(
+                                llm_result = await enrich_posting_pass2(
                                     self.client,
                                     posting_id,
                                     title,
@@ -802,6 +946,10 @@ class EnrichmentOrchestrator:
                                     full_text,
                                 )
                                 api_calls += 1
+                                p2 = llm_result.result
+                                result.total_input_tokens += llm_result.input_tokens
+                                result.total_output_tokens += llm_result.output_tokens
+                                breaker.record_success()
                                 content_cache_p2[content_hash] = p2
                                 cached_on_fallback = True
                                 async with async_session_factory() as save_session:
@@ -813,8 +961,22 @@ class EnrichmentOrchestrator:
                                     )
                                     await save_session.commit()
                                 outcomes.append((True, posting_id))
+                            except EnrichmentAPIError as e:
+                                api_calls += 1
+                                breaker.record_api_failure(e.category)
+                                if breaker.tripped:
+                                    logger.error(
+                                        "Circuit breaker tripped during Pass 2 fallback: %s",
+                                        breaker.trip_reason,
+                                    )
+                                logger.exception(
+                                    "Pass 2 failed for posting %s (%s)",
+                                    posting_id,
+                                    e.category,
+                                )
+                                outcomes.append((False, posting_id))
                             except Exception:
-                                api_calls += 1  # Count failed follower attempt
+                                api_calls += 1
                                 logger.exception("Pass 2 failed for posting %s", posting_id)
                                 outcomes.append((False, posting_id))
                     return outcomes
@@ -832,6 +994,14 @@ class EnrichmentOrchestrator:
                             result.failed += 1
                             await increment_enrichment_counter(run.run_id, pass2_failed=1)
                             failed_ids.add(pid)
+
+                # Circuit breaker check — abort batch loop
+                if breaker.tripped:
+                    logger.error(
+                        "Pass 2 aborting: circuit breaker tripped — %s",
+                        breaker.trip_reason,
+                    )
+                    break
 
                 # Track actual dedup savings (accounts for fallback paths)
                 api_calls_this_batch = api_calls - api_calls_before
@@ -852,12 +1022,13 @@ class EnrichmentOrchestrator:
                     break
 
         logger.info(
-            "Pass 2 done: %d total, %d API, %d dedup, %d failed. Cache: %d",
+            "Pass 2 done: %d total, %d API, %d dedup, %d failed, %d in_tok, %d out_tok",
             result.succeeded + result.failed,
             api_calls,
             result.skipped,
             result.failed,
-            len(content_cache_p2),
+            result.total_input_tokens,
+            result.total_output_tokens,
         )
         run.finish_pass2(result)
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
@@ -868,7 +1039,9 @@ class EnrichmentOrchestrator:
             else DBStatus.FAILED
         )
         error_msg = None
-        if run.status == EnrichmentStatus.FAILED:
+        if breaker.tripped:
+            error_msg = f"circuit breaker triggered: {breaker.trip_reason}"
+        elif run.status == EnrichmentStatus.FAILED:
             p1_failed = run.pass1_result.failed if run.pass1_result else 0
             error_msg = f"pass1: {p1_failed}fail, pass2: {result.failed}fail"
         await update_enrichment_run_record(

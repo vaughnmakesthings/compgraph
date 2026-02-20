@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import requests
 import streamlit as st
 
 from compgraph.dashboard import configure_logging
+from compgraph.dashboard.api import api_get, api_post
 from compgraph.dashboard.db import get_session
 from compgraph.dashboard.diagnostics import render_diagnostics_sidebar
 from compgraph.dashboard.queries import (
+    FRESHNESS_ICONS,
+    freshness_color,
     get_enrichment_coverage,
     get_last_scrape_timestamps,
 )
@@ -25,8 +26,6 @@ logger = logging.getLogger(__name__)
 st.set_page_config(page_title="CompGraph Dashboard", layout="wide")
 
 render_diagnostics_sidebar()
-
-API_BASE = os.environ.get("COMPGRAPH_API_URL", "http://localhost:8000")
 
 
 def _format_elapsed(started_at: str) -> str:
@@ -40,21 +39,8 @@ def _format_elapsed(started_at: str) -> str:
         return ""
 
 
-def _api_get(path: str) -> dict[str, Any] | None:
-    try:
-        resp = requests.get(f"{API_BASE}{path}", timeout=5)
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
-    except requests.RequestException as exc:
-        logger.warning("API request failed: %s", exc)
-        return None
-
-
 # --- Fetch pipeline status ---
-pipeline = _api_get("/api/pipeline/status")
+pipeline = api_get("/api/pipeline/status", on_error="log")
 
 
 # --- System State Banner ---
@@ -174,18 +160,14 @@ if pipeline is not None:
     with sched_col2:
         if sched["enabled"]:
             if st.button("Trigger Now"):
-                trigger_result = _api_get("/api/scheduler/status")
+                trigger_result = api_get("/api/scheduler/status", on_error="log")
                 if trigger_result and trigger_result.get("schedules"):
                     schedule_id = trigger_result["schedules"][0]["schedule_id"]
-                    try:
-                        url = f"{API_BASE}/api/scheduler/jobs/{schedule_id}/trigger"
-                        resp = requests.post(url, timeout=10)
-                        if resp.ok:
-                            st.success("Pipeline triggered!")
-                            time.sleep(1)
-                            st.rerun()
-                    except requests.RequestException as exc:
-                        st.error(f"Failed to trigger: {exc}")
+                    result = api_post(f"/api/scheduler/jobs/{schedule_id}/trigger")
+                    if result is not None:
+                        st.success("Pipeline triggered!")
+                        time.sleep(1)
+                        st.rerun()
 
 
 # --- Data Freshness ---
@@ -215,17 +197,9 @@ try:
         cols = st.columns(len(company_entries))
         for col, entry in zip(cols, company_entries, strict=True):
             ts = entry["last_scraped_at"]
-            if ts is None:
-                icon, ts_str = "\u26aa", "Never"
-            else:
-                age = datetime.now(UTC) - ts
-                if age < timedelta(hours=24):
-                    icon = "\U0001f7e2"  # green circle
-                elif age < timedelta(hours=72):
-                    icon = "\U0001f7e1"  # yellow circle
-                else:
-                    icon = "\U0001f534"  # red circle
-                ts_str = ts.strftime("%Y-%m-%d %H:%M UTC")
+            color = freshness_color(ts)
+            icon = FRESHNESS_ICONS[color]
+            ts_str = ts.strftime("%Y-%m-%d %H:%M UTC") if ts else "Never"
             col.markdown(f"{icon} **{entry['name']}**")
             col.caption(f"Last scraped: {ts_str}")
 except Exception:
@@ -267,7 +241,7 @@ if auto_refresh:
 
 @st.fragment(run_every=30)
 def _status_monitor() -> None:
-    status = _api_get("/api/pipeline/status")
+    status = api_get("/api/pipeline/status", on_error="log")
     if status is not None and status["system_state"] in ("scraping", "enriching"):
         if not st.session_state.get("auto_refresh", False):
             st.session_state.auto_refresh = True

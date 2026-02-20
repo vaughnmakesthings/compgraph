@@ -280,13 +280,16 @@ class ICIMSFetcher:
                 self._record_failure()
                 return None
 
-            self.consecutive_failures = 0
+            self._record_success()
             return data
 
         except httpx.HTTPError as exc:
             logger.warning("HTTP error for job %s: %r", job_id, exc)
             self._record_failure()
             return None
+
+    def _record_success(self) -> None:
+        self.consecutive_failures = 0
 
     def _record_failure(self) -> None:
         self.consecutive_failures += 1

@@ -74,69 +74,59 @@ def _run_to_response(run: EnrichmentRun) -> EnrichmentRunResponse:
 # --- Endpoints ---
 
 
-@router.post("/pass1/trigger", response_model=TriggerResponse)
-async def trigger_pass1(background_tasks: BackgroundTasks) -> TriggerResponse:
-    """Trigger Pass 1 enrichment (Haiku classification).
+_TRIGGER_METHODS = {"run_pass1", "run_pass2", "run_full"}
 
-    Runs in the background. Use GET /api/enrich/status to check progress.
-    """
+
+def _trigger_enrichment(
+    background_tasks: BackgroundTasks,
+    method_name: str,
+    message: str,
+) -> TriggerResponse:
+    """Shared setup for all enrichment trigger endpoints."""
+    if method_name not in _TRIGGER_METHODS:
+        raise ValueError(f"Unknown enrichment method: {method_name}")
+
     enrichment_run = EnrichmentRun()
     _store_run(enrichment_run)
 
     orchestrator = EnrichmentOrchestrator()
+    method = getattr(orchestrator, method_name)
 
-    async def _run_pass1() -> None:
-        await orchestrator.run_pass1(enrichment_run)
+    async def _run() -> None:
+        await method(enrichment_run)
 
-    background_tasks.add_task(_run_pass1)
+    background_tasks.add_task(_run)
 
-    return TriggerResponse(
-        run_id=enrichment_run.run_id,
-        message="Pass 1 enrichment triggered. Check /api/enrich/status for progress.",
+    return TriggerResponse(run_id=enrichment_run.run_id, message=message)
+
+
+@router.post("/pass1/trigger", response_model=TriggerResponse)
+async def trigger_pass1(background_tasks: BackgroundTasks) -> TriggerResponse:
+    """Trigger Pass 1 enrichment (Haiku classification)."""
+    return _trigger_enrichment(
+        background_tasks,
+        "run_pass1",
+        "Pass 1 enrichment triggered. Check /api/enrich/status for progress.",
     )
 
 
 @router.post("/pass2/trigger", response_model=TriggerResponse)
 async def trigger_pass2(background_tasks: BackgroundTasks) -> TriggerResponse:
-    """Trigger Pass 2 enrichment (Sonnet entity extraction).
-
-    Runs in the background. Requires Pass 1 to be complete for target postings.
-    """
-    enrichment_run = EnrichmentRun()
-    _store_run(enrichment_run)
-
-    orchestrator = EnrichmentOrchestrator()
-
-    async def _run_pass2() -> None:
-        await orchestrator.run_pass2(enrichment_run)
-
-    background_tasks.add_task(_run_pass2)
-
-    return TriggerResponse(
-        run_id=enrichment_run.run_id,
-        message="Pass 2 enrichment triggered. Check /api/enrich/status for progress.",
+    """Trigger Pass 2 enrichment (Sonnet entity extraction)."""
+    return _trigger_enrichment(
+        background_tasks,
+        "run_pass2",
+        "Pass 2 enrichment triggered. Check /api/enrich/status for progress.",
     )
 
 
 @router.post("/trigger", response_model=TriggerResponse)
 async def trigger_full(background_tasks: BackgroundTasks) -> TriggerResponse:
-    """Trigger full enrichment pipeline (Pass 1 + Pass 2).
-
-    Runs in the background. Use GET /api/enrich/status to check progress.
-    """
-    enrichment_run = EnrichmentRun()
-    _store_run(enrichment_run)
-
-    orchestrator = EnrichmentOrchestrator()
-
-    async def _run_full() -> None:
-        await orchestrator.run_full(enrichment_run)
-
-    background_tasks.add_task(_run_full)
-
-    return TriggerResponse(
-        run_id=enrichment_run.run_id,
-        message="Full enrichment pipeline triggered. Check /api/enrich/status for progress.",
+    """Trigger full enrichment pipeline (Pass 1 + Pass 2)."""
+    return _trigger_enrichment(
+        background_tasks,
+        "run_full",
+        "Full enrichment pipeline triggered. Check /api/enrich/status for progress.",
     )
 
 

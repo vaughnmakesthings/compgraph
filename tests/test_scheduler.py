@@ -404,30 +404,13 @@ class TestSchedulerTriggerAPI:
 
 
 class TestSchedulerInvalidScheduleID:
-    async def test_trigger_unknown_schedule_returns_404(self, app_with_scheduler):
+    @pytest.mark.parametrize("action", ["trigger", "pause", "resume"])
+    async def test_unknown_schedule_returns_404(self, app_with_scheduler, action):
         async with AsyncClient(
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.post("/api/scheduler/jobs/nonexistent/trigger")
-
-        assert resp.status_code == 404
-
-    async def test_pause_unknown_schedule_returns_404(self, app_with_scheduler):
-        async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
-            base_url="http://test",
-        ) as client:
-            resp = await client.post("/api/scheduler/jobs/nonexistent/pause")
-
-        assert resp.status_code == 404
-
-    async def test_resume_unknown_schedule_returns_404(self, app_with_scheduler):
-        async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
-            base_url="http://test",
-        ) as client:
-            resp = await client.post("/api/scheduler/jobs/nonexistent/resume")
+            resp = await client.post(f"/api/scheduler/jobs/nonexistent/{action}")
 
         assert resp.status_code == 404
 
