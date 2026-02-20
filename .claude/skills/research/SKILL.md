@@ -45,9 +45,15 @@ Required: topic description (e.g., "how Workday CXS pagination works", "Supabase
 
 4. **Save** — write findings to `docs/references/<topic-slug>.md`
 
-5. **Commit** — stage and commit the reference doc:
+5. **Index** — check if the new reference doc is listed in `docs/context-packs.md` Tier 2 "External Research" table. If not, add a row:
+   ```
+   | `docs/references/<topic-slug>.md` | <one-line description> | <relevant domain> |
+   ```
+   Choose the domain based on content: Scraper design, Enrichment pipeline, Database setup, Pipeline debugging, etc.
+
+6. **Commit** — stage and commit the reference doc (and context-packs.md if updated):
    ```bash
-   git add docs/references/<topic-slug>.md
+   git add docs/references/<topic-slug>.md docs/context-packs.md
    git commit -m "docs: add research on <topic>"
    ```
 

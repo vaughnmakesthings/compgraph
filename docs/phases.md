@@ -42,7 +42,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ## Current State (2026-02-20)
 
-**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). 504 tests passing. Dev server + dashboard running at 192.168.1.69:8000/:8501. Remaining: data quality review, prompt tuning.
+**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). All tests passing (CI enforced). Dev server + dashboard running at 192.168.1.69:8000/:8501. Remaining: data quality review, prompt tuning.
 
 See `docs/changelog.md` for session-by-session history.
 
@@ -258,6 +258,8 @@ Goal: Production-ready frontend with auth, export, and deployment on Digital Oce
 | Export/PDF capability | Download reports, charts, filtered data | Production views | Pending |
 | DO production deploy | Droplet provisioning, Caddy reverse proxy, CI/CD, domain, SSL | All above | Pending |
 | Scraper expansion (full) | Scale to 50 companies using proven adapters | Pipeline validated at 10+ companies | Pending |
+
+**Consideration:** Evaluate Metabase OSS as a complementary exploration layer alongside the custom frontend. Could serve ad-hoc data exploration needs without custom development. See `docs/references/metabase-oss-evaluation.md`. Decision at M7 planning time.
 
 **Exit criteria:** Production URL accessible. Auth working. All views from M5 replicated. PDF export functional. CI/CD pipeline green.
 
