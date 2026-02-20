@@ -5,6 +5,7 @@ from datetime import date, datetime
 from sqlalchemy import (
     ARRAY,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Float,
@@ -157,6 +158,9 @@ class EnrichmentRunDB(Base):
     total_dedup_saved: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    circuit_breaker_tripped: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -170,7 +174,9 @@ class Posting(Base):
     __tablename__ = "postings"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False
+    )
     external_job_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     fingerprint_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(
@@ -197,7 +203,9 @@ class PostingSnapshot(Base):
     __tablename__ = "posting_snapshots"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    posting_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("postings.id"), nullable=False)
+    posting_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("postings.id", ondelete="CASCADE"), nullable=False
+    )
     snapshot_date: Mapped[date] = mapped_column(Date, nullable=False)
     title_raw: Mapped[str | None] = mapped_column(Text, nullable=True)
     location_raw: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -219,7 +227,9 @@ class PostingEnrichment(Base):
     __tablename__ = "posting_enrichments"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    posting_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("postings.id"), nullable=False)
+    posting_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("postings.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Classification
     title_normalized: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -262,20 +272,31 @@ class PostingEnrichment(Base):
 
     posting: Mapped["Posting"] = relationship(back_populates="enrichments")
 
+    __table_args__ = (
+        CheckConstraint("pay_min IS NULL OR pay_min >= 0", name="check_pay_min_positive"),
+        CheckConstraint("pay_max IS NULL OR pay_max >= 0", name="check_pay_max_positive"),
+        CheckConstraint(
+            "pay_min IS NULL OR pay_max IS NULL OR pay_min <= pay_max",
+            name="check_pay_range",
+        ),
+    )
+
 
 class PostingBrandMention(Base):
     __tablename__ = "posting_brand_mentions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    posting_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("postings.id"), nullable=False)
+    posting_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("postings.id", ondelete="CASCADE"), nullable=False
+    )
     entity_name: Mapped[str] = mapped_column(String(255), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     resolved_brand_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("brands.id"), nullable=True
+        ForeignKey("brands.id", ondelete="RESTRICT"), nullable=True
     )
     resolved_retailer_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("retailers.id"), nullable=True
+        ForeignKey("retailers.id", ondelete="SET NULL"), nullable=True
     )
 
     posting: Mapped["Posting"] = relationship(back_populates="brand_mentions")

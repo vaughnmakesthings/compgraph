@@ -5,24 +5,27 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+from typing import Protocol, cast, runtime_checkable
 
 from rapidfuzz import fuzz
 from slugify import slugify
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from compgraph.config import settings
 from compgraph.db.models import Brand, PostingBrandMention, PostingEnrichment, Retailer
 from compgraph.enrichment.schemas import EntityMention
 
 logger = logging.getLogger(__name__)
 
-# Type alias for dimension models with name/slug/id (Brand and Retailer)
-DimensionModel = type[Brand] | type[Retailer]
 
-# Fuzzy matching thresholds (configurable via Settings for model experiment tuning)
-AUTO_ACCEPT_THRESHOLD = settings.ENTITY_AUTO_ACCEPT_THRESHOLD
-REVIEW_THRESHOLD = settings.ENTITY_REVIEW_THRESHOLD
+@runtime_checkable
+class DimensionEntity(Protocol):
+    id: uuid.UUID
+    name: str
+    slug: str
+
+
+DimensionModel = type[Brand] | type[Retailer]
 
 
 def normalize_entity_name(name: str) -> str:
@@ -52,7 +55,8 @@ async def _find_entity(
     result = await session.execute(stmt)
     entity = result.scalar_one_or_none()
     if entity:
-        return entity.id, 100.0  # type: ignore[attr-defined]
+        matched = cast(DimensionEntity, entity)
+        return matched.id, 100.0
 
     # Tier 2: Slug match
     entity_slug = slugify(normalized)
@@ -60,7 +64,8 @@ async def _find_entity(
     result = await session.execute(stmt)
     entity = result.scalar_one_or_none()
     if entity:
-        return entity.id, 95.0  # type: ignore[attr-defined]
+        matched = cast(DimensionEntity, entity)
+        return matched.id, 95.0
 
     # Tier 3: Fuzzy match against all entities
     stmt = select(model)
@@ -69,15 +74,18 @@ async def _find_entity(
 
     best_score = 0.0
     best_id: uuid.UUID | None = None
-    for entity in all_entities:
-        score = fuzz.token_sort_ratio(normalized.lower(), entity.name.lower())  # type: ignore[attr-defined]
+    for row in all_entities:
+        candidate = cast(DimensionEntity, row)
+        score = fuzz.token_sort_ratio(normalized.lower(), candidate.name.lower())
         if score > best_score:
             best_score = score
-            best_id = entity.id  # type: ignore[attr-defined]
+            best_id = candidate.id
 
-    if best_score >= AUTO_ACCEPT_THRESHOLD:
+    from compgraph.config import settings
+
+    if best_score >= settings.ENTITY_AUTO_ACCEPT_THRESHOLD:
         return best_id, best_score
-    if best_score >= REVIEW_THRESHOLD:
+    if best_score >= settings.ENTITY_REVIEW_THRESHOLD:
         logger.info(
             "Fuzzy %s match for '%s' (score=%.1f) — accepted but flagged for review",
             label,
@@ -110,16 +118,17 @@ async def _create_entity(
         # Savepoint rolled back, session state preserved — re-query
         stmt = select(model).where(model.slug == entity_slug)
         result = await session.execute(stmt)
-        existing = result.scalar_one()
+        existing = cast(DimensionEntity, result.scalar_one())
         logger.info(
             "%s already exists (concurrent create): %s (id=%s)",
             label,
             normalized,
-            existing.id,  # type: ignore[attr-defined]
+            existing.id,
         )
-        return existing.id  # type: ignore[attr-defined, no-any-return]
-    logger.info("Created new %s: %s (id=%s)", label, normalized, entity.id)
-    return entity.id
+        return existing.id
+    matched = cast(DimensionEntity, entity)
+    logger.info("Created new %s: %s (id=%s)", label, normalized, matched.id)
+    return matched.id
 
 
 async def resolve_entity(

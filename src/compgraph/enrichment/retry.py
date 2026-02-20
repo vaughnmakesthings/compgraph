@@ -11,7 +11,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
 import anthropic
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from compgraph.enrichment.client import strip_markdown_fences
 
@@ -164,6 +164,11 @@ async def call_llm_with_retry(  # noqa: UP047
                 )
 
             # Extract text content from response (first block is always TextBlock)
+            if not response.content:
+                raise EnrichmentAPIError(
+                    f"Empty content list in API response for posting {posting_id}",
+                    category=ErrorCategory.PARSE_ERROR,
+                )
             content_block = response.content[0]
             if not hasattr(content_block, "text"):
                 raise EnrichmentAPIError(
@@ -183,12 +188,19 @@ async def call_llm_with_retry(  # noqa: UP047
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                 )
-            except Exception as parse_err:
+            except (json.JSONDecodeError, ValidationError) as parse_err:
                 raise EnrichmentAPIError(
                     f"Failed to parse {pass_label} response for posting {posting_id}: {parse_err}",
                     category=ErrorCategory.PARSE_ERROR,
                     original=parse_err,
                 ) from parse_err
+            except Exception as unexpected_err:
+                raise EnrichmentAPIError(
+                    f"Unexpected error parsing {pass_label} response "
+                    f"for posting {posting_id}: {unexpected_err}",
+                    category=ErrorCategory.TRANSIENT,
+                    original=unexpected_err,
+                ) from unexpected_err
 
         except EnrichmentAPIError:
             raise  # Don't wrap our own errors

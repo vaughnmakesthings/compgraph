@@ -19,6 +19,28 @@ class TestEnrichmentRunDBModel:
         assert run.id == expected_id
         assert run.started_at == expected_time
 
+    def test_circuit_breaker_tripped_column_exists(self):
+        table = EnrichmentRunDB.__table__
+        assert "circuit_breaker_tripped" in table.c
+        col = table.c["circuit_breaker_tripped"]
+        assert not col.nullable
+        assert col.default.arg is False
+
+    def test_circuit_breaker_tripped_can_be_set_true(self):
+        run = EnrichmentRunDB(
+            id=uuid.uuid4(),
+            status=EnrichmentRunStatus.FAILED,
+            started_at=datetime.now(UTC),
+            circuit_breaker_tripped=True,
+        )
+        assert run.circuit_breaker_tripped is True
+
+    def test_circuit_breaker_tripped_has_server_default(self):
+        table = EnrichmentRunDB.__table__
+        col = table.c["circuit_breaker_tripped"]
+        assert col.server_default is not None
+        assert str(col.server_default.arg) == "false"
+
     def test_integer_columns_have_server_defaults(self):
         table = EnrichmentRunDB.__table__
         int_cols = [

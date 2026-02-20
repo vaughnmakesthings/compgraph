@@ -243,8 +243,10 @@ async def get_latest_enrichment_run_from_db() -> dict | None:
             "total_api_calls": row.total_api_calls,
             "total_dedup_saved": row.total_dedup_saved,
             "error_summary": row.error_summary,
-            "circuit_breaker_tripped": bool(
-                row.error_summary and "circuit breaker" in row.error_summary.lower()
+            "circuit_breaker_tripped": (
+                row.circuit_breaker_tripped
+                if row.circuit_breaker_tripped is not None
+                else bool(row.error_summary and "circuit breaker" in row.error_summary.lower())
             ),
         }
 
@@ -653,6 +655,8 @@ class EnrichmentOrchestrator:
             "total_api_calls": result.total_api_calls,
             "total_dedup_saved": result.total_dedup_saved,
         }
+        if breaker.tripped:
+            update_fields["circuit_breaker_tripped"] = True
         if finalize:
             update_fields["status"] = (
                 DBStatus.COMPLETED
@@ -1090,6 +1094,7 @@ class EnrichmentOrchestrator:
             status=final_status,
             finished_at=run.finished_at,
             error_summary=error_msg,
+            circuit_breaker_tripped=run.circuit_breaker_tripped,
         )
         return result
 
