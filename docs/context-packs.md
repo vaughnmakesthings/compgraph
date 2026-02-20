@@ -289,6 +289,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
 | `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
 | `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
+| `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, LLM eval tool |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 
