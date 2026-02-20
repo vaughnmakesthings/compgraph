@@ -72,10 +72,10 @@ Latest `src/` commit: 2026-02-20
 
 | Doc | Last Commit | Days Behind | Status | Notes |
 |-----|-------------|:-----------:|--------|-------|
-| CLAUDE.md | 2026-02-20 | 0 | STALE-CONTENT | Test count not stated but MEMORY.md says 458 (actual: 508) |
+| CLAUDE.md | 2026-02-20 | 0 | STALE-CONTENT | Test count not stated but MEMORY.md says 458 (actual: 509) |
 | docs/context-packs.md | 2026-02-20 | 0 | BROKEN-REFS | Phantom ref: proxy-provider-comparison.md |
 | docs/changelog.md | 2026-02-19 | 1 | CURRENT | |
-| docs/phases.md | 2026-02-20 | 0 | STALE-CONTENT | States 458 tests (actual: 508) |
+| docs/phases.md | 2026-02-20 | 0 | STALE-CONTENT | States 458 tests (actual: 509) |
 | docs/design.md | 2026-02-15 | 5 | STABLE | Intentionally slow-changing |
 | docs/failure-patterns.md | 2026-02-19 | 1 | CURRENT | |
 | docs/workflow.md | 2026-02-12 | 8 | STALE | Oldest living doc |
@@ -86,14 +86,14 @@ Latest `src/` commit: 2026-02-20
 | docs/compgraph-product-spec.md | 2026-02-15 | 5 | STABLE | Intentionally slow-changing |
 
 ### Specific Discrepancies
-- **Test count:** pytest reports 508 collected, phases.md and MEMORY.md say 458
+- **Test count:** pytest reports 509 collected, phases.md and MEMORY.md say 458
 - **Skill coverage in cheat-sheet.md:** Lists 5 of 12 skills (missing /pr, /deploy, /enrich-status, /migrate, /research, /pr-feedback-cycle, /docs-audit)
 
 ## Phase 3 — Cross-Doc Consistency
 
 | Check | Status | Details |
 |-------|--------|---------|
-| C1: Test count | **MISMATCH** | pytest=508, phases.md=458, MEMORY.md=458 |
+| C1: Test count | **MISMATCH** | pytest=509, phases.md=458, MEMORY.md=458 |
 | C2: Milestone state | MATCH | phases.md=~95%, CLAUDE.md=~95%, MEMORY.md=~95% |
 | C3: Active scrapers | MATCH | 4 active in all sources (iCIMS x2 + Workday x2) |
 | C4: Agent roster | MATCH | 9 on disk = 9 in CLAUDE.md |
@@ -138,7 +138,7 @@ Skipped (`--report-only`)
 
 ## Recommended Actions (prioritized)
 
-1. **Fix test count** in phases.md and MEMORY.md: 458 → 508
+1. **Fix test count** in phases.md and MEMORY.md: 458 → 509
 2. **Annotate or remove phantom ref** `proxy-provider-comparison.md` in context-packs.md
 3. **Add 5 unlisted reference docs** to context-packs.md Tier 2 table
 4. **Update cheat-sheet.md** to include all 12 skills
