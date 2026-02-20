@@ -282,8 +282,13 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/supabase-alembic-migrations.md` | Connection strings, schema isolation, pool config, migration safety | Database setup, Alembic config |
 | `docs/references/icims-scraping.md` | iframe bypass, JSON-LD extraction, pagination, anti-scraping, portal types | iCIMS scraper (BDS, MarketSource) |
 | `docs/references/workday-cxs-api.md` | CXS API endpoints, search/detail schemas, pagination, rate limits, tenant variations | Workday scraper (2020 Companies) |
-| `docs/references/proxy-provider-comparison.md` | Provider evaluation, pricing, feature comparison | Proxy infrastructure |
+| `docs/references/proxy-provider-comparison.md` <!-- MISSING --> | Provider evaluation, pricing, feature comparison | Proxy infrastructure |
 | `docs/references/similar-projects-research.md` | Open-source project patterns, tooling decisions, anti-bot signals | Scraper design, enrichment tooling, pipeline architecture |
+| `docs/references/canadian-portals-research.md` | Canadian job portal research | Scraper expansion |
+| `docs/references/multi-component-scraper-patterns.md` | Multi-component scraper architecture | Scraper design patterns |
+| `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
+| `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
+| `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 

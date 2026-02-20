@@ -32,6 +32,13 @@ START → worktree → implement → test → commit → pr → merge → cleanu
 | **Cleanup** | `/cleanup` | After PR is merged — removes stale worktrees + branches |
 | **Merge Guardian** | `/merge-guardian` | PR is open, want to merge safely after CI passes |
 | **Parallel Pipeline** | `/parallel-pipeline <issue>` | Large issue with independent subtasks |
+| **Commit** | `/commit` | Lint, test, diff review, commit, push |
+| **Deploy** | `/deploy` | Deploy main to Raspberry Pi dev server |
+| **Research** | `/research <topic>` | Structured codebase/web research with scope boundaries |
+| **PR Feedback** | `/pr-feedback-cycle [PR#]` | Triage and resolve bot review comments |
+| **Enrich Status** | `/enrich-status` | Check enrichment pipeline status on dev server |
+| **Migrate** | `/migrate` | Generate/run Alembic migrations |
+| **Docs Audit** | `/docs-audit` | Validate doc freshness, consistency, research gaps |
 
 ## Plugin Skills (pre-installed)
 
@@ -108,9 +115,9 @@ gh pr merge 42 --squash --delete-branch          # Merge PR
 |-----------|-------|------|--------|
 | M1 | Foundation | Schema, migrations, scrapers, orchestrator | COMPLETE |
 | M2 | Enrichment | 2-pass LLM extraction, entity resolution, fingerprinting | COMPLETE |
-| M3 | Data Collection | 10-14 days daily runs, quality monitoring | Next |
+| M3 | Data Collection | 10-14 days daily runs, quality monitoring | ~95% |
 | M4 | Aggregation & API | 4 materialized tables + dashboard endpoints | |
-| M5 | Prototype UI | Streamlit dashboard connected to live API | |
+| M5 | Prototype UI | Streamlit dashboard (5 pages live, needs API migration) | |
 | M6 | Tuning & Hardening | Prompt tuning, pg_trgm, monitoring, security | |
 | M7 | Production UI | Frontend, auth, export, production deploy | |
 

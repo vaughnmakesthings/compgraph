@@ -35,7 +35,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ## Current State (2026-02-20)
 
-**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). 458 tests passing. Dev server + dashboard running at 192.168.1.69:8000/:8501. Remaining: data quality review, prompt tuning.
+**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). 504 tests passing. Dev server + dashboard running at 192.168.1.69:8000/:8501. Remaining: data quality review, prompt tuning.
 
 See `docs/changelog.md` for session-by-session history.
 
