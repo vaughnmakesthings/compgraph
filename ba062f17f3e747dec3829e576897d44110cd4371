@@ -1,0 +1,36 @@
+.claude/settings.json
+  ce3475f2f110b62d 9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "ba062f17f3e747dec3829e576897d44110cd4371",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    },
+    "ce3475f2f110b62d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52f57f8a-37fb-42e5-a652-df6dfefeb5ba",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
