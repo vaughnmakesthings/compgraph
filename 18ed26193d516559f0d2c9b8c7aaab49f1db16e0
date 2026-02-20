@@ -1,0 +1,38 @@
+docs/phases.md
+  9a3790c7e1b69b83 18,22-26,37-39,107-109,111-116,159-160,165-172,197-198,213-214,227-228,248-249,252-260,289-290,297-374
+CLAUDE.md
+  9a3790c7e1b69b83 89-90,93,96-98,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "18ed26193d516559f0d2c9b8c7aaab49f1db16e0",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    },
+    "9a3790c7e1b69b83": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1273f7e6-59fc-46c6-a34c-6a14090001a5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 133,
+      "total_deletions": 18,
+      "accepted_lines": 132,
+      "overriden_lines": 0
+    }
+  }
+}
