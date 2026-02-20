@@ -152,6 +152,20 @@ List any changes that don't trace back to the issue or plan:
 **"I added error handling the plan didn't mention"**
 → APPROVE if it's for code being changed.
 
+### Step 6: Roadmap Boundary Check
+
+Read the "Future Constraints" table in `docs/phases.md` Roadmap Summary. Flag as **SCOPE VIOLATION** if changes implement features deferred to later milestones:
+
+- Auth (login/invite/JWT) → deferred to M4
+- arq (replace APScheduler) → deferred to M6
+- LiteLLM (provider abstraction) → deferred to M6
+- Frontend framework (React/Next.js) → deferred to M7
+- Digital Ocean production deploy → deferred to M7
+
+**Edge case:** If a feature is planned for M6 but built now without explicit user approval → **REJECT** with reference to the roadmap constraint.
+
+**Edge case:** Preparatory work (e.g., adding a config field that M6 will use) is acceptable if it directly supports the current task.
+
 ## What You Don't Review
 
 Leave these concerns to the code-reviewer agent:
@@ -171,3 +185,4 @@ Your job is scope and goal alignment only.
 - Original issue or task description
 - Implementation plan (if exists)
 - Product spec: `docs/compgraph-product-spec.md`
+- Roadmap: `docs/phases.md` (Roadmap Summary + Future Constraints)

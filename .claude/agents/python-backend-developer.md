@@ -91,6 +91,14 @@ uv run ruff check --fix && uv run ruff format    # Lint and format
 - **UUIDs for all primary keys**, timezone-aware timestamps everywhere
 - **Supabase** managed Postgres via asyncpg
 
+### Milestone Context
+
+Before starting work, read `docs/phases.md` Roadmap Summary for current milestone awareness. Key constraints:
+- **Auth** is M4 — do not implement login/invite/JWT until then
+- **APScheduler stays** — arq migration is deferred to M6
+- **Anthropic SDK stays** — LiteLLM provider abstraction is deferred to M6
+- **Streamlit stays** — frontend framework selection is deferred to M7
+
 ---
 
 ## PIPELINE ARCHITECTURE

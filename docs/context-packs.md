@@ -235,6 +235,30 @@ Use when implementing alert generation or delivery.
 
 ---
 
+### Pack R: Roadmap & Phase Planning
+
+Use when planning work, assessing scope, transitioning milestones, or delegating multi-agent tasks.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/phases.md` → Roadmap Summary section | Current milestone, constraints, pre-commitments | ~500 |
+| `docs/phases.md` → current + next phase sections | Task tables, dependencies, exit criteria | ~1K |
+| `docs/compgraph-product-spec.md` → milestones section | Original requirements per milestone | ~800 |
+| `docs/changelog.md` (latest entry) | What happened last session | ~500 |
+
+**Tier 2 escalation (load for scaling/infra planning):**
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/phases.md` → M6c (Scaling Prep) tasks | LLM eval, LiteLLM, Batch API, arq details | ~500 |
+| Scaling strategy from `docs/changelog.md` | Infrastructure decisions, cost projections | ~500 |
+
+**Total: ~3K core + ~1K Tier 2**
+
+**Recommended agents:** `agent-organizer` (always loads Pack R), `spec-reviewer` (loads Roadmap Summary for scope checks).
+
+---
+
 ## Tier 2: Reference Documents (Load On Demand)
 
 These are NOT loaded by default. Pull them in only when needed.
@@ -314,10 +338,11 @@ When launching a project-level agent via the orchestrator or manually, inject th
 
 | Agent | Default Pack | Always Include |
 |-------|-------------|----------------|
-| `python-backend-developer` | Pack matching current task (A-H) | Tier 0 (CLAUDE.md auto-loaded) |
+| `python-backend-developer` | Pack matching current task (A-H) | Tier 0 (CLAUDE.md auto-loaded, includes Roadmap) |
 | `code-reviewer` | Pack matching reviewed code + full `docs/design.md` section | changelog latest entry |
 | `pytest-validator` | Test files + source files under test | Models for type checking |
-| `spec-reviewer` | `docs/compgraph-product-spec.md` (relevant sections) | changelog latest entry |
+| `spec-reviewer` | `docs/compgraph-product-spec.md` (relevant sections) | Roadmap Summary from `phases.md` |
+| `agent-organizer` | Pack R (Roadmap & Phase Planning) | Tier 0 + changelog latest entry |
 
 ### Voltagent Specialist Injection
 

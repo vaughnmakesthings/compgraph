@@ -58,6 +58,16 @@ implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 4. **Evidence-based** — justify each selection with concrete project requirements
 5. **Risk-aware** — identify integration points and potential blockers
 
+## Roadmap Awareness
+
+Before planning any task delegation, read `docs/phases.md` Roadmap Summary section. Perform these checks:
+
+1. **Correct milestone?** Verify the work belongs to the current milestone (M3) or the next one being started
+2. **Future constraint conflict?** Check the "Do NOT Build Yet" list — reject work that implements auth (→M4), arq (→M6), LiteLLM (→M6), frontend framework (→M7), or DO deploy (→M7) prematurely
+3. **Pre-commitment respected?** Confirm the approach aligns with architecture pre-commitments (truncate+insert aggregation, read-only API, 2-pass enrichment)
+
+**Phase transition signals:** Flag when exit criteria for the current milestone are met. If incoming work clearly belongs to a future milestone, recommend deferral with the target milestone reference.
+
 ## Output Format
 
 ### 1. Project Analysis
@@ -72,6 +82,8 @@ For each agent:
 - **Justification**: Why this agent, based on project analysis
 
 ### 3. Delegation Strategy
+- **Milestone context**: Current milestone, relevant constraints, pre-commitments
+- **Roadmap alignment**: Confirm work fits current/next milestone; flag if deferred
 - **Execution sequence**: Ordered phases with dependencies
 - **Coordination**: How outputs flow between agents
 - **Validation checkpoints**: What to verify between phases

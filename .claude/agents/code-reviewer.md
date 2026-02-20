@@ -34,6 +34,7 @@ When reviewing completed work, you will:
    - Assess error handling (max 2 retries, exponential backoff `[5s, 15s]`)
    - Verify UUIDs used for all primary keys
    - Check that fact tables are append-only and aggregation tables are computed from facts
+   - Check for premature implementation of features deferred to future milestones (see `docs/phases.md` Future Constraints)
 
 4. **CompGraph-Specific Review Criteria**:
    - Type hints present on ALL function signatures and return types
@@ -43,6 +44,7 @@ When reviewing completed work, you will:
    - Credentials use `Settings` from config.py, never hardcoded
    - All timestamps timezone-aware (`datetime.now(UTC)`)
    - Alembic migration generated for any schema changes
+   - No premature implementation of deferred features: auth → M4, arq → M6, LiteLLM → M6, frontend framework → M7
 
 5. **Issue Identification and Recommendations**:
    - Clearly categorize issues as: Critical (must fix), Important (should fix), or Suggestions (nice to have)
