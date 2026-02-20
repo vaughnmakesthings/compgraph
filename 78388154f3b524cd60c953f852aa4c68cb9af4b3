@@ -1,0 +1,36 @@
+.claude/agents/spec-reviewer.md
+  a2722da7cba61f25 91-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "78388154f3b524cd60c953f852aa4c68cb9af4b3",
+  "prompts": {
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    },
+    "a2722da7cba61f25": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "70d83413-1519-4fe5-925e-6572f01d1be1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 14,
+      "total_deletions": 14,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    }
+  }
+}
