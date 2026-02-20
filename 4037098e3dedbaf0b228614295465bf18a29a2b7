@@ -1,0 +1,36 @@
+.claude/skills/pr-feedback-cycle/SKILL.md
+  4c76d1eb689278df 20-21,23,26,29-38,44-77,125,284,335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "4037098e3dedbaf0b228614295465bf18a29a2b7",
+  "prompts": {
+    "4c76d1eb689278df": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "770ddc35-f1d3-47d9-912d-d282c635f3ed",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 51,
+      "overriden_lines": 0
+    },
+    "61a5868297899bc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35ac3168-4244-43be-b54f-b12c78e961b2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    }
+  }
+}
