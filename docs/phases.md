@@ -15,11 +15,15 @@ M3 (data collection) → M4 (aggregation + API) → M5 (dashboard via API) → M
 
 | Feature | Deferred To | Rationale |
 |---------|-------------|-----------|
-| Auth (login, invite, JWT) | M4 (Step 4d) | API must exist first |
+| Auth (Supabase Auth, magic link) | M4 (Step 4d) | API must exist first |
 | arq (replace APScheduler) | M6 | Current scheduler works; migration is operational hardening |
 | LiteLLM (provider abstraction) | M6 | Needs LLM eval tool (Issue #128) to validate quality first |
-| Frontend framework (React/Next.js) | M7 | Streamlit validates views cheaply before committing to framework |
-| Digital Ocean deploy | M7 | Production infra only after production UI |
+| Frontend framework (Next.js) | M7 | Streamlit validates views cheaply before committing to framework |
+| Digital Ocean production deploy | M7 | Production infra only after production UI |
+| Digital Ocean dev migration | M5 | Move Pi services to DO Droplet alongside dashboard API migration |
+| Scraper expansion (new companies) | M4+ | Current 4 companies validate pipeline; add more after agg+API layer exists |
+| Custom JWT auth | Never | Using Supabase Auth instead |
+| Prisma / second ORM | Never | FastAPI + SQLAlchemy is the single data layer; frontend is pure API consumer |
 
 ### Architecture Pre-Commitments
 
@@ -30,6 +34,9 @@ These decisions are already made. Do not revisit without explicit user approval:
 - **Dashboard migration (M5):** Streamlit pages migrate from direct DB queries to API calls
 - **Enrichment:** 2-pass stays (Haiku + Sonnet), model swap only after LLM eval tool validates quality
 - **Entity resolution:** 3-tier (exact/slug/fuzzy) stays, thresholds tunable via config
+- **Auth:** Supabase Auth — magic link, invite-only, admin/user roles. No public sign-up, no custom JWT.
+- **Frontend data access:** Pure API consumer — Next.js calls FastAPI endpoints, no direct DB access, no Prisma
+- **Database platform:** Supabase Postgres through M6. Evaluate DO Managed Postgres for M7 if needed.
 
 ---
 
@@ -97,9 +104,16 @@ Goal: 10-14 days of daily pipeline runs on autopilot. No new features — valida
 | Codebase audit + circuit breaker | Code simplification, enrichment circuit breaker | Done (PR #129) |
 | Daily pipeline runs | Monitor scrape + enrichment, flag failures | In progress |
 | Data quality review | SQL queries on enrichment accuracy | Pending |
-| Tune enrichment prompts | Based on observed errors | Pending |
+| Initial prompt fixes from observed errors | Fix obvious extraction failures from pipeline monitoring | Pending |
+| Prompt injection mitigation (Pass 1) | Sanitize/validate LLM input to prevent injection (Issue #130) | Pending |
+| Prompt injection mitigation (Pass 2) | Sanitize/validate LLM input to prevent injection (Issue #131) | Pending |
 
-**Exit criteria:** 10+ days of clean snapshots. Enrichment accuracy validated. Use case priorities revised from real data.
+**Exit criteria (all must be met):**
+- 7+ consecutive days with 0 unhandled pipeline failures
+- Enrichment Pass 1 success rate >95% across all companies
+- Enrichment Pass 2 success rate >90% across all companies
+- At least 1 data quality SQL review completed with findings documented
+- Security issues #130 and #131 (prompt injection) addressed or risk-accepted
 
 ---
 
@@ -142,10 +156,19 @@ Goal: Query layer serving dashboard views from pre-computed aggregation tables, 
 
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| Auth endpoints | Login, invite, me, logout (Issue #59) | Users table exists | Pending |
+| Supabase Auth integration | Magic link + invite flow, admin/user roles, JWT verification middleware (Issue #59) | Users table exists | Pending |
+| Role-based access control | Admin: invite, pipeline control, full access. User: read-only dashboard, export | Supabase Auth | Pending |
 | `GET /api/scrape/status` | Pipeline status | — | Done (PR #58) |
 | `POST /api/scrape/trigger` | Manual trigger (admin) | — | Done (PR #58) |
 | Alert generation logic | Detect significant changes, create alert records | All agg jobs | Pending |
+
+#### Step 4e: Pipeline Infrastructure
+
+| Task | Summary | Dependencies | Status |
+|------|---------|-------------|--------|
+| `scrape_runs` table | Per-company health tracking: status, duration, error counts per run | Schema migration | Pending |
+| Scraper expansion (first wave) | Onboard 2-4 additional companies using existing adapters | Agg jobs validate pipeline | Pending |
+| Missing indexes | Add indexes on large fact/aggregation tables (Issue #110) | — | Pending |
 
 **Exit criteria:** All endpoints return real data. Auth gates dashboard access. Alerts generate meaningful signals.
 
@@ -171,6 +194,8 @@ Goal: Migrate existing Streamlit pages from direct DB queries to API calls. Add 
 | Migrate Brand Intel | Replace direct DB queries with brand API | API client + brand endpoints | Pending |
 | Velocity dashboard | New page: line charts of posting volume, filterable | `GET /api/velocity` | Pending |
 | Alerts feed | New page: triggered alerts with drill-down | `GET /api/alerts` | Pending |
+| Migrate Scheduler page | Replace direct APScheduler queries with API calls (design for arq compatibility in M6) | API client + system endpoints | Pending |
+| DO dev environment migration | Move FastAPI + Streamlit + scheduler from Pi to DO Droplet | DO account provisioned | Pending |
 | Deploy behind auth | Dashboard requires login | Auth endpoints (M4) | Pending |
 
 **Exit criteria:** All dashboard pages use API exclusively (no direct DB). Velocity and alerts views functional. Daily use for 1+ week. Leadership can view.
@@ -185,7 +210,8 @@ Goal: Production-grade data quality, operational reliability, and cost-optimized
 
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| Prompt tuning | Refine enrichment prompts from accumulated error patterns | M3 data quality review | Pending |
+| Systematic prompt refinement with eval tool | Refine enrichment prompts using LLM eval tool Elo ranking | M3 data quality review + LLM eval tool | Pending |
+| Enrichment pass refactor | Merge run_pass1/run_pass2 into generic _run_pass (Issue #90) | — | Pending |
 | Brand/retailer taxonomy | Merge duplicate entities, correct misclassifications | Enrichment data available | Pending |
 | Role archetype normalization | Standardize role categories across companies | Enrichment data available | Pending |
 | Alert threshold tuning | Reduce noise from velocity/brand/lifecycle alerts | Alert system (M4) | Pending |
@@ -198,6 +224,8 @@ Goal: Production-grade data quality, operational reliability, and cost-optimized
 | Concurrent run guard | Prevent overlapping pipeline runs (Issue #60) | — | Pending |
 | Multi-worker support | Safe concurrent API + scheduler (Issue #61) | Concurrent run guard | Pending |
 | Query performance | Index tuning, slow query identification | Production-like data volume | Pending |
+| Supabase RLS policies | Row-level security hardening (Issue #52) | Auth (M4) | Pending |
+| Scraper redirect validation | Validate HTTP redirect targets (Issue #65) | — | Pending |
 
 #### Step 6c: Scaling Prep
 
@@ -217,13 +245,19 @@ Goal: Production-grade data quality, operational reliability, and cost-optimized
 
 Goal: Production-ready frontend with auth, export, and deployment on Digital Ocean.
 
+**Architecture note:** Frontend is a pure API consumer. Next.js calls FastAPI endpoints directly. No BFF layer, no Prisma, no direct DB access.
+
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| Frontend framework selection | Evaluate React/Next.js vs Remix vs other | M5 validates view requirements | Pending |
-| Production dashboard views | Rebuild Streamlit views in chosen framework | Framework selected | Pending |
-| Auth flow | Invite + magic link, session management | Auth endpoints (M4) | Pending |
-| Export/PDF capability | Download reports and charts | Production views | Pending |
-| Digital Ocean deploy | Droplet provisioning, CI/CD, domain, SSL | All above | Pending |
+| Frontend stack finalization | Confirm leading candidate: Next.js App Router + AG Grid + shadcn/ui + Recharts | M5 validates view requirements | Pending |
+| Project scaffold | Next.js app, AG Grid integration, API client, auth middleware | Stack confirmed | Pending |
+| Dashboard views | Rebuild Streamlit views: velocity, brand intel, posting explorer, alerts | Scaffold | Pending |
+| Data tables (AG Grid) | Sorting, filtering, column grouping for posting/brand/company views | Scaffold | Pending |
+| Charts (Recharts) | Velocity line charts, brand timeline, pay distribution | Scaffold | Pending |
+| Auth flow | Next.js middleware + Supabase Auth, invite flow, role-based route protection | Supabase Auth (M4) | Pending |
+| Export/PDF capability | Download reports, charts, filtered data | Production views | Pending |
+| DO production deploy | Droplet provisioning, Caddy reverse proxy, CI/CD, domain, SSL | All above | Pending |
+| Scraper expansion (full) | Scale to 50 companies using proven adapters | Pipeline validated at 10+ companies | Pending |
 
 **Exit criteria:** Production URL accessible. Auth working. All views from M5 replicated. PDF export functional. CI/CD pipeline green.
 
@@ -252,9 +286,89 @@ Auth endpoints                             ← M4d
   ↓
 Dashboard via API migration                ← M5
   ↓
+DO dev environment migration               ← M5 (parallel)
+  ↓
 Data quality + operational hardening       ← M6a-b
   ↓
 LLM eval → Haiku test → LiteLLM → Batch   ← M6c (scaling prep)
   ↓
 Frontend framework → views → deploy        ← M7
 ```
+
+---
+
+## Open Issue Mapping
+
+All open GitHub issues assigned to milestones. Last triaged: 2026-02-20.
+
+### Close as stale/done (verify first)
+
+| Issue | Title | Rationale |
+|-------|-------|-----------|
+| #46 | Fix Alembic connection routing | Fixed in PRs #114, #116 (direct connection support) |
+| #47 | Add append-only triggers on fact tables | Trigger deliberately dropped in PR #118 by design |
+| #108 | Migrations use pooled database URL | Duplicate of #46, same fix |
+
+### M3 (must-fix before graduation)
+
+| Issue | Title | Category |
+|-------|-------|----------|
+| #130 | Prompt injection risk in Pass 1 enrichment | Security |
+| #131 | Prompt injection risk in Pass 2 enrichment | Security |
+| #109 | Enrichment runs stuck as RUNNING | Pipeline reliability |
+| #102 | Duplicate brand mentions from Pass 2 reruns | Data quality |
+| #105 | Fingerprinting before brand resolution | Data quality |
+
+### M4
+
+| Issue | Title | Category |
+|-------|-------|----------|
+| #59 | Auth endpoints (now Supabase Auth) | Auth |
+| #110 | Missing indexes on fact/aggregation tables | Performance |
+| #70 | Multiple PostingEnrichment records per posting | Data integrity |
+| #107 | Enrichment retry logic (transient vs permanent errors) | Pipeline reliability |
+
+### M5
+
+| Issue | Title | Category |
+|-------|-------|----------|
+| #55 | Dashboard UX polish | Dashboard |
+| #97 | Dashboard shows "pending" for running companies | Dashboard bug |
+| #99 | Dashboard auto-refresh doesn't activate externally | Dashboard bug |
+| #100 | Scheduler page shows "No pipeline runs" | Dashboard bug |
+| #91 | Enrichment progress shows zeros during runs | Dashboard bug |
+
+### M6
+
+| Issue | Title | Category |
+|-------|-------|----------|
+| #52 | RLS policies for Supabase security | Security |
+| #60 | Concurrent run control | Operational |
+| #61 | Multi-worker support | Operational |
+| #65 | Scraper redirect validation | Security |
+| #90 | Enrichment pass refactor (_run_pass) | Refactor |
+| #49 | Connection pool tuning | Performance |
+| #50 | CHECK constraints on pay ranges | Schema |
+| #51 | FK cascade rules | Schema |
+| #53 | CI migration drift detection | CI |
+| #54 | Squash Alembic migrations | Maintenance |
+| #48 | CREATE INDEX CONCURRENTLY | Performance |
+| #128 | LLM eval tool (Elo ranking) | Scaling prep (M6c) |
+
+### Low-priority / review feedback (triage individually)
+
+| Issue | Title | Category |
+|-------|-------|----------|
+| #87 | Batch ID for scrape run grouping | Pipeline improvement |
+| #88 | Server default for enrichment_runs.status | Migration cleanup |
+| #89 | Batch enrichment counter increments | Performance |
+| #95, #96 | Extract pass1/pass2 save helpers | Related to #90 refactor |
+| #101 | Scraper deactivation overlap bug | Pipeline edge case |
+| #103 | Fuzzy resolution loads entire tables | Performance |
+| #104 | Scrape API orphans concurrent runs | Pipeline edge case |
+| #106 | Pipeline leaks PENDING scrape runs | Pipeline edge case |
+| #119 | Make downgrade() idempotent in migration | Migration cleanup |
+| #120 | Improve retailer intel test thoroughness | Test quality |
+| #121, #122 | Explicit column rename in Brand Intel | Dashboard cleanup |
+| #132-138 | Code quality from latest review | Code quality |
+| #66 | Distinguish empty extraction from failure | Enrichment design |

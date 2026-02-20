@@ -86,17 +86,18 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 
 ## Roadmap
 
-**Current:** M3 — Data Collection (~95%). Remaining: data quality review, prompt tuning.
-**Next:** M4 — Aggregation & API (4 agg rebuild jobs → dashboard/detail endpoints → auth).
+**Current:** M3 — Data Collection (~95%). Remaining: data quality review, prompt fixes, security (#130/#131).
+**Next:** M4 — Aggregation & API (4 agg rebuild jobs → dashboard/detail endpoints → Supabase Auth).
 
 **Do NOT build yet:**
-- Auth (login/invite/JWT) → M4d
+- Auth (Supabase Auth, magic link + invite) → M4d. Custom JWT → never.
 - arq (replace APScheduler) → M6
 - LiteLLM (provider abstraction) → M6 (needs LLM eval tool first)
-- Frontend framework (React/Next.js) → M7
-- Digital Ocean production deploy → M7
+- Frontend framework (Next.js) → M7
+- Digital Ocean production deploy → M7 (dev migration in M5)
+- Prisma / second ORM → never (frontend is pure API consumer)
 
-**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Dashboard migration (M5) = Streamlit → API calls. Enrichment 2-pass stays. Entity resolution 3-tier stays.
+**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Dashboard migration (M5) = Streamlit → API calls. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (magic link, invite-only, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres through M6.
 
 See `docs/phases.md` for full roadmap with task tables. Load Pack R from `docs/context-packs.md` for planning sessions.
 
