@@ -15,6 +15,11 @@ from compgraph.enrichment.prompts import (
     build_pass2_messages,
     build_pass2_user_message,
 )
+from compgraph.enrichment.retry import (
+    EnrichmentAPIError,
+    ErrorCategory,
+    LLMCallResult,
+)
 from compgraph.enrichment.schemas import EntityMention, Pass2Result
 
 # ---------------------------------------------------------------------------
@@ -99,6 +104,13 @@ class TestEntityMention:
         entity = EntityMention(entity_name="Test", entity_type="retailer", confidence=1.0)
         assert entity.confidence == 1.0
 
+    def test_confidence_negative_rejected(self):
+        """Negative confidence should be rejected."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            EntityMention(entity_name="Test", entity_type="retailer", confidence=-0.1)
+
     def test_confidence_out_of_range(self):
         from pydantic import ValidationError
 
@@ -148,7 +160,7 @@ class TestEnrichPostingPass2:
         client = _make_mock_client(SAMPLE_ENTITIES_RESPONSE)
         posting_id = uuid.uuid4()
 
-        result = await enrich_posting_pass2(
+        llm_result = await enrich_posting_pass2(
             client,
             posting_id,
             "Samsung Brand Ambassador",
@@ -157,15 +169,18 @@ class TestEnrichPostingPass2:
             "Full text here",
         )
 
-        assert len(result.entities) == 3
-        assert result.entities[0].entity_name == "Samsung"
+        assert isinstance(llm_result, LLMCallResult)
+        assert len(llm_result.result.entities) == 3
+        assert llm_result.result.entities[0].entity_name == "Samsung"
+        assert llm_result.input_tokens == 100
+        assert llm_result.output_tokens == 50
         client.messages.create.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_empty_entity_extraction(self):
         client = _make_mock_client(SAMPLE_EMPTY_ENTITIES)
 
-        result = await enrich_posting_pass2(
+        llm_result = await enrich_posting_pass2(
             client,
             uuid.uuid4(),
             "Warehouse Coordinator",
@@ -174,20 +189,34 @@ class TestEnrichPostingPass2:
             "Process incoming shipments and manage inventory.",
         )
 
-        assert len(result.entities) == 0
+        assert len(llm_result.result.entities) == 0
 
     @pytest.mark.asyncio
-    async def test_parse_failure_raises_value_error(self):
+    async def test_token_tracking(self):
+        """Token counts from the API response should be propagated."""
+        client = _make_mock_client(SAMPLE_ENTITIES_RESPONSE, input_tokens=300, output_tokens=150)
+
+        llm_result = await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
+
+        assert llm_result.input_tokens == 300
+        assert llm_result.output_tokens == 150
+
+    @pytest.mark.asyncio
+    async def test_parse_failure_raises_enrichment_api_error(self):
+        """Invalid JSON should raise EnrichmentAPIError with PARSE_ERROR category."""
         client = AsyncMock()
         content_block = MagicMock()
         content_block.text = "Not JSON"
         response = MagicMock()
         response.content = [content_block]
         response.stop_reason = "end_turn"
+        response.usage = MagicMock(input_tokens=100, output_tokens=50)
         client.messages.create = AsyncMock(return_value=response)
 
-        with pytest.raises(ValueError, match="Failed to parse"):
+        with pytest.raises(EnrichmentAPIError) as exc_info:
             await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
+
+        assert exc_info.value.category == ErrorCategory.PARSE_ERROR
 
     @pytest.mark.asyncio
     async def test_rate_limit_retry(self):
@@ -207,10 +236,34 @@ class TestEnrichPostingPass2:
         )
 
         with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
-            result = await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
+            llm_result = await enrich_posting_pass2(
+                client, uuid.uuid4(), "Title", "Loc", None, "Body"
+            )
 
-        assert len(result.entities) == 3
+        assert len(llm_result.result.entities) == 3
         assert client.messages.create.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_rate_limit_exhausted(self):
+        """Should raise EnrichmentAPIError after exhausting retries."""
+        import anthropic
+
+        client = AsyncMock()
+        rate_limit_error = anthropic.RateLimitError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        client.messages.create = AsyncMock(side_effect=rate_limit_error)
+
+        with (
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
+
+        assert exc_info.value.category == ErrorCategory.RATE_LIMIT
+        assert client.messages.create.await_count == 3
 
     @pytest.mark.asyncio
     async def test_permanent_error_no_retry(self):
@@ -228,10 +281,11 @@ class TestEnrichPostingPass2:
 
             with (
                 patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
-                pytest.raises(anthropic.APIStatusError),
+                pytest.raises(EnrichmentAPIError) as exc_info,
             ):
                 await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
 
+            assert exc_info.value.category == ErrorCategory.PERMANENT
             assert client.messages.create.await_count == 1, f"Status {status_code} should not retry"
 
     @pytest.mark.asyncio
@@ -249,10 +303,11 @@ class TestEnrichPostingPass2:
 
         with (
             patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
-            pytest.raises(anthropic.APIStatusError),
+            pytest.raises(EnrichmentAPIError) as exc_info,
         ):
             await enrich_posting_pass2(client, uuid.uuid4(), "Title", "Loc", None, "Body")
 
+        assert exc_info.value.category == ErrorCategory.TRANSIENT
         assert client.messages.create.await_count == 3
 
 

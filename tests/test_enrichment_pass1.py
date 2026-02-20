@@ -15,6 +15,12 @@ from compgraph.enrichment.prompts import (
     build_pass1_messages,
     build_pass1_user_message,
 )
+from compgraph.enrichment.retry import (
+    EnrichmentAPIError,
+    ErrorCategory,
+    LLMCallResult,
+    _classify_rate_limit,
+)
 from compgraph.enrichment.schemas import Pass1Result
 
 # ---------------------------------------------------------------------------
@@ -177,14 +183,17 @@ class TestEnrichPostingPass1:
         client = _make_mock_client(SAMPLE_FIELD_REP_RESPONSE)
         posting_id = uuid.uuid4()
 
-        result = await enrich_posting_pass1(
+        llm_result = await enrich_posting_pass1(
             client, posting_id, "Field Sales Rep - Samsung", "Chicago, IL", "Visit Best Buy stores."
         )
 
-        assert result.role_archetype == "field_rep"
-        assert result.pay_type == "hourly"
-        assert result.pay_min == 20.0
-        assert result.has_commission is True
+        assert isinstance(llm_result, LLMCallResult)
+        assert llm_result.result.role_archetype == "field_rep"
+        assert llm_result.result.pay_type == "hourly"
+        assert llm_result.result.pay_min == 20.0
+        assert llm_result.result.has_commission is True
+        assert llm_result.input_tokens == 100
+        assert llm_result.output_tokens == 50
         client.messages.create.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -192,26 +201,36 @@ class TestEnrichPostingPass1:
         client = _make_mock_client(SAMPLE_MERCHANDISER_RESPONSE)
         posting_id = uuid.uuid4()
 
-        result = await enrich_posting_pass1(
+        llm_result = await enrich_posting_pass1(
             client, posting_id, "Retail Merchandiser", "Dallas, TX", "Stock shelves."
         )
 
-        assert result.role_archetype == "merchandiser"
-        assert result.employment_type == "part_time"
-        assert result.pay_type is None
+        assert llm_result.result.role_archetype == "merchandiser"
+        assert llm_result.result.employment_type == "part_time"
+        assert llm_result.result.pay_type is None
 
     @pytest.mark.asyncio
     async def test_successful_manager_classification(self):
         client = _make_mock_client(SAMPLE_MANAGER_RESPONSE)
         posting_id = uuid.uuid4()
 
-        result = await enrich_posting_pass1(
+        llm_result = await enrich_posting_pass1(
             client, posting_id, "Territory Manager", "Atlanta, GA", "Manage team of 20."
         )
 
-        assert result.role_archetype == "manager"
-        assert result.pay_type == "salary"
-        assert result.pay_min == 55000.0
+        assert llm_result.result.role_archetype == "manager"
+        assert llm_result.result.pay_type == "salary"
+        assert llm_result.result.pay_min == 55000.0
+
+    @pytest.mark.asyncio
+    async def test_token_tracking(self):
+        """Token counts from the API response should be propagated."""
+        client = _make_mock_client(SAMPLE_FIELD_REP_RESPONSE, input_tokens=250, output_tokens=120)
+
+        llm_result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        assert llm_result.input_tokens == 250
+        assert llm_result.output_tokens == 120
 
     @pytest.mark.asyncio
     async def test_max_tokens_truncation_warns(self, caplog):
@@ -222,24 +241,27 @@ class TestEnrichPostingPass1:
         import logging
 
         with caplog.at_level(logging.WARNING):
-            result = await enrich_posting_pass1(client, posting_id, "Title", "Loc", "Body")
+            llm_result = await enrich_posting_pass1(client, posting_id, "Title", "Loc", "Body")
 
-        assert result.role_archetype == "field_rep"
+        assert llm_result.result.role_archetype == "field_rep"
         assert "truncated" in caplog.text.lower() or "max_tokens" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_parse_failure_raises_value_error(self):
-        """Invalid JSON response should raise ValueError."""
+    async def test_parse_failure_raises_enrichment_api_error(self):
+        """Invalid JSON response should raise EnrichmentAPIError with PARSE_ERROR category."""
         client = AsyncMock()
         content_block = MagicMock()
         content_block.text = "This is not JSON"
         response = MagicMock()
         response.content = [content_block]
         response.stop_reason = "end_turn"
+        response.usage = MagicMock(input_tokens=100, output_tokens=50)
         client.messages.create = AsyncMock(return_value=response)
 
-        with pytest.raises(ValueError, match="Failed to parse"):
+        with pytest.raises(EnrichmentAPIError) as exc_info:
             await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        assert exc_info.value.category == ErrorCategory.PARSE_ERROR
 
     @pytest.mark.asyncio
     async def test_rate_limit_retry(self):
@@ -261,14 +283,14 @@ class TestEnrichPostingPass1:
         )
 
         with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
-            result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+            llm_result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
-        assert result.role_archetype == "field_rep"
+        assert llm_result.result.role_archetype == "field_rep"
         assert client.messages.create.await_count == 2
 
     @pytest.mark.asyncio
     async def test_rate_limit_exhausted(self):
-        """Should raise after exhausting retries on RateLimitError."""
+        """Should raise EnrichmentAPIError after exhausting retries on RateLimitError."""
         import anthropic
 
         client = AsyncMock()
@@ -281,10 +303,11 @@ class TestEnrichPostingPass1:
 
         with (
             patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
-            pytest.raises(anthropic.RateLimitError),
+            pytest.raises(EnrichmentAPIError) as exc_info,
         ):
             await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
+        assert exc_info.value.category == ErrorCategory.RATE_LIMIT
         assert client.messages.create.await_count == 3
 
     @pytest.mark.asyncio
@@ -306,9 +329,9 @@ class TestEnrichPostingPass1:
         )
 
         with patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock):
-            result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+            llm_result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
-        assert result.role_archetype == "field_rep"
+        assert llm_result.result.role_archetype == "field_rep"
         assert client.messages.create.await_count == 2
 
     @pytest.mark.asyncio
@@ -327,10 +350,11 @@ class TestEnrichPostingPass1:
 
             with (
                 patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
-                pytest.raises(anthropic.APIStatusError),
+                pytest.raises(EnrichmentAPIError) as exc_info,
             ):
                 await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
+            assert exc_info.value.category == ErrorCategory.PERMANENT
             # Only 1 attempt — no retries for permanent errors
             assert client.messages.create.await_count == 1, f"Status {status_code} should not retry"
 
@@ -349,12 +373,186 @@ class TestEnrichPostingPass1:
 
         with (
             patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
-            pytest.raises(anthropic.APIStatusError),
+            pytest.raises(EnrichmentAPIError) as exc_info,
         ):
             await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
 
+        assert exc_info.value.category == ErrorCategory.TRANSIENT
         # All 3 retry attempts for transient 500
         assert client.messages.create.await_count == 3
+
+
+# ---------------------------------------------------------------------------
+# Error classification
+# ---------------------------------------------------------------------------
+
+
+class TestErrorClassification:
+    def test_standard_rate_limit(self):
+        """Standard 429 without quota indicators → RATE_LIMIT."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.RATE_LIMIT
+
+    def test_quota_from_retry_after_header(self):
+        """retry-after > 300s suggests quota exhaustion."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={"retry-after": "600"}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
+
+    def test_short_retry_after_is_rate_limit(self):
+        """retry-after <= 300s is normal rate limiting."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={"retry-after": "60"}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.RATE_LIMIT
+
+    def test_quota_from_usage_limit_message(self):
+        """Error message containing 'usage limit' → QUOTA_EXHAUSTED."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Your usage limit has been exceeded",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
+
+    def test_quota_from_spending_limit_message(self):
+        """Error message containing 'spending limit' → QUOTA_EXHAUSTED."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Your spending limit has been reached",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
+
+    def test_quota_from_billing_message(self):
+        """Error message containing 'billing' → QUOTA_EXHAUSTED."""
+        import anthropic
+
+        error = anthropic.RateLimitError(
+            message="Billing issue: please check your account",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker
+# ---------------------------------------------------------------------------
+
+
+class TestCircuitBreaker:
+    def test_trips_after_threshold(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=3)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        assert not breaker.tripped
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        assert not breaker.tripped
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        assert breaker.tripped
+        assert breaker.trip_reason is not None
+        assert "3 consecutive" in breaker.trip_reason
+
+    def test_resets_on_success(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=3)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        breaker.record_success()
+        assert breaker.consecutive_failures == 0
+        # Need 3 more failures now, not just 1
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        assert not breaker.tripped
+
+    def test_ignores_parse_errors(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=3)
+        for _ in range(5):
+            breaker.record_api_failure(ErrorCategory.PARSE_ERROR)
+        assert not breaker.tripped
+
+    def test_ignores_permanent_errors(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=3)
+        for _ in range(5):
+            breaker.record_api_failure(ErrorCategory.PERMANENT)
+        assert not breaker.tripped
+
+    def test_trips_on_quota_exhausted(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=2)
+        breaker.record_api_failure(ErrorCategory.QUOTA_EXHAUSTED)
+        breaker.record_api_failure(ErrorCategory.QUOTA_EXHAUSTED)
+        assert breaker.tripped
+        assert "quota_exhausted" in breaker.trip_reason
+
+    def test_trips_on_transient_errors(self):
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=2)
+        breaker.record_api_failure(ErrorCategory.TRANSIENT)
+        breaker.record_api_failure(ErrorCategory.TRANSIENT)
+        assert breaker.tripped
+
+    def test_mixed_api_errors_accumulate(self):
+        """Different API error categories still count toward the threshold."""
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=3)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        breaker.record_api_failure(ErrorCategory.QUOTA_EXHAUSTED)
+        breaker.record_api_failure(ErrorCategory.TRANSIENT)
+        assert breaker.tripped
+
+    def test_tripped_stays_tripped_after_success(self):
+        """Once tripped, the breaker stays tripped even if API recovers."""
+        from compgraph.enrichment.orchestrator import CircuitBreaker
+
+        breaker = CircuitBreaker(threshold=2)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        breaker.record_api_failure(ErrorCategory.RATE_LIMIT)
+        assert breaker.tripped
+        breaker.record_success()
+        assert breaker.tripped  # Conservative: stays tripped for rest of run
+
+
+# ---------------------------------------------------------------------------
+# LLMCallResult
+# ---------------------------------------------------------------------------
+
+
+class TestLLMCallResult:
+    def test_wraps_result_with_tokens(self):
+        result = Pass1Result.model_validate(SAMPLE_FIELD_REP_RESPONSE)
+        llm_result = LLMCallResult(result=result, input_tokens=200, output_tokens=80)
+        assert llm_result.result.role_archetype == "field_rep"
+        assert llm_result.input_tokens == 200
+        assert llm_result.output_tokens == 80
 
 
 # ---------------------------------------------------------------------------
@@ -480,6 +678,8 @@ class TestEnrichmentOrchestrator:
         assert result.succeeded == 0
         assert result.failed == 0
         assert result.skipped == 0
+        assert result.total_input_tokens == 0
+        assert result.total_output_tokens == 0
 
     def test_enrichment_run_finish_success(self):
         from compgraph.enrichment.orchestrator import (
@@ -623,3 +823,8 @@ class TestEnrichmentConfig:
         assert settings.ENRICHMENT_BATCH_SIZE == 50
         assert settings.ENRICHMENT_CONCURRENCY == 5
         assert settings.ENRICHMENT_MODEL_PASS1 == "claude-haiku-4-5-20251001"
+
+    def test_circuit_breaker_threshold_default(self):
+        from compgraph.config import settings
+
+        assert settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD == 3

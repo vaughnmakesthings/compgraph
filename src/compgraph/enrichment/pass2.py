@@ -8,7 +8,7 @@ import anthropic
 
 from compgraph.config import settings
 from compgraph.enrichment.prompts import PASS2_SYSTEM_PROMPT, build_pass2_messages
-from compgraph.enrichment.retry import call_llm_with_retry
+from compgraph.enrichment.retry import LLMCallResult, call_llm_with_retry
 from compgraph.enrichment.schemas import Pass2Result
 
 
@@ -19,7 +19,7 @@ async def enrich_posting_pass2(
     location: str,
     content_role_specific: str | None,
     full_text: str,
-) -> Pass2Result:
+) -> LLMCallResult[Pass2Result]:
     """Run Pass 2 enrichment on a single posting.
 
     Calls Sonnet to extract brand and retailer entities.
@@ -35,11 +35,10 @@ async def enrich_posting_pass2(
         full_text: Full text content from the posting snapshot (fallback).
 
     Returns:
-        Pass2Result with extracted entities.
+        LLMCallResult wrapping Pass2Result with token usage.
 
     Raises:
-        anthropic.APIError: After exhausting retries.
-        ValueError: If response cannot be parsed into Pass2Result.
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
     """
     messages = build_pass2_messages(title, location, content_role_specific, full_text)
 

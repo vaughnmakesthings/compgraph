@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ENRICHMENT_MODEL_PASS1: str = "claude-haiku-4-5-20251001"
     ENRICHMENT_MODEL_PASS2: str = "claude-sonnet-4-5-20250929"
 
+    # Circuit breaker (consecutive group-level API failures before aborting batch)
+    ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD: int = 3
+
     # Entity resolution thresholds (fuzzy matching via rapidfuzz)
     ENTITY_AUTO_ACCEPT_THRESHOLD: int = 85
     ENTITY_REVIEW_THRESHOLD: int = 70

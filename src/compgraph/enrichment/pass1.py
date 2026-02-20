@@ -8,7 +8,7 @@ import anthropic
 
 from compgraph.config import settings
 from compgraph.enrichment.prompts import PASS1_SYSTEM_PROMPT, build_pass1_messages
-from compgraph.enrichment.retry import call_llm_with_retry
+from compgraph.enrichment.retry import LLMCallResult, call_llm_with_retry
 from compgraph.enrichment.schemas import Pass1Result
 
 
@@ -18,7 +18,7 @@ async def enrich_posting_pass1(
     title: str,
     location: str,
     full_text: str,
-) -> Pass1Result:
+) -> LLMCallResult[Pass1Result]:
     """Run Pass 1 enrichment on a single posting.
 
     Calls Haiku to classify the posting and extract structured fields.
@@ -32,11 +32,10 @@ async def enrich_posting_pass1(
         full_text: Full text content from the posting snapshot.
 
     Returns:
-        Pass1Result with extracted classification data.
+        LLMCallResult wrapping Pass1Result with token usage.
 
     Raises:
-        anthropic.APIError: After exhausting retries.
-        ValueError: If response cannot be parsed into Pass1Result.
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
     """
     messages = build_pass1_messages(title, location, full_text)
 

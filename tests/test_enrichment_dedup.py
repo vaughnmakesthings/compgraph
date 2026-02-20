@@ -176,6 +176,13 @@ def _make_pass1_result(**overrides):
     return Pass1Result(**defaults)
 
 
+def _wrap_llm(result, input_tokens=100, output_tokens=50):
+    """Wrap a parsed result in LLMCallResult for orchestrator mocks."""
+    from compgraph.enrichment.retry import LLMCallResult
+
+    return LLMCallResult(result=result, input_tokens=input_tokens, output_tokens=output_tokens)
+
+
 def _make_pass2_result(entities=None):
     """Create a Pass2Result."""
     if entities is None:
@@ -200,7 +207,7 @@ class TestPass1Dedup:
         ]
 
         pass1_result = _make_pass1_result()
-        mock_enrich = AsyncMock(return_value=pass1_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(pass1_result))
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
 
@@ -246,7 +253,7 @@ class TestPass1Dedup:
             _make_posting(title="LG Brand Rep", full_text="Demo products at Costco."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
 
@@ -291,7 +298,7 @@ class TestPass1Dedup:
             _make_posting(title="Sony Merchandiser", full_text="Stock shelves."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
 
@@ -341,7 +348,7 @@ class TestPass1Dedup:
             call_count += 1
             if call_count == 1:
                 raise RuntimeError("API error")
-            return _make_pass1_result()
+            return _wrap_llm(_make_pass1_result())
 
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
@@ -398,7 +405,7 @@ class TestPass1Dedup:
             call_count += 1
             if call_count == 1:
                 raise RuntimeError("API error")
-            return _make_pass1_result()
+            return _wrap_llm(_make_pass1_result())
 
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
@@ -446,7 +453,7 @@ class TestPass1Dedup:
             _make_posting(title="Samsung BA", full_text="Visit stores."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
 
@@ -510,6 +517,59 @@ class TestPass1Dedup:
         assert result.failed == 0
         assert result.skipped == 0
 
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_aborts_remaining_groups(self):
+        """Circuit breaker should stop processing after consecutive API failures."""
+        from compgraph.enrichment.retry import EnrichmentAPIError, ErrorCategory
+
+        # 4 groups (unique content) — breaker threshold=2 should stop after 2 failures
+        postings = [
+            _make_posting(title="Job A", full_text="Content A"),
+            _make_posting(title="Job B", full_text="Content B"),
+            _make_posting(title="Job C", full_text="Content C"),
+            _make_posting(title="Job D", full_text="Content D"),
+        ]
+
+        mock_enrich = AsyncMock(
+            side_effect=EnrichmentAPIError("Rate limited", ErrorCategory.RATE_LIMIT)
+        )
+        mock_save = AsyncMock()
+        mock_fetch = AsyncMock(side_effect=[postings, []])
+
+        mock_session = AsyncMock()
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "compgraph.enrichment.orchestrator.async_session_factory",
+                return_value=mock_session_ctx,
+            ),
+            patch("compgraph.enrichment.orchestrator.enrich_posting_pass1", mock_enrich),
+            patch("compgraph.enrichment.orchestrator.save_enrichment", mock_save),
+            patch("compgraph.enrichment.orchestrator.get_anthropic_client"),
+            patch("compgraph.enrichment.orchestrator.fetch_unenriched_postings", mock_fetch),
+            patch("compgraph.enrichment.orchestrator.settings") as mock_settings,
+        ):
+            mock_settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD = 2
+
+            from compgraph.enrichment.orchestrator import (
+                EnrichmentOrchestrator,
+                EnrichmentRun,
+            )
+
+            orch = EnrichmentOrchestrator(batch_size=10, concurrency=1)
+            run = EnrichmentRun()
+            result = await orch.run_pass1(run)
+
+        # Breaker trips after 2 failures — remaining groups should NOT be attempted
+        # With concurrency=1, groups process sequentially, so at most 2 API calls
+        assert mock_enrich.call_count <= 3  # at most threshold calls before break
+        assert mock_save.call_count == 0  # no successes
+        assert result.failed > 0
+        assert result.succeeded == 0
+
 
 # ---------------------------------------------------------------------------
 # Pass 2 dedup orchestrator tests
@@ -566,7 +626,7 @@ class TestPass2Dedup:
         ]
 
         pass2_result = _make_pass2_result()
-        mock_enrich = AsyncMock(return_value=pass2_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(pass2_result))
         mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
         mock_save_mentions = AsyncMock()
         mock_mark_p2 = AsyncMock()
@@ -622,7 +682,7 @@ class TestPass2Dedup:
         ]
 
         empty_result = Pass2Result(entities=[])
-        mock_enrich = AsyncMock(return_value=empty_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(empty_result))
         mock_save_mentions = AsyncMock()
         mock_mark_p2 = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
@@ -678,7 +738,7 @@ class TestCacheIsolation:
             _make_posting(title="Samsung BA", full_text="Visit stores."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
 
         mock_session = AsyncMock()
@@ -734,7 +794,7 @@ class TestCrossBatchCache:
             _make_posting(title="Samsung BA", location="Houston, TX", full_text="Visit stores."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
         # Return batch1, then batch2, then empty to stop
         mock_fetch = AsyncMock(side_effect=[batch1, batch2, []])
@@ -796,7 +856,7 @@ class TestPass2FallbackChain:
         ]
 
         pass2_result = _make_pass2_result()
-        mock_enrich = AsyncMock(return_value=pass2_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(pass2_result))
         mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
         mock_save_mentions = AsyncMock()
         mock_mark_p2 = AsyncMock()
@@ -853,7 +913,7 @@ class TestPass2FallbackChain:
         ]
 
         pass2_result = _make_pass2_result()
-        mock_enrich = AsyncMock(return_value=pass2_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(pass2_result))
         mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
         mock_save_mentions = AsyncMock()
         mock_mark_p2 = AsyncMock()
@@ -919,7 +979,7 @@ class TestPass2FallbackCacheReuse:
             call_count += 1
             if call_count == 1:
                 raise RuntimeError("API error")
-            return _make_pass2_result()
+            return _wrap_llm(_make_pass2_result())
 
         mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
         mock_save_mentions = AsyncMock()
@@ -986,7 +1046,7 @@ class TestSkippedPersistence:
             _make_posting(title="Samsung BA", full_text="Visit stores."),
         ]
 
-        mock_enrich = AsyncMock(return_value=_make_pass1_result())
+        mock_enrich = AsyncMock(return_value=_wrap_llm(_make_pass1_result()))
         mock_save = AsyncMock()
         mock_fetch = AsyncMock(side_effect=[postings, []])
         mock_update = AsyncMock()
@@ -1034,7 +1094,7 @@ class TestSkippedPersistence:
         ]
 
         pass2_result = _make_pass2_result()
-        mock_enrich = AsyncMock(return_value=pass2_result)
+        mock_enrich = AsyncMock(return_value=_wrap_llm(pass2_result))
         mock_resolve = AsyncMock(return_value=MagicMock(brand_id=uuid.uuid4()))
         mock_save_mentions = AsyncMock()
         mock_mark_p2 = AsyncMock()
