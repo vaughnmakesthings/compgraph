@@ -1,0 +1,25 @@
+docs/context-packs.md
+  db6a613a4c40acaa 292
+docs/references/openrouter-model-candidates.md
+  db6a613a4c40acaa 1-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "2f1d1be5a3f2487fd12383dbc1b38fcb40c25275",
+  "prompts": {
+    "db6a613a4c40acaa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "33a239ac-36b6-4e8a-9859-44cadf62fac1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 93,
+      "total_deletions": 0,
+      "accepted_lines": 93,
+      "overriden_lines": 0
+    }
+  }
+}
