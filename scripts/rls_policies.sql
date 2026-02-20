@@ -51,28 +51,43 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 -- =============================================================================
 
 -- Dimension tables
+DROP POLICY IF EXISTS read_companies ON companies;
 CREATE POLICY read_companies ON companies FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_brands ON brands;
 CREATE POLICY read_brands ON brands FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_retailers ON retailers;
 CREATE POLICY read_retailers ON retailers FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_markets ON markets;
 CREATE POLICY read_markets ON markets FOR SELECT TO authenticated USING (true);
 
 -- Operational tables
+DROP POLICY IF EXISTS read_scrape_runs ON scrape_runs;
 CREATE POLICY read_scrape_runs ON scrape_runs FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_enrichment_runs ON enrichment_runs;
 CREATE POLICY read_enrichment_runs ON enrichment_runs FOR SELECT TO authenticated USING (true);
 
 -- Fact tables
+DROP POLICY IF EXISTS read_postings ON postings;
 CREATE POLICY read_postings ON postings FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_posting_snapshots ON posting_snapshots;
 CREATE POLICY read_posting_snapshots ON posting_snapshots FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_posting_enrichments ON posting_enrichments;
 CREATE POLICY read_posting_enrichments ON posting_enrichments FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_posting_brand_mentions ON posting_brand_mentions;
 CREATE POLICY read_posting_brand_mentions ON posting_brand_mentions FOR SELECT TO authenticated USING (true);
 
 -- Aggregation tables
+DROP POLICY IF EXISTS read_agg_daily_velocity ON agg_daily_velocity;
 CREATE POLICY read_agg_daily_velocity ON agg_daily_velocity FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_agg_brand_timeline ON agg_brand_timeline;
 CREATE POLICY read_agg_brand_timeline ON agg_brand_timeline FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_agg_pay_benchmarks ON agg_pay_benchmarks;
 CREATE POLICY read_agg_pay_benchmarks ON agg_pay_benchmarks FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS read_agg_posting_lifecycle ON agg_posting_lifecycle;
 CREATE POLICY read_agg_posting_lifecycle ON agg_posting_lifecycle FOR SELECT TO authenticated USING (true);
 
 -- Users table: authenticated users can only see their own record
+DROP POLICY IF EXISTS read_own_user ON users;
 CREATE POLICY read_own_user ON users FOR SELECT TO authenticated USING (auth.uid() = id);
 
 COMMIT;
