@@ -15,12 +15,12 @@ No arguments required.
 
 1. **Query enrichment counts** via the dev server API:
    ```bash
-   curl -sf http://192.168.1.69:8000/api/enrich/status
+   curl -sf https://dev.compgraph.io/api/enrich/status
    ```
 
 2. **Query posting counts** for context:
    ```bash
-   curl -sf http://192.168.1.69:8000/health
+   curl -sf https://dev.compgraph.io/health
    ```
 
 3. **Summarize** the results in a table:
@@ -33,7 +33,7 @@ No arguments required.
 
 Check if the server is running:
 ```bash
-ssh compgraph-dev "systemctl status compgraph --no-pager"
+ssh compgraph-do "systemctl status compgraph --no-pager"
 ```
 
 Report the status and suggest `/deploy` if the service is down.

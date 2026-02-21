@@ -1,0 +1,25 @@
+[Unit]
+Description=CompGraph FastAPI Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=compgraph
+Group=compgraph
+WorkingDirectory=/opt/compgraph
+EnvironmentFile=/opt/compgraph/.env
+ExecStart=/opt/compgraph/.venv/bin/uvicorn compgraph.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=90
+MemoryMax=1G
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/compgraph
+
+[Install]
+WantedBy=multi-user.target
