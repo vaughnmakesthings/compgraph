@@ -1,0 +1,35 @@
+infra/systemd/compgraph-dashboard.service
+  226dddeed5cce070 1-25
+.claude/skills/deploy/SKILL.md
+  226dddeed5cce070 3,8,12-13,17,23,25,27,29,32,34,38,44-47
+.claude/skills/enrich-status/SKILL.md
+  226dddeed5cce070 18,23,36
+infra/systemd/compgraph.service
+  226dddeed5cce070 1-25
+infra/setup-droplet.sh
+  226dddeed5cce070 1-104
+infra/Caddyfile
+  226dddeed5cce070 1-7
+infra/deploy.sh
+  226dddeed5cce070 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "abbf63d3677044f0bf3a18360a3e407844988596",
+  "prompts": {
+    "226dddeed5cce070": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f262c04a-c4bb-4557-bc13-101e0dc00d57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 238,
+      "total_deletions": 18,
+      "accepted_lines": 238,
+      "overriden_lines": 0
+    }
+  }
+}
