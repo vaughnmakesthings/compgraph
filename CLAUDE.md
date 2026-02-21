@@ -111,6 +111,40 @@ See `docs/phases.md` for full roadmap with task tables. Load Pack R from `docs/c
 
 ## Conventions
 
+### Frontend Design Antipatterns
+
+When generating or reviewing frontend code (Next.js, React, CSS), reject these AI-default patterns on sight:
+
+**Color:**
+- Don't use purple, indigo, or violet as primary/accent colors. The `bg-indigo-500` / `violet-600` / cyan palette is the #1 AI-generation tell. Use the project's defined brand palette instead.
+- Don't accept gradient hero sections (especially purple→blue or purple→pink). If a gradient is needed, it must use brand colors with intentional direction and purpose.
+- Don't default to Tailwind's color names without mapping them to design tokens first.
+
+**Components & Layout:**
+- Don't use the SaaS landing page template (centered hero → 3-column feature grid → CTA → footer). CompGraph is a B2B intelligence platform — use data-dense layouts.
+- Don't apply uniform large border-radius (`rounded-xl`, `rounded-2xl`) to everything. Vary radius by component role: inputs, cards, buttons, and containers should have distinct radii.
+- Don't add glassmorphism (backdrop-blur + transparency) to cards. Use solid backgrounds with subtle borders.
+- Don't use decorative icons (Lucide/Heroicons scattered for visual filler). Every icon must communicate meaning.
+
+**Typography & Spacing:**
+- Don't default to Inter. Choose a specific font pairing with rationale (display + body).
+- Don't use metronomic spacing (identical gaps everywhere). Create visual rhythm with intentional density variation — tight data sections vs. airy navigation.
+- Don't use the same shadow depth on every elevated element. Define a shadow scale (sm/md/lg) and assign by component importance.
+
+**Animation & Polish:**
+- Don't add fade-in-on-scroll to every section or hover-scale to every card. Animations must serve a UX purpose (state change feedback, progressive disclosure, loading indication).
+- Don't use `transition-all` — specify exact properties (`transition-colors`, `transition-opacity`).
+- Don't add the ✨ sparkle icon or "AI-powered" badges. These are negative trust signals.
+
+**Process:**
+- Never accept the first AI-generated color scheme. Always override with project design tokens.
+- Treat AI-generated components as wireframes, then apply intentional design decisions.
+- When prompting AI tools for UI, provide: hex colors, font family, spacing scale values, border-radius values. Never say "make it modern."
+
+Reference: `docs/references/ai-generated-design-complaints.md` for the full research behind these rules.
+
+### Backend Conventions
+
 - All database operations must be async. No sync SQLAlchemy calls anywhere.
 - No mutable operations on `posting_snapshots` — strict append-only. `posting_enrichments` allows updates (trigger dropped in PR #118 due to iCIMS conflicts).
 - All timestamps use timezone-aware datetime (`DateTime(timezone=True)`).
@@ -316,6 +350,7 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/enrich-status` — check enrichment pipeline status on dev server
 - `/migrate` — generate/run Alembic migrations
 - `/docs-audit` — validate doc freshness, cross-doc consistency, and research gaps
+- `/frontend-design` — enforce CompGraph design language, reject AI-default patterns
 
 ## Code Standards
 
