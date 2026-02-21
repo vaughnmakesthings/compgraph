@@ -342,7 +342,7 @@ Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-
 Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/commit` — lint, test, diff review, commit, push
 - `/pr` — create PR with validation and CI awareness
-- `/deploy` — deploy main to Raspberry Pi dev server
+- `/deploy` — deploy main to Digital Ocean dev server
 - `/merge-guardian` — enforce CI pass + review before merge
 - `/pr-feedback-cycle` — triage and resolve bot review comments
 - `/research` — structured codebase/web research with scope boundaries

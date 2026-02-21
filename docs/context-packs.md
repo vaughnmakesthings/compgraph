@@ -289,6 +289,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
 | `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
 | `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
+| `docs/references/metabase-oss-evaluation.md` | Metabase OSS evaluation for dashboard replacement | Dashboard, M5 planning |
 | `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, LLM eval tool |
 | `docs/references/llm-eval-best-practices.md` | Eval frameworks, scoring, statistical rigor, prompt optimization from human feedback, error taxonomy, cost optimization | LLM eval tool, prompt improvement |
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
