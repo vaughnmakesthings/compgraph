@@ -84,5 +84,5 @@ Python checks (ruff, pytest) still run if Python files are staged — both stack
 - Never commit `.env`, credentials, or binary files
 - Never use `--no-verify` unless the user explicitly requested it
 - If ruff or pytest fail, fix the issues first — do not skip
-- If eslint or tsc fail in compgraph-eval, fix before committing
+- If eslint, tsc, or vitest fail in compgraph-eval, fix before committing
 - Always show the diff summary before committing — no silent commits
