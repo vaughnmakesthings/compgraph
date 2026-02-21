@@ -125,19 +125,24 @@ def _trigger_enrichment(
             if enrichment_run.status == EnrichmentStatus.RUNNING:
                 enrichment_run.status = EnrichmentStatus.FAILED
                 enrichment_run.finished_at = datetime.now(tz=UTC)
-            # Best-effort DB update
-            try:
-                from compgraph.db.models import EnrichmentRunStatus as DBStatus
-                from compgraph.enrichment.orchestrator import update_enrichment_run_record
+                # Best-effort DB update — only if run was still RUNNING
+                try:
+                    from compgraph.db.models import EnrichmentRunStatus as DBStatus
+                    from compgraph.enrichment.orchestrator import (
+                        update_enrichment_run_record,
+                    )
 
-                await update_enrichment_run_record(
-                    enrichment_run.run_id,
-                    status=DBStatus.FAILED,
-                    finished_at=enrichment_run.finished_at,
-                    error_summary=f"Unhandled exception in {method_name}",
-                )
-            except Exception:
-                logger.exception("Failed to update DB for crashed run %s", enrichment_run.run_id)
+                    await update_enrichment_run_record(
+                        enrichment_run.run_id,
+                        status=DBStatus.FAILED,
+                        finished_at=enrichment_run.finished_at,
+                        error_summary=f"Unhandled exception in {method_name}",
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed to update DB for crashed run %s",
+                        enrichment_run.run_id,
+                    )
 
     background_tasks.add_task(_run)
 
