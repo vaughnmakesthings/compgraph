@@ -1,0 +1,52 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# Only one deploy at a time — cancel in-progress deploys if a new merge lands
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate: wait for CI to pass before deploying
+  ci-gate:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI checks
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          running-workflow-name: "Wait for CI"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          check-regexp: "^(Lint|Type Check|Test)"
+          wait-interval: 15
+          allowed-conclusions: success
+
+  deploy:
+    name: Deploy to Dev
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            root@165.232.128.28 \
+            "bash /opt/compgraph/infra/deploy-ci.sh"
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
