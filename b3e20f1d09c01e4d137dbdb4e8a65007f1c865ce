@@ -1,0 +1,38 @@
+docs/references/nextjs-15-vitest-testing-patterns.md
+  43d454a49692b1ab 1-269
+docs/context-packs.md
+  43d454a49692b1ab 294
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b3e20f1d09c01e4d137dbdb4e8a65007f1c865ce",
+  "prompts": {
+    "43d454a49692b1ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c9ca8d83-1d35-4aa6-9f7d-fdf0fcfbe07b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 270,
+      "total_deletions": 0,
+      "accepted_lines": 270,
+      "overriden_lines": 0
+    },
+    "8aec1106922da70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3630a4ad-551b-4978-80d3-96969cc27b84",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 74,
+      "total_deletions": 13,
+      "accepted_lines": 61,
+      "overriden_lines": 0
+    }
+  }
+}
