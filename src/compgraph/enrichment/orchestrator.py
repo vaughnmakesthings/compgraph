@@ -70,9 +70,10 @@ class EnrichmentRun:
     circuit_breaker_tripped: bool = False
     error_summary: str | None = None
 
-    def finish(self, result: EnrichResult) -> None:
+    def finish(self, result: EnrichResult, *, finalize: bool = True) -> None:
         self.pass1_result = result
-        self.finished_at = datetime.now(UTC)
+        if finalize:
+            self.finished_at = datetime.now(UTC)
         self._update_status(result)
 
     def finish_pass2(self, result: EnrichResult) -> None:
@@ -111,10 +112,14 @@ class EnrichmentRun:
 
 # In-memory run storage (mirrors scrape orchestrator pattern)
 _runs: dict[uuid.UUID, EnrichmentRun] = {}
+MAX_STORED_ENRICHMENT_RUNS = 10
 
 
 def _store_run(run: EnrichmentRun) -> None:
     _runs[run.run_id] = run
+    if len(_runs) > MAX_STORED_ENRICHMENT_RUNS:
+        oldest_id = min(_runs, key=lambda k: _runs[k].started_at)
+        del _runs[oldest_id]
 
 
 def get_enrichment_run(run_id: uuid.UUID) -> EnrichmentRun | None:
@@ -644,7 +649,7 @@ class EnrichmentOrchestrator:
         if breaker.tripped:
             run.circuit_breaker_tripped = True
             run.error_summary = f"circuit breaker triggered: {breaker.trip_reason}"
-        run.finish(result)
+        run.finish(result, finalize=finalize)
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
 
         update_fields: dict[str, object] = {

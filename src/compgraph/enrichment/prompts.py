@@ -94,14 +94,26 @@ Output: {"role_archetype":"corporate","role_level":"mid","employment_type":"full
 </examples>"""
 
 
+def sanitize_for_prompt(text: str) -> str:
+    """Escape XML special characters in untrusted posting content.
+
+    Lightweight mitigation against prompt injection via scraped job postings.
+    Ampersand is escaped first to prevent double-escaping.
+    """
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def build_pass1_user_message(title: str, location: str, full_text: str) -> str:
     """Build the user message for Pass 1 enrichment."""
+    s_title = sanitize_for_prompt(title)
+    s_location = sanitize_for_prompt(location)
+    s_body = sanitize_for_prompt(full_text)
     return f"""\
 <posting>
-<title>{title}</title>
-<location>{location}</location>
+<title>{s_title}</title>
+<location>{s_location}</location>
 <body>
-{full_text}
+{s_body}
 </body>
 </posting>"""
 
@@ -207,12 +219,15 @@ def build_pass2_user_message(
     falls back to full_text if Pass 1 section is empty.
     """
     primary_content = content_role_specific or full_text
+    s_title = sanitize_for_prompt(title)
+    s_location = sanitize_for_prompt(location)
+    s_body = sanitize_for_prompt(primary_content)
     return f"""\
 <posting>
-<title>{title}</title>
-<location>{location}</location>
+<title>{s_title}</title>
+<location>{s_location}</location>
 <body>
-{primary_content}
+{s_body}
 </body>
 </posting>"""
 

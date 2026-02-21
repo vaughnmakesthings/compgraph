@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import uuid
+
+import pytest
+
 from compgraph.enrichment.resolver import normalize_entity_name
 from compgraph.enrichment.schemas import EntityMention
 
@@ -109,6 +113,73 @@ class TestFuzzyThresholds:
 # ---------------------------------------------------------------------------
 # Orchestrator Pass 2 extensions
 # ---------------------------------------------------------------------------
+
+
+class TestSaveBrandMentionsIdempotency:
+    """Tests for delete-before-insert idempotency in save_brand_mentions."""
+
+    @pytest.mark.asyncio
+    async def test_delete_executed_before_insert(self):
+        """Verify that existing mentions are deleted before new ones are added."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from compgraph.enrichment.resolver import save_brand_mentions
+        from compgraph.enrichment.schemas import EntityMention
+
+        session = AsyncMock()
+        # Mock the flush and execute calls
+        session.flush = AsyncMock()
+        session.execute = AsyncMock()
+        # Mock the enrichment lookup for primary brand update
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        session.execute.return_value = mock_result
+
+        posting_id = uuid.uuid4()
+        enrichment_id = uuid.uuid4()
+        entities = [
+            EntityMention(entity_name="Samsung", entity_type="client_brand", confidence=0.95),
+        ]
+        resolved = [(uuid.uuid4(), None, False)]
+
+        await save_brand_mentions(session, posting_id, enrichment_id, entities, resolved)
+
+        # First execute call should be the DELETE
+        first_call = session.execute.call_args_list[0]
+        delete_stmt = first_call[0][0]
+        # Verify it's a DELETE statement targeting PostingBrandMention
+        assert "DELETE" in str(delete_stmt).upper()
+
+    @pytest.mark.asyncio
+    async def test_mentions_added_after_delete(self):
+        """Verify that session.add is called after the delete."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from compgraph.enrichment.resolver import save_brand_mentions
+        from compgraph.enrichment.schemas import EntityMention
+
+        session = AsyncMock()
+        session.flush = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        session.execute = AsyncMock(return_value=mock_result)
+
+        posting_id = uuid.uuid4()
+        enrichment_id = uuid.uuid4()
+        entities = [
+            EntityMention(entity_name="Samsung", entity_type="client_brand", confidence=0.95),
+            EntityMention(entity_name="Best Buy", entity_type="retailer", confidence=0.9),
+        ]
+        resolved = [
+            (uuid.uuid4(), None, False),
+            (None, uuid.uuid4(), False),
+        ]
+
+        count = await save_brand_mentions(session, posting_id, enrichment_id, entities, resolved)
+
+        assert count == 2
+        # session.add should have been called for each entity
+        assert session.add.call_count == 2
 
 
 class TestEnrichmentRunPass2:

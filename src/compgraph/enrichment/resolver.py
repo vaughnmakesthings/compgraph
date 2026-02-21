@@ -195,7 +195,16 @@ async def save_brand_mentions(
 
     Also updates the PostingEnrichment with the primary brand_id/retailer_id
     (first entity of each type with highest confidence).
+
+    Idempotent: deletes existing mentions for this posting before inserting,
+    so re-runs don't accumulate duplicates.
     """
+    from sqlalchemy import delete
+
+    await session.execute(
+        delete(PostingBrandMention).where(PostingBrandMention.posting_id == posting_id)
+    )
+
     primary_brand_id: uuid.UUID | None = None
     primary_retailer_id: uuid.UUID | None = None
     count = 0

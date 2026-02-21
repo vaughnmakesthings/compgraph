@@ -119,6 +119,13 @@ async def fetch_pass1_complete_postings(
     Filters to enrichments that have Pass 1 done but Pass 2 not yet run.
     Uses enrichment_version to track completion (avoids infinite loop when
     Pass 2 extracts zero entities).
+
+    Uses a latest-enrichment subquery (DISTINCT ON posting_id ORDER BY
+    enriched_at DESC) to ensure exactly one enrichment row per posting,
+    preventing duplicate brand mentions when multiple enrichment records exist.
+
+    Note: filters to is_active=True. Short-lived postings deactivated before
+    enrichment runs are permanently skipped to avoid unexpected LLM API costs.
     """
     # Subquery: latest snapshot per posting
     latest_snapshot = (
@@ -128,6 +135,17 @@ async def fetch_pass1_complete_postings(
         )
         .distinct(PostingSnapshot.posting_id)
         .order_by(PostingSnapshot.posting_id, PostingSnapshot.created_at.desc())
+        .subquery()
+    )
+
+    # Subquery: latest enrichment per posting (prevents N rows per posting)
+    latest_enrichment = (
+        select(
+            PostingEnrichment.posting_id,
+            PostingEnrichment.id.label("enrichment_id"),
+        )
+        .distinct(PostingEnrichment.posting_id)
+        .order_by(PostingEnrichment.posting_id, PostingEnrichment.enriched_at.desc())
         .subquery()
     )
 
@@ -142,7 +160,14 @@ async def fetch_pass1_complete_postings(
             PostingSnapshot,
             PostingSnapshot.id == latest_snapshot.c.snapshot_id,
         )
-        .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
+        .join(
+            latest_enrichment,
+            Posting.id == latest_enrichment.c.posting_id,
+        )
+        .join(
+            PostingEnrichment,
+            PostingEnrichment.id == latest_enrichment.c.enrichment_id,
+        )
         .where(
             PostingEnrichment.enrichment_version.not_like("%pass2%"),
         )

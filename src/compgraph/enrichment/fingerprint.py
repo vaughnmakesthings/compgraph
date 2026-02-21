@@ -78,7 +78,7 @@ def generate_fingerprint(title: str, location: str, brand_slug: str | None) -> s
     norm_location = normalize_location(location)
     brand = brand_slug or ""
 
-    composite = f"{norm_title}|{norm_location}|{brand}"
+    composite = f"{norm_title}\0{norm_location}\0{brand}"
     return hashlib.sha256(composite.encode("utf-8")).hexdigest()
 
 
@@ -93,12 +93,14 @@ async def detect_reposts(session: AsyncSession, company_id: uuid.UUID | None = N
 
     Returns count of reposts detected.
     """
-    # Fetch postings that have enrichment but no fingerprint
+    # Fetch postings that have Pass 2-complete enrichment but no fingerprint.
+    # Requires Pass 2 so brand_slug is available for accurate fingerprints.
     stmt = (
         select(Posting, PostingEnrichment)
         .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
         .where(Posting.fingerprint_hash.is_(None))
         .where(Posting.is_active.is_(True))
+        .where(PostingEnrichment.enrichment_version.like("%pass2%"))
     )
     if company_id is not None:
         stmt = stmt.where(Posting.company_id == company_id)
