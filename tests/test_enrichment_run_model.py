@@ -6,6 +6,62 @@ from datetime import UTC, datetime
 from compgraph.db.models import EnrichmentRunDB, EnrichmentRunStatus
 
 
+class TestEnrichmentRunFinalize:
+    """Tests for EnrichmentRun.finish() finalize flag and _store_run eviction."""
+
+    def test_finish_with_finalize_true_sets_finished_at(self):
+        from compgraph.enrichment.orchestrator import EnrichmentRun, EnrichResult
+
+        run = EnrichmentRun()
+        result = EnrichResult(succeeded=5, failed=0)
+        run.finish(result, finalize=True)
+        assert run.finished_at is not None
+        assert run.pass1_result is result
+
+    def test_finish_with_finalize_false_does_not_set_finished_at(self):
+        from compgraph.enrichment.orchestrator import EnrichmentRun, EnrichResult
+
+        run = EnrichmentRun()
+        result = EnrichResult(succeeded=5, failed=0)
+        run.finish(result, finalize=False)
+        assert run.finished_at is None
+        assert run.pass1_result is result
+
+    def test_finish_default_finalize_is_true(self):
+        from compgraph.enrichment.orchestrator import EnrichmentRun, EnrichResult
+
+        run = EnrichmentRun()
+        result = EnrichResult(succeeded=3, failed=0)
+        run.finish(result)
+        assert run.finished_at is not None
+
+    def test_store_run_eviction(self):
+        from compgraph.enrichment.orchestrator import (
+            MAX_STORED_ENRICHMENT_RUNS,
+            EnrichmentRun,
+            _runs,
+            _store_run,
+        )
+
+        # Clear state
+        _runs.clear()
+
+        # Store MAX + 1 runs
+        runs = []
+        for _ in range(MAX_STORED_ENRICHMENT_RUNS + 1):
+            run = EnrichmentRun()
+            _store_run(run)
+            runs.append(run)
+
+        # Should have evicted the oldest
+        assert len(_runs) == MAX_STORED_ENRICHMENT_RUNS
+        assert runs[0].run_id not in _runs
+        assert runs[-1].run_id in _runs
+
+        # Cleanup
+        _runs.clear()
+
+
 class TestEnrichmentRunDBModel:
     def test_model_has_required_columns(self):
         expected_id = uuid.uuid4()

@@ -127,3 +127,19 @@ class TestGenerateFingerprint:
         fp1 = generate_fingerprint("Samsung Galaxy Rep", "Chicago, IL", "samsung")
         fp2 = generate_fingerprint("Samsung TV Rep", "Chicago, IL", "samsung")
         assert fp1 != fp2
+
+    def test_delimiter_prevents_collision(self):
+        """Titles/locations with pipe characters shouldn't collide.
+
+        With the old `|` delimiter, "a|b" + "c" could collide with "a" + "b|c".
+        With `\\0` delimiter this is impossible since NUL can't appear in text.
+        """
+        fp1 = generate_fingerprint("Field Rep|Best Buy", "Chicago, IL", "samsung")
+        fp2 = generate_fingerprint("Field Rep", "Best Buy|Chicago, IL", "samsung")
+        assert fp1 != fp2
+
+    def test_none_brand_differs_from_branded(self):
+        """None brand should produce a different hash from a real brand."""
+        fp_none = generate_fingerprint("Samsung Rep", "Chicago, IL", None)
+        fp_brand = generate_fingerprint("Samsung Rep", "Chicago, IL", "samsung")
+        assert fp_none != fp_brand
