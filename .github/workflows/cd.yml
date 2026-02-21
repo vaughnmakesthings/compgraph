@@ -1,7 +1,9 @@
 name: CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 # Only one deploy at a time — cancel in-progress deploys if a new merge lands
@@ -13,26 +15,13 @@ permissions:
   contents: read
 
 jobs:
-  # Gate: wait for CI to pass before deploying
-  ci-gate:
-    name: Wait for CI
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for CI checks
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.sha }}
-          running-workflow-name: "Wait for CI"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          check-regexp: "^(Lint|Type Check|Test)"
-          wait-interval: 15
-          allowed-conclusions: success
-
   deploy:
     name: Deploy to Dev
-    needs: ci-gate
     runs-on: ubuntu-latest
-    environment: dev
+    # Only deploy if CI succeeded and this was a push (not a PR)
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     steps:
       - name: Configure SSH
         run: |
