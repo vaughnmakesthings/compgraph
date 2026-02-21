@@ -5,13 +5,12 @@
       "command": "op",
       "args": [
         "run",
+        "--env-file=.env",
         "--no-masking",
         "--",
         "npx",
         "-y",
-        "@supabase/mcp-server@latest",
-        "--access-token",
-        "$SUPABASE_ACCESS_TOKEN"
+        "@supabase/mcp-server-supabase@latest"
       ],
       "env": {
         "SUPABASE_ACCESS_TOKEN": "op://DEV/SUPABASE_ACCESS_TOKEN/credential"

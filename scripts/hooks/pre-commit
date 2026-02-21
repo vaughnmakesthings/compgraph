@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit hook: ruff check + format on staged Python files
+# Pre-commit hook: ruff check + format + mypy on staged Python files
 set -e
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
@@ -13,3 +13,10 @@ echo "[pre-commit] Checking staged Python files..."
 uv run ruff check $STAGED
 # Format check (fail if unformatted)
 uv run ruff format --check $STAGED
+
+# Type check staged src/ files (skip tests — they use looser typing)
+SRC_STAGED=$(echo "$STAGED" | grep '^src/' || true)
+if [ -n "$SRC_STAGED" ]; then
+    echo "[pre-commit] Running mypy on staged src/ files..."
+    uv run mypy --no-error-summary $SRC_STAGED
+fi

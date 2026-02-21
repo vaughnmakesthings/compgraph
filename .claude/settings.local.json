@@ -56,7 +56,14 @@
       "Bash(gh pr view:*)",
       "Bash(git pull:*)",
       "Bash(git branch:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(uv venv:*)",
+      "Bash(gh repo create:*)",
+      "mcp__plugin_claude-mem_mcp-search__save_memory",
+      "Bash(git reset:*)"
     ]
+  },
+  "enabledPlugins": {
+    "k8s-toolkit@hanibalsk-marketplace": true
   }
 }

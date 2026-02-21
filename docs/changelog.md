@@ -4,6 +4,81 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-20 (Session 3) — Digital Ocean Dev Server Migration
+
+**Goal:** Migrate dev server from Raspberry Pi to Digital Ocean Droplet (M5 task).
+
+**What happened:**
+- Created infrastructure files: systemd units, Caddyfile, setup-droplet.sh, deploy.sh (PR #143)
+- Provisioned DO Droplet (s-1vcpu-2gb, sfo3, $12/mo) at 165.232.128.28
+- Set up Cloud Firewall (ports 22/80/443/ICMP only)
+- Configured Caddy reverse proxy with auto Let's Encrypt for dev.compgraph.io + dashboard.dev.compgraph.io
+- Installed Python 3.12, uv, 75 packages via uv sync
+- All services running: FastAPI, Streamlit, Caddy — 532MB memory usage
+- Updated CLAUDE.md, phases.md, deploy skill, enrich-status skill
+- Stopped Pi scheduler, 48h soak period started
+
+**Key gotchas:**
+- Deploy keys disabled on repo — used gh auth token + git credential store
+- uv must be copied to /usr/local/bin for compgraph service user access
+- Caddy needs reload after copying Caddyfile (started before config was in place)
+- Had to recreate droplet to add 1Password SSH key (54266809) alongside Termius key
+
+**What's next:**
+- Monitor 2+ scheduled pipeline runs on DO (Mon/Wed/Fri 2am ET)
+- Decommission Pi after 48h soak
+- Merge PR #143 after review bots pass
+
+---
+
+## 2026-02-20 (Session 2) — CompGraph-Eval PR Feedback + Merge
+
+**Goal:** Triage bot reviews on compgraph-eval PR #1, fix accepted issues, merge.
+
+**What happened:**
+- PR #1 received 34 review threads across 4 bots (Gemini, Cubic, Cursor, CodeRabbit)
+- 2-cycle feedback loop: 28 threads in cycle 1, 6 new threads in cycle 2
+- 7 fixes committed across 2 cycles:
+  - store.py: PRAGMA foreign_keys, CASCADE delete_run, ASC comparison order
+  - 2_Review.py: A/B blinding, state reset on run change, pass number validation, dead code removal
+  - 1_Run_Tests.py: DEFAULT_CONCURRENCY from config
+  - export_corpus.py: asyncpg dialect + postgres:// scheme handling
+  - runner.py: graceful LLM call failure handling
+- 4 issues deferred: #6 (narrow exceptions), #7 (N+1 queries), #8 (KeyError guards), #9 (test assertions)
+- 8 threads rejected (intentional design, local tool risk, Streamlit patterns)
+- Squash merged to main as `6c361db`
+
+**What's next:**
+- Export corpus from Supabase: `op run --env-file=../.env -- uv run python scripts/export_corpus.py`
+- Run first real evaluation against production prompts
+- Close Issue #128
+
+---
+
+## 2026-02-20 (Session 1) — CompGraph-Eval Tool Built
+
+**Goal:** Implement the standalone LLM evaluation tool (Issue #128).
+
+**What happened:**
+- Built `compgraph-eval/` as standalone repo: github.com/vaughnmakesthings/compgraph-eval (private)
+- 12 tasks executed sequentially: scaffolding, schemas, SQLite store, prompt registry, LLM wrapper, runner, Elo calculator, corpus export, 3 Streamlit UI pages, E2E test
+- 32 tests passing, 12 commits, Python 3.13 + uv
+- Production prompts copied verbatim from compgraph enrichment/prompts.py
+- Stack: LiteLLM (multi-provider), Streamlit (3 pages), aiosqlite, Pydantic 2.0
+- Schemas simplified from production (no Literal types/validators — eval tool accepts any LLM output)
+
+**Key decisions:**
+- Used `[dependency-groups]` for dev deps (uv convention), not `[project.optional-dependencies]`
+- Event loop helper `_get_or_create_event_loop()` in Streamlit pages for async compatibility
+- Randomized A/B assignment in review page to avoid position bias
+
+**What's next:**
+- Export corpus from Supabase: `op run --env-file=../.env -- uv run python scripts/export_corpus.py`
+- Run first real evaluation against production prompts
+- Close Issue #128
+
+---
+
 ## 2026-02-19 (Session 2) — Scaling Strategy + LLM Eval Tool Design
 
 **Goal:** Research scaling path, design an LLM evaluation tool for prompt/model testing.
