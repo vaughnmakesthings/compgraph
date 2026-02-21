@@ -20,7 +20,12 @@ echo "=== Deploying CompGraph to DO ==="
 # ── 1. Push secrets (optional) ──
 if [ "$ENV_UPDATE" = true ]; then
     echo "[1/5] Resolving and pushing secrets from 1Password..."
-    op run --env-file=.env -- env | grep -E '^(DATABASE_|ANTHROPIC_|SCHEDULER_|DB_POOL|DB_MAX)' > /tmp/compgraph-env
+    # Copy local .env (already has resolved secrets) with DO-specific additions
+    cp .env /tmp/compgraph-env
+    echo "" >> /tmp/compgraph-env
+    echo "SCHEDULER_ENABLED=true" >> /tmp/compgraph-env
+    echo "DB_POOL_SIZE=3" >> /tmp/compgraph-env
+    echo "DB_MAX_OVERFLOW=2" >> /tmp/compgraph-env
     scp /tmp/compgraph-env "$SSH_HOST:$APP_DIR/.env"
     ssh "$SSH_HOST" "chown compgraph:compgraph $APP_DIR/.env && chmod 600 $APP_DIR/.env"
     rm /tmp/compgraph-env
@@ -35,7 +40,7 @@ ssh "$SSH_HOST" "cd $APP_DIR && git pull"
 
 # ── 3. Sync dependencies ──
 echo "[3/5] Syncing dependencies..."
-ssh "$SSH_HOST" "cd $APP_DIR && sudo -u compgraph /root/.local/bin/uv sync"
+ssh "$SSH_HOST" "cd $APP_DIR && sudo -u compgraph uv sync"
 
 # ── 4. Restart services ──
 echo "[4/5] Restarting services..."
