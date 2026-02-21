@@ -324,6 +324,8 @@ Read `docs/changelog.md` (latest entry only) for session continuity. The Roadmap
 
 Project-level agents in `.claude/agents/` have deep CompGraph context:
 - `python-backend-developer` — implementation (scrapers, enrichment, aggregation, API)
+- `react-frontend-developer` — Next.js pages, Recharts charts, AG Grid tables, Supabase Auth, Vitest tests
+- `nextjs-deploy-ops` — DO deployment, Caddy, systemd, Supabase RLS, CI/CD
 - `code-reviewer` — quality gate (plan alignment, async patterns, append-only rules)
 - `pytest-validator` — test audit (hollow assertions, DB isolation)
 - `spec-reviewer` — scope gate (goal achievement vs product spec)
