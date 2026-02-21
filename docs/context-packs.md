@@ -272,6 +272,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/phases.md` | Implementation roadmap, milestone tracking, current progress | ~2K |
 | `docs/failure-patterns.md` | Known failure modes — load when debugging any pipeline issue | ~1K+ |
 | `docs/workflow.md` | Development workflow, agent crew integration, review gates | ~2K |
+| `docs/ci.md` | CI jobs (lint, type, test, security), CD auto-deploy pipeline, local hooks, review bots | ~1K |
 | `docs/secrets-reference.md` | 1Password references, env var setup | ~500 |
 
 ### External Research (load by section)

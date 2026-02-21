@@ -4,6 +4,34 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-21 — CD Pipeline + Dev Server Fix
+
+**Goal:** Fix broken enrichment status endpoint, add auto-deploy on merge to main.
+
+**What happened:**
+- Diagnosed `enrichment_runs.total_input_tokens does not exist` — DB missing columns added in PR #144
+- Deployed latest main, applied token tracking migration via Alembic + pooler URL
+- Added `circuit_breaker_tripped` column via Supabase MCP (migration `ac20bd3de6fd`)
+- Built GitHub Actions CD pipeline (PR #146):
+  - `cd.yml` workflow: triggers via `workflow_run` after CI passes on main
+  - `deploy-ci.sh`: pull → sync → auto-migrate → restart → health check
+  - Dedicated ED25519 deploy key (GitHub secrets: `DEPLOY_SSH_KEY`, `DEPLOY_SSH_KNOWN_HOSTS`)
+- Fixed 3 issues during CD bootstrap: permissions error (switched to `workflow_run`), missing script on droplet (chicken-and-egg), `sudo` env passthrough, duplicate Alembic revision ID
+- First successful auto-deploy confirmed (run 22251880116)
+- Updated docs: CLAUDE.md, ci.md, cheat-sheet.md, workflow.md, changelog.md, MEMORY.md
+
+**Key learnings:**
+- `lewagon/wait-on-check-action` needs `checks:read` permission — `workflow_run` is simpler
+- `sudo -u` drops environment variables — use `sudo -u user env VAR=val command`
+- Supabase pooler connection confuses Alembic autogenerate (sees all tables as new) — write manual migrations
+- Never reuse placeholder revision IDs (`a1b2c3d4e5f6` was already taken by `add_scrape_runs_table`)
+
+**What's next:**
+- Monitor CD pipeline on next merge
+- M3 remaining: data quality review, prompt tuning
+
+---
+
 ## 2026-02-20 (Session 3) — Digital Ocean Dev Server Migration
 
 **Goal:** Migrate dev server from Raspberry Pi to Digital Ocean Droplet (M5 task).

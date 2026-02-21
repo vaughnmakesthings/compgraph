@@ -33,7 +33,7 @@ START → worktree → implement → test → commit → pr → merge → cleanu
 | **Merge Guardian** | `/merge-guardian` | PR is open, want to merge safely after CI passes |
 | **Parallel Pipeline** | `/parallel-pipeline <issue>` | Large issue with independent subtasks |
 | **Commit** | `/commit` | Lint, test, diff review, commit, push |
-| **Deploy** | `/deploy` | Deploy main to Raspberry Pi dev server |
+| **Deploy** | `/deploy` | Manual deploy to DO dev server (auto-deploys on merge to main) |
 | **Research** | `/research <topic>` | Structured codebase/web research with scope boundaries |
 | **PR Feedback** | `/pr-feedback-cycle [PR#]` | Triage and resolve bot review comments |
 | **Enrich Status** | `/enrich-status` | Check enrichment pipeline status on dev server |

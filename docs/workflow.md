@@ -18,6 +18,7 @@ Step  7: Spec Alignment .................. autonomous (spec-reviewer agent)
 Step  8: Create PR ....................... autonomous
 Step  9: CI Testing ...................... GitHub Actions
 Step 10: Human Review & Merge ........... GATE: human approves
+Step 11: Auto-Deploy .................... CD workflow (automatic)
 ```
 
 ### Diagram
@@ -27,7 +28,7 @@ Step 10: Human Review & Merge ........... GATE: human approves
                               |
   0 ─── 1 ─── 2 ──[APPROVE]─── 3 ─── 4 ─── 5 ─── 6 ─── 7 ─── 8
                                                                   |
-                                                        9 ─── 10 ──[MERGE]
+                                                        9 ─── 10 ──[MERGE]─── 11 (auto-deploy)
 ```
 
 ---
@@ -171,6 +172,25 @@ Runs: ruff lint + format, pytest, security scan (when configured).
 | **Gate** | **HUMAN APPROVAL** |
 
 Human reviews PR, approves, and merges.
+
+---
+
+### Step 11: Auto-Deploy
+
+| Attribute | Value |
+|-----------|-------|
+| **Trigger** | Merge to main (CI passes) |
+| **Mechanism** | GitHub Actions CD workflow (`cd.yml`) |
+| **Gate** | Health check |
+
+After merge, the CD workflow automatically:
+1. SSHs to the DO dev server
+2. Pulls latest main, syncs dependencies
+3. Runs Alembic migrations
+4. Restarts services
+5. Verifies health endpoint
+
+No manual action required. Monitor at: GitHub Actions → CD workflow runs.
 
 ---
 
