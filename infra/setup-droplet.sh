@@ -27,7 +27,7 @@ if [ ! -f /swapfile ]; then
     chmod 600 /swapfile
     mkswap /swapfile
     swapon /swapfile
-    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 else
     echo "[2/10] Swap already exists, skipping."
 fi
