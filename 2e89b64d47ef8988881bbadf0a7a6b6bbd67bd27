@@ -1,0 +1,29 @@
+docs/reports/2026-02-21-docs-audit.md
+  8744901f4c938a6d 1-141
+docs/phases.md
+  8744901f4c938a6d 45
+docs/context-packs.md
+  8744901f4c938a6d 292
+CLAUDE.md
+  8744901f4c938a6d 345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "2e89b64d47ef8988881bbadf0a7a6b6bbd67bd27",
+  "prompts": {
+    "8744901f4c938a6d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "287d7e89-c6f6-434d-906c-8ab12ab1db8c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 144,
+      "total_deletions": 2,
+      "accepted_lines": 144,
+      "overriden_lines": 0
+    }
+  }
+}
