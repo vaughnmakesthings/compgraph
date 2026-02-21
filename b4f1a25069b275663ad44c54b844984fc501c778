@@ -1,0 +1,38 @@
+docs/context-packs.md
+  a51af1b32fcf7f2f 293
+docs/references/llm-eval-best-practices.md
+  a51af1b32fcf7f2f 1-468
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b4f1a25069b275663ad44c54b844984fc501c778",
+  "prompts": {
+    "8aec1106922da70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3630a4ad-551b-4978-80d3-96969cc27b84",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 61,
+      "overriden_lines": 0
+    },
+    "a51af1b32fcf7f2f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3d8a497-2c0e-4927-af98-20ea9e329ff3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 469,
+      "total_deletions": 0,
+      "accepted_lines": 469,
+      "overriden_lines": 0
+    }
+  }
+}
