@@ -28,14 +28,16 @@ ENCODED_PW=$(python3 -c "from urllib.parse import quote_plus; print(quote_plus('
 SUPABASE_REF="tkvxyxwfosworwqxesnz"
 export ALEMBIC_DATABASE_URL="postgresql+asyncpg://postgres.${SUPABASE_REF}:${ENCODED_PW}@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
 
-CURRENT=$(sudo -u compgraph "$APP_DIR/.venv/bin/alembic" current 2>&1 | tail -1)
-HEAD=$(sudo -u compgraph "$APP_DIR/.venv/bin/alembic" heads 2>&1 | tail -1 | awk '{print $1}')
+ALEMBIC="sudo -u compgraph env ALEMBIC_DATABASE_URL=$ALEMBIC_DATABASE_URL $APP_DIR/.venv/bin/alembic"
+
+CURRENT=$($ALEMBIC current 2>&1 | tail -1)
+HEAD=$($ALEMBIC heads 2>&1 | tail -1 | awk '{print $1}')
 
 if [ "$CURRENT" = "$HEAD" ]; then
     echo "  Database already at head ($HEAD). Skipping."
 else
     echo "  Migrating: $CURRENT -> $HEAD"
-    sudo -u compgraph "$APP_DIR/.venv/bin/alembic" upgrade head
+    $ALEMBIC upgrade head
     echo "  Migration complete."
 fi
 
