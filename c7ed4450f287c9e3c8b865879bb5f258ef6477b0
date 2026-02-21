@@ -1,0 +1,23 @@
+src/compgraph/api/routes/enrich.py
+  92a2e1b2e57cc163 128,131-133,144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "c7ed4450f287c9e3c8b865879bb5f258ef6477b0",
+  "prompts": {
+    "92a2e1b2e57cc163": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "625b9a37-53a6-4081-b6c5-db328757a4eb",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 13,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
