@@ -1,0 +1,43 @@
+src/compgraph/api/routes/enrich.py
+  92a2e1b2e57cc163 5,7,21,121-140
+src/compgraph/enrichment/resolver.py
+  92a2e1b2e57cc163 198-200,202-207
+src/compgraph/enrichment/fingerprint.py
+  92a2e1b2e57cc163 81,96-97,103
+src/compgraph/enrichment/prompts.py
+  92a2e1b2e57cc163 97-105,108-110,113-114,116,222-224,227-228,230
+tests/test_enrichment_prompts.py
+  92a2e1b2e57cc163 1-105
+tests/test_resolver.py
+  92a2e1b2e57cc163 5-8,118-182
+tests/test_enrichment_run_model.py
+  92a2e1b2e57cc163 9-64
+scripts/data_quality_review.py
+  92a2e1b2e57cc163 1-355
+tests/test_fingerprint.py
+  92a2e1b2e57cc163 130-145
+src/compgraph/enrichment/orchestrator.py
+  92a2e1b2e57cc163 73,75,115,120-122,652
+src/compgraph/enrichment/queries.py
+  92a2e1b2e57cc163 122-128,141-148,163-169
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f4cb99adeddcf7a69b19dfcdc1ecebfe15246d21",
+  "prompts": {
+    "92a2e1b2e57cc163": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "625b9a37-53a6-4081-b6c5-db328757a4eb",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 713,
+      "total_deletions": 27,
+      "accepted_lines": 692,
+      "overriden_lines": 1
+    }
+  }
+}
