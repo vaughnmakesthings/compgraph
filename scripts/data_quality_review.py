@@ -344,7 +344,7 @@ async def main_async(args: argparse.Namespace) -> int:
         print("RESULT: All checks passed — OK")
     print("=" * 70)
 
-    return 0
+    return 1 if warnings > 0 else 0
 
 
 def main() -> int:
