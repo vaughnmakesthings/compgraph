@@ -1,0 +1,7 @@
+dev.compgraph.io {
+	reverse_proxy localhost:8000
+}
+
+dashboard.dev.compgraph.io {
+	reverse_proxy localhost:8501
+}
