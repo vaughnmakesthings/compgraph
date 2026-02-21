@@ -8,35 +8,21 @@
 
 set -euo pipefail
 
-INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+FILE_PATH=$(jq -r '.tool_input.file_path // empty')
 
-# Only act on plan/research document paths
-case "$FILE_PATH" in
-  */docs/plans/*|*/docs/references/*|*/.claude/plans/*)
-    ;;
-  *)
-    exit 0
-    ;;
-esac
-
-# Only act on markdown files
+# Only markdown files
 [[ "$FILE_PATH" == *.md ]] || exit 0
 
+# Classify by path — exit early for non-matching paths
+case "$FILE_PATH" in
+  */docs/plans/*|*/.claude/plans/*) DOC_TYPE="plan" ;;
+  */docs/references/*)              DOC_TYPE="research" ;;
+  *)                                exit 0 ;;
+esac
+
 RELPATH=${FILE_PATH#"$CLAUDE_PROJECT_DIR"/}
-
-# Determine document type from path
-if [[ "$FILE_PATH" == *"/docs/plans/"* ]] || [[ "$FILE_PATH" == *"/.claude/plans/"* ]]; then
-  DOC_TYPE="plan"
-elif [[ "$FILE_PATH" == *"/docs/references/"* ]]; then
-  DOC_TYPE="research"
-else
-  DOC_TYPE="document"
-fi
-
-# Extract title from first heading, fallback to filename
 TITLE=$(head -5 "$FILE_PATH" 2>/dev/null | grep -m1 '^#' | sed 's/^#\+ *//' || true)
-[ -z "$TITLE" ] && TITLE=$(basename "$FILE_PATH")
+: "${TITLE:=$(basename "$FILE_PATH")}"
 
 cat <<EOF
 New ${DOC_TYPE} document detected: ${RELPATH}
@@ -46,5 +32,3 @@ ACTION REQUIRED — do both NOW before continuing other work:
 1. save_memory: "New ${DOC_TYPE}: ${TITLE} (${RELPATH})" to project compgraph
 2. index_codebase: project_path="${CLAUDE_PROJECT_DIR}", project_name="compgraph"
 EOF
-
-exit 0
