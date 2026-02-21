@@ -1,0 +1,25 @@
+[Unit]
+Description=CompGraph Streamlit Dashboard
+After=network-online.target compgraph.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=compgraph
+Group=compgraph
+WorkingDirectory=/opt/compgraph
+EnvironmentFile=/opt/compgraph/.env
+ExecStart=/opt/compgraph/.venv/bin/streamlit run src/compgraph/dashboard/main.py --server.port 8501 --server.address 127.0.0.1 --server.headless true
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+MemoryMax=512M
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/compgraph
+
+[Install]
+WantedBy=multi-user.target

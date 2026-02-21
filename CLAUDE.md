@@ -170,19 +170,36 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - **CLI**: `doctl` (v1.150.0) — installed, authenticated via 1Password plugin (`op plugin run -- doctl`)
 - **Management**: Use `doctl` CLI for all infrastructure operations (droplets, databases, networking, firewalls)
 
-### Current Dev Server (Raspberry Pi)
-Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.168.1.69`.
+### Dev Server (Digital Ocean Droplet)
+Dev server runs on a DO Droplet (`s-1vcpu-2gb`, sfo3, Ubuntu 24.04) at `165.232.128.28`.
 
-- **SSH**: `ssh compgraph-dev` (alias in `~/.ssh/config`, uses 1Password SSH agent)
+- **SSH**: `ssh compgraph-do` (alias in `~/.ssh/config`, uses 1Password SSH agent)
+- **Health**: `https://dev.compgraph.io/health`
+- **Deploy**: `bash infra/deploy.sh` (or `bash infra/deploy.sh --env-update` to push fresh secrets)
 - **Service**: `systemctl {start|stop|restart|status} compgraph`
 - **Logs**: `journalctl -u compgraph -f`
-- **Health**: `http://192.168.1.69:8000/health`
-- **Deploy**: `ssh compgraph-dev "cd /opt/compgraph && git pull && source /root/.local/bin/env && uv sync && systemctl restart compgraph"`
+- **Reverse proxy**: Caddy — automatic HTTPS via Let's Encrypt, config at `/etc/caddy/Caddyfile`
+- **Infra files**: `infra/` directory (systemd units, Caddyfile, setup + deploy scripts)
 
 ### Dashboard
-- **URL**: `http://192.168.1.69:8501`
+- **URL**: `https://dashboard.dev.compgraph.io`
 - **Service**: `systemctl {start|stop|restart|status} compgraph-dashboard`
 - **Logs**: `journalctl -u compgraph-dashboard -f`
+
+## SSH & Remote Commands
+
+When running commands on the dev server via SSH:
+- **Never build complex one-liner SSH commands** with f-string dictionary access, nested quotes, or multi-level escaping. They break reliably.
+- **For multi-line commands**: Write a temporary script file on the remote, execute it, then clean up:
+  ```bash
+  ssh compgraph-do 'cat > /tmp/task.sh << "SCRIPT"
+  cd /opt/compgraph
+  uv run python -c "from compgraph.config import Settings; print(Settings().database_url)"
+  SCRIPT
+  bash /tmp/task.sh && rm /tmp/task.sh'
+  ```
+- **For database queries**: Use `psql` or write a Python script rather than embedding SQL in SSH commands.
+- **For simple commands**: Single operations like `systemctl restart compgraph` are fine as one-liners.
 
 ## Git Workflow
 
@@ -190,8 +207,23 @@ Dev server runs on a Raspberry Pi (Debian 13 Trixie / DietPi, aarch64) at `192.1
 - **NEVER leave unactioned code review feedback before merge.** Fix, defer to issue, or explicitly reject with rationale.
 - Never merge a PR until ALL CI checks pass. Poll `gh pr checks <number>` if unsure.
 - 4 review bots active on PRs: Gemini, Cursor, Copilot, AND Cubic. Wait for all before merging.
-- Git hooks: pre-commit (ruff check+format), pre-push (pytest). Install via `bash scripts/setup-hooks.sh`.
+- Git hooks: pre-commit (ruff check+format+mypy), pre-push (pytest). Install via `bash scripts/setup-hooks.sh`.
 - Only use `--no-verify` for documentation-only pushes with explicit justification.
+
+### PR Workflow
+
+Before pushing any branch with Python changes:
+1. Run `uv run ruff check src/ tests/ --fix && uv run ruff format src/ tests/` — fix lint issues locally
+2. Run `uv run mypy src/compgraph/` — catch type errors before CI does
+3. Run `uv run pytest -x -q --tb=short -m "not integration"` — full unit test pass
+4. Only push after all three pass. Do NOT push hoping CI will catch issues — it wastes a round-trip.
+
+After squash-merging a PR to main:
+- Sync local main: `git checkout main && git pull origin main`
+- Rebase any open feature branches: `git checkout feat/xxx && git rebase main`
+- This prevents branch divergence on subsequent PRs.
+
+SQL aggregate pattern reminder: Use `aggregate_order_by()` from `sqlalchemy.dialects.postgresql` for ordered aggregates. SELECT-level `.order_by()` is a no-op for scalar aggregate functions.
 
 ## Pre-Session Validation
 

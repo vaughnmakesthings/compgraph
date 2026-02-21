@@ -195,7 +195,7 @@ Goal: Migrate existing Streamlit pages from direct DB queries to API calls. Add 
 | Velocity dashboard | New page: line charts of posting volume, filterable | `GET /api/velocity` | Pending |
 | Alerts feed | New page: triggered alerts with drill-down | `GET /api/alerts` | Pending |
 | Migrate Scheduler page | Replace direct APScheduler queries with API calls (design for arq compatibility in M6) | API client + system endpoints | Pending |
-| DO dev environment migration | Move FastAPI + Streamlit + scheduler from Pi to DO Droplet | DO account provisioned | Pending |
+| DO dev environment migration | Move FastAPI + Streamlit + scheduler from Pi to DO Droplet | DO account provisioned | **Complete** (PR #143) |
 | Deploy behind auth | Dashboard requires login | Auth endpoints (M4) | Pending |
 
 **Exit criteria:** All dashboard pages use API exclusively (no direct DB). Velocity and alerts views functional. Daily use for 1+ week. Leadership can view.
