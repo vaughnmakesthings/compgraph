@@ -291,6 +291,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
 | `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, LLM eval tool |
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
+| `docs/references/nextjs-15-vitest-testing-patterns.md` | Next.js 15 App Router testing pyramid, RSC limitations, mocking patterns | Frontend testing (Next.js) |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 
