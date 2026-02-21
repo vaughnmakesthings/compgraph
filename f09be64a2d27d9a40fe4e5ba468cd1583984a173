@@ -1,0 +1,62 @@
+.claude/hooks/index-new-docs.sh
+  8aec1106922da70b 11,13-16,18-20,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f09be64a2d27d9a40fe4e5ba468cd1583984a173",
+  "prompts": {
+    "43d454a49692b1ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c9ca8d83-1d35-4aa6-9f7d-fdf0fcfbe07b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 116,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "8aec1106922da70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3630a4ad-551b-4978-80d3-96969cc27b84",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 25,
+      "accepted_lines": 34,
+      "overriden_lines": 0
+    },
+    "a51af1b32fcf7f2f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3d8a497-2c0e-4927-af98-20ea9e329ff3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 469,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "db6a613a4c40acaa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "33a239ac-36b6-4e8a-9859-44cadf62fac1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 93,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
