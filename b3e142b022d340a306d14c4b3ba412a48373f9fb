@@ -1,0 +1,23 @@
+.claude/skills/frontend-design/SKILL.md
+  f0395815543bc130 3,8,10,12-21,25,27,29,35-39,41-43,46-48,52,73-74,78,86,92,101-103,105-116,118-139,151,153,156-157,164-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b3e142b022d340a306d14c4b3ba412a48373f9fb",
+  "prompts": {
+    "f0395815543bc130": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2cc9625-41fb-490f-8757-bceea513306b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 80,
+      "total_deletions": 29,
+      "accepted_lines": 80,
+      "overriden_lines": 0
+    }
+  }
+}
