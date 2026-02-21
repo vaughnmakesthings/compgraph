@@ -2,6 +2,7 @@
 # deploy.sh — Deploy CompGraph to Digital Ocean droplet
 # Usage: bash infra/deploy.sh [--env-update]
 set -euo pipefail
+trap 'rm -f /tmp/compgraph-env' EXIT
 
 SSH_HOST="compgraph-do"
 APP_DIR="/opt/compgraph"
@@ -36,7 +37,7 @@ fi
 
 # ── 2. Pull latest code ──
 echo "[2/5] Pulling latest code..."
-ssh "$SSH_HOST" "cd $APP_DIR && git pull"
+ssh "$SSH_HOST" "cd $APP_DIR && git config --global --add safe.directory $APP_DIR && git pull"
 
 # ── 3. Sync dependencies ──
 echo "[3/5] Syncing dependencies..."
