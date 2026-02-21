@@ -10,6 +10,17 @@
             "timeout": 45
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/index-new-docs.sh\"",
+            "timeout": 5,
+            "statusMessage": "Indexing new document..."
+          }
+        ]
       }
     ],
     "PreToolUse": [
