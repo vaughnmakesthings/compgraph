@@ -1,0 +1,27 @@
+.claude/agents/react-frontend-developer.md
+  bfc15aa77a1bafc9 1-515
+.claude/agents/nextjs-deploy-ops.md
+  bfc15aa77a1bafc9 1-364
+CLAUDE.md
+  bfc15aa77a1bafc9 327-328
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "e36aa2b8e8ae88af1521d728eb278d99cbb4eb34",
+  "prompts": {
+    "bfc15aa77a1bafc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "689e4286-beca-460a-a111-20ff6c90670b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 991,
+      "total_deletions": 110,
+      "accepted_lines": 881,
+      "overriden_lines": 0
+    }
+  }
+}
