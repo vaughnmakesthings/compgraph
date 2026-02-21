@@ -1,0 +1,25 @@
+docs/references/ai-generated-design-complaints.md
+  43d454a49692b1ab 1-115
+docs/context-packs.md
+  43d454a49692b1ab 296
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "01ccd5871dbcbc0ab488802978b1be11b4022fbf",
+  "prompts": {
+    "43d454a49692b1ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c9ca8d83-1d35-4aa6-9f7d-fdf0fcfbe07b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 116,
+      "total_deletions": 0,
+      "accepted_lines": 116,
+      "overriden_lines": 0
+    }
+  }
+}
