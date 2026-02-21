@@ -1,0 +1,25 @@
+.claude/skills/commit/SKILL.md
+  257b6422da1567dc 66-81,87
+CLAUDE.md
+  257b6422da1567dc 50-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f85045d94d3f0059fbfea35bbcd607cd6751965d",
+  "prompts": {
+    "257b6422da1567dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "22c8f7fd-b47b-43ad-8b6c-7eb2c8cdb660",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 0,
+      "accepted_lines": 32,
+      "overriden_lines": 0
+    }
+  }
+}
