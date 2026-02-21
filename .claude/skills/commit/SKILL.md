@@ -63,9 +63,26 @@ Optional arguments:
    ```
    If on a feature branch with no upstream, use `git push -u origin HEAD`.
 
+## Cross-Repo Detection
+
+When working in `compgraph-eval` (detected by `web/package.json` existing at repo root):
+
+**Step 1 (lint)** — add frontend checks for staged `web/**/*.{ts,tsx}` files:
+```bash
+cd web && npx eslint --max-warnings 0 src/ && npx tsc --noEmit
+```
+
+**Step 2 (test)** — add frontend tests for staged `web/**/*.{ts,tsx}` files:
+```bash
+cd web && npx vitest run --reporter=dot
+```
+
+Python checks (ruff, pytest) still run if Python files are staged — both stacks coexist in this repo.
+
 ## Rules
 
 - Never commit `.env`, credentials, or binary files
 - Never use `--no-verify` unless the user explicitly requested it
 - If ruff or pytest fail, fix the issues first — do not skip
+- If eslint or tsc fail in compgraph-eval, fix before committing
 - Always show the diff summary before committing — no silent commits
