@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from compgraph.aggregation.orchestrator import AggregationResult
 from compgraph.enrichment.orchestrator import EnrichmentRun, EnrichmentStatus
 from compgraph.scheduler.jobs import pipeline_job
 from compgraph.scrapers.orchestrator import PipelineRun, PipelineStatus
@@ -23,6 +24,15 @@ def _reset_scheduler_state():
     yield
     jobs_mod._last_pipeline_finished_at = None
     jobs_mod._last_pipeline_success = False
+
+
+def _mock_agg_orchestrator() -> MagicMock:
+    mock_result = AggregationResult()
+    mock_result.succeeded = {"agg_daily_velocity": 10}
+    mock_agg_orch = MagicMock()
+    mock_agg_orch.run = AsyncMock(return_value=mock_result)
+    mock_agg_cls = MagicMock(return_value=mock_agg_orch)
+    return mock_agg_cls
 
 
 # --- pipeline_job tests ---
@@ -64,6 +74,10 @@ class TestPipelineJobScrapesThenEnriches:
             ),
             patch("compgraph.scheduler.jobs._store_scrape_run"),
             patch("compgraph.scheduler.jobs._store_enrichment_run"),
+            patch(
+                "compgraph.aggregation.orchestrator.AggregationOrchestrator",
+                _mock_agg_orchestrator(),
+            ),
         ):
             await pipeline_job()
 
@@ -165,6 +179,10 @@ class TestPipelineJobPartialTriggers:
             ),
             patch("compgraph.scheduler.jobs._store_scrape_run"),
             patch("compgraph.scheduler.jobs._store_enrichment_run"),
+            patch(
+                "compgraph.aggregation.orchestrator.AggregationOrchestrator",
+                _mock_agg_orchestrator(),
+            ),
         ):
             await pipeline_job()
 
@@ -205,6 +223,10 @@ class TestPipelineJobTracksState:
             ),
             patch("compgraph.scheduler.jobs._store_scrape_run"),
             patch("compgraph.scheduler.jobs._store_enrichment_run"),
+            patch(
+                "compgraph.aggregation.orchestrator.AggregationOrchestrator",
+                _mock_agg_orchestrator(),
+            ),
         ):
             await pipeline_job()
 
@@ -287,6 +309,10 @@ class TestPipelineJobPartialEnrichSucceeds:
             ),
             patch("compgraph.scheduler.jobs._store_scrape_run"),
             patch("compgraph.scheduler.jobs._store_enrichment_run"),
+            patch(
+                "compgraph.aggregation.orchestrator.AggregationOrchestrator",
+                _mock_agg_orchestrator(),
+            ),
         ):
             await pipeline_job()
 

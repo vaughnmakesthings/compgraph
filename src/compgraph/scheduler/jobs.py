@@ -125,6 +125,30 @@ async def pipeline_job() -> None:
             pipeline_run.status.value,
         )
 
+    # --- Aggregate phase ---
+    agg_succeeded = True
+    if enrich_succeeded:
+        logger.info("[AGGREGATE] Starting aggregation phase")
+        try:
+            from compgraph.aggregation.orchestrator import AggregationOrchestrator
+
+            agg_orchestrator = AggregationOrchestrator()
+            agg_result = await agg_orchestrator.run()
+            agg_succeeded = agg_result.ok
+            if agg_result.failed:
+                logger.warning("[AGGREGATE] Partial failure: %s", agg_result.failed)
+            logger.info(
+                "[AGGREGATE] Aggregation phase finished: %d succeeded, %d failed",
+                len(agg_result.succeeded),
+                len(agg_result.failed),
+            )
+        except Exception:
+            logger.exception("[AGGREGATE] Aggregation phase failed")
+            agg_succeeded = False
+    else:
+        logger.warning("[AGGREGATE] Skipping aggregation — enrichment failed")
+        agg_succeeded = False
+
     _last_pipeline_finished_at = datetime.now(UTC)
-    _last_pipeline_success = scrape_succeeded and enrich_succeeded
+    _last_pipeline_success = scrape_succeeded and enrich_succeeded and agg_succeeded
     logger.info("[PIPELINE] Scheduled pipeline job complete")
