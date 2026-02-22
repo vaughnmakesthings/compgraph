@@ -47,6 +47,21 @@ op run --env-file=.env -- uv run streamlit run src/compgraph/dashboard/main.py  
 
 **Secrets**: All secrets managed via 1Password. Use `op run --env-file=.env --` prefix for any command that needs DATABASE_PASSWORD or ANTHROPIC_API_KEY. See `docs/secrets-reference.md`.
 
+### Frontend (compgraph-eval)
+
+When working in `compgraph-eval`:
+
+```bash
+cd compgraph-eval/web
+npm run lint             # ESLint strict (--max-warnings 0)
+npm run typecheck        # TypeScript --noEmit
+npm test                 # Vitest run
+npm run test:coverage    # Vitest with v8 coverage (50% threshold)
+npm run build            # Production build
+```
+
+See `compgraph-eval/CLAUDE.md` for full frontend conventions.
+
 ## Stack
 
 - **Python 3.12+** / **uv** — use Python 3.13 for venvs (not 3.14)
