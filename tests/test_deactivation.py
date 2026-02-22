@@ -108,6 +108,46 @@ class TestDeactivateStalePostings:
         assert "is_active" in compiled.lower()
         assert company_id.hex in compiled
 
+    @pytest.mark.asyncio
+    async def test_excludes_runs_overlapping_with_pending(self) -> None:
+        from unittest.mock import MagicMock
+
+        session = AsyncMock()
+        cutoff_result = MagicMock()
+        cutoff_result.scalar_one_or_none.return_value = None
+        session.execute.return_value = cutoff_result
+
+        company_id = uuid.uuid4()
+        scrape_run_id = uuid.uuid4()
+
+        count = await deactivate_stale_postings(session, company_id, scrape_run_id)
+        assert count == 0
+
+        cutoff_call = session.execute.call_args_list[0]
+        stmt = cutoff_call[0][0]
+        compiled = str(stmt.compile(compile_kwargs={"literal_binds": True}))
+        assert "pending" in compiled.lower()
+        assert scrape_run_id.hex in compiled
+
+    @pytest.mark.asyncio
+    async def test_cutoff_query_filters_by_scrape_run_id(self) -> None:
+        from unittest.mock import MagicMock
+
+        session = AsyncMock()
+        cutoff_result = MagicMock()
+        cutoff_result.scalar_one_or_none.return_value = None
+        session.execute.return_value = cutoff_result
+
+        company_id = uuid.uuid4()
+        scrape_run_id = uuid.uuid4()
+
+        await deactivate_stale_postings(session, company_id, scrape_run_id)
+
+        cutoff_call = session.execute.call_args_list[0]
+        stmt = cutoff_call[0][0]
+        compiled = str(stmt.compile(compile_kwargs={"literal_binds": True}))
+        assert scrape_run_id.hex in compiled
+
     def test_grace_period_constant(self) -> None:
         """Grace period should be 1 run for fast stale-posting cleanup."""
         assert GRACE_PERIOD_RUNS == 1

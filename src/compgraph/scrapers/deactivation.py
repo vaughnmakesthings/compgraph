@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import func
 
 from compgraph.db.models import Posting, ScrapeRun, ScrapeRunStatus
 
@@ -20,21 +21,26 @@ async def deactivate_stale_postings(
     company_id: uuid.UUID,
     scrape_run_id: uuid.UUID,
 ) -> int:
-    """Deactivate postings not seen since the most recent completed scrape run.
+    pending_cutoff = (
+        select(func.min(ScrapeRun.started_at))
+        .where(
+            ScrapeRun.company_id == company_id,
+            ScrapeRun.status == ScrapeRunStatus.PENDING,
+        )
+        .correlate(None)
+        .scalar_subquery()
+    )
 
-    Uses a grace period of 1 completed run. We order by completed_at to correctly
-    identify which runs completed most recently (handles overlapping runs), but use
-    started_at as the cutoff value since last_seen_at is recorded during the run
-    (after started_at but before completed_at).
-
-    Returns the number of postings deactivated.
-    """
-    # Get the started_at of the most recent completed run (ordered by completion)
     cutoff_query = (
         select(ScrapeRun.started_at)
         .where(
             ScrapeRun.company_id == company_id,
             ScrapeRun.status == ScrapeRunStatus.COMPLETED,
+            ScrapeRun.id != scrape_run_id,
+            or_(
+                pending_cutoff.is_(None),
+                ScrapeRun.completed_at < pending_cutoff,
+            ),
         )
         .order_by(ScrapeRun.completed_at.desc())
         .offset(GRACE_PERIOD_RUNS - 1)
@@ -45,13 +51,12 @@ async def deactivate_stale_postings(
 
     if cutoff_time is None:
         logger.debug(
-            "Fewer than %d completed runs for company %s — skipping deactivation",
+            "Fewer than %d safe completed runs for company %s — skipping deactivation",
             GRACE_PERIOD_RUNS,
             company_id,
         )
         return 0
 
-    # Deactivate postings whose last_seen_at is before the cutoff
     deactivate_stmt = (
         update(Posting)
         .where(
