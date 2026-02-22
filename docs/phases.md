@@ -40,7 +40,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ---
 
-## Current State (2026-02-20)
+## Current State (2026-02-22)
 
 **M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). All tests passing (CI enforced). Dev server + dashboard running at dev.compgraph.io / dashboard.dev.compgraph.io (Digital Ocean). **CD pipeline live** — auto-deploys to dev server on merge to main (PR #146). Remaining: data quality review, prompt tuning.
 
@@ -301,7 +301,7 @@ Frontend framework → views → deploy        ← M7
 
 ## Open Issue Mapping
 
-All open GitHub issues assigned to milestones. Last triaged: 2026-02-20.
+All open GitHub issues assigned to milestones. Last triaged: 2026-02-22.
 
 ### Close as stale/done (verify first)
 
