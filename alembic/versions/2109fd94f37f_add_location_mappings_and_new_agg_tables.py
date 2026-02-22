@@ -1,7 +1,7 @@
 """add location_mappings and new agg tables
 
 Revision ID: 2109fd94f37f
-Revises: ac20bd3de6fd
+Revises: afa58cde6b1e
 Create Date: 2026-02-22 00:31:56.976295
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "2109fd94f37f"
-down_revision: Union[str, None] = "ac20bd3de6fd"
+down_revision: Union[str, None] = "afa58cde6b1e"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
