@@ -42,18 +42,6 @@ Use memory to avoid re-researching areas that were already investigated in prior
 | **python-pro** | Python 3.12+ async patterns, type safety, performance |
 | **enrichment-monitor** | Enrichment pipeline health and status monitoring |
 
-### Voltagent Subagents (via Task tool)
-
-| Agent | Expertise |
-|-------|-----------|
-| **voltagent-lang:python-pro** | Python 3.12+ async, decorators, generators |
-| **voltagent-data-ai:postgres-pro** | Supabase/Postgres optimization, advanced SQL |
-| **voltagent-data-ai:prompt-engineer** | LLM prompt design (Haiku + Sonnet pipelines) |
-| **voltagent-data-ai:data-engineer** | ETL/pipeline architecture, data infrastructure |
-| **voltagent-core-dev:backend-developer** | FastAPI patterns, API design |
-| **voltagent-qa-sec:debugger** | Async/DB issue diagnosis, root cause analysis |
-| **voltagent-research:research-analyst** | Information gathering, synthesis, analysis |
-
 ### Review Sequence
 
 implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`

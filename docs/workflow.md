@@ -1,6 +1,6 @@
 # Development Workflow
 
-This document defines the development workflow for implementing features and fixes. It integrates the agent crew (project agents + voltagent specialists) with human review gates.
+This document defines the development workflow for implementing features and fixes. It integrates the agent crew (project-level agents) with human review gates.
 
 ---
 
@@ -59,7 +59,7 @@ Step 11: Auto-Deploy .................... CD workflow (automatic)
 | **Agent** | Main session or `Explore` subagent |
 | **Gate** | None |
 
-Understand the problem space. Read relevant code, check existing patterns, identify affected files. For specialist questions, use voltagent agents (e.g., `postgres-pro` for indexing strategy).
+Understand the problem space. Read relevant code, check existing patterns, identify affected files. For specialist questions, use project agents (e.g., `database-optimizer` for indexing strategy).
 
 ---
 
@@ -202,11 +202,10 @@ When delegating to a project-level agent:
 3. State the specific task clearly
 4. Agent works autonomously, returns results
 
-When querying a voltagent specialist:
+When querying a specialist project agent (e.g., `database-optimizer`, `python-pro`):
 1. Formulate a specific question (not "help me build X")
-2. Include relevant code snippets (paste, don't reference files)
+2. Include relevant context pack reference
 3. State project constraints (async, append-only, SQLAlchemy 2.0)
-4. Keep prompt under 3K tokens
 
 ---
 

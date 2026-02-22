@@ -59,7 +59,7 @@ Use when implementing any file in `src/compgraph/scrapers/`.
 
 **Total: ~2.5K–3.5K tokens**
 
-**Recommended agent:** `python-backend-developer` (project-level) for implementation, `voltagent-core-dev:backend-developer` for async patterns.
+**Recommended agent:** `python-backend-developer` for implementation, `python-pro` for async patterns.
 
 ---
 
@@ -103,7 +103,7 @@ Use when modifying or debugging any file in `src/compgraph/enrichment/`.
 
 **Total: ~2K–3K tokens (core) + ~1.8K (Tier 2 if needed)**
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:prompt-engineer` for prompt tuning, `voltagent-lang:python-pro` for async patterns.
+**Recommended agent:** `python-backend-developer` for implementation, `python-pro` for async patterns.
 
 ---
 
@@ -116,11 +116,26 @@ Use when implementing any file in `src/compgraph/aggregation/`.
 | `docs/design.md` → §5 Aggregation Engine | Rebuild strategy, table definitions | ~500 |
 | `src/compgraph/db/models.py` → all 4 agg_* models | Target schema | ~400 |
 | `src/compgraph/db/models.py` → source models (postings, enrichments) | Input schema | ~400 |
+| `src/compgraph/dashboard/queries.py` | Existing SQL query patterns as reference | ~500 |
 | The aggregation module being built/modified | Current state | ~200–500 |
 
-**Total: ~1.5K–2K tokens**
+**Key patterns:**
+- Aggregation strategy is truncate+insert (never incremental update) — see CLAUDE.md pre-commitments
+- Use `aggregate_order_by()` from `sqlalchemy.dialects.postgresql` for ordered aggregates — SELECT-level `.order_by()` is a no-op for scalar aggregate functions
+- Each job rebuilds one table inside a single transaction with error isolation
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:postgres-pro` for query optimization.
+**Agg table → source mapping:**
+
+| Agg Table | Source Tables | Key Columns |
+|-----------|-------------|-------------|
+| `agg_daily_velocity` | `postings`, `posting_snapshots` | company_id, snapshot date, counts |
+| `agg_brand_timeline` | `posting_brand_mentions`, `postings` | brand_id, company_id, date range |
+| `agg_pay_benchmarks` | `posting_enrichments`, `postings` | company_id, pay_range_min/max, role_type |
+| `agg_posting_lifecycle` | `postings`, `posting_snapshots` | days_open, repost count, company_id |
+
+**Total: ~2K–2.5K tokens**
+
+**Recommended agent:** `python-backend-developer` for implementation, `database-optimizer` for query optimization.
 
 ---
 
@@ -140,14 +155,24 @@ Use when implementing any file in `src/compgraph/api/`.
 
 | Type | Also load | Why |
 |------|-----------|-----|
-| Dashboard endpoints | agg_* models | Query aggregation tables |
-| Detail endpoints | fact + enrichment models | Query source tables |
-| Auth endpoints | User model, config (JWT settings) | Auth implementation |
+| Dashboard endpoints (`/api/velocity`, `/api/brands`, `/api/pay`, `/api/lifecycle`) | agg_* models | Query aggregation tables |
+| Detail endpoints (`/api/postings`, `/api/companies`) | fact + enrichment models | Query source tables, pagination patterns |
+| Auth endpoints | Use **Pack I** instead | Supabase Auth is complex enough for dedicated pack |
 | System endpoints | Pipeline status tracking (when exists) | Scrape/enrichment status |
+
+**Endpoint → agg table mapping:**
+
+| Endpoint | Agg Table | Notes |
+|----------|-----------|-------|
+| `GET /api/velocity` | `agg_daily_velocity` | Time series, filter by company |
+| `GET /api/brands`, `/api/brands/:id/timeline` | `agg_brand_timeline` | Brand list + single brand history |
+| `GET /api/pay` | `agg_pay_benchmarks` | Filter by role/company |
+| `GET /api/lifecycle` | `agg_posting_lifecycle` | Days open, repost metrics |
+| `GET /api/alerts` | All agg tables | Cross-table significant changes |
 
 **Total: ~2K–3K tokens**
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-core-dev:backend-developer` for FastAPI patterns, `voltagent-core-dev:api-designer` for REST design.
+**Recommended agent:** `python-backend-developer` for implementation, `python-pro` for FastAPI patterns.
 
 ---
 
@@ -173,7 +198,7 @@ Use when modifying models in `src/compgraph/db/models.py` or working with Alembi
 
 **Total: ~3K tokens (core) + ~1.5K (Tier 2 if needed)**
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:postgres-pro` for Postgres-specific features.
+**Recommended agent:** `python-backend-developer` for implementation, `database-optimizer` for Postgres-specific features.
 
 ---
 
@@ -200,7 +225,7 @@ Use when a pipeline stage produces incorrect output or crashes.
 
 **Total: ~3K–5K tokens**
 
-**Recommended agent:** `voltagent-qa-sec:debugger` for diagnosis, then `python-backend-developer` for fix.
+**Recommended agent:** `python-backend-developer` for diagnosis and fix.
 
 ---
 
@@ -217,7 +242,7 @@ Use when modifying the daily pipeline coordinator or scheduling infrastructure.
 
 **Total: ~2.5K–3K tokens**
 
-**Recommended agent:** `python-backend-developer` for implementation, `voltagent-data-ai:data-engineer` for pipeline architecture.
+**Recommended agent:** `python-backend-developer` for implementation.
 
 ---
 
@@ -232,6 +257,37 @@ Use when implementing alert generation or delivery.
 | `src/compgraph/db/models.py` → agg_* models | Source data for alert comparisons | ~400 |
 
 **Total: ~1.5K tokens**
+
+---
+
+### Pack I: Auth & Access Control
+
+Use when implementing Supabase Auth integration, JWT middleware, or role-based access (M4d).
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/design.md` → §6 API Surface (auth section) | Endpoint auth requirements | ~200 |
+| `src/compgraph/db/models.py` → User model | Existing user schema, roles | ~200 |
+| `src/compgraph/config.py` | Auth-related settings (JWT, Supabase project ref) | ~300 |
+| `src/compgraph/api/deps.py` | Dependency injection — add auth middleware here | ~200 |
+| `docs/references/supabase-auth-fastapi.md` | Supabase Auth patterns (JWT verification, magic link, RBAC) | ~800 |
+
+**Pre-commitments (from CLAUDE.md):**
+- Auth = Supabase Auth (invite via magic link, password login, admin/user roles)
+- No custom JWT — use Supabase-issued JWTs
+- Frontend = pure API consumer (Next.js calls FastAPI, no direct DB)
+
+**Roles:**
+
+| Role | Access |
+|------|--------|
+| Admin | Invite users, pipeline control, full dashboard, export |
+| User | Read-only dashboard, export |
+
+**Total: ~1.7K tokens**
+
+**Recommended agent:** `python-backend-developer` for implementation.
+
 
 ---
 
@@ -283,7 +339,6 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/supabase-alembic-migrations.md` | Connection strings, schema isolation, pool config, migration safety | Database setup, Alembic config |
 | `docs/references/icims-scraping.md` | iframe bypass, JSON-LD extraction, pagination, anti-scraping, portal types | iCIMS scraper (BDS, MarketSource) |
 | `docs/references/workday-cxs-api.md` | CXS API endpoints, search/detail schemas, pagination, rate limits, tenant variations | Workday scraper (2020 Companies) |
-| `docs/references/proxy-provider-comparison.md` <!-- MISSING --> | Provider evaluation, pricing, feature comparison | Proxy infrastructure |
 | `docs/references/similar-projects-research.md` | Open-source project patterns, tooling decisions, anti-bot signals | Scraper design, enrichment tooling, pipeline architecture |
 | `docs/references/canadian-portals-research.md` | Canadian job portal research | Scraper expansion |
 | `docs/references/multi-component-scraper-patterns.md` | Multi-component scraper architecture | Scraper design patterns |
@@ -296,6 +351,9 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
 | `docs/references/nextjs-15-vitest-testing-patterns.md` | Next.js 15 App Router testing pyramid, RSC limitations, mocking patterns | Frontend testing (Next.js) |
 | `docs/references/ai-generated-design-complaints.md` | AI design visual tells, purple problem, practitioner complaints, antidotes | Frontend design (Next.js) |
+| `docs/references/supabase-auth-fastapi.md`  | Supabase Auth JWT verification, magic link flow, role-based middleware | Auth (M4d) |
+| `docs/references/truncate-insert-patterns.md`  | PostgreSQL truncate+insert rebuild patterns, transaction isolation, concurrent reads | Aggregation (M4a) |
+| `docs/references/fastapi-pagination-patterns.md`  | Cursor vs offset pagination, filter parameters, SQLAlchemy query builders | Detail API (M4c) |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 
@@ -356,11 +414,9 @@ When launching a project-level agent via the orchestrator or manually, inject th
 | `spec-reviewer` | `docs/compgraph-product-spec.md` (relevant sections) | Roadmap Summary from `phases.md` |
 | `agent-organizer` | Pack R (Roadmap & Phase Planning) | Tier 0 + changelog latest entry |
 
-### Voltagent Specialist Injection
+### Subagent Prompting
 
-Voltagent agents have NO project context. When launching them, include:
-1. The specific question/task (not the whole project)
-2. Relevant code snippets (paste, don't reference files)
+When launching a project-level agent, include:
+1. The specific task (not the whole project)
+2. Relevant context pack reference
 3. Constraints and conventions that apply
-
-Keep voltagent prompts under 3K tokens. They're specialists, not project owners.
