@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 import uuid
 from typing import Protocol, cast, runtime_checkable
 
@@ -26,6 +27,27 @@ class DimensionEntity(Protocol):
 
 
 DimensionModel = type[Brand] | type[Retailer]
+
+_entity_cache: dict[str, tuple[float, list]] = {}
+_CACHE_TTL = 300  # 5 minutes
+
+
+async def _get_all_entities(session: AsyncSession, model: DimensionModel, label: str) -> list:
+    """Get all entities with in-memory caching to avoid repeated full table loads."""
+    now = time.monotonic()
+    if label in _entity_cache:
+        ts, entities = _entity_cache[label]
+        if now - ts < _CACHE_TTL:
+            return entities
+    stmt = select(model)
+    result = await session.execute(stmt)
+    entities = list(result.scalars().all())
+    _entity_cache[label] = (now, entities)
+    return entities
+
+
+def clear_entity_cache() -> None:
+    _entity_cache.clear()
 
 
 def normalize_entity_name(name: str) -> str:
@@ -67,10 +89,8 @@ async def _find_entity(
         matched = cast(DimensionEntity, entity)
         return matched.id, 95.0
 
-    # Tier 3: Fuzzy match against all entities
-    stmt = select(model)
-    result = await session.execute(stmt)
-    all_entities = result.scalars().all()
+    # Tier 3: Fuzzy match against all entities (cached)
+    all_entities = await _get_all_entities(session, model, label)
 
     best_score = 0.0
     best_id: uuid.UUID | None = None
@@ -116,6 +136,7 @@ async def _create_entity(
             await session.flush()
     except IntegrityError:
         # Savepoint rolled back, session state preserved — re-query
+        _entity_cache.pop(label, None)  # Concurrent create means cache is stale
         stmt = select(model).where(model.slug == entity_slug)
         result = await session.execute(stmt)
         existing = cast(DimensionEntity, result.scalar_one())
@@ -128,6 +149,8 @@ async def _create_entity(
         return existing.id
     matched = cast(DimensionEntity, entity)
     logger.info("Created new %s: %s (id=%s)", label, normalized, matched.id)
+    # Invalidate cache so subsequent fuzzy matches see the new entity
+    _entity_cache.pop(label, None)
     return matched.id
 
 

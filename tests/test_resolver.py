@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -121,7 +122,6 @@ class TestSaveBrandMentionsIdempotency:
     @pytest.mark.asyncio
     async def test_delete_executed_before_insert(self):
         """Verify that existing mentions are deleted before new ones are added."""
-        from unittest.mock import AsyncMock, MagicMock
 
         from compgraph.enrichment.resolver import save_brand_mentions
         from compgraph.enrichment.schemas import EntityMention
@@ -153,7 +153,6 @@ class TestSaveBrandMentionsIdempotency:
     @pytest.mark.asyncio
     async def test_mentions_added_after_delete(self):
         """Verify that session.add is called after the delete."""
-        from unittest.mock import AsyncMock, MagicMock
 
         from compgraph.enrichment.resolver import save_brand_mentions
         from compgraph.enrichment.schemas import EntityMention
@@ -220,3 +219,128 @@ class TestEnrichmentRunPass2:
         result = EnrichResult(succeeded=0, failed=0)
         run.finish_pass2(result)
         assert run.status == EnrichmentStatus.SUCCESS
+
+
+# ---------------------------------------------------------------------------
+# Entity cache (#103)
+# ---------------------------------------------------------------------------
+
+
+class TestEntityCache:
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self):
+        from compgraph.enrichment.resolver import clear_entity_cache
+
+        clear_entity_cache()
+        yield
+        clear_entity_cache()
+
+    @pytest.mark.asyncio
+    async def test_first_call_populates_cache(self):
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _entity_cache, _get_all_entities
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+
+        result = await _get_all_entities(session, Brand, "Brand")
+
+        assert len(result) == 1
+        assert result[0].name == "Samsung"
+        assert "Brand" in _entity_cache
+        session.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_second_call_within_ttl_uses_cache(self):
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _get_all_entities
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+
+        await _get_all_entities(session, Brand, "Brand")
+        await _get_all_entities(session, Brand, "Brand")
+
+        session.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_cache_expired_hits_db_again(self):
+        import time
+
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _entity_cache, _get_all_entities
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+
+        await _get_all_entities(session, Brand, "Brand")
+        assert session.execute.await_count == 1
+
+        _entity_cache["Brand"] = (time.monotonic() - 400, [mock_brand])
+        await _get_all_entities(session, Brand, "Brand")
+        assert session.execute.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_clear_cache_forces_db_hit(self):
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _get_all_entities, clear_entity_cache
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+
+        await _get_all_entities(session, Brand, "Brand")
+        assert session.execute.await_count == 1
+
+        clear_entity_cache()
+        await _get_all_entities(session, Brand, "Brand")
+        assert session.execute.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_create_entity_invalidates_cache(self):
+        """Creating a new entity should invalidate the cache for that model."""
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _create_entity, _entity_cache, _get_all_entities
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+        session.begin_nested = MagicMock(return_value=AsyncMock())
+        session.flush = AsyncMock()
+
+        # Populate cache
+        await _get_all_entities(session, Brand, "Brand")
+        assert "Brand" in _entity_cache
+
+        # Create entity should invalidate cache
+        new_brand = MagicMock()
+        new_brand.id = uuid.uuid4()
+        new_brand.name = "NewBrand"
+        new_brand.slug = "newbrand"
+        session.add = MagicMock()
+
+        await _create_entity(session, "NewBrand", Brand)
+        assert "Brand" not in _entity_cache

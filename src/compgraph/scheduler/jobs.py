@@ -62,6 +62,18 @@ async def pipeline_job() -> None:
 
     logger.info("[PIPELINE] Scheduled pipeline job starting")
 
+    # --- Cleanup stale PENDING runs before starting ---
+    try:
+        from compgraph.db.session import async_session_factory
+        from compgraph.scrapers.orchestrator import cleanup_stale_pending_runs
+
+        async with async_session_factory() as session:
+            cleaned = await cleanup_stale_pending_runs(session)
+            if cleaned:
+                logger.info("[PIPELINE] Cleaned up %d stale PENDING runs", cleaned)
+    except Exception:
+        logger.exception("[PIPELINE] Failed to clean up stale PENDING runs")
+
     # --- Scrape phase ---
     logger.info("[SCRAPE] Starting scrape phase")
     pipeline_run = PipelineRun()

@@ -456,6 +456,113 @@ class TestErrorClassification:
 
 
 # ---------------------------------------------------------------------------
+# 429-as-APIStatusError (#107)
+# ---------------------------------------------------------------------------
+
+
+class TestAPIStatusError429:
+    def test_classify_429_api_status_error(self):
+        import anthropic
+
+        from compgraph.enrichment.retry import _classify_rate_limit
+
+        error = anthropic.APIStatusError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.RATE_LIMIT
+
+    def test_classify_429_api_status_error_quota(self):
+        import anthropic
+
+        from compgraph.enrichment.retry import _classify_rate_limit
+
+        error = anthropic.APIStatusError(
+            message="Your usage limit has been exceeded",
+            response=MagicMock(status_code=429, headers={"retry-after": "600"}),
+            body=None,
+        )
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
+
+    @pytest.mark.asyncio
+    async def test_429_api_status_error_uses_rate_limit_delay(self):
+        import anthropic
+
+        from compgraph.enrichment.retry import RATE_LIMIT_BASE_DELAY
+
+        client = AsyncMock()
+        api_error = anthropic.APIStatusError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        client.messages.create = AsyncMock(
+            side_effect=[
+                api_error,
+                _make_mock_response(SAMPLE_FIELD_REP_RESPONSE),
+            ]
+        )
+
+        sleep_mock = AsyncMock()
+        with patch("compgraph.enrichment.retry._retry_sleep", sleep_mock):
+            llm_result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        assert llm_result.result.role_archetype == "field_rep"
+        assert client.messages.create.await_count == 2
+        sleep_mock.assert_awaited_once()
+        actual_delay = sleep_mock.call_args[0][0]
+        assert actual_delay == RATE_LIMIT_BASE_DELAY * (2**0)  # 60s on first retry
+
+    @pytest.mark.asyncio
+    async def test_429_api_status_error_exhausted(self):
+        import anthropic
+
+        client = AsyncMock()
+        api_error = anthropic.APIStatusError(
+            message="Rate limited",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+        client.messages.create = AsyncMock(side_effect=api_error)
+
+        with (
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        assert exc_info.value.category == ErrorCategory.RATE_LIMIT
+        assert client.messages.create.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_500_still_uses_transient_delay(self):
+        import anthropic
+
+        client = AsyncMock()
+        api_error = anthropic.APIStatusError(
+            message="Internal Server Error",
+            response=MagicMock(status_code=500, headers={}),
+            body=None,
+        )
+        client.messages.create = AsyncMock(
+            side_effect=[
+                api_error,
+                _make_mock_response(SAMPLE_FIELD_REP_RESPONSE),
+            ]
+        )
+
+        sleep_mock = AsyncMock()
+        with patch("compgraph.enrichment.retry._retry_sleep", sleep_mock):
+            llm_result = await enrich_posting_pass1(client, uuid.uuid4(), "Title", "Loc", "Body")
+
+        assert llm_result.result.role_archetype == "field_rep"
+        sleep_mock.assert_awaited_once()
+        actual_delay = sleep_mock.call_args[0][0]
+        assert actual_delay == 2.0 * (2**0)  # 2s transient delay, not 60s
+
+
+# ---------------------------------------------------------------------------
 # Circuit breaker
 # ---------------------------------------------------------------------------
 

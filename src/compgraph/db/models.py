@@ -291,6 +291,10 @@ class PostingEnrichment(Base):
     posting: Mapped["Posting"] = relationship(back_populates="enrichments")
 
     __table_args__ = (
+        Index("ix_posting_enrichment_posting_version", "posting_id", "enrichment_version"),
+        Index("ix_posting_enrichment_brand_id", "brand_id"),
+        Index("ix_posting_enrichment_retailer_id", "retailer_id"),
+        Index("ix_posting_enrichment_market_id", "market_id"),
         CheckConstraint("pay_min IS NULL OR pay_min >= 0", name="check_pay_min_positive"),
         CheckConstraint("pay_max IS NULL OR pay_max >= 0", name="check_pay_max_positive"),
         CheckConstraint(
@@ -318,6 +322,10 @@ class PostingBrandMention(Base):
     )
 
     posting: Mapped["Posting"] = relationship(back_populates="brand_mentions")
+
+    __table_args__ = (
+        Index("ix_posting_brand_mention_posting_entity", "posting_id", "entity_type"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +381,8 @@ class AggPayBenchmarks(Base):
     median_pay_max: Mapped[float | None] = mapped_column(Float, nullable=True)
     sample_size: Mapped[int] = mapped_column(Integer, default=0)
 
+    __table_args__ = (Index("ix_agg_pay_benchmarks_company_role", "company_id", "role_archetype"),)
+
 
 class AggPostingLifecycle(Base):
     __tablename__ = "agg_posting_lifecycle"
@@ -387,6 +397,8 @@ class AggPostingLifecycle(Base):
     median_days_open: Mapped[float | None] = mapped_column(Float, nullable=True)
     repost_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     avg_repost_gap_days: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (Index("ix_agg_posting_lifecycle_company_period", "company_id", "period"),)
 
 
 class AggBrandChurnSignals(Base):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -554,3 +555,82 @@ class TestCheckBaselineAnomaly:
         await check_baseline_anomaly(session, company_id, current_jobs_found=50)
 
         session.execute.assert_called_once()
+
+
+# --- Finally-Block Fallback Tests ---
+
+
+class TestInterruptedScrapeFinalization:
+    async def test_cancelled_scrape_produces_failed_result(self):
+        company = _make_company("bds")
+        mock_scrape_run = MagicMock()
+        mock_scrape_run.id = uuid.uuid4()
+
+        mock_adapter = AsyncMock()
+        mock_adapter.scrape = AsyncMock(side_effect=asyncio.CancelledError)
+
+        orchestrator = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        pipeline_run = PipelineRun()
+        pipeline_run.company_states[company.slug] = "running"
+
+        with (
+            _patch_session_and_companies([company]),
+            patch(
+                "compgraph.scrapers.orchestrator.get_adapter",
+                return_value=mock_adapter,
+            ),
+        ):
+            run = await orchestrator.run(pipeline_run)
+
+        result = run.company_results.get(company.slug)
+        assert result is not None
+        assert not result.success
+        assert result.finished_at is not None
+
+
+# --- Cleanup Stale Pending Runs Tests ---
+
+
+class TestCleanupStalePendingRuns:
+    async def test_transitions_old_pending_to_failed(self):
+        from compgraph.scrapers.orchestrator import cleanup_stale_pending_runs
+
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 3
+        session.execute = AsyncMock(return_value=mock_result)
+        session.commit = AsyncMock()
+
+        count = await cleanup_stale_pending_runs(session, max_age_hours=6)
+        assert count == 3
+        session.execute.assert_called_once()
+        session.commit.assert_called_once()
+
+    async def test_zero_stale_runs(self):
+        from compgraph.scrapers.orchestrator import cleanup_stale_pending_runs
+
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 0
+        session.execute = AsyncMock(return_value=mock_result)
+        session.commit = AsyncMock()
+
+        count = await cleanup_stale_pending_runs(session, max_age_hours=6)
+        assert count == 0
+
+    async def test_uses_correct_status_filter(self):
+        from compgraph.scrapers.orchestrator import cleanup_stale_pending_runs
+
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 0
+        session.execute = AsyncMock(return_value=mock_result)
+        session.commit = AsyncMock()
+
+        await cleanup_stale_pending_runs(session, max_age_hours=12)
+
+        call_args = session.execute.call_args
+        stmt = call_args[0][0]
+        compiled = str(stmt.compile())
+        assert "scrape_runs" in compiled.lower()
+        assert "status" in compiled.lower()

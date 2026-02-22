@@ -71,25 +71,31 @@ class LLMCallResult(Generic[T]):  # noqa: UP046
     output_tokens: int
 
 
-def _classify_rate_limit(error: anthropic.RateLimitError) -> ErrorCategory:
-    """Distinguish rate-limit from quota exhaustion based on headers and message."""
-    # Check retry-after header (> 5 min suggests quota, not transient rate limit)
-    if hasattr(error, "response") and error.response is not None:
-        retry_after_str = error.response.headers.get("retry-after", "")
+def _classify_rate_limit_headers(response: object | None, message: str | None) -> ErrorCategory:
+    if response is not None and hasattr(response, "headers"):
+        retry_after_str = response.headers.get("retry-after", "")
         try:
             if int(retry_after_str) > _QUOTA_RETRY_AFTER_THRESHOLD:
                 return ErrorCategory.QUOTA_EXHAUSTED
         except (ValueError, TypeError):
             pass
 
-    # Check error message for quota keywords
-    error_text = ""
-    if hasattr(error, "message") and error.message:
-        error_text = str(error.message).lower()
+    error_text = str(message).lower() if message else ""
     if any(kw in error_text for kw in _QUOTA_KEYWORDS):
         return ErrorCategory.QUOTA_EXHAUSTED
 
     return ErrorCategory.RATE_LIMIT
+
+
+def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
+    """Classify a rate-limit error as transient or quota-exhausted.
+
+    Works for both RateLimitError and APIStatusError (RateLimitError inherits from it).
+    """
+    return _classify_rate_limit_headers(
+        getattr(error, "response", None),
+        getattr(error, "message", None),
+    )
 
 
 async def _retry_sleep(delay: float) -> None:
@@ -235,20 +241,41 @@ async def call_llm_with_retry(  # noqa: UP047
                     category=ErrorCategory.PERMANENT,
                     original=e,
                 ) from e
-            last_category = ErrorCategory.TRANSIENT
-            if attempt < MAX_RETRIES - 1:
-                delay = 2.0 * (2**attempt)
-                logger.warning(
-                    "API error on posting %s: %s, retrying in %.0fs (attempt %d/%d)",
-                    posting_id,
-                    e.status_code,
-                    delay,
-                    attempt + 1,
-                    MAX_RETRIES,
-                )
-                await _retry_sleep(delay)
+            if e.status_code == 429:
+                last_category = _classify_rate_limit(e)
+                if attempt < MAX_RETRIES - 1:
+                    delay = RATE_LIMIT_BASE_DELAY * (2**attempt)
+                    logger.warning(
+                        "Rate limited (APIStatusError) on posting %s (%s), "
+                        "retrying in %.0fs (attempt %d/%d)",
+                        posting_id,
+                        last_category,
+                        delay,
+                        attempt + 1,
+                        MAX_RETRIES,
+                    )
+                    await _retry_sleep(delay)
+                else:
+                    logger.error(
+                        "Rate limit exhausted for posting %s (%s)", posting_id, last_category
+                    )
             else:
-                logger.error("API error exhausted for posting %s: %s", posting_id, e.status_code)
+                last_category = ErrorCategory.TRANSIENT
+                if attempt < MAX_RETRIES - 1:
+                    delay = 2.0 * (2**attempt)
+                    logger.warning(
+                        "API error on posting %s: %s, retrying in %.0fs (attempt %d/%d)",
+                        posting_id,
+                        e.status_code,
+                        delay,
+                        attempt + 1,
+                        MAX_RETRIES,
+                    )
+                    await _retry_sleep(delay)
+                else:
+                    logger.error(
+                        "API error exhausted for posting %s: %s", posting_id, e.status_code
+                    )
 
     raise EnrichmentAPIError(
         f"{pass_label} failed after {MAX_RETRIES} retries for posting {posting_id}",
