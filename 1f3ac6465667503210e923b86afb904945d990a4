@@ -1,0 +1,25 @@
+src/compgraph/enrichment/normalizers.py
+  7fe986756ca544cb 1-91
+tests/test_normalizers.py
+  7fe986756ca544cb 1-3,5-55,57-58,60-61,63-64,66-70,72,74-75,77,79-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "1f3ac6465667503210e923b86afb904945d990a4",
+  "prompts": {
+    "7fe986756ca544cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "66f61477-cfed-4e70-9c1e-ceed3c084c4a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 225,
+      "total_deletions": 0,
+      "accepted_lines": 227,
+      "overriden_lines": 4
+    }
+  }
+}
