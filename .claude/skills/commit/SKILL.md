@@ -69,15 +69,15 @@ When working in `compgraph-eval` (detected by `web/package.json` existing at rep
 
 **Step 1 (lint)** — add frontend checks for staged `web/**/*.{ts,tsx}` files:
 ```bash
-cd web && npx eslint --max-warnings 0 src/ && npx tsc --noEmit
+cd web && npm run lint && npm run typecheck
 ```
 
 **Step 2 (test)** — add frontend tests for staged `web/**/*.{ts,tsx}` files:
 ```bash
-cd web && npx vitest run --reporter=dot
+cd web && npm test
 ```
 
-Python checks (ruff, pytest) still run if Python files are staged — both stacks coexist in this repo.
+Steps 1-2 from the main section (ruff, pytest) only run when Python files are staged — skip them for frontend-only changes.
 
 ## Rules
 

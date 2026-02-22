@@ -49,7 +49,7 @@ op run --env-file=.env -- uv run streamlit run src/compgraph/dashboard/main.py  
 
 ### Frontend (compgraph-eval)
 
-When working in `compgraph-eval` (`/Users/vmud/Documents/dev/projects/compgraph-eval/`):
+When working in `compgraph-eval`:
 
 ```bash
 cd compgraph-eval/web
