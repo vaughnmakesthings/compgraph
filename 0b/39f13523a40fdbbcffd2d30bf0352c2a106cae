@@ -1,0 +1,31 @@
+tests/test_resolver.py
+  ae50e1711168c7e5 317-346
+src/compgraph/enrichment/resolver.py
+  ae50e1711168c7e5 7,36,151-152
+src/compgraph/enrichment/retry.py
+  ae50e1711168c7e5 91,93-94,245
+tests/test_orchestrator.py
+  ae50e1711168c7e5 563-564
+tests/test_enrichment_pass1.py
+  ae50e1711168c7e5 467,474,479,486
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "0b39f13523a40fdbbcffd2d30bf0352c2a106cae",
+  "prompts": {
+    "ae50e1711168c7e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c956cc7e-6702-4c51-bca4-f2597c40307c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 46,
+      "total_deletions": 35,
+      "accepted_lines": 45,
+      "overriden_lines": 0
+    }
+  }
+}
