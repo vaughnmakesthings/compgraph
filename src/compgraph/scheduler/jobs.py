@@ -90,7 +90,7 @@ async def pipeline_job() -> None:
     )
 
     # --- Enrich phase ---
-    enrich_succeeded = True
+    enrich_succeeded = False
     if scrape_succeeded:
         logger.info("[ENRICH] Starting enrichment phase (scrape had successes)")
         enrichment_run = EnrichmentRun()
