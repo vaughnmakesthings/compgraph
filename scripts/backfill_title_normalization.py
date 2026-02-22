@@ -17,11 +17,11 @@ BATCH_SIZE = 500
 
 
 async def backfill() -> int:
-    from compgraph.enrichment.normalizers import normalize_title_for_grouping
     from sqlalchemy import func, select, update
 
     from compgraph.db.models import PostingEnrichment, PostingSnapshot
     from compgraph.db.session import async_session_factory, engine
+    from compgraph.enrichment.normalizers import normalize_title_for_grouping
 
     try:
         async with async_session_factory() as session:
@@ -78,13 +78,14 @@ async def backfill() -> int:
                 batch_count = 0
                 for enrichment_id, title_raw in rows:
                     normalized = normalize_title_for_grouping(title_raw)
-                    if normalized is not None:
-                        await session.execute(
-                            update(PostingEnrichment)
-                            .where(PostingEnrichment.id == enrichment_id)
-                            .values(title_normalized=normalized)
-                        )
-                        batch_count += 1
+                    # Use empty string for un-normalizable titles so they
+                    # won't be re-queried (title_normalized IS NULL) forever.
+                    await session.execute(
+                        update(PostingEnrichment)
+                        .where(PostingEnrichment.id == enrichment_id)
+                        .values(title_normalized=normalized or "")
+                    )
+                    batch_count += 1
 
                 await session.commit()
                 updated += batch_count
