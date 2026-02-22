@@ -1,0 +1,37 @@
+tests/test_agg_daily_velocity.py
+  7fe986756ca544cb 1-10
+src/compgraph/aggregation/daily_velocity.py
+  7fe986756ca544cb 1-76
+src/compgraph/aggregation/brand_timeline.py
+  7fe986756ca544cb 1-48
+tests/test_agg_brand_timeline.py
+  7fe986756ca544cb 1-10
+src/compgraph/aggregation/posting_lifecycle.py
+  7fe986756ca544cb 1-72
+src/compgraph/aggregation/pay_benchmarks.py
+  7fe986756ca544cb 1-59
+tests/test_agg_posting_lifecycle.py
+  7fe986756ca544cb 1-10
+tests/test_agg_pay_benchmarks.py
+  7fe986756ca544cb 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "1cf728cffc468a300c51c88e42fa59ddf10cb4f3",
+  "prompts": {
+    "7fe986756ca544cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "66f61477-cfed-4e70-9c1e-ceed3c084c4a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 295,
+      "total_deletions": 0,
+      "accepted_lines": 295,
+      "overriden_lines": 0
+    }
+  }
+}
