@@ -4,6 +4,19 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-22 — Eval API Deploy, Docs Audit, Insights Fixes
+
+**Goal:** Deploy eval API backend to Pi, audit docs, implement insights feedback.
+
+**What happened:**
+- Deployed `compgraph-eval-api` (FastAPI, port 8001) as systemd service on Pi — seeded corpus.json + eval.db, .env with OpenRouter key, updated compgraph-eval deploy script + CI workflow for dual-service health checks
+- Docs audit: 0 phantom refs, 0 unlisted refs, agents/skills rosters exact match. Fixed phases.md date, scaling-plan.md stack description, MEMORY.md test count (530→644) and Pi services
+- Implemented 4 insights feedback items: `rg` syntax rule, observer always-record rule, duplicate task check rule, stop hook fix (`git diff HEAD` vs last commit)
+
+**Open:** feat/m4-data-quality-aggregation branch not yet merged (6 open review issues #148–#153 to triage first)
+
+---
+
 ## 2026-02-21 — CD Pipeline + Dev Server Fix
 
 **Goal:** Fix broken enrichment status endpoint, add auto-deploy on merge to main.
