@@ -20,7 +20,7 @@ M3 (data collection) → M4 (aggregation + API) → M5 (dashboard via API) → M
 | LiteLLM (provider abstraction) | M6 | Needs LLM eval tool (Issue #128) to validate quality first |
 | Frontend framework (Next.js) | M7 | Streamlit validates views cheaply before committing to framework |
 | Digital Ocean production deploy | M7 | Production infra only after production UI |
-| Digital Ocean dev migration | M5 | Move Pi services to DO Droplet alongside dashboard API migration |
+| Digital Ocean dev migration | ~~M5~~ DONE | DO Droplet live + CD auto-deploy on merge to main |
 | Scraper expansion (new companies) | M4+ | Current 4 companies validate pipeline; add more after agg+API layer exists |
 | Custom JWT auth | Never | Using Supabase Auth instead |
 | Prisma / second ORM | Never | FastAPI + SQLAlchemy is the single data layer; frontend is pure API consumer |
@@ -42,7 +42,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ## Current State (2026-02-20)
 
-**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). All tests passing (CI enforced). Dev server + dashboard running at dev.compgraph.io / dashboard.dev.compgraph.io (Digital Ocean). Remaining: data quality review, prompt tuning.
+**M3 ~95% complete.** All 4 scrapers operational (T-ROC, 2020 Companies, BDS, MarketSource). 1,025 postings scraped, enrichment pipeline running. Brand Intel dashboard shipped (PR #117). Posting Explorer polished with brand/retailer columns, pay formatting, human-readable headers (PRs #123, #124). All tests passing (CI enforced). Dev server + dashboard running at dev.compgraph.io / dashboard.dev.compgraph.io (Digital Ocean). **CD pipeline live** — auto-deploys to dev server on merge to main (PR #146). Remaining: data quality review, prompt tuning.
 
 See `docs/changelog.md` for session-by-session history.
 

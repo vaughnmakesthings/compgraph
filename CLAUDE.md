@@ -224,11 +224,25 @@ Dev server runs on a DO Droplet (`s-1vcpu-2gb`, sfo3, Ubuntu 24.04) at `165.232.
 
 - **SSH**: `ssh compgraph-do` (alias in `~/.ssh/config`, uses 1Password SSH agent)
 - **Health**: `https://dev.compgraph.io/health`
-- **Deploy**: `bash infra/deploy.sh` (or `bash infra/deploy.sh --env-update` to push fresh secrets)
+- **Auto-deploy**: Merging to `main` triggers CD workflow → CI passes → SSH deploy → migrate → restart → health check
+- **Manual deploy**: `bash infra/deploy.sh` (or `bash infra/deploy.sh --env-update` to push fresh secrets)
 - **Service**: `systemctl {start|stop|restart|status} compgraph`
 - **Logs**: `journalctl -u compgraph -f`
 - **Reverse proxy**: Caddy — automatic HTTPS via Let's Encrypt, config at `/etc/caddy/Caddyfile`
-- **Infra files**: `infra/` directory (systemd units, Caddyfile, setup + deploy scripts)
+- **Infra files**: `infra/` directory (systemd units, Caddyfile, setup + deploy scripts, `deploy-ci.sh` for CD)
+
+### CD Pipeline (Auto-Deploy)
+Every merge to `main` auto-deploys to the dev server via GitHub Actions:
+
+1. CI workflow runs (lint, typecheck, test, security scan)
+2. CI passes → CD workflow triggers via `workflow_run`
+3. SSH to droplet → `git pull` → `uv sync` → `alembic upgrade head` → restart services → health check
+
+- **Workflow**: `.github/workflows/cd.yml`
+- **Deploy script**: `infra/deploy-ci.sh` (runs on droplet)
+- **Secrets**: `DEPLOY_SSH_KEY` + `DEPLOY_SSH_KNOWN_HOSTS` (GitHub repo secrets, dedicated ED25519 key)
+- **Migrations**: Auto-run via pooler URL (avoids IPv6 direct connection DNS issue)
+- **Concurrency**: Only one deploy at a time — new merges cancel in-progress deploys
 
 ### Dashboard
 - **URL**: `https://dashboard.dev.compgraph.io`
@@ -268,6 +282,7 @@ Before pushing any branch with Python changes:
 4. Only push after all three pass. Do NOT push hoping CI will catch issues — it wastes a round-trip.
 
 After squash-merging a PR to main:
+- CD auto-deploys to dev server (no manual action needed)
 - Sync local main: `git checkout main && git pull origin main`
 - Rebase any open feature branches: `git checkout feat/xxx && git rebase main`
 - This prevents branch divergence on subsequent PRs.
