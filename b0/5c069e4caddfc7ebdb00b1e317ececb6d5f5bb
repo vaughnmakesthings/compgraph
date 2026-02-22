@@ -1,0 +1,25 @@
+tests/test_indexes.py
+  ae50e1711168c7e5 1-79
+src/compgraph/db/models.py
+  ae50e1711168c7e5 294-297,326-329,384-385,401
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b05c069e4caddfc7ebdb00b1e317ececb6d5f5bb",
+  "prompts": {
+    "ae50e1711168c7e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c956cc7e-6702-4c51-bca4-f2597c40307c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 94,
+      "total_deletions": 0,
+      "accepted_lines": 90,
+      "overriden_lines": 1
+    }
+  }
+}
