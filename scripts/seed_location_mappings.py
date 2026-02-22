@@ -57,10 +57,10 @@ def parse_args() -> argparse.Namespace:
 
 
 async def extract_distinct_locations() -> list[tuple[str, str, str]]:
-    from compgraph.enrichment.normalizers import normalize_location_raw
     from sqlalchemy import text
 
     from compgraph.db.session import async_session_factory
+    from compgraph.enrichment.normalizers import normalize_location_raw
 
     async with async_session_factory() as session:
         rows = (
