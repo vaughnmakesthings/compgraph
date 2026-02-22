@@ -136,6 +136,7 @@ async def _create_entity(
             await session.flush()
     except IntegrityError:
         # Savepoint rolled back, session state preserved — re-query
+        _entity_cache.pop(label, None)  # Concurrent create means cache is stale
         stmt = select(model).where(model.slug == entity_slug)
         result = await session.execute(stmt)
         existing = cast(DimensionEntity, result.scalar_one())
