@@ -87,14 +87,11 @@ def _classify_rate_limit_headers(response: object | None, message: str | None) -
     return ErrorCategory.RATE_LIMIT
 
 
-def _classify_rate_limit(error: anthropic.RateLimitError) -> ErrorCategory:
-    return _classify_rate_limit_headers(
-        getattr(error, "response", None),
-        getattr(error, "message", None),
-    )
+def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
+    """Classify a rate-limit error as transient or quota-exhausted.
 
-
-def _classify_rate_limit_from_status(error: anthropic.APIStatusError) -> ErrorCategory:
+    Works for both RateLimitError and APIStatusError (RateLimitError inherits from it).
+    """
     return _classify_rate_limit_headers(
         getattr(error, "response", None),
         getattr(error, "message", None),
@@ -245,7 +242,7 @@ async def call_llm_with_retry(  # noqa: UP047
                     original=e,
                 ) from e
             if e.status_code == 429:
-                last_category = _classify_rate_limit_from_status(e)
+                last_category = _classify_rate_limit(e)
                 if attempt < MAX_RETRIES - 1:
                     delay = RATE_LIMIT_BASE_DELAY * (2**attempt)
                     logger.warning(

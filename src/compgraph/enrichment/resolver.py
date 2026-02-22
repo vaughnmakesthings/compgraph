@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 import uuid
 from typing import Protocol, cast, runtime_checkable
 
@@ -32,8 +33,7 @@ _CACHE_TTL = 300  # 5 minutes
 
 
 async def _get_all_entities(session: AsyncSession, model: DimensionModel, label: str) -> list:
-    import time
-
+    """Get all entities with in-memory caching to avoid repeated full table loads."""
     now = time.monotonic()
     if label in _entity_cache:
         ts, entities = _entity_cache[label]
@@ -148,6 +148,8 @@ async def _create_entity(
         return existing.id
     matched = cast(DimensionEntity, entity)
     logger.info("Created new %s: %s (id=%s)", label, normalized, matched.id)
+    # Invalidate cache so subsequent fuzzy matches see the new entity
+    _entity_cache.pop(label, None)
     return matched.id
 
 

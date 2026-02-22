@@ -464,26 +464,26 @@ class TestAPIStatusError429:
     def test_classify_429_api_status_error(self):
         import anthropic
 
-        from compgraph.enrichment.retry import _classify_rate_limit_from_status
+        from compgraph.enrichment.retry import _classify_rate_limit
 
         error = anthropic.APIStatusError(
             message="Rate limited",
             response=MagicMock(status_code=429, headers={}),
             body=None,
         )
-        assert _classify_rate_limit_from_status(error) == ErrorCategory.RATE_LIMIT
+        assert _classify_rate_limit(error) == ErrorCategory.RATE_LIMIT
 
     def test_classify_429_api_status_error_quota(self):
         import anthropic
 
-        from compgraph.enrichment.retry import _classify_rate_limit_from_status
+        from compgraph.enrichment.retry import _classify_rate_limit
 
         error = anthropic.APIStatusError(
             message="Your usage limit has been exceeded",
             response=MagicMock(status_code=429, headers={"retry-after": "600"}),
             body=None,
         )
-        assert _classify_rate_limit_from_status(error) == ErrorCategory.QUOTA_EXHAUSTED
+        assert _classify_rate_limit(error) == ErrorCategory.QUOTA_EXHAUSTED
 
     @pytest.mark.asyncio
     async def test_429_api_status_error_uses_rate_limit_delay(self):

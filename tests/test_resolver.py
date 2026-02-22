@@ -314,3 +314,33 @@ class TestEntityCache:
         clear_entity_cache()
         await _get_all_entities(session, Brand, "Brand")
         assert session.execute.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_create_entity_invalidates_cache(self):
+        """Creating a new entity should invalidate the cache for that model."""
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import _create_entity, _entity_cache, _get_all_entities
+
+        mock_brand = MagicMock()
+        mock_brand.name = "Samsung"
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_brand]
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+        session.begin_nested = MagicMock(return_value=AsyncMock())
+        session.flush = AsyncMock()
+
+        # Populate cache
+        await _get_all_entities(session, Brand, "Brand")
+        assert "Brand" in _entity_cache
+
+        # Create entity should invalidate cache
+        new_brand = MagicMock()
+        new_brand.id = uuid.uuid4()
+        new_brand.name = "NewBrand"
+        new_brand.slug = "newbrand"
+        session.add = MagicMock()
+
+        await _create_entity(session, "NewBrand", Brand)
+        assert "Brand" not in _entity_cache

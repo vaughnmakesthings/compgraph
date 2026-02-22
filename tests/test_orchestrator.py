@@ -560,8 +560,8 @@ class TestCheckBaselineAnomaly:
 # --- Finally-Block Fallback Tests ---
 
 
-class TestFinallyBlockFallbackResult:
-    async def test_fallback_result_when_scrape_run_exists_but_result_is_none(self):
+class TestInterruptedScrapeFinalization:
+    async def test_cancelled_scrape_produces_failed_result(self):
         company = _make_company("bds")
         mock_scrape_run = MagicMock()
         mock_scrape_run.id = uuid.uuid4()
