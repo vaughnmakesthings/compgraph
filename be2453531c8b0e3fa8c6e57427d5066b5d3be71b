@@ -1,0 +1,33 @@
+docs/context-packs.md
+  0158602c098e622a 62,106,119,122-125,127-136,138,158-160,163-171,175,201,228,263-291,354-356,417,419,421
+docs/references/fastapi-pagination-patterns.md
+  0158602c098e622a 1-1211
+docs/references/supabase-auth-fastapi.md
+  0158602c098e622a 1-879
+docs/reports/2026-02-22-docs-audit.md
+  0158602c098e622a 1-177
+docs/workflow.md
+  0158602c098e622a 3,62,205,207
+docs/references/truncate-insert-patterns.md
+  0158602c098e622a 1-658
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "be2453531c8b0e3fa8c6e57427d5066b5d3be71b",
+  "prompts": {
+    "0158602c098e622a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34fb8ac0-21a3-4f71-972f-5c445acf0db3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3018,
+      "total_deletions": 50,
+      "accepted_lines": 3002,
+      "overriden_lines": 0
+    }
+  }
+}
