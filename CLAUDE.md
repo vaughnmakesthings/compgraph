@@ -203,9 +203,11 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - Don't add MCP servers to `.mcp.json` that are already provided by plugins — this causes ~10K tokens of context waste and auth warnings. Plugins are the authoritative source.
 - Don't forget `exclude_ids` for failed postings in batch loops — prevents livelock on persistent failures.
 - Don't test mock behavior — test real behavior. Don't add test-only methods to production classes. Mock minimally and only after understanding the dependency chain.
+- Don't create GitHub issues or TaskCreate entries without checking for duplicates first. Search existing open issues (`gh issue list`) and the current task list (`TaskList`) before creating. Never create the same task twice.
 
 ## Platform Gotchas
 
+- **`grep` vs `rg`**: Always use the Grep tool or `rg` directly — never `grep --include` flags. The Grep tool uses ripgrep which doesn't support GNU grep flags and will silently return wrong results.
 - **macOS `find`**: Use `fd` or `Glob` tool instead — macOS `find` has different flag syntax than GNU `find` (e.g., `-regex` behavior differs).
 - **Docker**: Requires OrbStack on macOS dev machines (not Docker Desktop). The GitHub MCP server is a Go-based Docker image, not an npm package.
 - **`claude plugins uninstall`**: Verify removal by checking `~/.claude/plugins/installed_plugins.json` directly.
@@ -303,6 +305,7 @@ All hooks MUST have a fallback/escape condition. If an external tool call fails 
 - When spawning sub-agents or orchestrator pipelines, check for duplicate/orphaned processes first.
 - Do not improvise if a skill or resource is missing — ask the user or pull the latest from main before proceeding.
 - If a background agent has not produced output in 10 minutes, consider it stale and report to the user.
+- **Observer agents must always record.** Never skip an observation claiming it is "routine" or "no observation needed." Record every meaningful event — git operations, file edits, test results, decisions, errors. If in doubt, record it. The session-end summary is the fallback, not the primary mechanism.
 
 ## CodeSight (Semantic Code Search)
 
