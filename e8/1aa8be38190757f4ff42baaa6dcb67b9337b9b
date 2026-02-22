@@ -1,0 +1,23 @@
+src/compgraph/scheduler/jobs.py
+  ae50e1711168c7e5 65-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "e81aa8be38190757f4ff42baaa6dcb67b9337b9b",
+  "prompts": {
+    "ae50e1711168c7e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c956cc7e-6702-4c51-bca4-f2597c40307c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0
+    }
+  }
+}
