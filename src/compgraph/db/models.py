@@ -73,10 +73,28 @@ class Market(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(2), nullable=True, default="US")
     dma: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LocationMapping(Base):
+    __tablename__ = "location_mappings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    city_normalized: Mapped[str] = mapped_column(String(255), nullable=False)
+    state: Mapped[str] = mapped_column(String(10), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="US")
+    metro_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    metro_state: Mapped[str] = mapped_column(String(10), nullable=False)
+    metro_country: Mapped[str] = mapped_column(String(2), nullable=False, default="US")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("city_normalized", "state", "country", name="uq_location_mapping"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +387,56 @@ class AggPostingLifecycle(Base):
     median_days_open: Mapped[float | None] = mapped_column(Float, nullable=True)
     repost_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     avg_repost_gap_days: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class AggBrandChurnSignals(Base):
+    __tablename__ = "agg_brand_churn_signals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    brand_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("brands.id"), nullable=False)
+    period: Mapped[date] = mapped_column(Date, nullable=False)
+    active_posting_count: Mapped[int] = mapped_column(Integer, default=0)
+    prior_period_count: Mapped[int] = mapped_column(Integer, default=0)
+    velocity_delta: Mapped[float | None] = mapped_column(Float, nullable=True)
+    avg_days_active: Mapped[float | None] = mapped_column(Float, nullable=True)
+    repost_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    churn_signal_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (Index("ix_churn_signals_company_brand", "company_id", "brand_id"),)
+
+
+class AggMarketCoverageGaps(Base):
+    __tablename__ = "agg_market_coverage_gaps"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    market_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("markets.id"), nullable=False)
+    period: Mapped[date] = mapped_column(Date, nullable=False)
+    total_active_postings: Mapped[int] = mapped_column(Integer, default=0)
+    brand_count: Mapped[int] = mapped_column(Integer, default=0)
+    brand_names: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+
+    __table_args__ = (Index("ix_coverage_gaps_company_market", "company_id", "market_id"),)
+
+
+class AggBrandAgencyOverlap(Base):
+    __tablename__ = "agg_brand_agency_overlap"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    brand_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("brands.id"), nullable=False)
+    period: Mapped[date] = mapped_column(Date, nullable=False)
+    agency_count: Mapped[int] = mapped_column(Integer, default=0)
+    agency_names: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    primary_company_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("companies.id"), nullable=True
+    )
+    primary_share: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_exclusive: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_contested: Mapped[bool] = mapped_column(Boolean, default=False)
+    total_postings: Mapped[int] = mapped_column(Integer, default=0)
+
+    __table_args__ = (Index("ix_agency_overlap_brand", "brand_id"),)
 
 
 # ---------------------------------------------------------------------------
