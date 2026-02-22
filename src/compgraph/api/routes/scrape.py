@@ -119,12 +119,29 @@ def _get_active_run_and_orchestrator(
 # --- Endpoints ---
 
 
+_ACTIVE_STATUSES = frozenset(
+    {
+        PipelineStatus.PENDING,
+        PipelineStatus.RUNNING,
+        PipelineStatus.PAUSED,
+        PipelineStatus.STOPPING,
+    }
+)
+
+
 @router.post("/trigger", response_model=TriggerResponse)
 async def trigger_scrape(background_tasks: BackgroundTasks) -> TriggerResponse:
     """Trigger a manual scrape pipeline run.
 
     The scrape runs in the background. Use GET /api/scrape/status to check progress.
     """
+    latest = get_latest_run()
+    if latest is not None and latest.status in _ACTIVE_STATUSES:
+        raise HTTPException(
+            status_code=409,
+            detail="A pipeline is already running. Wait for completion or force-stop first.",
+        )
+
     pipeline_run = PipelineRun()
     _store_run(pipeline_run)
 

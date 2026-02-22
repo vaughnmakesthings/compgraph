@@ -100,3 +100,52 @@ class TestScrapeTriggerEndpoint:
 
         status_resp = client.get(f"/api/scrape/status/{run_id}")
         assert status_resp.status_code == 200
+
+
+class TestScrapeTriggerConcurrencyGuard:
+    def test_trigger_returns_409_when_pipeline_running(self, client):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 409
+        assert "already running" in resp.json()["detail"]
+
+    def test_trigger_returns_409_when_pipeline_paused(self, client):
+        run = PipelineRun(status=PipelineStatus.PAUSED)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 409
+        assert "already running" in resp.json()["detail"]
+
+    def test_trigger_returns_409_when_pipeline_pending(self, client):
+        run = PipelineRun(status=PipelineStatus.PENDING)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 409
+
+    def test_trigger_allowed_after_completed_run(self, client):
+        run = PipelineRun(status=PipelineStatus.SUCCESS)
+        run.finished_at = datetime.now(UTC)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 200
+
+    def test_trigger_allowed_after_failed_run(self, client):
+        run = PipelineRun(status=PipelineStatus.FAILED)
+        run.finished_at = datetime.now(UTC)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 200
+
+    def test_trigger_allowed_after_cancelled_run(self, client):
+        run = PipelineRun(status=PipelineStatus.CANCELLED)
+        run.finished_at = datetime.now(UTC)
+        _store_run(run)
+
+        resp = client.post("/api/scrape/trigger")
+        assert resp.status_code == 200
