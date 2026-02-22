@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "476414eb1874b16e59657b208d09b212f2be7d61",
+  "prompts": {
+    "7fe986756ca544cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "66f61477-cfed-4e70-9c1e-ceed3c084c4a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 140,
+      "total_deletions": 2,
+      "accepted_lines": 138,
+      "overriden_lines": 0
+    }
+  }
+}
