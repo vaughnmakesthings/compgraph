@@ -6,12 +6,13 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import func
 
 from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
 from compgraph.db.session import async_session_factory
@@ -167,6 +168,26 @@ async def check_baseline_anomaly(
     return warnings
 
 
+async def cleanup_stale_pending_runs(session: AsyncSession, max_age_hours: int = 6) -> int:
+    cutoff = datetime.now(UTC) - timedelta(hours=max_age_hours)
+    stmt = (
+        update(ScrapeRun)
+        .where(
+            ScrapeRun.status == ScrapeRunStatus.PENDING,
+            ScrapeRun.started_at < cutoff,
+        )
+        .values(
+            status=ScrapeRunStatus.FAILED,
+            completed_at=func.now(),
+            errors={"errors": ["Cleaned up stale PENDING run"], "warnings": []},
+        )
+    )
+    result = await session.execute(stmt)
+    await session.commit()
+    count: int = result.rowcount  # type: ignore[attr-defined]
+    return count
+
+
 class PipelineOrchestrator:
     """Coordinates scrape runs across all companies with error isolation.
 
@@ -253,7 +274,7 @@ class PipelineOrchestrator:
 
             for company, result in zip(companies, results, strict=True):
                 if isinstance(result, BaseException):
-                    # CancelledError from force-stop → SKIPPED, not FAILED
+                    # CancelledError from force-stop -> SKIPPED, not FAILED
                     is_cancelled = isinstance(result, asyncio.CancelledError)
                     error_result = ScrapeResult(
                         company_id=company.id,
@@ -352,9 +373,14 @@ class PipelineOrchestrator:
                 )
                 raise
             finally:
+                if scrape_run is not None and result is None:
+                    result = ScrapeResult(
+                        company_id=company.id,
+                        company_slug=company.slug,
+                        errors=["Scrape interrupted before completion"],
+                        finished_at=datetime.now(UTC),
+                    )
                 if result is not None:
-                    # Update company state and results immediately so the
-                    # API reflects partial progress during long scrapes
                     pipeline_run.company_states[company.slug] = (
                         CompanyState.COMPLETED if result.success else CompanyState.FAILED
                     )
