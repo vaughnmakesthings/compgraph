@@ -1,0 +1,25 @@
+tests/test_deactivation.py
+  ae50e1711168c7e5 111-150
+src/compgraph/scrapers/deactivation.py
+  ae50e1711168c7e5 8,10,24-32,39-43,54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "89358ff7473796ca54a91f13554d7fdc9b7c1fd0",
+  "prompts": {
+    "ae50e1711168c7e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c956cc7e-6702-4c51-bca4-f2597c40307c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 239,
+      "total_deletions": 22,
+      "accepted_lines": 234,
+      "overriden_lines": 0
+    }
+  }
+}
