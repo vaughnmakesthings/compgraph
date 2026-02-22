@@ -1,0 +1,31 @@
+.claude/agents/react-frontend-developer.md
+  ff5e462149a9f283 4,509-552
+.claude/agents/dx-optimizer.md
+  ff5e462149a9f283 4,28-33
+.claude/skills/frontend-design/SKILL.md
+  ff5e462149a9f283 155,157-177,185
+.mcp.json
+  ff5e462149a9f283 25-31
+CLAUDE.md
+  ff5e462149a9f283 368,375,396
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f5d6d47740721af2bb6c32935d53cda1869e834a",
+  "prompts": {
+    "ff5e462149a9f283": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "164d715c-65ad-4c1b-a11c-eecbd281f220",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 86,
+      "total_deletions": 7,
+      "accepted_lines": 86,
+      "overriden_lines": 0
+    }
+  }
+}
