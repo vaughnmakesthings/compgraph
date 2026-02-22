@@ -27,6 +27,28 @@ class DimensionEntity(Protocol):
 
 DimensionModel = type[Brand] | type[Retailer]
 
+_entity_cache: dict[str, tuple[float, list]] = {}
+_CACHE_TTL = 300  # 5 minutes
+
+
+async def _get_all_entities(session: AsyncSession, model: DimensionModel, label: str) -> list:
+    import time
+
+    now = time.monotonic()
+    if label in _entity_cache:
+        ts, entities = _entity_cache[label]
+        if now - ts < _CACHE_TTL:
+            return entities
+    stmt = select(model)
+    result = await session.execute(stmt)
+    entities = list(result.scalars().all())
+    _entity_cache[label] = (now, entities)
+    return entities
+
+
+def clear_entity_cache() -> None:
+    _entity_cache.clear()
+
 
 def normalize_entity_name(name: str) -> str:
     """Normalize an entity name for matching.
@@ -67,10 +89,8 @@ async def _find_entity(
         matched = cast(DimensionEntity, entity)
         return matched.id, 95.0
 
-    # Tier 3: Fuzzy match against all entities
-    stmt = select(model)
-    result = await session.execute(stmt)
-    all_entities = result.scalars().all()
+    # Tier 3: Fuzzy match against all entities (cached)
+    all_entities = await _get_all_entities(session, model, label)
 
     best_score = 0.0
     best_id: uuid.UUID | None = None
