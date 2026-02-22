@@ -13,7 +13,7 @@ _COMPANY_NAMES = [
 ]
 
 _LOCATION_SUFFIX = re.compile(
-    r"\s*[-|\u2013\u2014]\s*[A-Za-z\s]+,\s*[A-Z]{2}(?:,\s*US)?\s*$"
+    r"\s*[-|\u2013\u2014]\s*[A-Za-z\s]+,\s*[A-Z]{2}(?:,\s*(?:US|CA))?\s*$"
     r"|\s*\([A-Za-z\s]+,\s*[A-Z]{2}(?:,\s*(?:US|CA))?\)\s*$",
     re.IGNORECASE,
 )
