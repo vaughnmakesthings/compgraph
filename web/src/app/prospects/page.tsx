@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/data/badge";
 import { PROSPECTS, type ProspectSummary } from "@/lib/mock/prospects";
+import { MockupBanner } from "@/components/content/mockup-banner";
 
 const SIGNAL_COLORS: Record<
   "high" | "medium" | "low",
@@ -153,6 +154,7 @@ export default function ProspectsPage() {
 
   return (
     <div>
+      <MockupBanner />
       {/* Page header */}
       <div className="mb-6">
         <h1
