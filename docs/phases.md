@@ -17,7 +17,7 @@ M3 (data collection) → M4 (aggregation + API) → M5 (dashboard via API) → M
 |---------|-------------|-----------|
 | Auth (Supabase Auth, invite via magic link + password login) | M4 (Step 4d) | API must exist first |
 | arq (replace APScheduler) | M6 | Current scheduler works; migration is operational hardening |
-| LiteLLM (provider abstraction) | M6 | Needs LLM eval tool (Issue #128) to validate quality first |
+| LiteLLM (provider abstraction) | M6 | Needs Prompt Evaluation Tool (Issue #128) to validate quality first |
 | Frontend framework (Next.js) | M7 | Streamlit validates views cheaply before committing to framework |
 | Digital Ocean production deploy | M7 | Production infra only after production UI |
 | Digital Ocean dev migration | ~~M5~~ DONE | DO Droplet live + CD auto-deploy on merge to main |
@@ -32,7 +32,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 - **Aggregation strategy:** truncate+insert rebuild (not incremental), transactional
 - **API layer:** read-only queries against aggregation tables, no writes
 - **Dashboard migration (M5):** Streamlit pages migrate from direct DB queries to API calls
-- **Enrichment:** 2-pass stays (Haiku + Sonnet), model swap only after LLM eval tool validates quality
+- **Enrichment:** 2-pass stays (Haiku + Sonnet), model swap only after Prompt Evaluation Tool validates quality
 - **Entity resolution:** 3-tier (exact/slug/fuzzy) stays, thresholds tunable via config
 - **Auth:** Supabase Auth — invite via magic link, user sets up username/password during profile setup. Admin/user roles. No public sign-up, no custom JWT.
 - **Frontend data access:** Pure API consumer — Next.js calls FastAPI endpoints, no direct DB access, no Prisma
@@ -210,7 +210,7 @@ Goal: Production-grade data quality, operational reliability, and cost-optimized
 
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| Systematic prompt refinement with eval tool | Refine enrichment prompts using LLM eval tool Elo ranking | M3 data quality review + LLM eval tool | Pending |
+| Systematic prompt refinement with Prompt Evaluation Tool | Refine enrichment prompts using Prompt Evaluation Tool Elo ranking | M3 data quality review + Prompt Evaluation Tool | Pending |
 | Enrichment pass refactor | Merge run_pass1/run_pass2 into generic _run_pass (Issue #90) | — | Pending |
 | Brand/retailer taxonomy | Merge duplicate entities, correct misclassifications | Enrichment data available | Pending |
 | Role archetype normalization | Standardize role categories across companies | Enrichment data available | Pending |
@@ -231,9 +231,9 @@ Goal: Production-grade data quality, operational reliability, and cost-optimized
 
 | Task | Summary | Dependencies | Status |
 |------|---------|-------------|--------|
-| LLM eval tool | Standalone Streamlit app for prompt/model testing with Elo ranking (Issue #128) | — | Pending |
-| Haiku Pass 2 test | Evaluate Haiku for Pass 2 (5x savings if quality holds) | LLM eval tool | Pending |
-| LiteLLM integration | Provider-agnostic LLM calls (~half day, drop-in) | LLM eval tool validates quality | Pending |
+| Prompt Evaluation Tool | Standalone app for prompt/model testing with Elo ranking (Issue #128) | — | Pending |
+| Haiku Pass 2 test | Evaluate Haiku for Pass 2 (5x savings if quality holds) | Prompt Evaluation Tool | Pending |
+| LiteLLM integration | Provider-agnostic LLM calls (~half day, drop-in) | Prompt Evaluation Tool validates quality | Pending |
 | Anthropic Batch API | 50% cost discount for non-urgent enrichment | LiteLLM (or direct integration) | Pending |
 | arq migration | Replace APScheduler with arq for Redis-backed job queue | Multi-worker support | Pending |
 
@@ -355,7 +355,7 @@ All open GitHub issues assigned to milestones. Last triaged: 2026-02-22.
 | #53 | CI migration drift detection | CI |
 | #54 | Squash Alembic migrations | Maintenance |
 | #48 | CREATE INDEX CONCURRENTLY | Performance |
-| #128 | LLM eval tool (Elo ranking) | Scaling prep (M6c) |
+| #128 | Prompt Evaluation Tool (Elo ranking) | Scaling prep (M6c) |
 
 ### Low-priority / review feedback (triage individually)
 

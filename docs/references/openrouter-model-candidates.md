@@ -10,7 +10,7 @@ CompGraph's 2-pass enrichment pipeline needs cost-effective LLM models:
 - **Pass 2** (Sonnet-class): Entity extraction, brand/retailer identification — needs more capability
 
 Current production: Haiku 4.5 (Pass 1), Sonnet 4.5 (Pass 2) via direct Anthropic API.
-Eval tool (`compgraph-eval`) routes through OpenRouter for multi-provider comparison.
+Prompt Evaluation Tool (`compgraph-eval`) routes through OpenRouter for multi-provider comparison.
 
 ## Current Eval Config (13 models)
 

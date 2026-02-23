@@ -4,6 +4,23 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-23 — Pipeline Controls: Scrape/Enrich/Scheduler UI with Live Polling (PR #167)
+
+**Goal:** Wire existing backend pipeline endpoints to the Next.js Settings page — trigger, pause, resume, stop scrape; live status polling; enrichment status; scheduler controls.
+
+**What happened:**
+- Implemented types.ts (ScrapeStatus, ScrapeStatusResponse, EnrichStatusResponse, SchedulerStatusResponse), api-client.ts (11 new methods), and settings/page.tsx (full pipeline controls UI with 3s polling, per-company table, scheduler section) per plan `delightful-roaming-dahl.md`
+- Added tests for coverage (api-client.test.ts + pages.test.tsx) to pass 50% threshold (→52.3% statements)
+- 4-cycle pr-feedback-cycle triage: 8 bot threads fixed (Gemini ×4 status casing, Cubic ×2 null/type, Cursor ×3), 2 deferred (#168 EnrichStatus union, #169 setTimeout refactor)
+- Key backend corrections discovered during review: `PipelineStatus` StrEnum is lowercase (not uppercase), `company_states` is `dict[str, str]` (not objects), `company_results` has per-company counts, `pass1_result`/`pass2_result` are nullable, `MISSED_RUN_THRESHOLD_HOURS = 80`
+- Merged as PR #167 commit e18741d (squash), Vercel auto-deploying
+
+**Key files:** `web/src/lib/types.ts`, `web/src/lib/api-client.ts`, `web/src/app/settings/page.tsx`, `web/src/test/api-client.test.ts`, `web/src/test/pages.test.tsx`
+
+**Open:** #168 (EnrichStatus union type), #169 (setTimeout polling), #162 (eval/ subtree bugs)
+
+---
+
 ## 2026-02-23 — MCP Tool Integration & Agent Workflow Updates
 
 **Goal:** Verify new MCP tools are working and propagate awareness across all project agents.
@@ -112,9 +129,9 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
-## 2026-02-20 (Session 1) — CompGraph-Eval Tool Built
+## 2026-02-20 (Session 1) — CompGraph Prompt Evaluation Tool Built
 
-**Goal:** Implement the standalone LLM evaluation tool (Issue #128).
+**Goal:** Implement the standalone Prompt Evaluation Tool (Issue #128).
 
 **What happened:**
 - Built `compgraph-eval/` as standalone repo: github.com/vaughnmakesthings/compgraph-eval (private)
@@ -122,7 +139,7 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 - 32 tests passing, 12 commits, Python 3.13 + uv
 - Production prompts copied verbatim from compgraph enrichment/prompts.py
 - Stack: LiteLLM (multi-provider), Streamlit (3 pages), aiosqlite, Pydantic 2.0
-- Schemas simplified from production (no Literal types/validators — eval tool accepts any LLM output)
+- Schemas simplified from production (no Literal types/validators — Prompt Evaluation Tool accepts any LLM output)
 
 **Key decisions:**
 - Used `[dependency-groups]` for dev deps (uv convention), not `[project.optional-dependencies]`
@@ -136,15 +153,15 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
-## 2026-02-19 (Session 2) — Scaling Strategy + LLM Eval Tool Design
+## 2026-02-19 (Session 2) — Scaling Strategy + Prompt Evaluation Tool Design
 
-**Goal:** Research scaling path, design an LLM evaluation tool for prompt/model testing.
+**Goal:** Research scaling path, design a Prompt Evaluation Tool for prompt/model testing.
 
 **What happened:**
 - Scaling analysis for 50 companies: Hetzner VPS ($4-11/mo) + Vercel frontend + Supabase Pro = ~$30-50/mo total infra
 - LLM cost analysis: $110/mo unoptimized → $16-27/mo with content dedup (PR #86) + Anthropic Batch API (50% discount)
 - Provider-agnostic enrichment research: LiteLLM drop-in (~half day), coupling surface is only 3-4 files (client.py, pass1.py, pass2.py, prompts.py)
-- Designed standalone LLM eval tool (brainstorming skill → approved design → implementation plan):
+- Designed standalone Prompt Evaluation Tool (brainstorming skill → approved design → implementation plan):
   - Standalone `compgraph-eval/` Streamlit app with SQLite, LiteLLM, Elo ranking
   - 3 pages: Run Tests, Side-by-Side Review, Leaderboard
   - Versioned prompt modules, auto-discovered, edit in editor
@@ -156,8 +173,8 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 - Single VPS over PaaS for small scale — systemd is simpler, cheaper, already proven on Pi
 - Replace APScheduler with arq (async Redis task queue) when scaling to 50 companies
 - Test Haiku for Pass 2 BEFORE adding provider complexity — zero code change, potential 5x cost reduction
-- LLM eval tool is prerequisite for any provider migration — test quality before switching
-- Eval tool uses copied schemas (~60 lines) rather than CompGraph package dependency
+- Prompt Evaluation Tool is prerequisite for any provider migration — test quality before switching
+- Prompt Evaluation Tool uses copied schemas (~60 lines) rather than CompGraph package dependency
 
 **Docs created:**
 - `docs/plans/2026-02-19-llm-eval-tool-design.md` — approved design
@@ -165,7 +182,7 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 - `docs/references/canadian-portals-research.md` — competitor Canadian portal analysis (from session 1)
 - `docs/references/osl-careers-research.md` — OSL competitor research (from session 1)
 
-**State:** M3 ~95% complete. Scaling roadmap documented. LLM eval tool planned and tracked as Issue #128. Ready for implementation when prioritized.
+**State:** M3 ~95% complete. Scaling roadmap documented. Prompt Evaluation Tool planned and tracked as Issue #128. Ready for implementation when prioritized.
 
 ---
 

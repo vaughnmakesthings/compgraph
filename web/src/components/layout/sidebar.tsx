@@ -80,7 +80,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "eval",
-    label: "Eval Tool",
+    label: "Prompt Evaluation Tool",
     icon: BeakerIcon,
     href: "/eval",
     categories: [
