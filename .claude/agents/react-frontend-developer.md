@@ -486,6 +486,25 @@ npx vitest run                  # Direct vitest execution
 
 ---
 
+## PRE-PUSH CHECKLIST
+
+Run these in `web/` before every push. Do NOT rely on Vercel CI to catch issues — build failures are slower to debug remotely than locally.
+
+```bash
+npm run lint        # ESLint strict (--max-warnings 0)
+npm run typecheck   # TypeScript --noEmit
+npm test            # Vitest full suite
+npm run build       # Catch SSR failures, missing env vars, import errors
+```
+
+Then, with the dev server running (`npm run dev`):
+- Use next-devtools `browser_eval` to visually verify any affected pages
+- Check browser console for hydration errors on routes you changed
+
+Only push after all checks pass.
+
+---
+
 ## MCP TOOLS
 
 Full reference: `docs/references/mcp-server-capabilities.md`.
@@ -495,6 +514,7 @@ Full reference: `docs/references/mcp-server-capabilities.md`.
 - `nextjs_index` → `nextjs_call` — inspect route structure, component hierarchy, build errors
 - `nextjs_docs` — fetch current official Next.js docs (always prefer over training data)
 - `browser_eval` — Playwright automation: screenshots, console messages, hydration error detection
+- Use `browser_eval` for pre-push visual verification — it's faster than diagnosing a failed Vercel deploy
 
 ### Vercel MCP — Production Debugging (project: `prj_8IH6w1sFBAbXQhkmr1paJE3Nfrpr`)
 - `get_deployment_build_logs` — first stop when a push causes a Vercel build failure
