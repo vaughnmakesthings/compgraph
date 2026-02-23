@@ -8,38 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.aggregation.base import AggregationJob
 
 _QUERY = """
-WITH snapshot_dates AS (
-    SELECT DISTINCT ps.snapshot_date
-    FROM posting_snapshots ps
-),
-daily_stats AS (
+WITH daily_stats AS (
     SELECT
-        sd.snapshot_date AS date,
+        ps.snapshot_date AS date,
         p.company_id,
+        COUNT(DISTINCT ps.posting_id) AS active_postings,
         COUNT(DISTINCT p.id) FILTER (
-            WHERE p.first_seen_at::date = sd.snapshot_date
+            WHERE p.first_seen_at::date = ps.snapshot_date
         ) AS new_postings,
         COUNT(DISTINCT p.id) FILTER (
             WHERE p.is_active = false
-            AND p.last_seen_at::date = sd.snapshot_date
-        ) AS closed_postings,
-        COUNT(DISTINCT p.id) FILTER (
-            WHERE p.is_active = true
-            AND p.first_seen_at::date <= sd.snapshot_date
-        ) + COUNT(DISTINCT p.id) FILTER (
-            WHERE p.is_active = false
-            AND p.last_seen_at::date >= sd.snapshot_date
-            AND p.first_seen_at::date <= sd.snapshot_date
-        ) AS active_postings
-    FROM snapshot_dates sd
-    CROSS JOIN companies c
-    JOIN postings p ON p.company_id = c.id
-    WHERE EXISTS (
-        SELECT 1 FROM posting_snapshots ps2
-        WHERE ps2.posting_id = p.id
-        AND ps2.snapshot_date = sd.snapshot_date
-    )
-    GROUP BY sd.snapshot_date, p.company_id
+            AND p.last_seen_at::date = ps.snapshot_date
+        ) AS closed_postings
+    FROM posting_snapshots ps
+    JOIN postings p ON p.id = ps.posting_id
+    GROUP BY ps.snapshot_date, p.company_id
 )
 SELECT
     date,
