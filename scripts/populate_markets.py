@@ -43,7 +43,7 @@ async def populate() -> int:
                 market = Market(
                     name=metro_name,
                     state=metro_state,
-                    country=metro_country,
+                    country=metro_country or "US",
                 )
                 session.add(market)
                 inserted += 1

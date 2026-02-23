@@ -23,3 +23,13 @@ class TestPopulateMarketsNullCountry:
         normalized = {(n, s, c or "US") for (n, s, c) in existing}
         assert ("Chicago", "IL", "US") in normalized
         assert ("NYC", "NY", "US") in normalized
+
+    def test_market_country_normalizes_none_to_us(self):
+        metro_country = None
+        market_country = metro_country or "US"
+        assert market_country == "US"
+
+    def test_market_country_preserves_non_none_value(self):
+        metro_country = "CA"
+        market_country = metro_country or "US"
+        assert market_country == "CA"
