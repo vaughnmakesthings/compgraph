@@ -30,7 +30,7 @@ async def populate() -> int:
             metros = (await session.execute(stmt)).all()
 
             existing = {
-                (r[0], r[1], r[2])
+                (r[0], r[1], r[2] or "US")
                 for r in (
                     await session.execute(select(Market.name, Market.state, Market.country))
                 ).all()
@@ -38,12 +38,12 @@ async def populate() -> int:
 
             inserted = 0
             for metro_name, metro_state, metro_country in metros:
-                if (metro_name, metro_state, metro_country) in existing:
+                if (metro_name, metro_state, metro_country or "US") in existing:
                     continue
                 market = Market(
                     name=metro_name,
                     state=metro_state,
-                    country=metro_country,
+                    country=metro_country or "US",
                 )
                 session.add(market)
                 inserted += 1

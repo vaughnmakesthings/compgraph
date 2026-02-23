@@ -13,9 +13,9 @@ WITH posting_durations AS (
         p.company_id,
         pe.role_archetype,
         DATE_TRUNC('month', p.first_seen_at)::date AS period,
-        EXTRACT(EPOCH FROM (
+        GREATEST(0, EXTRACT(EPOCH FROM (
             COALESCE(p.last_seen_at, NOW()) - p.first_seen_at
-        )) / 86400.0 AS days_open,
+        )) / 86400.0) AS days_open,
         p.times_reposted
     FROM postings p
     JOIN posting_enrichments pe ON pe.posting_id = p.id
@@ -33,7 +33,7 @@ SELECT
         ELSE 0
     END AS repost_rate,
     COALESCE(
-        AVG(days_open) FILTER (WHERE times_reposted > 0),
+        AVG(days_open / NULLIF(times_reposted, 0)) FILTER (WHERE times_reposted > 0),
         0
     ) AS avg_repost_gap_days
 FROM posting_durations
