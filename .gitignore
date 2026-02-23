@@ -33,3 +33,17 @@ htmlcov/
 .coverage
 .worktrees/
 
+
+# eval/ subtree exclusions
+eval/web/node_modules/
+eval/web/.next/
+eval/.venv/
+eval/data/eval.db
+
+# web/ Next.js app exclusions
+web/node_modules/
+web/.next/
+web/coverage/
+web/.tsbuildinfo
+# Override global gitignore "runs/" pattern so eval/runs/ pages are tracked
+!web/src/app/eval/runs/

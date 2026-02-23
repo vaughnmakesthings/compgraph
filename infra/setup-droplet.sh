@@ -103,7 +103,7 @@ systemctl restart systemd-journald
 # ── 10. Install systemd units ──
 echo "[10/10] Installing systemd units..."
 # Copy from repo if available, otherwise expect them to be SCP'd
-for unit in compgraph.service compgraph-dashboard.service; do
+for unit in compgraph.service; do
     if [ -f "$APP_DIR/infra/systemd/$unit" ]; then
         cp "$APP_DIR/infra/systemd/$unit" /etc/systemd/system/
     else
@@ -111,7 +111,7 @@ for unit in compgraph.service compgraph-dashboard.service; do
     fi
 done
 systemctl daemon-reload
-systemctl enable compgraph compgraph-dashboard
+systemctl enable compgraph
 systemctl enable caddy
 systemctl start caddy
 
@@ -120,5 +120,5 @@ echo "=== Setup complete ==="
 echo "Next steps:"
 echo "  1. Push .env file: scp .env compgraph-do:/opt/compgraph/.env"
 echo "  2. Fix permissions: ssh compgraph-do 'chown compgraph:compgraph /opt/compgraph/.env && chmod 600 /opt/compgraph/.env'"
-echo "  3. Start services: ssh compgraph-do 'systemctl start compgraph compgraph-dashboard'"
+echo "  3. Start services: ssh compgraph-do 'systemctl start compgraph'"
 echo "  4. Verify: curl https://dev.compgraph.io/health"

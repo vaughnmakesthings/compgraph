@@ -78,3 +78,49 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
+
+  eval-python-test:
+    name: Eval Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install eval dependencies
+        run: uv sync --group dev
+        working-directory: eval
+      - name: Run eval tests
+        run: uv run pytest tests/ -q --tb=short
+        working-directory: eval
+
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: web
+      - name: Lint
+        run: npm run lint
+        working-directory: web
+      - name: Type check
+        run: npm run typecheck
+        working-directory: web
+      - name: Test with coverage
+        run: npm run test:coverage
+        working-directory: web
+      - name: Build
+        run: npm run build
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: "https://dev.compgraph.io"
