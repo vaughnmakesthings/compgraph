@@ -314,10 +314,13 @@ export function Sidebar() {
     buildDefaultExpanded
   );
 
-  // Apply persisted state after mount (client-only — avoids SSR hydration mismatch)
+  // Apply persisted state after mount (client-only — avoids SSR hydration mismatch).
+  // setState inside useEffect is intentional: SSR renders with defaults, client merges
+  // stored state after hydration to avoid a server/client tree mismatch.
   useEffect(() => {
     const stored = readStoredState();
     if (Object.keys(stored).length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpandedKeys((prev) => ({ ...prev, ...stored }));
     }
   }, []);
