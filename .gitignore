@@ -33,3 +33,9 @@ htmlcov/
 .coverage
 .worktrees/
 
+
+# eval/ subtree exclusions
+eval/web/node_modules/
+eval/web/.next/
+eval/.venv/
+eval/data/eval.db
