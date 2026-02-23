@@ -1,8 +1,9 @@
 export function MockupBanner() {
   return (
     <div
+      role="note"
+      aria-label="This page contains placeholder data for design review"
       style={{
-        borderTop: "2px solid #DCB256",
         border: "1px solid #DCB25640",
         borderTopWidth: "2px",
         borderTopColor: "#DCB256",
