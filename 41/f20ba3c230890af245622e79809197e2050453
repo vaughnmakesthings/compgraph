@@ -1,0 +1,36 @@
+.github/workflows/cd.yml
+  9b0b087205aa2c59 42-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "41f20ba3c230890af245622e79809197e2050453",
+  "prompts": {
+    "9b0b087205aa2c59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42f232a1-929c-4124-a62f-0772fb5b54ce",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 0,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    },
+    "a56280cc78325225": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed5c6710-f04d-4c66-8946-6e3e4b8a8961",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 17,
+      "total_deletions": 0,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}
