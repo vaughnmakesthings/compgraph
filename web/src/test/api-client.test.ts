@@ -293,3 +293,42 @@ describe('api network error handling', () => {
     await expect(api.getPipelineStatus()).rejects.toThrow('Network error')
   })
 })
+
+describe('api simple GET endpoints', () => {
+  it('api.getPayBenchmarks fetches /api/aggregation/pay-benchmarks', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+    await api.getPayBenchmarks()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/aggregation/pay-benchmarks')
+  })
+
+  it('api.getChurnSignals fetches /api/aggregation/churn-signals', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+    await api.getChurnSignals()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/aggregation/churn-signals')
+  })
+
+  it('api.listEvalRuns fetches /api/eval/runs', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
+    await api.listEvalRuns()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/runs')
+  })
+
+  it('api.getEvalLeaderboard fetches /api/eval/leaderboard-data', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ runs: [], elo: {}, comparisons: [], field_accuracy: {} }),
+    } as Response)
+    const result = await api.getEvalLeaderboard()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/leaderboard-data')
+    expect(result.runs).toEqual([])
+  })
+
+  it('api.upsertFieldReview sends POST to /api/eval/field-reviews', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'fr-1' }) } as Response)
+    const result = await api.upsertFieldReview({ result_id: 'r1', field_name: 'role_archetype', is_correct: 1 })
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/eval/field-reviews')
+    expect(init.method).toBe('POST')
+    expect(result.id).toBe('fr-1')
+  })
+})
