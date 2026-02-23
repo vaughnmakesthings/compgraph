@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/data/badge";
 import { api } from "@/lib/api-client";
+import { formatRoleArchetype } from "@/lib/utils";
 import type { PostingListItem } from "@/lib/types";
 
 const PAGE_SIZE = 50;
@@ -17,15 +18,17 @@ function formatDate(iso: string): string {
 
 function formatPayRange(min: number | null, max: number | null): string {
   if (min === null && max === null) return "—";
-  if (min !== null && max !== null) return `$${min.toLocaleString()}–$${max.toLocaleString()}`;
-  if (min !== null) return `$${min.toLocaleString()}+`;
-  return `up to $${max!.toLocaleString()}`;
+  const fmt = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: n % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 });
+  if (min !== null && max !== null) return `$${fmt(min)}–$${fmt(max)}`;
+  if (min !== null) return `$${fmt(min)}+`;
+  return `up to $${fmt(max!)}`;
 }
 
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div
             style={{ backgroundColor: "#E8E8E4", borderRadius: "4px", height: "14px" }}
@@ -48,6 +51,15 @@ export default function HiringPage() {
   const [companyFilter, setCompanyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [roleFilter, setRoleFilter] = useState("");
+
+  // All companies fetched once on mount — not derived from current page (#173)
+  const [allCompanies, setAllCompanies] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    api.getCompanies()
+      .then((cos) => setAllCompanies(cos.map((c) => ({ id: c.id, name: c.name })).sort((a, b) => a.name.localeCompare(b.name))))
+      .catch(() => {/* non-fatal: company filter falls back to empty */});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,24 +89,12 @@ export default function HiringPage() {
     };
   }, [offset]);
 
-  // Note: filter options are derived from the current page only.
-  // TODO: fetch all distinct companies/roles from a dedicated endpoint for complete filtering.
   const uniqueRoles = useMemo(() => {
     const roles = new Set<string>();
     for (const item of items) {
       if (item.role_archetype) roles.add(item.role_archetype);
     }
     return [...roles].sort();
-  }, [items]);
-
-  const uniqueCompanies = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const item of items) {
-      if (!seen.has(item.company_id)) {
-        seen.set(item.company_id, item.company_name ?? item.company_id);
-      }
-    }
-    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -175,7 +175,7 @@ export default function HiringPage() {
           aria-label="Filter by company"
         >
           <option value="">All Companies</option>
-          {uniqueCompanies.map(([id, name]) => (
+          {allCompanies.map(({ id, name }) => (
             <option key={id} value={id}>
               {name}
             </option>
@@ -202,7 +202,7 @@ export default function HiringPage() {
           <option value="">All Roles</option>
           {uniqueRoles.map((role) => (
             <option key={role} value={role}>
-              {role}
+              {formatRoleArchetype(role)}
             </option>
           ))}
         </select>
@@ -215,7 +215,7 @@ export default function HiringPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ backgroundColor: "#E8E8E4" }}>
-              {["Title", "Company", "Location", "Role", "Pay Range", "Status", "First Seen"].map(
+              {["Title", "Company", "Location", "Role", "Pay Range", "Status"].map(
                 (col) => (
                   <th
                     key={col}
@@ -234,7 +234,7 @@ export default function HiringPage() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-8 text-center text-sm"
                   style={{ color: "#4F5D75", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
                 >
@@ -269,7 +269,7 @@ export default function HiringPage() {
                   </td>
                   <td className="px-4 py-3">
                     {item.role_archetype ? (
-                      <Badge variant="neutral">{item.role_archetype}</Badge>
+                      <Badge variant="neutral">{formatRoleArchetype(item.role_archetype)}</Badge>
                     ) : (
                       <span style={{ color: "#4F5D75" }}>—</span>
                     )}
@@ -285,16 +285,26 @@ export default function HiringPage() {
                       {formatPayRange(item.pay_min, item.pay_max)}
                     </span>
                   </td>
+                  {/* Status + date merged in one column (#182) */}
                   <td className="px-4 py-3">
-                    <Badge variant={item.is_active ? "success" : "error"}>
-                      {item.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </td>
-                  <td
-                    className="px-4 py-3"
-                    style={{ color: "#4F5D75", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
-                  >
-                    {formatDate(item.first_seen_at)}
+                    <div className="flex flex-col gap-0.5">
+                      <Badge variant={item.is_active ? "success" : "error"}>
+                        {item.is_active ? "Active" : "Closed"}
+                      </Badge>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "#8A8F98",
+                          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                        }}
+                      >
+                        {item.is_active
+                          ? `Since: ${formatDate(item.first_seen_at)}`
+                          : item.last_seen_at
+                            ? `Closed: ${formatDate(item.last_seen_at)}`
+                            : `Start: ${formatDate(item.first_seen_at)}`}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))

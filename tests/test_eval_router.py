@@ -101,7 +101,7 @@ class TestEvalRunsEndpoint:
         fake_run = MagicMock()
         fake_run.id = run_id
         fake_run.pass_number = 1
-        fake_run.model = "claude-haiku-4-5"
+        fake_run.model = "claude-haiku-4-5-20251001"
         fake_run.prompt_version = "v1"
         fake_run.corpus_size = 10
         fake_run.total_input_tokens = None
@@ -121,7 +121,7 @@ class TestEvalRunsEndpoint:
             assert resp.status_code == 200
             data = resp.json()
             assert data["id"] == str(run_id)
-            assert data["model"] == "claude-haiku-4-5"
+            assert data["model"] == "claude-haiku-4-5-20251001"
             assert data["pass_number"] == 1
         finally:
             app.dependency_overrides.clear()
@@ -172,7 +172,7 @@ class TestEvalRunsPostEndpoint:
                 "/api/eval/runs",
                 json={
                     "pass_number": 1,
-                    "model": "claude-haiku-4-5",
+                    "model": "claude-haiku-4-5-20251001",
                     "prompt_version": "v1",
                     "concurrency": 5,
                 },

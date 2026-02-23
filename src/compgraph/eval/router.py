@@ -391,11 +391,28 @@ async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, s
 # --- POST: Run Execution ---
 
 
+_SUPPORTED_MODELS = {
+    "claude-haiku-4-5-20251001",
+    "claude-sonnet-4-5-20251001",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6",
+}
+
+
 class RunCreate(BaseModel):
     pass_number: int
     model: str
     prompt_version: str
     concurrency: int = Field(default=5, ge=1, le=50)
+
+    @field_validator("model")
+    @classmethod
+    def model_must_be_supported(cls, v: str) -> str:
+        if v not in _SUPPORTED_MODELS:
+            raise ValueError(
+                f"Unsupported model '{v}'. Must be one of: {sorted(_SUPPORTED_MODELS)}"
+            )
+        return v
 
 
 @router.post("/runs")

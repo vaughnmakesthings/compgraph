@@ -204,9 +204,11 @@ export interface EnrichPassResult {
   skipped: number
 }
 
+export type EnrichStatus = 'pending' | 'running' | 'success' | 'partial' | 'failed'
+
 export interface EnrichStatusResponse {
   run_id: string
-  status: string
+  status: EnrichStatus
   started_at: string | null
   finished_at: string | null
   pass1_result: EnrichPassResult | null

@@ -132,7 +132,7 @@ interface NewRunFormProps {
 
 function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [passNumber, setPassNumber] = useState(1);
-  const [model, setModel] = useState("claude-haiku-4-5");
+  const [model, setModel] = useState("claude-haiku-4-5-20251001");
   const [promptVersion, setPromptVersion] = useState("pass1_v1");
   const [concurrency, setConcurrency] = useState(5);
   const [submitting, setSubmitting] = useState(false);
@@ -140,8 +140,8 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [confirmStep, setConfirmStep] = useState(false);
 
   const handleSubmit = () => {
-    if (!model.trim() || !promptVersion.trim()) {
-      setFormError("Model and prompt version are required.");
+    if (!promptVersion.trim()) {
+      setFormError("Prompt version is required.");
       return;
     }
     setFormError(null);
@@ -229,12 +229,10 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
           >
             Model
           </label>
-          <input
-            type="text"
+          <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
             disabled={submitting}
-            placeholder="e.g. claude-haiku-4-5"
             className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
             style={{
               borderColor: "#BFC0C0",
@@ -244,7 +242,12 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
               color: "#2D3142",
               borderRadius: "var(--radius-sm, 4px)",
             }}
-          />
+          >
+            <option value="claude-haiku-4-5-20251001">Haiku 4.5 (fast, cheap)</option>
+            <option value="claude-sonnet-4-5-20251001">Sonnet 4.5 (balanced)</option>
+            <option value="claude-sonnet-4-6">Sonnet 4.6 (latest)</option>
+            <option value="claude-opus-4-6">Opus 4.6 (highest quality)</option>
+          </select>
         </div>
         <div>
           <label
@@ -392,7 +395,7 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         <div className="mt-4 flex gap-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting || !model.trim() || !promptVersion.trim()}
+            disabled={submitting || !promptVersion.trim()}
             className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
             style={{
               backgroundColor: "#EF8354",

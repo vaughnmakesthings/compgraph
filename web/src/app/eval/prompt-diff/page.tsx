@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, startTransition, useState, useEffect, useMemo, useCallback } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api-client";
 import type { EvalRun, EvalResult } from "@/lib/types";
@@ -98,22 +98,25 @@ function PromptDiffContent() {
   useEffect(() => {
     if (!bothSelected) return;
     let cancelled = false;
-    startTransition(() => setLoadingResults(true));
 
-    Promise.all([
-      api.getEvalResults(baselineRunId!),
-      api.getEvalResults(candidateRunId!),
-    ])
-      .then(([baseData, candData]) => {
-        if (!cancelled) {
-          setBaselineResults(baseData);
-          setCandidateResults(candData);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
+    async function fetchResults() {
+      setLoadingResults(true);
+      try {
+        const [baseData, candData] = await Promise.all([
+          api.getEvalResults(baselineRunId!),
+          api.getEvalResults(candidateRunId!),
+        ]);
+        if (cancelled) return;
+        setBaselineResults(baseData);
+        setCandidateResults(candData);
+      } catch {
+        // ignore — results stay empty
+      } finally {
         if (!cancelled) setLoadingResults(false);
-      });
+      }
+    }
+
+    void fetchResults();
 
     return () => {
       cancelled = true;
