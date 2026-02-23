@@ -1,0 +1,23 @@
+web/src/app/settings/page.tsx
+  a56280cc78325225 479
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "6f7af0812c856057633b89fe43b004d983d7bb55",
+  "prompts": {
+    "a56280cc78325225": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed5c6710-f04d-4c66-8946-6e3e4b8a8961",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
