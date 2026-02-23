@@ -4,7 +4,7 @@ import asyncio
 import json
 import uuid
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
@@ -341,7 +341,7 @@ class FieldReviewCreate(BaseModel):
     result_id: uuid.UUID
     field_name: str
     model_value: str | None
-    is_correct: int
+    is_correct: Literal[-1, 0, 1]
     correct_value: str | None = None
 
 
