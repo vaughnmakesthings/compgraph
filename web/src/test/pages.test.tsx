@@ -13,6 +13,18 @@ vi.mock("../lib/api-client", () => ({
     health: vi.fn(),
     triggerAggregation: vi.fn(),
     getPipelineRuns: vi.fn(),
+    getSchedulerStatus: vi.fn(),
+    triggerScrape: vi.fn(),
+    pauseScrape: vi.fn(),
+    resumeScrape: vi.fn(),
+    stopScrape: vi.fn(),
+    forceStopScrape: vi.fn(),
+    getScrapeStatus: vi.fn(),
+    triggerEnrichment: vi.fn(),
+    getEnrichStatus: vi.fn(),
+    triggerSchedulerJob: vi.fn(),
+    pauseSchedulerJob: vi.fn(),
+    resumeSchedulerJob: vi.fn(),
   },
 }));
 
@@ -99,6 +111,13 @@ beforeEach(() => {
   vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
   vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
   vi.mocked(api.getPipelineRuns).mockResolvedValue({ scrape_runs: [], enrichment_runs: [] });
+  vi.mocked(api.getSchedulerStatus).mockResolvedValue({
+    enabled: true,
+    schedules: [],
+    last_pipeline_finished_at: null,
+    last_pipeline_success: null,
+    missed_run: false,
+  });
 });
 
 afterEach(() => {
@@ -309,14 +328,12 @@ describe("Settings page", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders disabled Scrape and Enrichment trigger buttons with coming soon tooltip", () => {
+  it("renders enabled Scrape and Enrichment trigger buttons", () => {
     render(<SettingsPage />);
     const scrapeBtn = screen.getByRole("button", { name: /trigger scrape/i });
     const enrichBtn = screen.getByRole("button", { name: /trigger enrichment/i });
-    expect(scrapeBtn).toBeDisabled();
-    expect(enrichBtn).toBeDisabled();
-    expect(scrapeBtn).toHaveAttribute("title", "Coming soon");
-    expect(enrichBtn).toHaveAttribute("title", "Coming soon");
+    expect(scrapeBtn).not.toBeDisabled();
+    expect(enrichBtn).not.toBeDisabled();
   });
 
   it("renders the System Info section", () => {

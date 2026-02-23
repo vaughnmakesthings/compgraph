@@ -2,11 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
-import type { ScrapeRunSummary, EnrichmentRunSummary } from "@/lib/types";
+import type {
+  ScrapeRunSummary,
+  EnrichmentRunSummary,
+  ScrapeStatusResponse,
+  EnrichStatusResponse,
+  SchedulerStatusResponse,
+} from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+const TERMINAL_STATES = new Set(["SUCCESS", "PARTIAL", "FAILED"]);
+
 type HealthStatus = "idle" | "ok" | "error";
+
+// --- Shared primitives ---
 
 interface SectionCardProps {
   title: string;
@@ -36,9 +46,17 @@ interface OutlineButtonProps {
   disabled?: boolean;
   children: React.ReactNode;
   tooltip?: string;
+  variant?: "default" | "danger";
 }
 
-function OutlineButton({ onClick, disabled = false, children, tooltip }: OutlineButtonProps) {
+function OutlineButton({
+  onClick,
+  disabled = false,
+  children,
+  tooltip,
+  variant = "default",
+}: OutlineButtonProps) {
+  const color = variant === "danger" ? "#8C2C23" : "#EF8354";
   return (
     <button
       type="button"
@@ -46,8 +64,8 @@ function OutlineButton({ onClick, disabled = false, children, tooltip }: Outline
       disabled={disabled}
       title={tooltip}
       style={{
-        border: "1px solid #EF8354",
-        color: "#EF8354",
+        border: `1px solid ${color}`,
+        color,
         borderRadius: "var(--radius-md, 6px)",
         padding: "8px 16px",
         fontSize: "14px",
@@ -61,7 +79,53 @@ function OutlineButton({ onClick, disabled = false, children, tooltip }: Outline
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(239,131,84,0.1)";
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+            variant === "danger" ? "rgba(140,44,35,0.08)" : "rgba(239,131,84,0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SmallButton({
+  onClick,
+  disabled = false,
+  children,
+  variant = "default",
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  variant?: "default" | "danger";
+}) {
+  const color = variant === "danger" ? "#8C2C23" : "#EF8354";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: `1px solid ${color}`,
+        color,
+        borderRadius: "4px",
+        padding: "4px 10px",
+        fontSize: "12px",
+        fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+        backgroundColor: "transparent",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        transition: "background-color 150ms",
+        whiteSpace: "nowrap",
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+            variant === "danger" ? "rgba(140,44,35,0.08)" : "rgba(239,131,84,0.1)";
         }
       }}
       onMouseLeave={(e) => {
@@ -138,19 +202,396 @@ function StatusDot({ status }: { status: string }) {
   );
 }
 
+// Status badge for live run panels
+const SCRAPE_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+  PENDING:  { bg: "#E8E8E4",     color: "#4F5D75", label: "Pending" },
+  RUNNING:  { bg: "#DCB2561A",   color: "#DCB256", label: "Running" },
+  PAUSED:   { bg: "#EF83541A",   color: "#EF8354", label: "Paused" },
+  STOPPING: { bg: "#EF83541A",   color: "#EF8354", label: "Stopping" },
+  SUCCESS:  { bg: "#1B998B1A",   color: "#1B998B", label: "Success" },
+  PARTIAL:  { bg: "#DCB2561A",   color: "#DCB256", label: "Partial" },
+  FAILED:   { bg: "#8C2C231A",   color: "#8C2C23", label: "Failed" },
+};
+
+function RunBadge({ status }: { status: string }) {
+  const c = SCRAPE_BADGE[status] ?? { bg: "#E8E8E4", color: "#4F5D75", label: status };
+  return (
+    <span
+      style={{
+        backgroundColor: c.bg,
+        color: c.color,
+        borderRadius: "4px",
+        padding: "2px 8px",
+        fontSize: "12px",
+        fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+        fontWeight: 600,
+        letterSpacing: "0.03em",
+      }}
+    >
+      {c.label}
+    </span>
+  );
+}
+
+const COMPANY_STATE_LABEL: Record<string, string> = {
+  PENDING:   "pending",
+  RUNNING:   "running",
+  COMPLETED: "done",
+  FAILED:    "failed",
+  SKIPPED:   "skipped",
+};
+
+const COMPANY_STATE_COLOR: Record<string, string> = {
+  PENDING:   "#4F5D75",
+  RUNNING:   "#DCB256",
+  COMPLETED: "#1B998B",
+  FAILED:    "#8C2C23",
+  SKIPPED:   "#BFC0C0",
+};
+
+// --- Live scrape panel ---
+
+function LiveScrapePanel({
+  status,
+  onControl,
+  controlRunning,
+}: {
+  status: ScrapeStatusResponse;
+  onControl: (action: "pause" | "resume" | "stop" | "force-stop") => void;
+  controlRunning: boolean;
+}) {
+  const isActive = !TERMINAL_STATES.has(status.status);
+  const canPause = status.status === "RUNNING";
+  const canResume = status.status === "PAUSED";
+  const canStop = status.status === "RUNNING" || status.status === "PAUSED";
+  const canForce = status.status === "RUNNING" || status.status === "PAUSED" || status.status === "STOPPING";
+
+  return (
+    <div
+      className="mt-4 rounded"
+      style={{ border: "1px solid #BFC0C0" }}
+      role="region"
+      aria-label="Active scrape run"
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5"
+        style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0", borderRadius: "6px 6px 0 0" }}
+      >
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontWeight: 600,
+            color: "#2D3142",
+            fontSize: "13px",
+          }}
+        >
+          Active Scrape Run
+        </span>
+        <div className="flex items-center gap-3">
+          <span
+            style={{
+              fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+              fontSize: "11px",
+              color: "#4F5D75",
+            }}
+          >
+            {status.run_id.slice(0, 8)}
+          </span>
+          <RunBadge status={status.status} />
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div
+        className="grid grid-cols-5 divide-x divide-[#BFC0C0]"
+        style={{ borderBottom: "1px solid #BFC0C0" }}
+      >
+        {[
+          { label: "Postings", value: status.total_postings_found },
+          { label: "Snapshots", value: status.total_snapshots_created },
+          { label: "Errors", value: status.total_errors },
+          { label: "Succeeded", value: status.companies_succeeded },
+          { label: "Failed", value: status.companies_failed },
+        ].map(({ label, value }) => (
+          <div key={label} className="px-3 py-2" style={{ borderColor: "#BFC0C0" }}>
+            <div
+              style={{
+                fontSize: "10px",
+                color: "#4F5D75",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                fontSize: "18px",
+                color: label === "Errors" && value > 0 ? "#8C2C23" : "#2D3142",
+                fontWeight: 600,
+              }}
+            >
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-company table */}
+      {Object.keys(status.company_states).length > 0 && (
+        <div style={{ borderBottom: "1px solid #BFC0C0" }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ backgroundColor: "#F9F9F7" }}>
+                {["Company", "State", "Postings", "Snapshots"].map((col) => (
+                  <th
+                    key={col}
+                    className="text-left px-3 py-1.5"
+                    style={{
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      fontWeight: 600,
+                      color: "#4F5D75",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      fontSize: "10px",
+                    }}
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(status.company_states).map(([slug, cs]) => (
+                <tr key={slug} style={{ borderTop: "1px solid #E8E8E4" }}>
+                  <td
+                    className="px-3 py-1.5"
+                    style={{
+                      fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                      color: "#2D3142",
+                    }}
+                  >
+                    {slug}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <span
+                      style={{
+                        color: COMPANY_STATE_COLOR[cs.state] ?? "#4F5D75",
+                        fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      }}
+                    >
+                      {COMPANY_STATE_LABEL[cs.state] ?? cs.state.toLowerCase()}
+                    </span>
+                  </td>
+                  <td
+                    className="px-3 py-1.5"
+                    style={{
+                      fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                      color: "#4F5D75",
+                    }}
+                  >
+                    {cs.postings_found}
+                  </td>
+                  <td
+                    className="px-3 py-1.5"
+                    style={{
+                      fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                      color: "#4F5D75",
+                    }}
+                  >
+                    {cs.snapshots_created}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Control buttons (only when active) */}
+      {isActive && (
+        <div className="flex gap-2 px-4 py-3" style={{ borderRadius: "0 0 6px 6px" }}>
+          {canPause && (
+            <SmallButton onClick={() => onControl("pause")} disabled={controlRunning}>
+              Pause
+            </SmallButton>
+          )}
+          {canResume && (
+            <SmallButton onClick={() => onControl("resume")} disabled={controlRunning}>
+              Resume
+            </SmallButton>
+          )}
+          {canStop && (
+            <SmallButton onClick={() => onControl("stop")} disabled={controlRunning}>
+              Stop
+            </SmallButton>
+          )}
+          {canForce && (
+            <SmallButton onClick={() => onControl("force-stop")} disabled={controlRunning} variant="danger">
+              Force Stop
+            </SmallButton>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Live enrichment panel ---
+
+function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
+  return (
+    <div
+      className="mt-4 rounded"
+      style={{ border: "1px solid #BFC0C0" }}
+      role="region"
+      aria-label="Active enrichment run"
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5"
+        style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0", borderRadius: "6px 6px 0 0" }}
+      >
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontWeight: 600,
+            color: "#2D3142",
+            fontSize: "13px",
+          }}
+        >
+          Active Enrichment Run
+        </span>
+        <div className="flex items-center gap-3">
+          <span
+            style={{
+              fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+              fontSize: "11px",
+              color: "#4F5D75",
+            }}
+          >
+            {status.run_id.slice(0, 8)}
+          </span>
+          <RunBadge status={status.status.toUpperCase()} />
+        </div>
+      </div>
+
+      {/* Circuit breaker warning */}
+      {status.circuit_breaker_tripped && (
+        <div
+          className="px-4 py-2"
+          style={{
+            backgroundColor: "#8C2C231A",
+            borderBottom: "1px solid #8C2C2333",
+            color: "#8C2C23",
+            fontSize: "12px",
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+          }}
+          role="alert"
+        >
+          Circuit breaker tripped — LLM API errors exceeded threshold
+        </div>
+      )}
+
+      {/* Pass results */}
+      <div
+        className="grid grid-cols-2 divide-x"
+        style={{ borderBottom: "1px solid #BFC0C0" }}
+      >
+        {[
+          { label: "Pass 1 (Haiku)", result: status.pass1_result },
+          { label: "Pass 2 (Sonnet)", result: status.pass2_result },
+        ].map(({ label, result }) => (
+          <div key={label} className="px-4 py-3" style={{ borderColor: "#BFC0C0" }}>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#4F5D75",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                marginBottom: "6px",
+                fontWeight: 600,
+              }}
+            >
+              {label}
+            </div>
+            <div className="flex gap-4">
+              {[
+                { k: "succeeded", v: result.succeeded, color: "#1B998B" },
+                { k: "failed",    v: result.failed,    color: "#8C2C23" },
+                { k: "skipped",   v: result.skipped,   color: "#4F5D75" },
+              ].map(({ k, v, color }) => (
+                <div key={k}>
+                  <div style={{ fontSize: "10px", color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>{k}</div>
+                  <div style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", fontSize: "16px", color, fontWeight: 600 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Token / API stats */}
+      <div className="grid grid-cols-4 divide-x" style={{ borderColor: "#BFC0C0" }}>
+        {[
+          { label: "Input tokens",  value: status.total_input_tokens.toLocaleString() },
+          { label: "Output tokens", value: status.total_output_tokens.toLocaleString() },
+          { label: "API calls",     value: status.total_api_calls.toLocaleString() },
+          { label: "Dedup saved",   value: status.total_dedup_saved.toLocaleString() },
+        ].map(({ label, value }) => (
+          <div key={label} className="px-3 py-2" style={{ borderColor: "#BFC0C0" }}>
+            <div style={{ fontSize: "10px", color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}>
+              {label}
+            </div>
+            <div style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", fontSize: "14px", color: "#2D3142", fontWeight: 600 }}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Main page ---
+
 export default function SettingsPage() {
+  // Health check
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [apiVersion, setApiVersion] = useState<string | null>(null);
   const [healthChecking, setHealthChecking] = useState(false);
 
+  // Aggregation trigger
   const [aggStatus, setAggStatus] = useState<"idle" | "ok" | "error">("idle");
   const [aggMessage, setAggMessage] = useState<string | null>(null);
   const [aggRunning, setAggRunning] = useState(false);
 
+  // Scrape trigger + live status
+  const [scrapeActiveRunId, setScrapeActiveRunId] = useState<string | null>(null);
+  const [scrapeStatus, setScrapeStatus] = useState<ScrapeStatusResponse | null>(null);
+  const [scrapeTriggerRunning, setScrapeTriggerRunning] = useState(false);
+  const [scrapeTriggerError, setScrapeTriggerError] = useState<string | null>(null);
+  const [scrapeControlRunning, setScrapeControlRunning] = useState(false);
+
+  // Enrichment trigger + live status
+  const [enrichActiveRunId, setEnrichActiveRunId] = useState<string | null>(null);
+  const [enrichStatus, setEnrichStatus] = useState<EnrichStatusResponse | null>(null);
+  const [enrichTriggerRunning, setEnrichTriggerRunning] = useState(false);
+  const [enrichTriggerError, setEnrichTriggerError] = useState<string | null>(null);
+
+  // Scheduler
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusResponse | null>(null);
+  const [schedulerLoading, setSchedulerLoading] = useState(true);
+  const [schedulerJobRunning, setSchedulerJobRunning] = useState<string | null>(null);
+
+  // Run history
   const [scrapeRuns, setScrapeRuns] = useState<ScrapeRunSummary[]>([]);
   const [enrichRuns, setEnrichRuns] = useState<EnrichmentRunSummary[]>([]);
   const [runsLoading, setRunsLoading] = useState(true);
 
+  // Load run history on mount
   useEffect(() => {
     let cancelled = false;
     void api.getPipelineRuns().then((data) => {
@@ -165,6 +606,62 @@ export default function SettingsPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Load scheduler status on mount
+  useEffect(() => {
+    let cancelled = false;
+    void api.getSchedulerStatus().then((data) => {
+      if (!cancelled) { setSchedulerStatus(data); setSchedulerLoading(false); }
+    }).catch(() => {
+      if (!cancelled) setSchedulerLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Poll scrape status while run is active
+  useEffect(() => {
+    if (!scrapeActiveRunId) return;
+    let mounted = true;
+
+    async function fetchScrapeStatus(id: ReturnType<typeof setInterval>) {
+      try {
+        const s = await api.getScrapeStatus();
+        if (!mounted) return;
+        setScrapeStatus(s);
+        if (TERMINAL_STATES.has(s.status)) {
+          clearInterval(id);
+          setScrapeActiveRunId(null);
+        }
+      } catch { /* ignore — keep polling */ }
+    }
+
+    const intervalId = setInterval(() => void fetchScrapeStatus(intervalId), 3000);
+    void fetchScrapeStatus(intervalId);
+    return () => { mounted = false; clearInterval(intervalId); };
+  }, [scrapeActiveRunId]);
+
+  // Poll enrichment status while run is active
+  useEffect(() => {
+    if (!enrichActiveRunId) return;
+    let mounted = true;
+
+    async function fetchEnrichStatus(id: ReturnType<typeof setInterval>) {
+      try {
+        const s = await api.getEnrichStatus();
+        if (!mounted) return;
+        setEnrichStatus(s);
+        if (TERMINAL_STATES.has(s.status.toUpperCase())) {
+          clearInterval(id);
+          setEnrichActiveRunId(null);
+        }
+      } catch { /* ignore — keep polling */ }
+    }
+
+    const intervalId = setInterval(() => void fetchEnrichStatus(intervalId), 3000);
+    void fetchEnrichStatus(intervalId);
+    return () => { mounted = false; clearInterval(intervalId); };
+  }, [enrichActiveRunId]);
+
+  // Handlers
   async function handleHealthCheck() {
     setHealthChecking(true);
     setHealthStatus("idle");
@@ -195,6 +692,63 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleTriggerScrape() {
+    setScrapeTriggerRunning(true);
+    setScrapeTriggerError(null);
+    setScrapeStatus(null);
+    try {
+      const result = await api.triggerScrape();
+      setScrapeActiveRunId(result.run_id);
+    } catch (err) {
+      setScrapeTriggerError(err instanceof Error ? err.message : "Failed to trigger scrape");
+    } finally {
+      setScrapeTriggerRunning(false);
+    }
+  }
+
+  async function handleScrapeControl(action: "pause" | "resume" | "stop" | "force-stop") {
+    setScrapeControlRunning(true);
+    try {
+      if (action === "pause") await api.pauseScrape();
+      else if (action === "resume") await api.resumeScrape();
+      else if (action === "stop") await api.stopScrape();
+      else await api.forceStopScrape();
+      // Immediate re-fetch to reflect the new state
+      const s = await api.getScrapeStatus();
+      setScrapeStatus(s);
+      if (TERMINAL_STATES.has(s.status)) setScrapeActiveRunId(null);
+    } catch { /* ignore */ } finally {
+      setScrapeControlRunning(false);
+    }
+  }
+
+  async function handleTriggerEnrichment() {
+    setEnrichTriggerRunning(true);
+    setEnrichTriggerError(null);
+    setEnrichStatus(null);
+    try {
+      const result = await api.triggerEnrichment();
+      setEnrichActiveRunId(result.run_id);
+    } catch (err) {
+      setEnrichTriggerError(err instanceof Error ? err.message : "Failed to trigger enrichment");
+    } finally {
+      setEnrichTriggerRunning(false);
+    }
+  }
+
+  async function handleSchedulerJob(jobId: string, action: "trigger" | "pause" | "resume") {
+    setSchedulerJobRunning(`${jobId}:${action}`);
+    try {
+      if (action === "trigger") await api.triggerSchedulerJob(jobId);
+      else if (action === "pause") await api.pauseSchedulerJob(jobId);
+      else await api.resumeSchedulerJob(jobId);
+      const s = await api.getSchedulerStatus();
+      setSchedulerStatus(s);
+    } catch { /* ignore */ } finally {
+      setSchedulerJobRunning(null);
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -206,6 +760,7 @@ export default function SettingsPage() {
         </h1>
       </div>
 
+      {/* API Health */}
       <SectionCard title="API Health">
         <div className="flex items-center gap-4 mb-3">
           <span
@@ -249,6 +804,7 @@ export default function SettingsPage() {
         </OutlineButton>
       </SectionCard>
 
+      {/* Pipeline Controls */}
       <SectionCard title="Pipeline Controls" className="mt-4">
         <div className="flex flex-col gap-2">
           <OutlineButton
@@ -257,14 +813,21 @@ export default function SettingsPage() {
           >
             {aggRunning ? "Running..." : "Trigger Aggregation"}
           </OutlineButton>
-          <OutlineButton disabled tooltip="Coming soon">
-            Trigger Scrape
+          <OutlineButton
+            onClick={() => void handleTriggerScrape()}
+            disabled={scrapeTriggerRunning || !!scrapeActiveRunId}
+          >
+            {scrapeTriggerRunning ? "Starting..." : scrapeActiveRunId ? "Scrape running…" : "Trigger Scrape"}
           </OutlineButton>
-          <OutlineButton disabled tooltip="Coming soon">
-            Trigger Enrichment
+          <OutlineButton
+            onClick={() => void handleTriggerEnrichment()}
+            disabled={enrichTriggerRunning || !!enrichActiveRunId}
+          >
+            {enrichTriggerRunning ? "Starting..." : enrichActiveRunId ? "Enrichment running…" : "Trigger Enrichment"}
           </OutlineButton>
         </div>
 
+        {/* Aggregation status */}
         {aggStatus !== "idle" && aggMessage && (
           <div
             className="mt-3 rounded px-3 py-2 text-sm"
@@ -282,8 +845,235 @@ export default function SettingsPage() {
             {aggMessage}
           </div>
         )}
+
+        {/* Scrape trigger error */}
+        {scrapeTriggerError && (
+          <div
+            className="mt-3 rounded px-3 py-2 text-sm"
+            style={{
+              backgroundColor: "#8C2C231A",
+              color: "#8C2C23",
+              border: "1px solid #8C2C2333",
+              borderRadius: "var(--radius-md, 6px)",
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              fontSize: "13px",
+            }}
+            role="alert"
+          >
+            Scrape error: {scrapeTriggerError}
+          </div>
+        )}
+
+        {/* Enrichment trigger error */}
+        {enrichTriggerError && (
+          <div
+            className="mt-3 rounded px-3 py-2 text-sm"
+            style={{
+              backgroundColor: "#8C2C231A",
+              color: "#8C2C23",
+              border: "1px solid #8C2C2333",
+              borderRadius: "var(--radius-md, 6px)",
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              fontSize: "13px",
+            }}
+            role="alert"
+          >
+            Enrichment error: {enrichTriggerError}
+          </div>
+        )}
+
+        {/* Live scrape status panel */}
+        {scrapeStatus && (
+          <LiveScrapePanel
+            status={scrapeStatus}
+            onControl={(action) => void handleScrapeControl(action)}
+            controlRunning={scrapeControlRunning}
+          />
+        )}
+
+        {/* Live enrichment status panel */}
+        {enrichStatus && <LiveEnrichPanel status={enrichStatus} />}
       </SectionCard>
 
+      {/* Scheduler */}
+      <SectionCard title="Scheduler" className="mt-4">
+        {schedulerLoading ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>
+            Loading…
+          </p>
+        ) : !schedulerStatus ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>
+            Could not load scheduler status.
+          </p>
+        ) : (
+          <>
+            {/* Header row */}
+            <div className="flex items-center gap-3 mb-4">
+              <span
+                style={{
+                  backgroundColor: schedulerStatus.enabled ? "#1B998B1A" : "#E8E8E4",
+                  color: schedulerStatus.enabled ? "#1B998B" : "#4F5D75",
+                  borderRadius: "4px",
+                  padding: "2px 8px",
+                  fontSize: "12px",
+                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                  fontWeight: 600,
+                }}
+              >
+                {schedulerStatus.enabled ? "Enabled" : "Disabled"}
+              </span>
+              {schedulerStatus.last_pipeline_finished_at && (
+                <span
+                  style={{
+                    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                    fontSize: "12px",
+                    color: "#4F5D75",
+                  }}
+                >
+                  Last run:{" "}
+                  <span
+                    style={{
+                      color: schedulerStatus.last_pipeline_success === false ? "#8C2C23" : "#1B998B",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {schedulerStatus.last_pipeline_success === false ? "Failed" : "Success"}
+                  </span>{" "}
+                  {formatTs(schedulerStatus.last_pipeline_finished_at)}
+                </span>
+              )}
+            </div>
+
+            {/* Missed run warning */}
+            {schedulerStatus.missed_run && (
+              <div
+                className="mb-4 px-3 py-2 rounded"
+                style={{
+                  backgroundColor: "#8C2C231A",
+                  border: "1px solid #8C2C2333",
+                  color: "#8C2C23",
+                  fontSize: "13px",
+                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                }}
+                role="alert"
+              >
+                No pipeline completed in the last 56 hours — scheduler may have failed.
+              </div>
+            )}
+
+            {/* Schedules table */}
+            {schedulerStatus.schedules.length === 0 ? (
+              <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>
+                No schedules configured.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                      {["Schedule", "Status", "Next Run", "Last Run", "Actions"].map((col) => (
+                        <th
+                          key={col}
+                          className="text-left px-3 py-2"
+                          style={{
+                            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                            fontWeight: 600,
+                            color: "#4F5D75",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedulerStatus.schedules.map((sched) => {
+                      const isRunning = schedulerJobRunning?.startsWith(sched.schedule_id);
+                      return (
+                        <tr key={sched.schedule_id} style={{ borderBottom: "1px solid #E8E8E4" }}>
+                          <td
+                            className="px-3 py-2"
+                            style={{
+                              fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                              color: "#2D3142",
+                            }}
+                          >
+                            {sched.schedule_id}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              style={{
+                                backgroundColor: sched.paused ? "#EF83541A" : "#1B998B1A",
+                                color: sched.paused ? "#EF8354" : "#1B998B",
+                                borderRadius: "4px",
+                                padding: "1px 6px",
+                                fontSize: "11px",
+                                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {sched.paused ? "Paused" : "Scheduled"}
+                            </span>
+                          </td>
+                          <td
+                            className="px-3 py-2"
+                            style={{
+                              fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                              color: "#4F5D75",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatTs(sched.next_fire_time)}
+                          </td>
+                          <td
+                            className="px-3 py-2"
+                            style={{
+                              fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                              color: "#4F5D75",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatTs(sched.last_fire_time)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-1.5">
+                              <SmallButton
+                                onClick={() => void handleSchedulerJob(sched.schedule_id, "trigger")}
+                                disabled={!!isRunning}
+                              >
+                                Trigger
+                              </SmallButton>
+                              {sched.paused ? (
+                                <SmallButton
+                                  onClick={() => void handleSchedulerJob(sched.schedule_id, "resume")}
+                                  disabled={!!isRunning}
+                                >
+                                  Resume
+                                </SmallButton>
+                              ) : (
+                                <SmallButton
+                                  onClick={() => void handleSchedulerJob(sched.schedule_id, "pause")}
+                                  disabled={!!isRunning}
+                                >
+                                  Pause
+                                </SmallButton>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </SectionCard>
+
+      {/* System Info */}
       <SectionCard title="System Info" className="mt-4">
         <div>
           <KvRow label="API Version" value={apiVersion ?? "—"} />
@@ -292,6 +1082,7 @@ export default function SettingsPage() {
         </div>
       </SectionCard>
 
+      {/* Scrape Run History */}
       <SectionCard title="Scrape Run History" className="mt-4">
         {runsLoading ? (
           <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>
@@ -335,6 +1126,7 @@ export default function SettingsPage() {
         )}
       </SectionCard>
 
+      {/* Enrichment Run History */}
       <SectionCard title="Enrichment Run History" className="mt-4">
         {runsLoading ? (
           <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>

@@ -172,3 +172,61 @@ export interface EvalComparison {
   notes: string | null
   created_at: string
 }
+
+// --- Pipeline Control Types ---
+
+export type ScrapeStatus = 'PENDING' | 'RUNNING' | 'PAUSED' | 'STOPPING' | 'SUCCESS' | 'PARTIAL' | 'FAILED'
+
+export interface CompanyState {
+  state: string
+  postings_found: number
+  snapshots_created: number
+}
+
+export interface ScrapeStatusResponse {
+  run_id: string
+  status: ScrapeStatus
+  started_at: string | null
+  finished_at: string | null
+  total_postings_found: number
+  total_snapshots_created: number
+  total_errors: number
+  companies_succeeded: number
+  companies_failed: number
+  company_states: Record<string, CompanyState>
+}
+
+export interface EnrichPassResult {
+  succeeded: number
+  failed: number
+  skipped: number
+}
+
+export interface EnrichStatusResponse {
+  run_id: string
+  status: string
+  started_at: string | null
+  finished_at: string | null
+  pass1_result: EnrichPassResult
+  pass2_result: EnrichPassResult
+  total_input_tokens: number
+  total_output_tokens: number
+  total_api_calls: number
+  total_dedup_saved: number
+  circuit_breaker_tripped: boolean
+}
+
+export interface ScheduleInfo {
+  schedule_id: string
+  next_fire_time: string | null
+  last_fire_time: string | null
+  paused: boolean
+}
+
+export interface SchedulerStatusResponse {
+  enabled: boolean
+  schedules: ScheduleInfo[]
+  last_pipeline_finished_at: string | null
+  last_pipeline_success: boolean | null
+  missed_run: boolean
+}
