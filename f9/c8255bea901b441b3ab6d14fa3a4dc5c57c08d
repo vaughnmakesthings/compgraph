@@ -1,0 +1,69 @@
+docs/references/openrouter-model-candidates.md
+  69b921f7377ee1c9 13
+docs/context-packs.md
+  69b921f7377ee1c9 350-351
+docs/phases.md
+  69b921f7377ee1c9 20,35,213,234-236,358
+CLAUDE.md
+  0eeb29a67be27275 47,49,60,89,96,101,105,109
+  69b921f7377ee1c9 102,106
+docs/reports/2026-02-22b-docs-audit.md
+  69b921f7377ee1c9 19,70,105,114
+docs/reports/2026-02-22-docs-audit.md
+  69b921f7377ee1c9 141
+web/src/test/layout.test.tsx
+  69b921f7377ee1c9 64
+docs/changelog.md
+  a56280cc78325225 7-23
+  69b921f7377ee1c9 132,134,142,156,158,164,176-177,185
+web/src/components/layout/sidebar.tsx
+  69b921f7377ee1c9 83
+docs/plans/2026-02-22-data-quality-aggregation-design.md
+  69b921f7377ee1c9 199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "f9c8255bea901b441b3ab6d14fa3a4dc5c57c08d",
+  "prompts": {
+    "0eeb29a67be27275": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b5d9463-de76-4ede-9b09-955bb63adc4f",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 12,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    },
+    "69b921f7377ee1c9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7f2c7d09-4795-417d-b986-8d155e42f1ba",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 29,
+      "total_deletions": 29,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    },
+    "a56280cc78325225": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed5c6710-f04d-4c66-8946-6e3e4b8a8961",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}
