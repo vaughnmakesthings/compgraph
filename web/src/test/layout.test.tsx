@@ -148,7 +148,7 @@ describe("Sidebar", () => {
     const competitorsButton = screen.getByRole("button", {
       name: /competitors/i,
     });
-    expect(competitorsButton).toHaveAttribute("aria-controls", "nav-tier1-competitors");
+    expect(competitorsButton).toHaveAttribute("aria-controls", "nav-sub-competitors");
   });
 });
 
