@@ -1,0 +1,27 @@
+web/src/app/eval/review/page.tsx
+  7dbaa9afd2c5b41b 898
+web/src/app/eval/leaderboard/page.tsx
+  7dbaa9afd2c5b41b 76,400-407,557,566
+web/src/lib/api-client.ts
+  7dbaa9afd2c5b41b 100-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "8186115afb4c36bc81ddc92b1a0df800adaafc5e",
+  "prompts": {
+    "7dbaa9afd2c5b41b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0049afa5-7075-499a-9e1e-83faf091e15a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 22,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
