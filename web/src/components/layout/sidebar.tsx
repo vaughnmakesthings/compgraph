@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   BuildingOfficeIcon,
+  BuildingStorefrontIcon,
   ChartBarIcon,
   BriefcaseIcon,
   BeakerIcon,
@@ -49,6 +50,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: BuildingOfficeIcon,
     href: "/competitors",
     categories: [],
+  },
+  {
+    id: "prospects",
+    label: "Prospects",
+    icon: BuildingStorefrontIcon,
+    href: "/prospects",
   },
   {
     id: "market",
