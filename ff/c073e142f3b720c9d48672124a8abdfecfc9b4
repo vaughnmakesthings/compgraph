@@ -1,0 +1,29 @@
+src/compgraph/main.py
+  7dbaa9afd2c5b41b 16,62
+tests/test_eval_router.py
+  7dbaa9afd2c5b41b 1-169
+src/compgraph/eval/elo.py
+  7dbaa9afd2c5b41b 1-48
+src/compgraph/eval/router.py
+  7dbaa9afd2c5b41b 1-109,112-151,153-239,241,243-246,248-260,262-277,279,281-290,292,294-464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "ffc073e142f3b720c9d48672124a8abdfecfc9b4",
+  "prompts": {
+    "7dbaa9afd2c5b41b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0049afa5-7075-499a-9e1e-83faf091e15a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 683,
+      "total_deletions": 0,
+      "accepted_lines": 672,
+      "overriden_lines": 10
+    }
+  }
+}
