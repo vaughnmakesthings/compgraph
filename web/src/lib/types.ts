@@ -177,8 +177,7 @@ export interface EvalComparison {
 
 export type ScrapeStatus = 'pending' | 'running' | 'paused' | 'stopping' | 'success' | 'partial' | 'failed' | 'cancelled'
 
-export interface CompanyState {
-  state: string
+export interface CompanyResult {
   postings_found: number
   snapshots_created: number
 }
@@ -193,7 +192,10 @@ export interface ScrapeStatusResponse {
   total_errors: number
   companies_succeeded: number
   companies_failed: number
-  company_states: Record<string, CompanyState>
+  /** Plain state strings keyed by company slug (e.g. "running", "completed") */
+  company_states: Record<string, string>
+  /** Per-company result details keyed by company slug */
+  company_results: Record<string, CompanyResult>
 }
 
 export interface EnrichPassResult {
@@ -207,8 +209,8 @@ export interface EnrichStatusResponse {
   status: string
   started_at: string | null
   finished_at: string | null
-  pass1_result: EnrichPassResult
-  pass2_result: EnrichPassResult
+  pass1_result: EnrichPassResult | null
+  pass2_result: EnrichPassResult | null
   total_input_tokens: number
   total_output_tokens: number
   total_api_calls: number

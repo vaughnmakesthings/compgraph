@@ -430,7 +430,7 @@ describe("Settings page — scheduler section", () => {
     render(<SettingsPage />);
     await waitFor(() =>
       expect(
-        screen.getByText(/no pipeline completed in the last 56 hours/i)
+        screen.getByText(/no pipeline completed in the last 80 hours/i)
       ).toBeInTheDocument()
     );
   });

@@ -380,11 +380,11 @@ function LiveScrapePanel({
                   <td className="px-3 py-1.5">
                     <span
                       style={{
-                        color: COMPANY_STATE_COLOR[cs.state] ?? "#4F5D75",
+                        color: COMPANY_STATE_COLOR[cs] ?? "#4F5D75",
                         fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                       }}
                     >
-                      {COMPANY_STATE_LABEL[cs.state] ?? cs.state.toLowerCase()}
+                      {COMPANY_STATE_LABEL[cs] ?? cs}
                     </span>
                   </td>
                   <td
@@ -394,7 +394,7 @@ function LiveScrapePanel({
                       color: "#4F5D75",
                     }}
                   >
-                    {cs.postings_found}
+                    {status.company_results[slug]?.postings_found ?? 0}
                   </td>
                   <td
                     className="px-3 py-1.5"
@@ -403,7 +403,7 @@ function LiveScrapePanel({
                       color: "#4F5D75",
                     }}
                   >
-                    {cs.snapshots_created}
+                    {status.company_results[slug]?.snapshots_created ?? 0}
                   </td>
                 </tr>
               ))}
@@ -518,18 +518,24 @@ function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
             >
               {label}
             </div>
-            <div className="flex gap-4">
-              {[
-                { k: "succeeded", v: result.succeeded, color: "#1B998B" },
-                { k: "failed",    v: result.failed,    color: "#8C2C23" },
-                { k: "skipped",   v: result.skipped,   color: "#4F5D75" },
-              ].map(({ k, v, color }) => (
-                <div key={k}>
-                  <div style={{ fontSize: "10px", color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>{k}</div>
-                  <div style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", fontSize: "16px", color, fontWeight: 600 }}>{v}</div>
-                </div>
-              ))}
-            </div>
+            {result == null ? (
+              <div style={{ fontSize: "12px", color: "#4F5D75", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}>
+                Not started
+              </div>
+            ) : (
+              <div className="flex gap-4">
+                {[
+                  { k: "succeeded", v: result.succeeded, color: "#1B998B" },
+                  { k: "failed",    v: result.failed,    color: "#8C2C23" },
+                  { k: "skipped",   v: result.skipped,   color: "#4F5D75" },
+                ].map(({ k, v, color }) => (
+                  <div key={k}>
+                    <div style={{ fontSize: "10px", color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>{k}</div>
+                    <div style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", fontSize: "16px", color, fontWeight: 600 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -962,7 +968,7 @@ export default function SettingsPage() {
                 }}
                 role="alert"
               >
-                No pipeline completed in the last 56 hours — scheduler may have failed.
+                No pipeline completed in the last 80 hours — scheduler may have failed.
               </div>
             )}
 
