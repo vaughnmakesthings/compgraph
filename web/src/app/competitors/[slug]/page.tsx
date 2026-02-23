@@ -9,6 +9,7 @@ import { BarChart } from "@/components/charts/bar-chart";
 import { COMPANIES } from "@/lib/constants";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
 import type { GlassdoorReview } from "@/lib/mock/dossiers";
+import { MockupBanner } from "@/components/content/mockup-banner";
 
 type Tab = "summary" | "brands" | "hiring" | "employees";
 
@@ -423,6 +424,7 @@ export default function CompetitorDossierPage() {
 
   return (
     <div>
+      <MockupBanner />
       {/* Header */}
       <div className="flex items-start gap-3 mb-6 flex-wrap">
         <div className="flex-1 min-w-0">
