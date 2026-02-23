@@ -138,7 +138,7 @@ Voltagent plugins were removed Feb 20 per MEMORY.md, but 4 docs still reference 
 These references confuse agents into attempting to launch non-existent voltagent sub-agents. **This is the highest-priority fix.**
 
 ### Open Issues (10 open, no M4 label)
-- #128: LLM Eval Tool (enhancement)
+- #128: Prompt Evaluation Tool (enhancement)
 - #103-#110: Detail bugs (enrichment, scraper, pipeline)
 - #119-#122: Review feedback items
 

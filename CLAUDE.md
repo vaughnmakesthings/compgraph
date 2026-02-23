@@ -44,12 +44,12 @@ uv run preflight                                   # Validate environment before
 
 **Secrets**: All secrets managed via 1Password. Use `op run --env-file=.env --` prefix for any command that needs DATABASE_PASSWORD or ANTHROPIC_API_KEY. See `docs/secrets-reference.md`.
 
-### Frontend (compgraph-eval)
+### Frontend (web/)
 
-When working in `compgraph-eval`:
+When working in `web/`:
 
 ```bash
-cd compgraph-eval/web
+cd web
 npm run lint             # ESLint strict (--max-warnings 0)
 npm run typecheck        # TypeScript --noEmit
 npm test                 # Vitest run
@@ -57,7 +57,7 @@ npm run test:coverage    # Vitest with v8 coverage (50% threshold)
 npm run build            # Production build
 ```
 
-See `compgraph-eval/CLAUDE.md` for full frontend conventions.
+See `web/CLAUDE.md` for full frontend conventions.
 
 ## Stack
 
@@ -86,28 +86,29 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - **Frontend**: Next.js 16 at `web/` — Pipeline Health, Posting Explorer, Brand Intel, and Scheduler views. Deployed to Vercel.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
-### Database Schema (13 tables)
+### Database Schema (25 tables)
 
 | Tier | Tables | Purpose |
 |------|--------|---------|
 | **Dimension** | `companies`, `brands`, `retailers`, `markets` | Reference data, slowly changing |
 | **Fact** | `postings`, `posting_snapshots`, `posting_enrichments`, `posting_brand_mentions` | Append-only event data |
 | **Aggregation** | `agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle` | Pre-computed dashboard metrics |
+| **Eval** | `eval_runs`, `eval_samples`, `eval_results`, `eval_prompts` | LLM evaluation tool (manually applied) |
 | **Auth** | `users` | Invite-only access control |
 
 ## Roadmap
 
-**Current:** M3 — Data Collection (~95%). Remaining: data quality review, prompt fixes, security (#130/#131).
-**Next:** M4 — Aggregation & API (4 agg rebuild jobs → dashboard/detail endpoints → Supabase Auth).
+**Current:** M6 complete. All pipeline stages (scrape → enrich → aggregate → API), Next.js frontend, Streamlit decommissioned, DO dev server + Vercel frontend live.
+**Next:** M7 — Production UI (auth, production infra, Prompt Evaluation Tool).
 
 **Do NOT build yet:**
-- Auth (Supabase Auth, invite via magic link, password login) → M4d. Custom JWT → never.
-- arq (replace APScheduler) → M6
-- LiteLLM (provider abstraction) → M6 (needs LLM eval tool first)
-- Digital Ocean production deploy → M7 (dev migration in M5)
+- arq (replace APScheduler) → M6/M7
+- LiteLLM (provider abstraction) → M7 (needs Prompt Evaluation Tool #128 first)
+- Digital Ocean production deploy → M7
 - Prisma / second ORM → never (frontend is pure API consumer)
+- Custom JWT → never (using Supabase Auth)
 
-**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Dashboard migration (M5) = Streamlit → API calls. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (invite via magic link, password login, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres through M6.
+**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (invite via magic link, password login, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres through M6.
 
 See `docs/phases.md` for full roadmap with task tables. Load Pack R from `docs/context-packs.md` for planning sessions.
 

@@ -61,7 +61,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Competitors")).toBeInTheDocument();
     expect(screen.getByText("Market Overview")).toBeInTheDocument();
     expect(screen.getByText("Job Feed")).toBeInTheDocument();
-    expect(screen.getByText("Eval Tool")).toBeInTheDocument();
+    expect(screen.getByText("Prompt Evaluation Tool")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 

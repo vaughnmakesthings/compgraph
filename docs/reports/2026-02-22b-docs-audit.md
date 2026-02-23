@@ -16,7 +16,7 @@
 
 **Overall Health: YELLOW**
 
-> YELLOW: 3 content mismatches — test count in MEMORY.md (530 vs 644 actual), LLM Eval Tool stack in scaling-plan.md (Streamlit vs Next.js), Current State date in phases.md (Feb 20 vs Feb 22)
+> YELLOW: 3 content mismatches — test count in MEMORY.md (530 vs 644 actual), Prompt Evaluation Tool stack in scaling-plan.md (Streamlit vs Next.js), Current State date in phases.md (Feb 20 vs Feb 22)
 
 ---
 
@@ -67,7 +67,7 @@ Latest src/ commit: **2026-02-22**
 - **MEMORY.md Current State**: `Feb 21 2026` → today is Feb 22
 - **MEMORY.md Pi section**: missing `compgraph-eval-api` service (FastAPI, port 8001), deployed this session
 - **MEMORY.md latest PRs**: `#144, #146` — M4 branch PRs not tracked
-- **scaling-plan.md LLM Eval Tool stack**: `LiteLLM + SQLite + Streamlit + Pydantic` → actual: **FastAPI + Next.js + aiosqlite + LiteLLM + Pydantic**
+- **scaling-plan.md Prompt Evaluation Tool stack**: `LiteLLM + SQLite + Streamlit + Pydantic` → actual: **FastAPI + Next.js + aiosqlite + LiteLLM + Pydantic**
 - **phases.md Current State date**: `(2026-02-20)` → should be `(2026-02-22)`
 
 ---
@@ -102,7 +102,7 @@ Latest src/ commit: **2026-02-22**
 
 ### Scaling Plan
 - All scaling topics (arq, LiteLLM, Batch API, DO) mapped to phases.md M6/M7 ✓
-- LLM Eval Tool stack description in scaling-plan.md is stale (see auto-fixes)
+- Prompt Evaluation Tool stack description in scaling-plan.md is stale (see auto-fixes)
 
 ---
 
@@ -111,7 +111,7 @@ Latest src/ commit: **2026-02-22**
 ### Fix 1: docs/phases.md — Current State date updated
 `(2026-02-20)` → `(2026-02-22)`
 
-### Fix 2: memory/scaling-plan.md — LLM Eval Tool stack corrected
+### Fix 2: memory/scaling-plan.md — Prompt Evaluation Tool stack corrected
 `LiteLLM + SQLite + Streamlit + Pydantic` → `FastAPI + Next.js + aiosqlite + LiteLLM + Pydantic`
 
 ---

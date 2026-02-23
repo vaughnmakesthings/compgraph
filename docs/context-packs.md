@@ -347,8 +347,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
 | `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
 | `docs/references/metabase-oss-evaluation.md` | Metabase OSS evaluation for dashboard replacement | Dashboard, M5 planning |
-| `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, LLM eval tool |
-| `docs/references/llm-eval-best-practices.md` | Eval frameworks, scoring, statistical rigor, prompt optimization from human feedback, error taxonomy, cost optimization | LLM eval tool, prompt improvement |
+| `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, Prompt Evaluation Tool |
+| `docs/references/llm-eval-best-practices.md` | Eval frameworks, scoring, statistical rigor, prompt optimization from human feedback, error taxonomy, cost optimization | Prompt Evaluation Tool, prompt improvement |
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
 | `docs/references/nextjs-15-vitest-testing-patterns.md` | Next.js 15 App Router testing pyramid, RSC limitations, mocking patterns | Frontend testing (Next.js) |
 | `docs/references/ai-generated-design-complaints.md` | AI design visual tells, purple problem, practitioner complaints, antidotes | Frontend design (Next.js) |
