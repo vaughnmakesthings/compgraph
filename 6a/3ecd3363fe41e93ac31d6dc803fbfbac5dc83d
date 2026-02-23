@@ -1,0 +1,23 @@
+docs/context-packs.md
+  77ecc8fe9394a9e2 355-356
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "6a3ecd3363fe41e93ac31d6dc803fbfbac5dc83d",
+  "prompts": {
+    "77ecc8fe9394a9e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc5e9811-8cae-42b8-91a1-0263a01e2e55",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
