@@ -1,0 +1,25 @@
+docs/references/logo-dev-api.md
+  a10be16931c01235 1-234
+docs/context-packs.md
+  a10be16931c01235 344
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b505b6f640fcc8219830c57d09b8c14c483154a6",
+  "prompts": {
+    "a10be16931c01235": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9df2c197-4a9f-4a5f-b06c-7ba9aa667b26",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 235,
+      "total_deletions": 0,
+      "accepted_lines": 235,
+      "overriden_lines": 0
+    }
+  }
+}
