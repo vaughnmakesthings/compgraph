@@ -114,6 +114,22 @@ async def _get_result_run_map(db: AsyncSession) -> dict[uuid.UUID, str]:
     return {row.id: f"{row.model}/{row.prompt_version}" for row in rows}
 
 
+async def _get_field_accuracy_for_run(db: AsyncSession, run_id: uuid.UUID) -> dict[str, float]:
+    stmt = text(
+        """
+        SELECT fr.field_name,
+               AVG(fr.is_correct::float) AS accuracy
+        FROM eval_field_reviews fr
+        JOIN eval_results r ON fr.result_id = r.id
+        WHERE r.run_id = :run_id
+          AND fr.is_correct >= 0
+        GROUP BY fr.field_name
+        """
+    )
+    rows = (await db.execute(stmt, {"run_id": str(run_id)})).all()
+    return {row.field_name: row.accuracy for row in rows}
+
+
 # --- Corpus ---
 
 
@@ -157,19 +173,7 @@ async def get_run_results(run_id: uuid.UUID, db: DbDep) -> list[dict]:
 @router.get("/runs/{run_id}/field-accuracy")
 async def get_run_field_accuracy(run_id: uuid.UUID, db: DbDep) -> dict[str, float]:
     await _get_run_or_404(run_id, db)
-    stmt = text(
-        """
-        SELECT fr.field_name,
-               AVG(fr.is_correct::float) AS accuracy
-        FROM eval_field_reviews fr
-        JOIN eval_results r ON fr.result_id = r.id
-        WHERE r.run_id = :run_id
-          AND fr.is_correct >= 0
-        GROUP BY fr.field_name
-        """
-    )
-    rows = (await db.execute(stmt, {"run_id": str(run_id)})).all()
-    return {row.field_name: row.accuracy for row in rows}
+    return await _get_field_accuracy_for_run(db, run_id)
 
 
 @router.get("/runs/{run_id}/field-reviews")
@@ -216,19 +220,7 @@ async def get_leaderboard_data(db: DbDep) -> dict:
     for run in runs:
         run_id_str = str(run.id)
 
-        acc_stmt = text(
-            """
-            SELECT fr.field_name,
-                   AVG(fr.is_correct::float) AS accuracy
-            FROM eval_field_reviews fr
-            JOIN eval_results r ON fr.result_id = r.id
-            WHERE r.run_id = :run_id
-              AND fr.is_correct >= 0
-            GROUP BY fr.field_name
-            """
-        )
-        acc_rows = (await db.execute(acc_stmt, {"run_id": str(run.id)})).all()
-        field_accuracy[run_id_str] = {row.field_name: row.accuracy for row in acc_rows}
+        field_accuracy[run_id_str] = await _get_field_accuracy_for_run(db, run.id)
 
         res_stmt = (
             select(EvalResult).where(EvalResult.run_id == run.id).order_by(EvalResult.posting_id)

@@ -12,17 +12,23 @@ from compgraph.api.deps import get_db
 from compgraph.main import app
 
 
-def _make_mock_session(scalars_return=None, all_return=None, execute_return=None):
-    mock_session = AsyncMock()
-
+def _make_mock_result(scalars_return=None, all_return=None):
     mock_result = MagicMock()
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = all_return or []
     mock_result.scalars.return_value = mock_scalars
     mock_result.all.return_value = all_return or []
     mock_result.scalar_one_or_none.return_value = scalars_return
+    return mock_result
 
-    mock_session.execute = AsyncMock(return_value=mock_result)
+
+def _make_mock_session(scalars_return=None, all_return=None, side_effects=None):
+    mock_session = AsyncMock()
+    if side_effects is not None:
+        mock_session.execute = AsyncMock(side_effect=side_effects)
+    else:
+        mock_result = _make_mock_result(scalars_return=scalars_return, all_return=all_return)
+        mock_session.execute = AsyncMock(return_value=mock_result)
     return mock_session
 
 
@@ -123,7 +129,13 @@ class TestEvalRunsEndpoint:
 
 class TestEvalLeaderboardEndpoint:
     def test_get_leaderboard_empty(self, mock_empty_db) -> None:
-        with TestClient(app) as client:
+        with (
+            patch(
+                "compgraph.eval.router._get_field_accuracy_for_run",
+                new=AsyncMock(return_value={}),
+            ),
+            TestClient(app) as client,
+        ):
             resp = client.get("/api/eval/leaderboard-data")
         assert resp.status_code == 200
         data = resp.json()
