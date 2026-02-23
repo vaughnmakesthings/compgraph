@@ -12,7 +12,7 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const TERMINAL_STATES = new Set(["SUCCESS", "PARTIAL", "FAILED"]);
+const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 
 type HealthStatus = "idle" | "ok" | "error";
 
@@ -204,13 +204,14 @@ function StatusDot({ status }: { status: string }) {
 
 // Status badge for live run panels
 const SCRAPE_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  PENDING:  { bg: "#E8E8E4",     color: "#4F5D75", label: "Pending" },
-  RUNNING:  { bg: "#DCB2561A",   color: "#DCB256", label: "Running" },
-  PAUSED:   { bg: "#EF83541A",   color: "#EF8354", label: "Paused" },
-  STOPPING: { bg: "#EF83541A",   color: "#EF8354", label: "Stopping" },
-  SUCCESS:  { bg: "#1B998B1A",   color: "#1B998B", label: "Success" },
-  PARTIAL:  { bg: "#DCB2561A",   color: "#DCB256", label: "Partial" },
-  FAILED:   { bg: "#8C2C231A",   color: "#8C2C23", label: "Failed" },
+  pending:   { bg: "#E8E8E4",     color: "#4F5D75", label: "Pending" },
+  running:   { bg: "#DCB2561A",   color: "#DCB256", label: "Running" },
+  paused:    { bg: "#EF83541A",   color: "#EF8354", label: "Paused" },
+  stopping:  { bg: "#EF83541A",   color: "#EF8354", label: "Stopping" },
+  success:   { bg: "#1B998B1A",   color: "#1B998B", label: "Success" },
+  partial:   { bg: "#DCB2561A",   color: "#DCB256", label: "Partial" },
+  failed:    { bg: "#8C2C231A",   color: "#8C2C23", label: "Failed" },
+  cancelled: { bg: "#E8E8E4",     color: "#4F5D75", label: "Cancelled" },
 };
 
 function RunBadge({ status }: { status: string }) {
@@ -234,19 +235,19 @@ function RunBadge({ status }: { status: string }) {
 }
 
 const COMPANY_STATE_LABEL: Record<string, string> = {
-  PENDING:   "pending",
-  RUNNING:   "running",
-  COMPLETED: "done",
-  FAILED:    "failed",
-  SKIPPED:   "skipped",
+  pending:   "pending",
+  running:   "running",
+  completed: "done",
+  failed:    "failed",
+  skipped:   "skipped",
 };
 
 const COMPANY_STATE_COLOR: Record<string, string> = {
-  PENDING:   "#4F5D75",
-  RUNNING:   "#DCB256",
-  COMPLETED: "#1B998B",
-  FAILED:    "#8C2C23",
-  SKIPPED:   "#BFC0C0",
+  pending:   "#4F5D75",
+  running:   "#DCB256",
+  completed: "#1B998B",
+  failed:    "#8C2C23",
+  skipped:   "#BFC0C0",
 };
 
 // --- Live scrape panel ---
@@ -261,10 +262,10 @@ function LiveScrapePanel({
   controlRunning: boolean;
 }) {
   const isActive = !TERMINAL_STATES.has(status.status);
-  const canPause = status.status === "RUNNING";
-  const canResume = status.status === "PAUSED";
-  const canStop = status.status === "RUNNING" || status.status === "PAUSED";
-  const canForce = status.status === "RUNNING" || status.status === "PAUSED" || status.status === "STOPPING";
+  const canPause = status.status === "running";
+  const canResume = status.status === "paused";
+  const canStop = status.status === "running" || status.status === "paused";
+  const canForce = status.status === "running" || status.status === "paused" || status.status === "stopping";
 
   return (
     <div
@@ -649,7 +650,7 @@ export default function SettingsPage() {
         const s = await api.getEnrichStatus();
         if (!mounted) return;
         setEnrichStatus(s);
-        if (TERMINAL_STATES.has(s.status.toUpperCase())) {
+        if (TERMINAL_STATES.has(s.status)) {
           clearInterval(id);
           setEnrichActiveRunId(null);
         }
@@ -933,11 +934,15 @@ export default function SettingsPage() {
                   Last run:{" "}
                   <span
                     style={{
-                      color: schedulerStatus.last_pipeline_success === false ? "#8C2C23" : "#1B998B",
+                      color: schedulerStatus.last_pipeline_success === true ? "#1B998B"
+                           : schedulerStatus.last_pipeline_success === false ? "#8C2C23"
+                           : "#4F5D75",
                       fontWeight: 500,
                     }}
                   >
-                    {schedulerStatus.last_pipeline_success === false ? "Failed" : "Success"}
+                    {schedulerStatus.last_pipeline_success === true ? "Success"
+                   : schedulerStatus.last_pipeline_success === false ? "Failed"
+                   : "Unknown"}
                   </span>{" "}
                   {formatTs(schedulerStatus.last_pipeline_finished_at)}
                 </span>
@@ -990,7 +995,7 @@ export default function SettingsPage() {
                   </thead>
                   <tbody>
                     {schedulerStatus.schedules.map((sched) => {
-                      const isRunning = schedulerJobRunning?.startsWith(sched.schedule_id);
+                      const isRunning = schedulerJobRunning?.startsWith(sched.schedule_id + ":");
                       return (
                         <tr key={sched.schedule_id} style={{ borderBottom: "1px solid #E8E8E4" }}>
                           <td

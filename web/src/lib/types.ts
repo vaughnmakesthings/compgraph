@@ -175,7 +175,7 @@ export interface EvalComparison {
 
 // --- Pipeline Control Types ---
 
-export type ScrapeStatus = 'PENDING' | 'RUNNING' | 'PAUSED' | 'STOPPING' | 'SUCCESS' | 'PARTIAL' | 'FAILED'
+export type ScrapeStatus = 'pending' | 'running' | 'paused' | 'stopping' | 'success' | 'partial' | 'failed' | 'cancelled'
 
 export interface CompanyState {
   state: string
