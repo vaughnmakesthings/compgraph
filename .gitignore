@@ -39,3 +39,9 @@ eval/web/node_modules/
 eval/web/.next/
 eval/.venv/
 eval/data/eval.db
+
+# web/ Next.js app exclusions
+web/node_modules/
+web/.next/
+web/coverage/
+web/.tsbuildinfo

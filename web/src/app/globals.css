@@ -1,0 +1,63 @@
+@import "@fontsource-variable/sora";
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+
+@theme {
+  /* Source colors — CompGraph brand palette */
+  --color-jet-black: #2D3142;
+  --color-coral: #EF8354;
+  --color-blue-slate: #4F5D75;
+  --color-silver: #BFC0C0;
+  --color-teal-jade: #1B998B;
+  --color-chestnut: #8C2C23;
+  --color-warm-gold: #DCB256;
+
+  /* Semantic tokens — light mode defaults */
+  --color-background: #F4F4F0;
+  --color-foreground: #2D3142;
+  --color-surface: #FFFFFF;
+  --color-primary: #EF8354;
+  --color-primary-foreground: #FFFFFF;
+  --color-border: #BFC0C0;
+  --color-muted: #E8E8E4;
+  --color-muted-foreground: #4F5D75;
+  --color-success: #1B998B;
+  --color-success-muted: #1B998B1A;
+  --color-warning: #DCB256;
+  --color-warning-muted: #DCB2561A;
+  --color-error: #8C2C23;
+  --color-error-muted: #8C2C231A;
+  --color-sidebar: #2D3142;
+
+  /* Typography */
+  --font-display: "Sora Variable", sans-serif;
+  --font-body: "DM Sans Variable", sans-serif;
+  --font-mono: "JetBrains Mono Variable", monospace;
+
+  /* Radius scale — intentionally varied by component role */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadow scale — assigned by component importance */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10);
+
+  /* Chart palette — CSS variables for Recharts theming */
+  --chart-1: #EF8354;
+  --chart-2: #1B998B;
+  --chart-3: #4F5D75;
+  --chart-4: #DCB256;
+  --chart-5: #8C2C23;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
