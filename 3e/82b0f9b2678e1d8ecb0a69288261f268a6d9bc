@@ -1,0 +1,23 @@
+web/src/test/eval-pages.test.tsx
+  88db8d68932f503a 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "3e82b0f9b2678e1d8ecb0a69288261f268a6d9bc",
+  "prompts": {
+    "88db8d68932f503a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "68d1491a-4225-409b-85a2-a494e48929a4",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 94,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
