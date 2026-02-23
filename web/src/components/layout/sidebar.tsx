@@ -181,6 +181,7 @@ function Tier1Category({
         className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pl-4 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
         style={{ color: "rgba(255,255,255,0.45)" }}
         aria-expanded={isExpanded}
+        aria-controls={`nav-tier2-${category.id}`}
       >
         {hasActiveChild && (
           <span
@@ -199,7 +200,7 @@ function Tier1Category({
       </button>
 
       {isExpanded && category.children.length > 0 && (
-        <div className="mt-0.5">
+        <div id={`nav-tier2-${category.id}`} className="mt-0.5">
           {category.children.map((child) => (
             <Tier2Item
               key={child.id}
@@ -274,6 +275,7 @@ function Tier0Item({
           className={`relative flex w-full items-center gap-3 rounded-[4px] px-3 py-2.5 ${hoverClasses}`}
           style={commonStyle}
           aria-expanded={isExpanded}
+          aria-controls={`nav-tier1-${item.id}`}
         >
           {itemContent}
         </button>
@@ -289,7 +291,7 @@ function Tier0Item({
       )}
 
       {hasCategories && isExpanded && item.categories!.length > 0 && (
-        <div className="mt-0.5 space-y-0.5">
+        <div id={`nav-tier1-${item.id}`} className="mt-0.5 space-y-0.5">
           {item.categories!.map((cat) => (
             <Tier1Category
               key={cat.id}
@@ -309,8 +311,16 @@ function Tier0Item({
 export function Sidebar() {
   const pathname = usePathname();
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>(
-    () => ({ ...buildDefaultExpanded(), ...readStoredState() })
+    buildDefaultExpanded
   );
+
+  // Apply persisted state after mount (client-only — avoids SSR hydration mismatch)
+  useEffect(() => {
+    const stored = readStoredState();
+    if (Object.keys(stored).length > 0) {
+      setExpandedKeys((prev) => ({ ...prev, ...stored }));
+    }
+  }, []);
 
   useEffect(() => {
     writeStoredState(expandedKeys);

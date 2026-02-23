@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Sidebar } from "../components/layout/sidebar";
 import { Header } from "../components/layout/header";
@@ -129,7 +129,7 @@ describe("Sidebar", () => {
     expect(stored["competitors"]).toBe(false);
   });
 
-  it("restores collapse state from localStorage on mount", () => {
+  it("restores collapse state from localStorage on mount", async () => {
     localStorageMock.setItem(
       "cg-sidebar-state",
       JSON.stringify({ competitors: false })
@@ -138,7 +138,17 @@ describe("Sidebar", () => {
     const competitorsButton = screen.getByRole("button", {
       name: /competitors/i,
     });
-    expect(competitorsButton).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => {
+      expect(competitorsButton).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
+  it("toggle buttons have aria-controls pointing to their collapsible region", () => {
+    render(<Sidebar />);
+    const competitorsButton = screen.getByRole("button", {
+      name: /competitors/i,
+    });
+    expect(competitorsButton).toHaveAttribute("aria-controls", "nav-tier1-competitors");
   });
 });
 
