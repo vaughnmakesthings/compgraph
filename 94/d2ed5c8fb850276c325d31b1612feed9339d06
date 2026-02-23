@@ -1,0 +1,25 @@
+web/src/test/pages.test.tsx
+  a56280cc78325225 365-526
+web/src/test/api-client.test.ts
+  a56280cc78325225 297-412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "94d2ed5c8fb850276c325d31b1612feed9339d06",
+  "prompts": {
+    "a56280cc78325225": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed5c6710-f04d-4c66-8946-6e3e4b8a8961",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 278,
+      "total_deletions": 0,
+      "accepted_lines": 278,
+      "overriden_lines": 0
+    }
+  }
+}
