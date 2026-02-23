@@ -7,6 +7,7 @@ import { Badge } from "@/components/data/badge";
 import { Callout } from "@/components/content/callout";
 import { BarChart } from "@/components/charts/bar-chart";
 import { COMPANIES } from "@/lib/constants";
+import { formatRoleArchetype } from "@/lib/utils";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
 import type { GlassdoorReview } from "@/lib/mock/dossiers";
 import { MockupBanner } from "@/components/content/mockup-banner";
@@ -731,7 +732,7 @@ export default function CompetitorDossierPage() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {posting.role_archetype}
+                        {formatRoleArchetype(posting.role_archetype)}
                       </td>
                       <td className="px-4 py-2.5">
                         <Badge
@@ -943,7 +944,7 @@ export default function CompetitorDossierPage() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {posting.role_archetype}
+                          {formatRoleArchetype(posting.role_archetype)}
                         </td>
                         <td className="px-4 py-2.5">
                           <Badge
