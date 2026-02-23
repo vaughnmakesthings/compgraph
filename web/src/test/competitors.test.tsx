@@ -11,24 +11,18 @@ import type {
 const mockVelocity = vi.hoisted<DailyVelocity[]>(() => [
   {
     date: "2026-02-22",
-    company_id: "uuid-advantage",
-    company_name: "Advantage Solutions",
+    company_id: "uuid-2020",
+    company_name: "2020 Companies",
+    company_slug: "2020",
     new_postings: 5,
     closed_postings: 1,
     active_postings: 120,
   },
   {
     date: "2026-02-22",
-    company_id: "uuid-acosta",
-    company_name: "Acosta Group",
-    new_postings: 3,
-    closed_postings: 0,
-    active_postings: 85,
-  },
-  {
-    date: "2026-02-22",
     company_id: "uuid-bds",
     company_name: "BDS Connected Solutions",
+    company_slug: "bds",
     new_postings: 2,
     closed_postings: 0,
     active_postings: 42,
@@ -37,14 +31,25 @@ const mockVelocity = vi.hoisted<DailyVelocity[]>(() => [
     date: "2026-02-22",
     company_id: "uuid-marketsource",
     company_name: "MarketSource",
+    company_slug: "marketsource",
     new_postings: 4,
     closed_postings: 2,
     active_postings: 67,
   },
   {
     date: "2026-02-22",
+    company_id: "uuid-osl",
+    company_name: "OSL Retail Services",
+    company_slug: "osl",
+    new_postings: 2,
+    closed_postings: 1,
+    active_postings: 55,
+  },
+  {
+    date: "2026-02-22",
     company_id: "uuid-troc",
     company_name: "T-ROC",
+    company_slug: "troc",
     new_postings: 1,
     closed_postings: 0,
     active_postings: 31,
@@ -53,7 +58,7 @@ const mockVelocity = vi.hoisted<DailyVelocity[]>(() => [
 
 const mockPayBenchmarks = vi.hoisted<PayBenchmark[]>(() => [
   {
-    company_id: "uuid-advantage",
+    company_id: "uuid-troc",
     role_archetype: "Field Rep",
     pay_min_avg: 18.5,
     pay_max_avg: 24.0,
@@ -67,7 +72,8 @@ const mockBrandTimeline = vi.hoisted<BrandTimeline[]>(() => [
     brand_name: "Samsung",
     date: "2026-02-22",
     posting_count: 30,
-    company_id: "uuid-advantage",
+    company_id: "uuid-troc",
+    company_slug: "troc",
   },
 ]);
 
@@ -75,7 +81,7 @@ const mockPostingsResponse = vi.hoisted<PostingListResponse>(() => ({
   items: [
     {
       id: "posting-1",
-      company_id: "uuid-advantage",
+      company_id: "uuid-troc",
       title: "Field Marketing Representative",
       location: "Atlanta, GA",
       first_seen_at: "2026-01-15T00:00:00Z",
@@ -92,7 +98,7 @@ const mockPostingsResponse = vi.hoisted<PostingListResponse>(() => ({
 
 // ── Controllable slug for dossier tests ───────────────────────────────────────
 
-const mockSlug = vi.hoisted(() => ({ current: "advantage" }));
+const mockSlug = vi.hoisted(() => ({ current: "troc" }));
 
 // ── Mock next/navigation ──────────────────────────────────────────────────────
 
@@ -166,10 +172,10 @@ describe("Competitors list page", () => {
 
   it("renders 5 company cards", () => {
     render(<CompetitorsPage />);
-    expect(screen.getByText("Advantage Solutions")).toBeInTheDocument();
-    expect(screen.getByText("Acosta Group")).toBeInTheDocument();
+    expect(screen.getByText("2020 Companies")).toBeInTheDocument();
     expect(screen.getByText("BDS Connected Solutions")).toBeInTheDocument();
     expect(screen.getByText("MarketSource")).toBeInTheDocument();
+    expect(screen.getByText("OSL Retail Services")).toBeInTheDocument();
     expect(screen.getByText("T-ROC")).toBeInTheDocument();
   });
 
@@ -177,8 +183,9 @@ describe("Competitors list page", () => {
     render(<CompetitorsPage />);
     const workdayBadges = screen.getAllByText("Workday");
     const icimsBadges = screen.getAllByText("iCIMS");
-    expect(workdayBadges).toHaveLength(3);
-    expect(icimsBadges).toHaveLength(2);
+    // 2020 Companies + T-ROC = 2 Workday; BDS + MarketSource + OSL = 3 iCIMS
+    expect(workdayBadges).toHaveLength(2);
+    expect(icimsBadges).toHaveLength(3);
   });
 
   it("shows active posting counts after velocity data loads", async () => {
@@ -191,12 +198,12 @@ describe("Competitors list page", () => {
 
 describe("Competitor dossier page", () => {
   beforeEach(() => {
-    mockSlug.current = "advantage";
+    mockSlug.current = "troc";
   });
 
-  it("renders the company name for the 'advantage' slug", () => {
+  it("renders the company name for the 'troc' slug", () => {
     render(<CompetitorDossierPage />);
-    expect(screen.getByText("Advantage Solutions")).toBeInTheDocument();
+    expect(screen.getByText("T-ROC")).toBeInTheDocument();
   });
 
   it("renders the ATS badge", () => {

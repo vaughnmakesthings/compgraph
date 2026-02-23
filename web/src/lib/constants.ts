@@ -7,9 +7,9 @@ export interface Company {
 }
 
 export const COMPANIES: Company[] = [
-  { name: "Advantage Solutions", slug: "advantage", ats: "Workday" },
-  { name: "Acosta Group", slug: "acosta", ats: "Workday" },
+  { name: "2020 Companies", slug: "2020", ats: "Workday" },
   { name: "BDS Connected Solutions", slug: "bds", ats: "iCIMS" },
   { name: "MarketSource", slug: "marketsource", ats: "iCIMS" },
+  { name: "OSL Retail Services", slug: "osl", ats: "iCIMS" },
   { name: "T-ROC", slug: "troc", ats: "Workday" },
 ];

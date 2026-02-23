@@ -73,14 +73,17 @@ export default function CompetitorDossierPage() {
 
     async function load() {
       try {
-        const [velocity, payBenchmarks, brandTimeline, postingsResp] =
-          await Promise.all([
-            api.getVelocity(),
-            api.getPayBenchmarks(),
-            api.getBrandTimeline(),
-            // TODO: filter by company_id once company UUIDs are available client-side
-            api.listPostings({ limit: 20 }),
-          ]);
+        const [velocity, payBenchmarks, brandTimeline] = await Promise.all([
+          api.getVelocity(),
+          api.getPayBenchmarks(),
+          api.getBrandTimeline(),
+        ]);
+        // Get the company UUID from velocity data (filtered by slug)
+        const companyRow = velocity.find((r) => r.company_slug === slug);
+        const postingsResp = await api.listPostings({
+          limit: 20,
+          ...(companyRow?.company_id ? { company_id: companyRow.company_id } : {}),
+        });
         if (!cancelled) {
           setData({
             velocity,
@@ -117,7 +120,7 @@ export default function CompetitorDossierPage() {
     const { velocity, payBenchmarks, brandTimeline } = data;
 
     const companyVelocity = velocity.filter(
-      (r) => r.company_name?.toLowerCase() === company.name.toLowerCase(),
+      (r) => r.company_slug === slug,
     );
 
     const latestRow = companyVelocity.sort((a, b) =>
@@ -160,7 +163,7 @@ export default function CompetitorDossierPage() {
       }));
 
     const companyBrandTimeline = brandTimeline.filter(
-      (b) => b.company_id === latestRow?.company_id,
+      (b) => b.company_slug === slug,
     );
 
     const topBrand =

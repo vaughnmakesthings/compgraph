@@ -133,4 +133,7 @@ export const api = {
 
   getEvalCorpus: () =>
     apiFetch<Array<{ id: string; title: string; content: string }>>('/api/eval/corpus'),
+
+  getCompanies: () =>
+    apiFetch<Array<{ id: string; name: string; slug: string; ats_platform: string }>>('/api/companies'),
 }

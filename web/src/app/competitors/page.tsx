@@ -118,21 +118,22 @@ export default function CompetitorsPage() {
     };
   }, []);
 
-  const activeByCompanyName = useMemo(() => {
+  const activeByCompanySlug = useMemo(() => {
     const latestDate: Record<string, string> = {};
     const latestCount: Record<string, number> = {};
     for (const row of velocity) {
-      const name = row.company_name ?? "";
-      if (!(name in latestDate) || row.date > latestDate[name]) {
-        latestDate[name] = row.date;
-        latestCount[name] = row.active_postings;
+      const slug = row.company_slug ?? "";
+      if (!slug) continue;
+      if (!(slug in latestDate) || row.date > latestDate[slug]) {
+        latestDate[slug] = row.date;
+        latestCount[slug] = row.active_postings;
       }
     }
     return latestCount;
   }, [velocity]);
 
   function resolveActivePostings(company: Company): number | null {
-    const count = activeByCompanyName[company.name];
+    const count = activeByCompanySlug[company.slug];
     return count !== undefined ? count : null;
   }
 

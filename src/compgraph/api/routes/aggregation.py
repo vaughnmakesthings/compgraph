@@ -14,6 +14,8 @@ from compgraph.db.models import (
     AggMarketCoverageGaps,
     AggPayBenchmarks,
     AggPostingLifecycle,
+    Brand,
+    Company,
 )
 
 router = APIRouter(prefix="/api/aggregation", tags=["aggregation"])
@@ -25,18 +27,58 @@ class TriggerResponse(BaseModel):
 
 @router.get("/velocity")
 async def get_velocity(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
-    result = await db.execute(
-        select(AggDailyVelocity).order_by(AggDailyVelocity.date.desc()).limit(500)
+    stmt = (
+        select(
+            AggDailyVelocity,
+            Company.name.label("company_name"),
+            Company.slug.label("company_slug"),
+        )
+        .join(Company, AggDailyVelocity.company_id == Company.id)
+        .order_by(AggDailyVelocity.date.desc())
+        .limit(500)
     )
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            **{
+                c.key: getattr(row.AggDailyVelocity, c.key)
+                for c in AggDailyVelocity.__table__.columns
+            },
+            "company_name": row.company_name,
+            "company_slug": row.company_slug,
+        }
+        for row in rows
+    ]
 
 
 @router.get("/brand-timeline")
 async def get_brand_timeline(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
-    result = await db.execute(select(AggBrandTimeline).limit(500))
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    stmt = (
+        select(
+            AggBrandTimeline,
+            Brand.name.label("brand_name"),
+            Company.name.label("company_name"),
+            Company.slug.label("company_slug"),
+        )
+        .join(Brand, AggBrandTimeline.brand_id == Brand.id)
+        .join(Company, AggBrandTimeline.company_id == Company.id)
+        .limit(500)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            **{
+                c.key: getattr(row.AggBrandTimeline, c.key)
+                for c in AggBrandTimeline.__table__.columns
+            },
+            "brand_name": row.brand_name,
+            "company_name": row.company_name,
+            "company_slug": row.company_slug,
+        }
+        for row in rows
+    ]
 
 
 @router.get("/pay-benchmarks")

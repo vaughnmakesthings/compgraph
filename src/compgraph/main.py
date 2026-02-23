@@ -6,6 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from compgraph.api.routes.aggregation import router as aggregation_router
+from compgraph.api.routes.companies import (
+    router as companies_router,
+)
 from compgraph.api.routes.enrich import router as enrich_router
 from compgraph.api.routes.health import router as health_router
 from compgraph.api.routes.pipeline import router as pipeline_router
@@ -60,5 +63,6 @@ app.include_router(enrich_router)
 app.include_router(scheduler_router)
 app.include_router(pipeline_router)
 app.include_router(aggregation_router)
+app.include_router(companies_router)
 app.include_router(postings_router, prefix="/api/postings", tags=["postings"])
 app.include_router(eval_router, prefix="/api/eval", tags=["eval"])

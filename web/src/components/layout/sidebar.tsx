@@ -67,6 +67,19 @@ const NAV_ITEMS: NavItem[] = [
     label: "Eval Tool",
     icon: BeakerIcon,
     href: "/eval",
+    categories: [
+      {
+        id: "eval-pages",
+        label: "Evaluation",
+        children: [
+          { id: "runs", label: "Runs", href: "/eval/runs" },
+          { id: "review", label: "Review", href: "/eval/review" },
+          { id: "accuracy", label: "Accuracy", href: "/eval/accuracy" },
+          { id: "leaderboard", label: "Leaderboard", href: "/eval/leaderboard" },
+          { id: "prompt-diff", label: "Run Diff", href: "/eval/prompt-diff" },
+        ],
+      },
+    ],
   },
   {
     id: "settings",

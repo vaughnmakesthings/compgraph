@@ -16,6 +16,7 @@ export interface DailyVelocity {
   date: string
   company_id: string
   company_name?: string
+  company_slug?: string
   new_postings: number
   closed_postings: number
   active_postings: number
@@ -27,6 +28,8 @@ export interface BrandTimeline {
   date: string
   posting_count: number
   company_id: string
+  company_name?: string
+  company_slug?: string
 }
 
 export interface PayBenchmark {
