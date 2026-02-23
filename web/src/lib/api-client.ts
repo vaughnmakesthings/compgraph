@@ -14,6 +14,9 @@ import type {
   EvalRun,
   EvalResult,
   EvalComparison,
+  ScrapeStatusResponse,
+  EnrichStatusResponse,
+  SchedulerStatusResponse,
 } from './types'
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -139,4 +142,43 @@ export const api = {
 
   getCompanies: () =>
     apiFetch<Array<{ id: string; name: string; slug: string; ats_platform: string }>>('/api/companies'),
+
+  // Scrape control
+  triggerScrape: () =>
+    apiFetch<{ run_id: string; message: string }>('/api/scrape/trigger', { method: 'POST' }),
+
+  pauseScrape: () =>
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/pause', { method: 'POST' }),
+
+  resumeScrape: () =>
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/resume', { method: 'POST' }),
+
+  stopScrape: () =>
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/stop', { method: 'POST' }),
+
+  forceStopScrape: () =>
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/force-stop', { method: 'POST' }),
+
+  getScrapeStatus: () =>
+    apiFetch<ScrapeStatusResponse>('/api/scrape/status'),
+
+  // Enrichment control
+  triggerEnrichment: () =>
+    apiFetch<{ run_id: string; message: string }>('/api/enrich/trigger', { method: 'POST' }),
+
+  getEnrichStatus: () =>
+    apiFetch<EnrichStatusResponse>('/api/enrich/status'),
+
+  // Scheduler
+  getSchedulerStatus: () =>
+    apiFetch<SchedulerStatusResponse>('/api/scheduler/status'),
+
+  triggerSchedulerJob: (jobId: string) =>
+    apiFetch<{ job_id: string; message: string }>(`/api/scheduler/jobs/${jobId}/trigger`, { method: 'POST' }),
+
+  pauseSchedulerJob: (jobId: string) =>
+    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/scheduler/jobs/${jobId}/pause`, { method: 'POST' }),
+
+  resumeSchedulerJob: (jobId: string) =>
+    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/scheduler/jobs/${jobId}/resume`, { method: 'POST' }),
 }
