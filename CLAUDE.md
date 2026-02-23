@@ -203,6 +203,7 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 
 ## Platform Gotchas
 
+- **GitHub operations**: Prefer the GitHub MCP server (`mcp__plugin_github_github__*` tools) for all GitHub interactions — issues, PRs, comments, reviews. Fall back to `gh` CLI only when the MCP tool doesn't cover the operation (e.g., `gh pr merge`, `gh pr checks`).
 - **`grep` vs `rg`**: Always use the Grep tool or `rg` directly — never `grep --include` flags. The Grep tool uses ripgrep which doesn't support GNU grep flags and will silently return wrong results.
 - **macOS `find`**: Use `fd` or `Glob` tool instead — macOS `find` has different flag syntax than GNU `find` (e.g., `-regex` behavior differs).
 - **Docker**: Requires OrbStack on macOS dev machines (not Docker Desktop). The GitHub MCP server is a Go-based Docker image, not an npm package.
