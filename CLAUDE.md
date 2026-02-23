@@ -40,9 +40,6 @@ op run --env-file=.env -- uv run python scripts/validate_enrichment.py          
 
 # Preflight
 uv run preflight                                   # Validate environment before work
-
-# Dashboard
-op run --env-file=.env -- uv run streamlit run src/compgraph/dashboard/main.py  # Local (:8501)
 ```
 
 **Secrets**: All secrets managed via 1Password. Use `op run --env-file=.env --` prefix for any command that needs DATABASE_PASSWORD or ANTHROPIC_API_KEY. See `docs/secrets-reference.md`.
@@ -74,7 +71,6 @@ See `compgraph-eval/CLAUDE.md` for full frontend conventions.
 - **rapidfuzz** — fuzzy string matching for entity resolution
 - **python-slugify** — slug generation for brand/retailer matching
 - **httpx** + **beautifulsoup4** — HTTP client + HTML parsing for scrapers
-- **streamlit** + **pandas** — dashboard UI at `:8501`
 - **apscheduler** (v4 alpha) — scheduled pipeline jobs
 
 ## Architecture
@@ -87,7 +83,7 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
 - **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert.
 - **Scheduler**: APScheduler v4 cron jobs trigger scrape→enrich→aggregate pipeline. Config in `src/compgraph/scheduler/`.
-- **Dashboard**: Streamlit multi-page app — Pipeline Health, Posting Explorer, Pipeline Controls, Scheduler, Brand Intel. Source in `src/compgraph/dashboard/`.
+- **Frontend**: Next.js 16 at `web/` — Pipeline Health, Posting Explorer, Brand Intel, and Scheduler views. Deployed to Vercel.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
 ### Database Schema (13 tables)
@@ -108,7 +104,6 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 - Auth (Supabase Auth, invite via magic link, password login) → M4d. Custom JWT → never.
 - arq (replace APScheduler) → M6
 - LiteLLM (provider abstraction) → M6 (needs LLM eval tool first)
-- Frontend framework (Next.js) → M7
 - Digital Ocean production deploy → M7 (dev migration in M5)
 - Prisma / second ORM → never (frontend is pure API consumer)
 
@@ -168,7 +163,6 @@ Reference: `docs/references/ai-generated-design-complaints.md` for the full rese
 - Enrichment Pass 2 completion tracked via `enrichment_version` column containing "pass2" (not PostingBrandMention existence).
 - Entity resolution uses savepoints (`begin_nested()`) for concurrent-safe creation.
 - Anthropic SDK types (`MessageParam`) imported under `TYPE_CHECKING` guard, used via `cast()` at runtime.
-- In Streamlit dataframes, use `column_config.NumberColumn(format=...)` for numeric display — string conversion breaks column sorting.
 - SQL `string_agg()` subqueries must include `ORDER BY` for deterministic results.
 
 ## Tests
@@ -245,11 +239,6 @@ Every merge to `main` auto-deploys to the dev server via GitHub Actions:
 - **Secrets**: `DEPLOY_SSH_KEY` + `DEPLOY_SSH_KNOWN_HOSTS` (GitHub repo secrets, dedicated ED25519 key)
 - **Migrations**: Auto-run via pooler URL (avoids IPv6 direct connection DNS issue)
 - **Concurrency**: Only one deploy at a time — new merges cancel in-progress deploys
-
-### Dashboard
-- **URL**: `https://dashboard.dev.compgraph.io`
-- **Service**: `systemctl {start|stop|restart|status} compgraph-dashboard`
-- **Logs**: `journalctl -u compgraph-dashboard -f`
 
 ## SSH & Remote Commands
 

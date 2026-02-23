@@ -45,7 +45,7 @@ ssh "$SSH_HOST" "cd $APP_DIR && sudo -u compgraph uv sync"
 
 # ── 4. Restart services ──
 echo "[4/5] Restarting services..."
-ssh "$SSH_HOST" "systemctl restart compgraph compgraph-dashboard && systemctl reload caddy"
+ssh "$SSH_HOST" "systemctl restart compgraph && systemctl reload caddy"
 
 # ── 5. Health check ──
 echo "[5/5] Waiting for startup..."
