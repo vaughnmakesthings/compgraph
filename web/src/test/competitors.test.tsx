@@ -1,10 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import type {
-  DailyVelocity,
-  PayBenchmark,
-  BrandTimeline,
-  PostingListResponse,
-} from "@/lib/types";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import type { DailyVelocity } from "@/lib/types";
 
 // ── Hoist mock data so it's available inside vi.mock factories ────────────────
 
@@ -56,46 +51,6 @@ const mockVelocity = vi.hoisted<DailyVelocity[]>(() => [
   },
 ]);
 
-const mockPayBenchmarks = vi.hoisted<PayBenchmark[]>(() => [
-  {
-    company_id: "uuid-troc",
-    role_archetype: "Field Rep",
-    pay_min_avg: 18.5,
-    pay_max_avg: 24.0,
-    sample_size: 40,
-  },
-]);
-
-const mockBrandTimeline = vi.hoisted<BrandTimeline[]>(() => [
-  {
-    brand_id: "brand-1",
-    brand_name: "Samsung",
-    date: "2026-02-22",
-    posting_count: 30,
-    company_id: "uuid-troc",
-    company_slug: "troc",
-  },
-]);
-
-const mockPostingsResponse = vi.hoisted<PostingListResponse>(() => ({
-  items: [
-    {
-      id: "posting-1",
-      company_id: "uuid-troc",
-      title: "Field Marketing Representative",
-      location: "Atlanta, GA",
-      first_seen_at: "2026-01-15T00:00:00Z",
-      last_seen_at: "2026-02-22T00:00:00Z",
-      is_active: true,
-      role_archetype: "Field Rep",
-      pay_min: 18,
-      pay_max: 24,
-      employment_type: "Full-time",
-    },
-  ],
-  total: 1,
-}));
-
 // ── Controllable slug for dossier tests ───────────────────────────────────────
 
 const mockSlug = vi.hoisted(() => ({ current: "troc" }));
@@ -137,14 +92,11 @@ vi.mock("recharts", async () => {
   };
 });
 
-// ── Mock api-client ───────────────────────────────────────────────────────────
+// ── Mock api-client (used by CompetitorsPage list) ────────────────────────────
 
 vi.mock("@/lib/api-client", () => ({
   api: {
     getVelocity: vi.fn().mockResolvedValue(mockVelocity),
-    getPayBenchmarks: vi.fn().mockResolvedValue(mockPayBenchmarks),
-    getBrandTimeline: vi.fn().mockResolvedValue(mockBrandTimeline),
-    listPostings: vi.fn().mockResolvedValue(mockPostingsResponse),
   },
 }));
 
@@ -211,14 +163,23 @@ describe("Competitor dossier page", () => {
     expect(screen.getByText("Workday")).toBeInTheDocument();
   });
 
-  it("renders KPI cards after data loads", async () => {
+  it("renders KPI cards", () => {
     render(<CompetitorDossierPage />);
-    await waitFor(() => {
-      expect(screen.getByText("Active Postings")).toBeInTheDocument();
-      expect(screen.getByText("New This Week")).toBeInTheDocument();
-      expect(screen.getByText("Avg Pay Min")).toBeInTheDocument();
-      expect(screen.getByText("Top Role")).toBeInTheDocument();
-    });
+    expect(screen.getByText("Active Postings")).toBeInTheDocument();
+    expect(screen.getByText("New This Week")).toBeInTheDocument();
+    expect(screen.getByText("Avg Pay Min")).toBeInTheDocument();
+    expect(screen.getByText("Top Role")).toBeInTheDocument();
+  });
+
+  it("renders KPI values from mock data", () => {
+    render(<CompetitorDossierPage />);
+    // $48,000 is unique to the avg pay KPI
+    expect(screen.getByText("$48,000")).toBeInTheDocument();
+    // 89 appears in both top KPI (Active Postings) and metrics row (Currently Open)
+    expect(screen.getAllByText("89").length).toBeGreaterThanOrEqual(1);
+    // 12 and FMR each appear in both KPI row and role distribution list
+    expect(screen.getAllByText("12").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("FMR").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders 'Company not found' for an unknown slug", () => {
@@ -227,31 +188,90 @@ describe("Competitor dossier page", () => {
     expect(screen.getByText(/company not found/i)).toBeInTheDocument();
   });
 
-  it("renders the Pay Benchmarks section title", () => {
+  it("renders tab navigation", () => {
     render(<CompetitorDossierPage />);
+    expect(screen.getByText("Executive Summary")).toBeInTheDocument();
+    expect(screen.getByText("Brand Intelligence")).toBeInTheDocument();
+    expect(screen.getByText("Hiring")).toBeInTheDocument();
+  });
+
+  it("renders the Key Finding callout on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Key Finding")).toBeInTheDocument();
+    expect(screen.getByText(/doubling down on Samsung/i)).toBeInTheDocument();
+  });
+
+  it("renders the Company Overview narrative section on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Company Overview")).toBeInTheDocument();
+    expect(screen.getByText(/premier retail services company/i)).toBeInTheDocument();
+  });
+
+  it("renders known clients and channels on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Known Clients & Channels")).toBeInTheDocument();
+    expect(screen.getByText("Samsung")).toBeInTheDocument();
+  });
+
+  it("renders the posting metrics row on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Total Roles Found")).toBeInTheDocument();
+    expect(screen.getByText("Roles Closed")).toBeInTheDocument();
+    expect(screen.getByText("Currently Open")).toBeInTheDocument();
+  });
+
+  it("renders the Hiring by Role section on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Hiring by Role")).toBeInTheDocument();
+    expect(screen.getAllByText("Brand Ambassador").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders the Latest Roles table on the summary tab", () => {
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("Latest Roles")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Field Marketing Representative – Samsung").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Orlando, FL")).toBeInTheDocument();
+  });
+
+  it("renders the Pay Benchmarks section title on the hiring tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Hiring"));
     expect(screen.getByText("Pay Benchmarks by Role")).toBeInTheDocument();
   });
 
-  it("renders the Job Postings section title", () => {
+  it("renders the Job Postings table on the hiring tab", () => {
     render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Hiring"));
     expect(screen.getByText("Job Postings")).toBeInTheDocument();
   });
 
-  it("renders posting data in the table after load", async () => {
+  it("renders the Geographic Focus callout on the brands tab", () => {
     render(<CompetitorDossierPage />);
-    await waitFor(() => {
-      expect(
-        screen.getByText("Field Marketing Representative"),
-      ).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByText("Brand Intelligence"));
+    expect(screen.getByText("Geographic Focus")).toBeInTheDocument();
+    expect(screen.getByText(/Southeast corridor dominance/i)).toBeInTheDocument();
   });
 
-  it("renders error message when API fails", async () => {
-    const { api } = await import("@/lib/api-client");
-    vi.mocked(api.getVelocity).mockRejectedValueOnce(new Error("Network error"));
+  it("renders the Brand Intelligence section on the brands tab", () => {
     render(<CompetitorDossierPage />);
-    await waitFor(() => {
-      expect(screen.getByRole("alert")).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByText("Brand Intelligence"));
+    // "Brand Intelligence" appears as both tab label and section heading
+    expect(screen.getAllByText("Brand Intelligence").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders the Data Note caution callout on the brands tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Brand Intelligence"));
+    expect(screen.getByText("Data Note")).toBeInTheDocument();
+    expect(screen.getByText(/re-fills of the same position/i)).toBeInTheDocument();
+  });
+
+  it("renders distinct content for the 'bds' slug", () => {
+    mockSlug.current = "bds";
+    render(<CompetitorDossierPage />);
+    expect(screen.getByText("BDS Connected Solutions")).toBeInTheDocument();
+    expect(screen.getByText(/in-store demo presence/i)).toBeInTheDocument();
   });
 });
