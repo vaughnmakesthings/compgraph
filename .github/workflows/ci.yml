@@ -78,3 +78,18 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
+
+  eval-python-test:
+    name: Eval Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Install eval dependencies
+        run: uv sync --dev
+        working-directory: eval
+      - name: Run eval tests
+        run: uv run pytest tests/ -q --tb=short --no-cov
+        working-directory: eval
