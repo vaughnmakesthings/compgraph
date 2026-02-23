@@ -341,6 +341,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/workday-cxs-api.md` | CXS API endpoints, search/detail schemas, pagination, rate limits, tenant variations | Workday scraper (2020 Companies) |
 | `docs/references/similar-projects-research.md` | Open-source project patterns, tooling decisions, anti-bot signals | Scraper design, enrichment tooling, pipeline architecture |
 | `docs/references/canadian-portals-research.md` | Canadian job portal research | Scraper expansion |
+| `docs/references/logo-dev-api.md` | Logo CDN endpoint, publishable vs secret keys, Brand Search/Describe, rate limits, CompGraph integration patterns | Brand enrichment, frontend logos, map markers |
 | `docs/references/multi-component-scraper-patterns.md` | Multi-component scraper architecture | Scraper design patterns |
 | `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
 | `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
