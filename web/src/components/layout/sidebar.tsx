@@ -34,6 +34,9 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   href: string;
+  /** Flat sub-items rendered without a category header */
+  children?: NavChild[];
+  /** Grouped sub-items rendered with collapsible category headers */
   categories?: NavCategory[];
 }
 
@@ -49,7 +52,13 @@ const NAV_ITEMS: NavItem[] = [
     label: "Competitors",
     icon: BuildingOfficeIcon,
     href: "/competitors",
-    categories: [],
+    children: [
+      { id: "troc", label: "T-ROC", href: "/competitors/troc" },
+      { id: "bds", label: "BDS Connected Solutions", href: "/competitors/bds" },
+      { id: "marketsource", label: "MarketSource", href: "/competitors/marketsource" },
+      { id: "osl", label: "OSL Retail Services", href: "/competitors/osl" },
+      { id: "2020", label: "2020 Companies", href: "/competitors/2020" },
+    ],
   },
   {
     id: "prospects",
@@ -119,9 +128,11 @@ function writeStoredState(state: Record<string, boolean>): void {
 function buildDefaultExpanded(): Record<string, boolean> {
   const defaults: Record<string, boolean> = {};
   for (const item of NAV_ITEMS) {
-    if (item.categories !== undefined) {
+    const hasSubItems =
+      (item.children?.length ?? 0) > 0 || (item.categories?.length ?? 0) > 0;
+    if (hasSubItems) {
       defaults[item.id] = true;
-      for (const cat of item.categories) {
+      for (const cat of item.categories ?? []) {
         defaults[`${item.id}-${cat.id}`] = true;
       }
     }
@@ -157,7 +168,7 @@ function Tier2Item({ item, isActive }: Tier2ItemProps) {
   return (
     <Link
       href={item.href}
-      className="flex items-center gap-2 rounded-[4px] py-1.5 pl-8 pr-3 text-sm transition-colors duration-150"
+      className="flex items-center gap-2 rounded-[4px] py-1.5 pl-9 pr-3 text-sm transition-colors duration-150"
       style={{
         color: isActive ? "#EF8354" : "rgba(255,255,255,0.6)",
         backgroundColor: isActive ? "rgba(239,131,84,0.08)" : "transparent",
@@ -198,7 +209,7 @@ function Tier1Category({
       <button
         type="button"
         onClick={() => onToggle(key)}
-        className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pl-4 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
+        className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
         style={{ color: "rgba(255,255,255,0.45)" }}
         aria-expanded={isExpanded}
         aria-controls={`nav-tier2-${category.id}`}
@@ -251,11 +262,108 @@ function Tier0Item({
   expandedKeys,
   pathname,
 }: Tier0ItemProps) {
-  const hasCategories = item.categories !== undefined;
+  const hasSubItems =
+    (item.children?.length ?? 0) > 0 || (item.categories?.length ?? 0) > 0;
   const Icon = item.icon;
 
-  const itemContent = (
-    <>
+  const activeColor = isActive ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+  const activeBg = isActive ? "rgba(255,255,255,0.07)" : "transparent";
+
+  if (hasSubItems) {
+    // Split layout: Link navigates, chevron button toggles expand
+    return (
+      <div>
+        <div
+          className="relative flex w-full items-center rounded-[4px] transition-colors duration-150 hover:bg-[#3D4357]"
+          style={{ color: activeColor, backgroundColor: activeBg }}
+        >
+          {/* Active indicator */}
+          <span
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-[3px] transition-opacity duration-150"
+            style={{
+              width: 3,
+              height: 20,
+              backgroundColor: "#EF8354",
+              opacity: isActive ? 1 : 0,
+            }}
+            aria-hidden="true"
+          />
+
+          {/* Navigable label area */}
+          <Link
+            href={item.href}
+            className="flex flex-1 items-center gap-3 py-2.5 pl-3"
+            style={{ color: "inherit" }}
+            aria-current={isActive ? "page" : undefined}
+          >
+            <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span className="flex-1 truncate text-sm font-medium">
+              {item.label}
+            </span>
+          </Link>
+
+          {/* Expand / collapse toggle */}
+          <button
+            type="button"
+            onClick={() => onToggle(item.id)}
+            className="flex items-center py-2.5 pr-3 pl-1"
+            style={{ color: "inherit" }}
+            aria-expanded={isExpanded}
+            aria-controls={`nav-sub-${item.id}`}
+            aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
+          >
+            <ChevronDownIcon
+              className="h-4 w-4 shrink-0 transition-transform duration-150"
+              style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+
+        {isExpanded && (
+          <div id={`nav-sub-${item.id}`} className="mt-0.5">
+            {/* Flat children (no category header) */}
+            {item.children && item.children.length > 0 && (
+              <div className="space-y-0.5">
+                {item.children.map((child) => (
+                  <Tier2Item
+                    key={child.id}
+                    item={child}
+                    isActive={pathname === child.href}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Grouped children (with collapsible category headers) */}
+            {item.categories && item.categories.length > 0 && (
+              <div className="space-y-0.5">
+                {item.categories.map((cat) => (
+                  <Tier1Category
+                    key={cat.id}
+                    parentId={item.id}
+                    category={cat}
+                    isExpanded={expandedKeys[`${item.id}-${cat.id}`] ?? true}
+                    onToggle={onToggle}
+                    pathname={pathname}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Simple link — no sub-items
+  return (
+    <Link
+      href={item.href}
+      className="relative flex items-center gap-3 rounded-[4px] px-3 py-2.5 transition-colors duration-150 hover:bg-[#3D4357] hover:text-white"
+      style={{ color: activeColor, backgroundColor: activeBg }}
+      aria-current={isActive ? "page" : undefined}
+    >
       <span
         className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-[3px] transition-opacity duration-150"
         style={{
@@ -268,63 +376,7 @@ function Tier0Item({
       />
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
       <span className="flex-1 truncate text-sm font-medium">{item.label}</span>
-      {hasCategories && (
-        <ChevronDownIcon
-          className="h-4 w-4 shrink-0 transition-transform duration-150"
-          style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
-          aria-hidden="true"
-        />
-      )}
-    </>
-  );
-
-  const commonStyle: React.CSSProperties = {
-    color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.72)",
-    backgroundColor: isActive ? "rgba(255,255,255,0.07)" : "transparent",
-  };
-
-  const hoverClasses =
-    "hover:bg-[#3D4357] hover:text-white transition-colors duration-150";
-
-  return (
-    <div>
-      {hasCategories ? (
-        <button
-          type="button"
-          onClick={() => onToggle(item.id)}
-          className={`relative flex w-full items-center gap-3 rounded-[4px] px-3 py-2.5 ${hoverClasses}`}
-          style={commonStyle}
-          aria-expanded={isExpanded}
-          aria-controls={`nav-tier1-${item.id}`}
-        >
-          {itemContent}
-        </button>
-      ) : (
-        <Link
-          href={item.href}
-          className={`relative flex items-center gap-3 rounded-[4px] px-3 py-2.5 ${hoverClasses}`}
-          style={commonStyle}
-          aria-current={isActive ? "page" : undefined}
-        >
-          {itemContent}
-        </Link>
-      )}
-
-      {hasCategories && isExpanded && item.categories!.length > 0 && (
-        <div id={`nav-tier1-${item.id}`} className="mt-0.5 space-y-0.5">
-          {item.categories!.map((cat) => (
-            <Tier1Category
-              key={cat.id}
-              parentId={item.id}
-              category={cat}
-              isExpanded={expandedKeys[`${item.id}-${cat.id}`] ?? true}
-              onToggle={onToggle}
-              pathname={pathname}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
@@ -347,10 +399,7 @@ export function Sidebar() {
   }, [expandedKeys]);
 
   const handleToggle = useCallback((key: string) => {
-    setExpandedKeys((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      return next;
-    });
+    setExpandedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
   return (
