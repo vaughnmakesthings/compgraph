@@ -14,10 +14,12 @@ class TestCoverageGapsQuery:
         assert "CROSS JOIN" not in _QUERY.upper()
 
     def test_query_filters_null_location(self):
-        assert "location_raw IS NOT NULL" in _QUERY
+        collapsed = "".join(_QUERY.split())
+        assert "location_rawISNOTNULL" in collapsed
 
     def test_query_groups_by_company_and_market(self):
-        assert "GROUP BY pb.company_id, pb.market_id" in _QUERY
+        collapsed = "".join(_QUERY.split())
+        assert "GROUPBYpb.company_id,pb.market_id" in collapsed
 
     def test_query_selects_required_output_columns(self):
         for col in (
