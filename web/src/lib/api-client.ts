@@ -11,6 +11,7 @@ import type {
   PostingListResponse,
   PostingDetail,
   EvalRun,
+  EvalResult,
   EvalComparison,
 } from './types'
 
@@ -88,13 +89,15 @@ export const api = {
 
   getEvalRun: (id: string) => apiFetch<EvalRun>(`/api/eval/runs/${id}`),
 
+  getEvalResults: (runId: string) => apiFetch<EvalResult[]>(`/api/eval/runs/${runId}/results`),
+
   getEvalLeaderboard: () => apiFetch<Record<string, unknown>>('/api/eval/leaderboard-data'),
 
   getEloRatings: () => apiFetch<Record<string, number>>('/api/eval/elo'),
 
   listComparisons: () => apiFetch<EvalComparison[]>('/api/eval/comparisons'),
 
-  createComparison: (body: {
+  recordComparison: (body: {
     posting_id: string
     result_a_id: string
     result_b_id: string

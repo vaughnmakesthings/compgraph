@@ -116,6 +116,20 @@ export interface EvalRun {
   completed_items: number
 }
 
+export interface EvalResult {
+  id: string
+  run_id: string
+  posting_id: string
+  raw_response: string | null
+  parsed_result: Record<string, unknown> | null
+  parse_success: boolean
+  input_tokens: number | null
+  output_tokens: number | null
+  cost_usd: number | null
+  latency_ms: number | null
+  created_at: string | null
+}
+
 export interface EvalComparison {
   id: string
   posting_id: string
