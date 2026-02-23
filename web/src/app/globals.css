@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-content: var(--surface-content);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-error-muted: var(--error-muted);
+  --color-status-correct: var(--status-correct);
+  --color-status-wrong: var(--status-wrong);
+  --color-status-improved: var(--status-improved);
+  --color-medal-gold: var(--medal-gold);
+  --color-medal-silver: var(--medal-silver);
+  --color-medal-bronze: var(--medal-bronze);
+  --color-threshold-high: var(--threshold-high);
+  --color-threshold-mid: var(--threshold-mid);
+  --color-threshold-low: var(--threshold-low);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Sora Variable', 'Sora', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Surface neutrals (CompGraph brand) */
+  --background: #F4F4F0;
+  --surface: #FFFFFF;
+  --surface-raised: #FAFAF7;
+  --surface-content: #EDEDEA;
+  --foreground: #2D3142;
+  --muted: #E8E8E3;
+  --muted-foreground: #4F5D75;
+
+  /* Primary / Secondary / Accent */
+  --primary: #EF8354;
+  --primary-foreground: #FFFFFF;
+  --secondary: #4F5D75;
+  --secondary-foreground: #FFFFFF;
+  --accent: rgba(239, 131, 84, 0.10);
+  --accent-foreground: #2D3142;
+  --border: #BFC0C0;
+  --input: #BFC0C0;
+  --ring: #EF8354;
+
+  /* Card / Popover (map to surface) */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+
+  /* Destructive (alias for error) */
+  --destructive: var(--error);
+
+  /* Semantic states */
+  --success: #1B998B;
+  --success-foreground: #FFFFFF;
+  --success-muted: rgba(27, 153, 139, 0.10);
+  --warning: #DCB256;
+  --warning-foreground: #2D3142;
+  --warning-muted: rgba(220, 178, 86, 0.10);
+  --error: #8C2C23;
+  --error-foreground: #FFFFFF;
+  --error-muted: rgba(140, 44, 35, 0.10);
+
+  /* Status tokens (eval-specific — map to semantic) */
+  --status-correct: var(--success);
+  --status-wrong: var(--error);
+  --status-improved: var(--primary);
+
+  /* Medal rankings */
+  --medal-gold: #D4A017;
+  --medal-silver: #A0A0A0;
+  --medal-bronze: #B87333;
+
+  /* Match quality thresholds (prompt-diff, leaderboard) */
+  --threshold-high: var(--success);
+  --threshold-mid: var(--warning);
+  --threshold-low: var(--error);
+
+  /* Charts — brand palette in order */
+  --chart-1: #EF8354;
+  --chart-2: #1B998B;
+  --chart-3: #4F5D75;
+  --chart-4: #DCB256;
+  --chart-5: #8C2C23;
+
+  /* Sidebar — always dark (jet-black base) */
+  --sidebar: #2D3142;
+  --sidebar-foreground: #D0D1D1;
+  --sidebar-primary: #EF8354;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #363B4D;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #4F5D75;
+  --sidebar-ring: #EF8354;
+}
+
+.dark {
+  --background: #1A1B26;
+  --surface: #2D3142;
+  --surface-raised: #363B4D;
+  --surface-content: #22233A;
+  --foreground: #E8E8E3;
+  --muted: #363B4D;
+  --muted-foreground: #9CA3B4;
+
+  --primary: #EF8354;
+  --primary-foreground: #1A1B26;
+  --secondary: #9CA3B4;
+  --secondary-foreground: #1A1B26;
+  --accent: rgba(239, 131, 84, 0.10);
+  --accent-foreground: #E8E8E3;
+  --border: #4F5D75;
+  --input: #4F5D75;
+  --ring: #EF8354;
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+
+  --destructive: var(--error);
+
+  --success: #22C4A8;
+  --success-foreground: #1A1B26;
+  --success-muted: rgba(34, 196, 168, 0.10);
+  --warning: #E8C76A;
+  --warning-foreground: #1A1B26;
+  --warning-muted: rgba(232, 199, 106, 0.10);
+  --error: #D4453A;
+  --error-foreground: #FFFFFF;
+  --error-muted: rgba(212, 69, 58, 0.10);
+
+  /* Status tokens — brighter for dark mode */
+  --status-correct: var(--success);
+  --status-wrong: var(--error);
+  --status-improved: var(--primary);
+
+  /* Medal rankings */
+  --medal-gold: #E8C76A;
+  --medal-silver: #C8C8C8;
+  --medal-bronze: #D4956A;
+
+  /* Match quality thresholds */
+  --threshold-high: var(--success);
+  --threshold-mid: var(--warning);
+  --threshold-low: var(--error);
+
+  /* Charts — same palette, coral stays visible on dark */
+  --chart-1: #EF8354;
+  --chart-2: #22C4A8;
+  --chart-3: #9CA3B4;
+  --chart-4: #E8C76A;
+  --chart-5: #D4453A;
+
+  /* Sidebar stays same as light — already dark */
+  --sidebar: #2D3142;
+  --sidebar-foreground: #D0D1D1;
+  --sidebar-primary: #EF8354;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #363B4D;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #363B4D;
+  --sidebar-ring: #EF8354;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+  }
+}
+
+/* Display font for headings */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Monospace font for data/metrics */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Noise texture overlay — subtle grain on content areas */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  border-radius: inherit;
+}
+.dark .noise-bg::before {
+  opacity: 0.04;
+}
