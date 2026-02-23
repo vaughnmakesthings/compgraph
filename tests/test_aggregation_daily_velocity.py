@@ -31,9 +31,14 @@ class TestDailyVelocityQuery:
     def test_net_change_computed_as_difference(self):
         """net_change = new_postings - closed_postings (COALESCE-wrapped after the fix)."""
         collapsed = "".join(_QUERY.split())
+        assert "new_postings-COALESCE(c.closed_postings,0)" in collapsed
+
+    def test_closed_date_is_day_after_last_seen(self):
+        """Closures must be dated to the day AFTER last_seen_at to avoid same-day double-count."""
+        collapsed = "".join(_QUERY.split())
         assert (
-            "new_postings-COALESCE(c.closed_postings,0)" in collapsed
-            or "new_postings-closed_postings" in collapsed
+            "last_seen_at::date+INTERVAL'1day'" in collapsed
+            or "last_seen_at::date+interval'1day'" in collapsed.lower()
         )
 
     def test_query_joins_postings_table(self):

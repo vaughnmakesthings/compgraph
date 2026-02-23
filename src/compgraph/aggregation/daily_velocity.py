@@ -22,13 +22,13 @@ WITH active_by_date AS (
 ),
 closed_by_date AS (
     SELECT
-        p.last_seen_at::date AS date,
+        (p.last_seen_at::date + INTERVAL '1 day')::date AS date,
         p.company_id,
         COUNT(DISTINCT p.id) AS closed_postings
     FROM postings p
     WHERE p.is_active = false
     AND p.last_seen_at IS NOT NULL
-    GROUP BY p.last_seen_at::date, p.company_id
+    GROUP BY (p.last_seen_at::date + INTERVAL '1 day')::date, p.company_id
 )
 SELECT
     a.date,
