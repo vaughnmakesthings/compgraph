@@ -1,0 +1,25 @@
+docs/ci.md
+  a57fe4432df39e54 7-9,13,21-22,24,43-54
+CLAUDE.md
+  a57fe4432df39e54 230-239
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "e9716758f671380eefb584b7d3ea71594c9c24ba",
+  "prompts": {
+    "a57fe4432df39e54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "88c53a7d-c496-42ac-a4a1-7215e5a9894c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 29,
+      "total_deletions": 6,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    }
+  }
+}
