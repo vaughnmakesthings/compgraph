@@ -120,7 +120,7 @@ export default function SettingsPage() {
     try {
       const result = await api.health();
       setHealthStatus("ok");
-      setApiVersion((result as { status: string; version?: string }).version ?? null);
+      setApiVersion(result.version ?? null);
     } catch {
       setHealthStatus("error");
     } finally {
@@ -193,34 +193,9 @@ export default function SettingsPage() {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => void handleHealthCheck()}
-          disabled={healthChecking}
-          style={{
-            border: "1px solid #EF8354",
-            color: "#EF8354",
-            borderRadius: "var(--radius-md, 6px)",
-            padding: "8px 16px",
-            fontSize: "14px",
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            backgroundColor: "transparent",
-            cursor: healthChecking ? "not-allowed" : "pointer",
-            opacity: healthChecking ? 0.5 : 1,
-            transition: "background-color 150ms",
-          }}
-          onMouseEnter={(e) => {
-            if (!healthChecking) {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(239,131,84,0.1)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
-          }}
-        >
+        <OutlineButton onClick={() => void handleHealthCheck()} disabled={healthChecking}>
           {healthChecking ? "Checking..." : "Check Health"}
-        </button>
+        </OutlineButton>
       </SectionCard>
 
       <SectionCard title="Pipeline Controls" className="mt-4">

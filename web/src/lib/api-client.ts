@@ -32,7 +32,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: () => apiFetch<{ status: string }>('/health'),
+  health: () => apiFetch<{ status: string; version?: string; checks?: Record<string, string> }>('/health'),
 
   getPipelineStatus: () => apiFetch<PipelineStatus>('/api/pipeline/status'),
 

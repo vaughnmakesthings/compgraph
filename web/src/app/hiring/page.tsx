@@ -84,6 +84,8 @@ export default function HiringPage() {
     };
   }, [offset]);
 
+  // Note: filter options are derived from the current page only.
+  // TODO: fetch all distinct companies/roles from a dedicated endpoint for complete filtering.
   const uniqueRoles = useMemo(() => {
     const roles = new Set<string>();
     for (const item of items) {
@@ -334,16 +336,16 @@ export default function HiringPage() {
           <button
             type="button"
             onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
-            disabled={items.length < PAGE_SIZE}
+            disabled={offset + PAGE_SIZE >= total}
             style={{
               border: "1px solid #BFC0C0",
               borderRadius: "var(--radius-md, 6px)",
               padding: "4px 12px",
               fontSize: "13px",
               backgroundColor: "#FFFFFF",
-              color: items.length < PAGE_SIZE ? "#BFC0C0" : "#2D3142",
-              cursor: items.length < PAGE_SIZE ? "not-allowed" : "pointer",
-              opacity: items.length < PAGE_SIZE ? 0.5 : 1,
+              color: offset + PAGE_SIZE >= total ? "#BFC0C0" : "#2D3142",
+              cursor: offset + PAGE_SIZE >= total ? "not-allowed" : "pointer",
+              opacity: offset + PAGE_SIZE >= total ? 0.5 : 1,
             }}
           >
             Next

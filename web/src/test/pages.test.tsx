@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MarketPage from "../app/market/page";
 import HiringPage from "../app/hiring/page";
 import SettingsPage from "../app/settings/page";
@@ -92,7 +93,7 @@ beforeEach(() => {
   vi.mocked(api.getVelocity).mockResolvedValue(mockVelocity);
   vi.mocked(api.getCoverageGaps).mockResolvedValue(mockGaps);
   vi.mocked(api.listPostings).mockResolvedValue(mockPostingsResponse);
-  vi.mocked(api.health).mockResolvedValue({ status: "ok" });
+  vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
   vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
 });
 
@@ -131,6 +132,31 @@ describe("Market Overview page", () => {
     expect(
       screen.getByRole("heading", { name: /coverage gaps/i })
     ).toBeInTheDocument();
+  });
+
+  it("renders KPI cards after data loads", async () => {
+    render(<MarketPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Total Active Postings")).toBeInTheDocument()
+    );
+    expect(screen.getByText("Most Active Company")).toBeInTheDocument();
+    // "Coverage Gaps" appears as both a KPI card label and a section heading
+    expect(screen.getAllByText("Coverage Gaps").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders total active postings value from mock data", async () => {
+    render(<MarketPage />);
+    // totalActive = 80 + 40 = 120
+    await waitFor(() =>
+      expect(screen.getByText("120")).toBeInTheDocument()
+    );
+  });
+
+  it("renders the coverage gap market row after data loads", async () => {
+    render(<MarketPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Miami, FL")).toBeInTheDocument()
+    );
   });
 });
 
@@ -200,6 +226,43 @@ describe("Job Feed page", () => {
     render(<HiringPage />);
     expect(screen.getByRole("button", { name: /prev/i })).toBeDisabled();
   });
+
+  it("disables Next button when total fits on one page", async () => {
+    // mockPostingsResponse has total: 1, which is < PAGE_SIZE (50)
+    render(<HiringPage />);
+    await waitFor(() =>
+      expect(screen.getByText(/Showing/)).toBeInTheDocument()
+    );
+    expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+  });
+
+  it("renders posting row after data loads", async () => {
+    render(<HiringPage />);
+    await waitFor(() =>
+      expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
+    );
+    // "T-ROC" appears in both the table row and the company filter dropdown option
+    expect(screen.getAllByText("T-ROC").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Miami, FL")).toBeInTheDocument();
+  });
+
+  it("filters job feed by status", async () => {
+    const user = userEvent.setup();
+    render(<HiringPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
+    );
+
+    const statusSelect = screen.getByRole("combobox", { name: /filter by status/i });
+    await user.selectOptions(statusSelect, "inactive");
+
+    // The mock posting is active, so filtering for inactive hides it
+    await waitFor(() =>
+      expect(screen.queryByText("Field Marketing Rep")).not.toBeInTheDocument()
+    );
+    expect(screen.getByText("No postings match your filters")).toBeInTheDocument();
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -265,5 +328,16 @@ describe("Settings page", () => {
     expect(screen.getByText("Supabase Postgres 17")).toBeInTheDocument();
     expect(screen.getByText("Platform")).toBeInTheDocument();
     expect(screen.getByText("Digital Ocean")).toBeInTheDocument();
+  });
+
+  it("shows OK status after health check succeeds", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: /check health/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText("OK")).toBeInTheDocument()
+    );
   });
 });
