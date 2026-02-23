@@ -91,5 +91,5 @@ jobs:
         run: uv sync --group dev
         working-directory: eval
       - name: Run eval tests
-        run: uv run pytest tests/ -q --tb=short --no-cov
+        run: uv run pytest tests/ -q --tb=short
         working-directory: eval
