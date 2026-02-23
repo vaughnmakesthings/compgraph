@@ -4,12 +4,13 @@
 
 | Workflow | File | Trigger | What it does |
 |----------|------|---------|-------------|
-| **CI** | `ci.yml` | Push to main, PRs | Lint & Format (ruff), Type Check (mypy), Test (pytest + coverage), Security Scan (Snyk) |
-| **CD** | `cd.yml` | CI passes on main (`workflow_run`) | Auto-deploys to DO dev server via SSH |
+| **CI** | `ci.yml` | Push to main, PRs | Lint & Format (ruff), Type Check (mypy), Test (pytest + coverage), Security Scan (Snyk), Frontend CI (lint/typecheck/test/build) |
+| **Backend CD** | `cd.yml` | CI passes on main (`workflow_run`) | Auto-deploys FastAPI to DO dev server via SSH |
+| **Frontend CD** | Vercel GitHub App | Push to main | Auto-deploys Next.js to Vercel (no workflow file) |
 
 ### CI (`ci.yml`)
 
-Runs 4 parallel jobs on every push to `main` and every PR:
+Runs 6 parallel jobs on every push to `main` and every PR:
 
 | Job | Command | Time |
 |-----|---------|------|
@@ -17,8 +18,10 @@ Runs 4 parallel jobs on every push to `main` and every PR:
 | Type Check | `mypy src/compgraph/` | ~45s |
 | Test | `pytest -x -q -m "not integration" --cov` | ~2m |
 | Security Scan | Snyk severity-threshold=high | ~1m |
+| Eval Python Tests | `pytest tests/ -q --tb=short` (in `eval/`) | ~30s |
+| Frontend CI | `npm run lint && typecheck && test:coverage && build` (in `web/`) | ~2m |
 
-### CD (`cd.yml`)
+### Backend CD (`cd.yml`)
 
 Triggers automatically via `workflow_run` after CI succeeds on `main`:
 
@@ -36,6 +39,18 @@ Triggers automatically via `workflow_run` after CI succeeds on `main`:
 **Secrets required:**
 - `DEPLOY_SSH_KEY` — ED25519 private key for `root@165.232.128.28`
 - `DEPLOY_SSH_KNOWN_HOSTS` — Server host key fingerprint
+
+### Frontend CD (Vercel GitHub Integration)
+
+Vercel deploys the Next.js frontend automatically — no workflow file required.
+
+1. Push to `main` → Vercel GitHub App triggers a build
+2. `npm run build` runs in `web/` with production env vars
+3. Built output deployed to Vercel's CDN edge network
+4. API calls from the frontend are rewritten: `/api/*` → `https://dev.compgraph.io/api/*` (via `web/vercel.json`)
+
+**Env var:** `NEXT_PUBLIC_API_URL=https://dev.compgraph.io` — configured in the Vercel project dashboard.
+**No GitHub secrets needed** — the Vercel GitHub App handles authentication.
 
 ## Local Pre-Commit (via hooks)
 

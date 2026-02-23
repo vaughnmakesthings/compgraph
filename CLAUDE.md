@@ -227,8 +227,16 @@ Dev server runs on a DO Droplet (`s-1vcpu-2gb`, sfo3, Ubuntu 24.04) at `165.232.
 - **Reverse proxy**: Caddy — automatic HTTPS via Let's Encrypt, config at `/etc/caddy/Caddyfile`
 - **Infra files**: `infra/` directory (systemd units, Caddyfile, setup + deploy scripts, `deploy-ci.sh` for CD)
 
-### CD Pipeline (Auto-Deploy)
-Every merge to `main` auto-deploys to the dev server via GitHub Actions:
+### Frontend (Vercel)
+Next.js 16 at `web/` is deployed to Vercel via GitHub integration.
+
+- **Auto-deploy**: Push to `main` → Vercel builds + deploys automatically (no workflow file)
+- **API routing**: `web/vercel.json` rewrites `/api/*` → `https://dev.compgraph.io/api/*`
+- **Env var**: `NEXT_PUBLIC_API_URL=https://dev.compgraph.io` — set in Vercel dashboard
+- **No manual deploy needed** — Vercel handles build and CDN distribution
+
+### Backend CD Pipeline (Auto-Deploy)
+Every merge to `main` auto-deploys the FastAPI backend to the DO dev server via GitHub Actions:
 
 1. CI workflow runs (lint, typecheck, test, security scan)
 2. CI passes → CD workflow triggers via `workflow_run`
