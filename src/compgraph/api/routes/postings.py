@@ -81,13 +81,13 @@ class PostingDetailResponse(BaseModel):
 
 
 def _build_filters(
-    company_id: str | None,
+    company_id: uuid.UUID | None,
     is_active: bool | None,
     role_archetype: str | None,
 ) -> list:
     filters = []
     if company_id is not None:
-        filters.append(Posting.company_id == uuid.UUID(company_id))
+        filters.append(Posting.company_id == company_id)  # already a uuid.UUID
     if is_active is not None:
         filters.append(Posting.is_active == is_active)
     if role_archetype is not None:
@@ -99,7 +99,7 @@ def _build_filters(
 async def list_postings(
     limit: int = 50,
     offset: int = 0,
-    company_id: str | None = None,
+    company_id: uuid.UUID | None = None,
     is_active: bool | None = None,
     role_archetype: str | None = None,
     db: AsyncSession = Depends(get_db),  # noqa: B008

@@ -226,6 +226,21 @@ class TestPostingsListEndpoint:
         assert body["total"] == 3
         assert len(body["items"]) == 3
 
+    def test_list_filters_by_role_archetype(self) -> None:
+        mock_session = _make_mock_db_for_list(rows=[], total=0)
+        app.dependency_overrides[get_db] = lambda: mock_session
+
+        try:
+            with TestClient(app) as client:
+                r = client.get("/api/postings?role_archetype=field_sales")
+        finally:
+            app.dependency_overrides.clear()
+
+        assert r.status_code == 200
+        data = r.json()
+        assert "items" in data
+        assert "total" in data
+
 
 class TestPostingsDetailEndpoint:
     def _setup_detail_mock(
