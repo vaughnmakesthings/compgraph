@@ -43,7 +43,7 @@ fi
 
 # ── 4. Restart services ──
 echo "[4/5] Restarting services..."
-systemctl restart compgraph compgraph-dashboard
+systemctl restart compgraph
 systemctl reload caddy
 
 # ── 5. Health check ──
