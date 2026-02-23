@@ -9,10 +9,12 @@ from compgraph.api.routes.aggregation import router as aggregation_router
 from compgraph.api.routes.enrich import router as enrich_router
 from compgraph.api.routes.health import router as health_router
 from compgraph.api.routes.pipeline import router as pipeline_router
+from compgraph.api.routes.postings import router as postings_router
 from compgraph.api.routes.scheduler import router as scheduler_router
 from compgraph.api.routes.scrape import router as scrape_router
 from compgraph.config import settings
 from compgraph.db.session import engine
+from compgraph.eval.router import router as eval_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,3 +60,5 @@ app.include_router(enrich_router)
 app.include_router(scheduler_router)
 app.include_router(pipeline_router)
 app.include_router(aggregation_router)
+app.include_router(postings_router, prefix="/api/postings", tags=["postings"])
+app.include_router(eval_router, prefix="/api/eval", tags=["eval"])

@@ -1,0 +1,17 @@
+[Unit]
+Description=CompGraph Eval API (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=compgraph-eval
+Group=compgraph-eval
+WorkingDirectory=/opt/compgraph-eval
+EnvironmentFile=/opt/compgraph-eval/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/compgraph-eval/.venv/bin/uvicorn eval.api:app --host 127.0.0.1 --port 8001 --workers 1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

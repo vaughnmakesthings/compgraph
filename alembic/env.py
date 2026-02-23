@@ -7,13 +7,14 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 from compgraph.db.models import Base
+from compgraph.eval.models import EvalBase
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = [Base.metadata, EvalBase.metadata]
 
 
 def get_url() -> str:

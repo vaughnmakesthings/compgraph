@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit: lint + typecheck staged files
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# --- Python checks ---
+PY_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+if [ -n "$PY_STAGED" ]; then
+    echo "[pre-commit] Checking staged Python files..."
+    echo "$PY_STAGED" | xargs uv run ruff check
+    echo "$PY_STAGED" | xargs uv run ruff format --check
+fi
+
+# --- Frontend checks ---
+FE_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^web/.*\.(ts|tsx|mjs|css)$' || true)
+if [ -n "$FE_STAGED" ]; then
+    echo "[pre-commit] Checking staged frontend files..."
+    cd "$REPO_ROOT/web"
+    npx eslint --max-warnings 0 src/
+    npx tsc --noEmit
+    cd "$REPO_ROOT"
+fi
+
+# --- Design token check (warning only) ---
+if [ -n "$FE_STAGED" ] && [ -x "$REPO_ROOT/scripts/check-design-tokens.sh" ]; then
+    bash "$REPO_ROOT/scripts/check-design-tokens.sh" || true
+fi

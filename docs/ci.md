@@ -28,7 +28,7 @@ Triggers automatically via `workflow_run` after CI succeeds on `main`:
    - `git pull origin main`
    - `uv sync` (dependency update)
    - `alembic upgrade head` (auto-migration via pooler URL)
-   - `systemctl restart compgraph compgraph-dashboard`
+   - `systemctl restart compgraph`
    - Health check with 6 retries (30s total)
 
 **Concurrency control:** Only one deploy runs at a time. New merges cancel in-progress deploys.

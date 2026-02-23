@@ -8,48 +8,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.aggregation.base import AggregationJob
 
 _QUERY = """
-WITH snapshot_dates AS (
-    SELECT DISTINCT ps.snapshot_date
-    FROM posting_snapshots ps
-),
-daily_stats AS (
+WITH active_by_date AS (
     SELECT
-        sd.snapshot_date AS date,
+        ps.snapshot_date AS date,
         p.company_id,
+        COUNT(DISTINCT ps.posting_id) AS active_postings,
         COUNT(DISTINCT p.id) FILTER (
-            WHERE p.first_seen_at::date = sd.snapshot_date
-        ) AS new_postings,
-        COUNT(DISTINCT p.id) FILTER (
-            WHERE p.is_active = false
-            AND p.last_seen_at::date = sd.snapshot_date
-        ) AS closed_postings,
-        COUNT(DISTINCT p.id) FILTER (
-            WHERE p.is_active = true
-            AND p.first_seen_at::date <= sd.snapshot_date
-        ) + COUNT(DISTINCT p.id) FILTER (
-            WHERE p.is_active = false
-            AND p.last_seen_at::date >= sd.snapshot_date
-            AND p.first_seen_at::date <= sd.snapshot_date
-        ) AS active_postings
-    FROM snapshot_dates sd
-    CROSS JOIN companies c
-    JOIN postings p ON p.company_id = c.id
-    WHERE EXISTS (
-        SELECT 1 FROM posting_snapshots ps2
-        WHERE ps2.posting_id = p.id
-        AND ps2.snapshot_date = sd.snapshot_date
-    )
-    GROUP BY sd.snapshot_date, p.company_id
+            WHERE p.first_seen_at::date = ps.snapshot_date
+        ) AS new_postings
+    FROM posting_snapshots ps
+    JOIN postings p ON p.id = ps.posting_id
+    GROUP BY ps.snapshot_date, p.company_id
+),
+closed_by_date AS (
+    SELECT
+        (p.last_seen_at::date + INTERVAL '1 day')::date AS date,
+        p.company_id,
+        COUNT(DISTINCT p.id) AS closed_postings
+    FROM postings p
+    WHERE p.is_active = false
+    AND p.last_seen_at IS NOT NULL
+    GROUP BY (p.last_seen_at::date + INTERVAL '1 day')::date, p.company_id
 )
 SELECT
-    date,
-    company_id,
-    active_postings,
-    new_postings,
-    closed_postings,
-    new_postings - closed_postings AS net_change
-FROM daily_stats
-ORDER BY date, company_id
+    a.date,
+    a.company_id,
+    a.active_postings,
+    a.new_postings,
+    COALESCE(c.closed_postings, 0) AS closed_postings,
+    a.new_postings - COALESCE(c.closed_postings, 0) AS net_change
+FROM active_by_date a
+LEFT JOIN closed_by_date c ON c.date = a.date AND c.company_id = a.company_id
+ORDER BY a.date, a.company_id
 """
 
 

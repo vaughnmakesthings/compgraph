@@ -1,0 +1,3 @@
+http://eval.compgraph.local {
+	reverse_proxy localhost:3000
+}

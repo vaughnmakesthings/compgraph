@@ -28,9 +28,10 @@ posting_markets AS (
         AND LOWER(TRIM(
             SPLIT_PART(ls.location_raw, ',', 1)
         )) = LOWER(lm.city_normalized)
-        AND LOWER(TRIM(
-            SPLIT_PART(ls.location_raw, ',', 2)
-        )) = LOWER(lm.state)
+        AND LOWER(TRIM(SPLIT_PART(
+            TRIM(SPLIT_PART(ls.location_raw, ',', 2)),
+            ' ', 1
+        ))) = LOWER(lm.state)
     JOIN markets m
         ON LOWER(m.name) = LOWER(lm.metro_name)
         AND LOWER(COALESCE(m.state, '')) = LOWER(lm.metro_state)
