@@ -175,7 +175,7 @@ describe('api.recordComparison', () => {
       posting_id: 'posting-1',
       result_a_id: 'result-a',
       result_b_id: 'result-b',
-      winner: 'a',
+      winner: 'a' as const,
       notes: 'A is more accurate',
     }
     const result = await api.recordComparison(body)
@@ -256,5 +256,40 @@ describe('api.getEvalResults', () => {
     } as Response)
 
     await expect(api.getEvalResults('run-missing')).rejects.toThrow('API error 404')
+  })
+})
+
+describe('api.getBrandTimeline', () => {
+  it('URL-encodes brand_id containing special characters', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as Response)
+
+    await api.getBrandTimeline({ brand_id: 'foo&bar' })
+
+    const url = vi.mocked(fetch).mock.calls[0][0] as string
+    expect(url).toContain('brand_id=foo%26bar')
+    expect(url).not.toContain('brand_id=foo&bar')
+  })
+
+  it('omits query string when no brand_id provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as Response)
+
+    await api.getBrandTimeline()
+
+    const url = vi.mocked(fetch).mock.calls[0][0] as string
+    expect(url).toMatch(/\/api\/aggregation\/brand-timeline$/)
+  })
+})
+
+describe('api network error handling', () => {
+  it('wraps fetch TypeError in a normalized network error', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    await expect(api.getPipelineStatus()).rejects.toThrow('Network error')
   })
 })

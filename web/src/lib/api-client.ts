@@ -16,10 +16,15 @@ import type {
 } from './types'
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    })
+  } catch (cause) {
+    throw new Error(`Network error: ${path}`, { cause })
+  }
   if (!res.ok) {
     throw new Error(`API error ${res.status}: ${path}`)
   }
@@ -39,8 +44,9 @@ export const api = {
   },
 
   getBrandTimeline: (params?: { brand_id?: string }) => {
-    const q = params?.brand_id ? `?brand_id=${params.brand_id}` : ''
-    return apiFetch<BrandTimeline[]>(`/api/aggregation/brand-timeline${q}`)
+    const q = new URLSearchParams()
+    if (params?.brand_id) q.set('brand_id', params.brand_id)
+    return apiFetch<BrandTimeline[]>(`/api/aggregation/brand-timeline${q.size ? `?${q}` : ''}`)
   },
 
   getPayBenchmarks: () => apiFetch<PayBenchmark[]>('/api/aggregation/pay-benchmarks'),
@@ -101,7 +107,7 @@ export const api = {
     posting_id: string
     result_a_id: string
     result_b_id: string
-    winner: string
+    winner: 'a' | 'b' | 'tie' | 'both_bad'
     notes?: string
   }) =>
     apiFetch<{ id: string }>('/api/eval/comparisons', {
