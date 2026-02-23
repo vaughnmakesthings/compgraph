@@ -895,22 +895,13 @@ function ReviewPageContent() {
                     key={value}
                     onClick={() => void handleVote(value)}
                     disabled={submitting}
-                    className="rounded border px-4 py-2.5 font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded border border-[#BFC0C0] px-4 py-2.5 font-medium transition-colors duration-150 hover:border-[#EF8354] disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
-                      borderColor: "#BFC0C0",
                       fontFamily:
                         "var(--font-body, 'DM Sans Variable', sans-serif)",
                       fontSize: "13px",
                       color: "#2D3142",
                       borderRadius: "var(--radius-sm, 4px)",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor =
-                        "#EF8354";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor =
-                        "#BFC0C0";
                     }}
                   >
                     {submitting ? "\u2026" : label}

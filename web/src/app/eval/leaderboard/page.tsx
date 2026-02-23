@@ -73,17 +73,7 @@ export default function LeaderboardPage() {
       .getEvalLeaderboard()
       .then((data) => {
         if (!cancelled) {
-          // The backend returns a generic Record<string, unknown>; cast defensively
-          const d = data as Partial<LeaderboardData>;
-          setRawData({
-            runs: Array.isArray(d.runs) ? (d.runs as EvalRun[]) : [],
-            elo: (d.elo as Record<string, number>) ?? {},
-            comparisons: Array.isArray(d.comparisons)
-              ? (d.comparisons as EvalComparison[])
-              : [],
-            field_accuracy:
-              (d.field_accuracy as Record<string, Record<string, number>>) ?? {},
-          });
+          setRawData(data);
         }
       })
       .catch((err) => {
@@ -407,6 +397,14 @@ export default function LeaderboardPage() {
                       ).map(({ key, label }) => (
                         <th
                           key={key}
+                          scope="col"
+                          aria-sort={
+                            sortKey === key
+                              ? sortAsc
+                                ? "ascending"
+                                : "descending"
+                              : "none"
+                          }
                           onClick={() => sortColumn(key)}
                           className="pb-3 pl-5 pt-4 pr-4 text-left last:text-right"
                           style={{
@@ -556,6 +554,7 @@ export default function LeaderboardPage() {
                   <thead>
                     <tr className="border-b border-[#BFC0C0]">
                       <th
+                        scope="col"
                         className="pb-3 pl-5 pt-4 pr-4 text-left"
                         style={headerStyle}
                       >
@@ -564,6 +563,7 @@ export default function LeaderboardPage() {
                       {allFieldNames.map((field) => (
                         <th
                           key={field}
+                          scope="col"
                           className="pb-3 pt-4 pr-4 text-center"
                           style={headerStyle}
                         >

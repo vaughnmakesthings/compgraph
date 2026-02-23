@@ -97,7 +97,12 @@ export const api = {
 
   getEvalResults: (runId: string) => apiFetch<EvalResult[]>(`/api/eval/runs/${runId}/results`),
 
-  getEvalLeaderboard: () => apiFetch<Record<string, unknown>>('/api/eval/leaderboard-data'),
+  getEvalLeaderboard: () => apiFetch<{
+    runs: EvalRun[];
+    elo: Record<string, number>;
+    comparisons: EvalComparison[];
+    field_accuracy: Record<string, Record<string, number>>;
+  }>('/api/eval/leaderboard-data'),
 
   getEloRatings: () => apiFetch<Record<string, number>>('/api/eval/elo'),
 
