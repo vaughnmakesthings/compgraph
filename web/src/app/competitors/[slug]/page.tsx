@@ -166,14 +166,18 @@ export default function CompetitorDossierPage() {
       (b) => b.company_slug === slug,
     );
 
-    const topBrand =
-      companyBrandTimeline.length > 0
-        ? companyBrandTimeline.reduce<BrandTimeline>(
-            (best, curr) =>
-              curr.posting_count > best.posting_count ? curr : best,
-            companyBrandTimeline[0],
-          )
-        : null;
+    // Aggregate by brand: take the max posting_count across all dates
+    const brandTotals = new Map<string, { brand_name: string; count: number }>();
+    for (const row of companyBrandTimeline) {
+      const existing = brandTotals.get(row.brand_id);
+      if (!existing || row.posting_count > existing.count) {
+        brandTotals.set(row.brand_id, { brand_name: row.brand_name, count: row.posting_count });
+      }
+    }
+    const brandsData = [...brandTotals.values()]
+      .sort((a, b) => b.count - a.count);
+
+    const topBrand = brandsData.length > 0 ? brandsData[0] : null;
 
     return {
       activePostings,
@@ -181,7 +185,8 @@ export default function CompetitorDossierPage() {
       avgPayMin,
       topRole,
       payChartData,
-      topBrand,
+      topBrand: topBrand ? { brand_name: topBrand.brand_name, posting_count: topBrand.count } : null,
+      brandsData,
       companyId: latestRow?.company_id ?? null,
     };
   }, [data, company]);
@@ -331,6 +336,96 @@ export default function CompetitorDossierPage() {
             }}
           >
             No pay benchmark data available
+          </div>
+        )}
+      </div>
+
+      {/* Brand Intelligence */}
+      <div
+        className="rounded-lg border p-4 mb-6"
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderColor: "#BFC0C0",
+          boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
+        }}
+      >
+        <h2
+          className="text-sm font-medium mb-4"
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            color: "#2D3142",
+          }}
+        >
+          Brand Intelligence
+        </h2>
+        {loading ? (
+          <SkeletonBox className="h-[200px]" />
+        ) : derived && derived.brandsData.length > 0 ? (
+          <div className="space-y-1.5">
+            {derived.brandsData.slice(0, 20).map((brand) => {
+              const maxCount = derived.brandsData[0].count;
+              const pct = maxCount > 0 ? (brand.count / maxCount) * 100 : 0;
+              return (
+                <div key={brand.brand_name} className="flex items-center gap-3">
+                  <span
+                    style={{
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      fontSize: "13px",
+                      color: "#2D3142",
+                      width: "160px",
+                      flexShrink: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={brand.brand_name}
+                  >
+                    {brand.brand_name}
+                  </span>
+                  <div
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#E8E8E4",
+                      borderRadius: "3px",
+                      height: "8px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        backgroundColor: "#EF8354",
+                        borderRadius: "3px",
+                        transition: "width 300ms ease",
+                      }}
+                    />
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                      fontSize: "11px",
+                      color: "#4F5D75",
+                      width: "32px",
+                      textAlign: "right",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {brand.count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="flex items-center justify-center py-8 text-sm"
+            style={{
+              color: "#4F5D75",
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            }}
+          >
+            No brand data available
           </div>
         )}
       </div>
