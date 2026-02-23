@@ -281,6 +281,14 @@ Before pushing any branch with Python changes:
 3. Run `uv run pytest -x -q --tb=short -m "not integration"` — full unit test pass
 4. Only push after all three pass. Do NOT push hoping CI will catch issues — it wastes a round-trip.
 
+Before pushing any branch with frontend (`web/`) changes:
+1. Run `npm run lint` — ESLint strict (--max-warnings 0)
+2. Run `npm run typecheck` — TypeScript --noEmit
+3. Run `npm test` — full Vitest suite
+4. Run `npm run build` — catch build-time errors (SSR failures, missing env vars, etc.)
+5. With dev server running (`npm run dev`): use next-devtools `browser_eval` to visually verify affected pages
+6. Only push after all five pass. Vercel build failures are slower to debug than catching locally.
+
 After squash-merging a PR to main:
 - CD auto-deploys to dev server (no manual action needed)
 - Sync local main: `git checkout main && git pull origin main`

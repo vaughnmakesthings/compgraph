@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Badge } from "@/components/data/badge";
 import { Callout } from "@/components/content/callout";
 import { PROSPECT_MOCKS, type ProspectContact, type PressRelease } from "@/lib/mock/prospects";
+import { MockupBanner } from "@/components/content/mockup-banner";
 
 type Tab = "summary" | "contacts";
 
@@ -821,6 +822,7 @@ export default function ProspectDossierPage() {
 
   return (
     <div>
+      <MockupBanner />
       {/* Header */}
       <div className="flex items-start gap-3 mb-6 flex-wrap">
         <div className="flex-1 min-w-0">

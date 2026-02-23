@@ -1,7 +1,7 @@
 ---
 name: enrichment-monitor
 description: Specialized agent for monitoring enrichment pipeline health and data quality.
-tools: Read, Grep, Glob, Bash, LS, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
+tools: Read, Grep, Glob, Bash, LS, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__get_advisors, mcp__supabase__get_logs
 ---
 
 # Enrichment Monitor

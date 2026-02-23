@@ -4,6 +4,22 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-23 — MCP Tool Integration & Agent Workflow Updates
+
+**Goal:** Verify new MCP tools are working and propagate awareness across all project agents.
+
+**What happened:**
+- Verified all 3 MCP servers: Supabase (25 tables, execute_sql working), next-devtools (init + browser_eval), Vercel (OAuth authenticated — `list_deployments`, `get_runtime_logs` available). Vercel required one-time OAuth flow via `/mcp`.
+- Created `docs/references/mcp-server-capabilities.md` documenting all 3 servers with tool tables, project IDs, composed workflows, and known gaps
+- Updated 5 agent files with MCP tool awareness: `nextjs-deploy-ops` (all 3 servers), `react-frontend-developer` (next-devtools + Vercel + Supabase types), `database-optimizer` (full Supabase suite), `python-backend-developer` and `enrichment-monitor` (Supabase read tools)
+- Fixed stale `nextjs-deploy-ops` infra section: removed Streamlit (decommissioned), corrected Next.js frontend to Vercel (not DO droplet)
+- Added frontend pre-push checklist to CLAUDE.md and `react-frontend-developer.md`: lint → typecheck → test → build → `browser_eval` local verification before every push
+- Added `mcp-server-capabilities.md` to context-packs.md External Research table
+
+**Open:** next-devtools runtime tools (`nextjs_index`, `nextjs_call`) require local dev server — use Vercel MCP for production debugging.
+
+---
+
 ## 2026-02-22 — Eval API Deploy, Docs Audit, Insights Fixes
 
 **Goal:** Deploy eval API backend to Pi, audit docs, implement insights feedback.
