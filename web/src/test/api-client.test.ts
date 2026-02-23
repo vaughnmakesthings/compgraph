@@ -294,6 +294,122 @@ describe('api network error handling', () => {
   })
 })
 
+describe('api pipeline control endpoints', () => {
+  function mockOk(body: unknown) {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => body,
+    } as Response)
+  }
+
+  it('triggerScrape sends POST to /api/scrape/trigger', async () => {
+    mockOk({ run_id: 'run-1', message: 'started' })
+    const result = await api.triggerScrape()
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/scrape/trigger')
+    expect(init.method).toBe('POST')
+    expect(result.run_id).toBe('run-1')
+  })
+
+  it('pauseScrape sends POST to /api/scrape/pause', async () => {
+    mockOk({ run_id: 'run-1', status: 'PAUSED', message: 'ok' })
+    await api.pauseScrape()
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/scrape/pause')
+    expect(init.method).toBe('POST')
+  })
+
+  it('resumeScrape sends POST to /api/scrape/resume', async () => {
+    mockOk({ run_id: 'run-1', status: 'RUNNING', message: 'ok' })
+    await api.resumeScrape()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/resume')
+  })
+
+  it('stopScrape sends POST to /api/scrape/stop', async () => {
+    mockOk({ run_id: 'run-1', status: 'STOPPING', message: 'ok' })
+    await api.stopScrape()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/stop')
+  })
+
+  it('forceStopScrape sends POST to /api/scrape/force-stop', async () => {
+    mockOk({ run_id: 'run-1', status: 'FAILED', message: 'ok' })
+    await api.forceStopScrape()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/force-stop')
+  })
+
+  it('getScrapeStatus fetches from /api/scrape/status and returns run_id + status', async () => {
+    const mockStatus = {
+      run_id: 'run-1', status: 'RUNNING', started_at: null, finished_at: null,
+      total_postings_found: 10, total_snapshots_created: 5, total_errors: 0,
+      companies_succeeded: 2, companies_failed: 0, company_states: {},
+    }
+    mockOk(mockStatus)
+    const result = await api.getScrapeStatus()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/status')
+    expect(result.run_id).toBe('run-1')
+    expect(result.status).toBe('RUNNING')
+  })
+
+  it('triggerEnrichment sends POST to /api/enrich/trigger', async () => {
+    mockOk({ run_id: 'enrich-1', message: 'started' })
+    const result = await api.triggerEnrichment()
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/enrich/trigger')
+    expect(init.method).toBe('POST')
+    expect(result.run_id).toBe('enrich-1')
+  })
+
+  it('getEnrichStatus fetches from /api/enrich/status', async () => {
+    const mockStatus = {
+      run_id: 'enrich-1', status: 'running', started_at: null, finished_at: null,
+      pass1_result: { succeeded: 50, failed: 0, skipped: 0 },
+      pass2_result: { succeeded: 45, failed: 0, skipped: 5 },
+      total_input_tokens: 10000, total_output_tokens: 2000,
+      total_api_calls: 50, total_dedup_saved: 5, circuit_breaker_tripped: false,
+    }
+    mockOk(mockStatus)
+    const result = await api.getEnrichStatus()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/enrich/status')
+    expect(result.run_id).toBe('enrich-1')
+    expect(result.circuit_breaker_tripped).toBe(false)
+  })
+
+  it('getSchedulerStatus fetches from /api/scheduler/status', async () => {
+    const mockStatus = {
+      enabled: true, schedules: [], last_pipeline_finished_at: null,
+      last_pipeline_success: null, missed_run: false,
+    }
+    mockOk(mockStatus)
+    const result = await api.getSchedulerStatus()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/status')
+    expect(result.enabled).toBe(true)
+    expect(result.missed_run).toBe(false)
+  })
+
+  it('triggerSchedulerJob sends POST with jobId in URL', async () => {
+    mockOk({ job_id: 'daily_pipeline', message: 'triggered' })
+    const result = await api.triggerSchedulerJob('daily_pipeline')
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/scheduler/jobs/daily_pipeline/trigger')
+    expect(init.method).toBe('POST')
+    expect(result.job_id).toBe('daily_pipeline')
+  })
+
+  it('pauseSchedulerJob sends POST and returns paused: true', async () => {
+    mockOk({ schedule_id: 'daily_pipeline', paused: true, message: 'ok' })
+    const result = await api.pauseSchedulerJob('daily_pipeline')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/jobs/daily_pipeline/pause')
+    expect(result.paused).toBe(true)
+  })
+
+  it('resumeSchedulerJob sends POST and returns paused: false', async () => {
+    mockOk({ schedule_id: 'daily_pipeline', paused: false, message: 'ok' })
+    const result = await api.resumeSchedulerJob('daily_pipeline')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/jobs/daily_pipeline/resume')
+    expect(result.paused).toBe(false)
+  })
+})
+
 describe('api simple GET endpoints', () => {
   it('api.getPayBenchmarks fetches /api/aggregation/pay-benchmarks', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)

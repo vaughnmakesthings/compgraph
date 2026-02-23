@@ -362,3 +362,165 @@ describe("Settings page", () => {
     );
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Settings — scheduler section
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("Settings page — scheduler section", () => {
+  it("renders the Scheduler heading", async () => {
+    render(<SettingsPage />);
+    expect(screen.getByRole("heading", { name: /scheduler/i })).toBeInTheDocument();
+  });
+
+  it("shows Enabled badge when scheduler is enabled", async () => {
+    render(<SettingsPage />);
+    await waitFor(() => expect(screen.getByText("Enabled")).toBeInTheDocument());
+  });
+
+  it("shows schedule row and action buttons for active schedule", async () => {
+    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+      enabled: true,
+      schedules: [
+        {
+          schedule_id: "daily_pipeline",
+          next_fire_time: "2026-02-24T06:00:00Z",
+          last_fire_time: "2026-02-23T06:00:00Z",
+          paused: false,
+        },
+      ],
+      last_pipeline_finished_at: "2026-02-23T07:00:00Z",
+      last_pipeline_success: true,
+      missed_run: false,
+    });
+    render(<SettingsPage />);
+    await waitFor(() => expect(screen.getByText("daily_pipeline")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /^trigger$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^pause$/i })).toBeInTheDocument();
+  });
+
+  it("shows Resume button for a paused schedule", async () => {
+    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+      enabled: true,
+      schedules: [
+        {
+          schedule_id: "daily_pipeline",
+          next_fire_time: null,
+          last_fire_time: null,
+          paused: true,
+        },
+      ],
+      last_pipeline_finished_at: null,
+      last_pipeline_success: null,
+      missed_run: false,
+    });
+    render(<SettingsPage />);
+    await waitFor(() => expect(screen.getByText("daily_pipeline")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /^resume$/i })).toBeInTheDocument();
+  });
+
+  it("shows missed run warning when missed_run is true", async () => {
+    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+      enabled: true,
+      schedules: [],
+      last_pipeline_finished_at: "2026-02-20T10:00:00Z",
+      last_pipeline_success: false,
+      missed_run: true,
+    });
+    render(<SettingsPage />);
+    await waitFor(() =>
+      expect(
+        screen.getByText(/no pipeline completed in the last 56 hours/i)
+      ).toBeInTheDocument()
+    );
+  });
+
+  it("shows 'Could not load scheduler status' when API fails", async () => {
+    vi.mocked(api.getSchedulerStatus).mockRejectedValueOnce(new Error("network"));
+    render(<SettingsPage />);
+    await waitFor(() =>
+      expect(screen.getByText(/could not load scheduler status/i)).toBeInTheDocument()
+    );
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Settings — trigger error handling
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("Settings page — trigger errors", () => {
+  it("shows error banner when Trigger Scrape fails", async () => {
+    vi.mocked(api.triggerScrape).mockRejectedValueOnce(new Error("Backend unreachable"));
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: /trigger scrape/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toBeInTheDocument()
+    );
+    expect(screen.getByText(/scrape error/i)).toBeInTheDocument();
+  });
+
+  it("shows error banner when Trigger Enrichment fails", async () => {
+    vi.mocked(api.triggerEnrichment).mockRejectedValueOnce(new Error("Backend unreachable"));
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: /trigger enrichment/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toBeInTheDocument()
+    );
+    expect(screen.getByText(/enrichment error/i)).toBeInTheDocument();
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Settings — run history with data
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("Settings page — run history with data", () => {
+  beforeEach(() => {
+    vi.mocked(api.getPipelineRuns).mockResolvedValue({
+      scrape_runs: [
+        {
+          id: "run-1",
+          company_name: "T-ROC",
+          company_slug: "troc",
+          status: "completed",
+          started_at: "2026-02-23T10:00:00Z",
+          completed_at: "2026-02-23T10:05:00Z",
+          jobs_found: 42,
+          snapshots_created: 10,
+          postings_closed: 2,
+        },
+      ],
+      enrichment_runs: [
+        {
+          id: "enrich-1",
+          status: "completed",
+          started_at: "2026-02-23T10:06:00Z",
+          finished_at: "2026-02-23T10:10:00Z",
+          pass1_total: 100,
+          pass1_succeeded: 95,
+          pass2_total: 95,
+          pass2_succeeded: 90,
+        },
+      ],
+    });
+  });
+
+  it("renders company name in scrape run history", async () => {
+    render(<SettingsPage />);
+    await waitFor(() => expect(screen.getByText("T-ROC")).toBeInTheDocument());
+  });
+
+  it("renders pass1 succeeded count in enrichment run history", async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      const cells = screen.getAllByText("95");
+      expect(cells.length).toBeGreaterThan(0);
+    });
+  });
+});
