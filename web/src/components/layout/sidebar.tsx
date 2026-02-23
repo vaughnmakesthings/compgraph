@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -318,7 +318,7 @@ export function Sidebar() {
   useEffect(() => {
     const stored = readStoredState();
     if (Object.keys(stored).length > 0) {
-      setExpandedKeys((prev) => ({ ...prev, ...stored }));
+      startTransition(() => setExpandedKeys((prev) => ({ ...prev, ...stored })));
     }
   }, []);
 

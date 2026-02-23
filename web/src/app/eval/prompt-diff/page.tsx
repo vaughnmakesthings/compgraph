@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
+import { Suspense, startTransition, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api-client";
 import type { EvalRun, EvalResult } from "@/lib/types";
@@ -98,7 +98,7 @@ function PromptDiffContent() {
   useEffect(() => {
     if (!bothSelected) return;
     let cancelled = false;
-    setLoadingResults(true);
+    startTransition(() => setLoadingResults(true));
 
     Promise.all([
       api.getEvalResults(baselineRunId!),
