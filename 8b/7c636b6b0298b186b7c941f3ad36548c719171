@@ -1,0 +1,29 @@
+web/src/app/competitors/[slug]/page.tsx
+  7dbaa9afd2c5b41b 16,70-72,112,138-140,142-144,301,309,348,356
+web/src/app/competitors/page.tsx
+  7dbaa9afd2c5b41b 8
+web/src/lib/constants.ts
+  7dbaa9afd2c5b41b 2-15
+web/src/test/competitors.test.tsx
+  7dbaa9afd2c5b41b 241-249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "8b7c636b6b0298b186b7c941f3ad36548c719171",
+  "prompts": {
+    "7dbaa9afd2c5b41b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0049afa5-7075-499a-9e1e-83faf091e15a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 49,
+      "total_deletions": 60,
+      "accepted_lines": 48,
+      "overriden_lines": 0
+    }
+  }
+}
