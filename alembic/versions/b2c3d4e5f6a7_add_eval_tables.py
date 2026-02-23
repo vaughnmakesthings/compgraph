@@ -101,7 +101,7 @@ def upgrade() -> None:
                 result_id     UUID NOT NULL REFERENCES eval_results(id) ON DELETE CASCADE,
                 field_name    TEXT NOT NULL,
                 model_value   TEXT,
-                is_correct    INTEGER NOT NULL,
+                is_correct    INTEGER NOT NULL CHECK (is_correct IN (-1, 0, 1)),
                 correct_value TEXT,
                 created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
                 UNIQUE (result_id, field_name)
@@ -122,6 +122,16 @@ def upgrade() -> None:
     op.execute(
         sa.text(
             "CREATE INDEX IF NOT EXISTS ix_eval_comparisons_posting_id ON eval_comparisons (posting_id)"
+        )
+    )
+    op.execute(
+        sa.text(
+            "CREATE INDEX IF NOT EXISTS ix_eval_comparisons_result_a_id ON eval_comparisons (result_a_id)"
+        )
+    )
+    op.execute(
+        sa.text(
+            "CREATE INDEX IF NOT EXISTS ix_eval_comparisons_result_b_id ON eval_comparisons (result_b_id)"
         )
     )
     op.execute(

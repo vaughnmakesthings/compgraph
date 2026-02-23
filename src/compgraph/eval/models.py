@@ -24,6 +24,8 @@ class EvalBase(DeclarativeBase):
 class EvalCorpus(EvalBase):
     __tablename__ = "eval_corpus"
 
+    # String PK (not UUID): corpus items use posting IDs from source eval data,
+    # which are text strings (e.g. "posting_abc123") assigned by the eval harness.
     id: Mapped[str] = mapped_column(String(200), primary_key=True)
     company_slug: Mapped[str] = mapped_column(String(100), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
@@ -134,6 +136,8 @@ class EvalComparison(EvalBase):
             name="check_eval_comparisons_winner",
         ),
         Index("ix_eval_comparisons_posting_id", "posting_id"),
+        Index("ix_eval_comparisons_result_a_id", "result_a_id"),
+        Index("ix_eval_comparisons_result_b_id", "result_b_id"),
     )
 
 
@@ -148,6 +152,7 @@ class EvalFieldReview(EvalBase):
     )
     field_name: Mapped[str] = mapped_column(String(100), nullable=False)
     model_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Integer (not Boolean): tri-state — 1=correct, 0=incorrect, -1=can't assess.
     is_correct: Mapped[int] = mapped_column(Integer, nullable=False)
     correct_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -159,6 +164,7 @@ class EvalFieldReview(EvalBase):
     result: Mapped["EvalResult"] = relationship(back_populates="field_reviews")
 
     __table_args__ = (
+        CheckConstraint("is_correct IN (-1, 0, 1)", name="check_eval_field_reviews_is_correct"),
         UniqueConstraint("result_id", "field_name", name="uq_eval_field_reviews_result_field"),
         Index("ix_eval_field_reviews_result_id", "result_id"),
     )
