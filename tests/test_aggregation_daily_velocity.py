@@ -29,9 +29,12 @@ class TestDailyVelocityQuery:
             assert col in _QUERY, f"Required column '{col}' missing from query"
 
     def test_net_change_computed_as_difference(self):
-        """net_change = new_postings - closed_postings."""
+        """net_change = new_postings - closed_postings (COALESCE-wrapped after the fix)."""
         collapsed = "".join(_QUERY.split())
-        assert "new_postings-closed_postings" in collapsed
+        assert (
+            "new_postings-COALESCE(c.closed_postings,0)" in collapsed
+            or "new_postings-closed_postings" in collapsed
+        )
 
     def test_query_joins_postings_table(self):
         """Must join postings table for company_id and post attributes."""
@@ -41,3 +44,14 @@ class TestDailyVelocityQuery:
         """active_postings must count from posting_snapshots (ps.posting_id)."""
         collapsed = "".join(_QUERY.split())
         assert "COUNT(DISTINCTps.posting_id)" in collapsed
+
+    def test_closed_postings_uses_separate_subquery(self):
+        """closed_postings must come from postings.last_seen_at, not posting_snapshots FILTER."""
+        assert "closed_by_date" in _QUERY or (
+            "is_active=false" in "".join(_QUERY.split()) and "last_seen_at" in _QUERY
+        )
+
+    def test_closed_postings_uses_coalesce(self):
+        """closed_postings must COALESCE null from LEFT JOIN to 0."""
+        collapsed = "".join(_QUERY.split())
+        assert "COALESCE(c.closed_postings,0)" in collapsed
