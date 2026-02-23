@@ -238,4 +238,13 @@ describe("Competitor dossier page", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("renders error message when API fails", async () => {
+    const { api } = await import("@/lib/api-client");
+    vi.mocked(api.getVelocity).mockRejectedValueOnce(new Error("Network error"));
+    render(<CompetitorDossierPage />);
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+  });
 });

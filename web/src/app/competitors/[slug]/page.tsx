@@ -13,7 +13,7 @@ import type {
   BrandTimeline,
   PostingListItem,
 } from "@/lib/types";
-import { COMPANIES } from "../page";
+import { COMPANIES } from "@/lib/constants";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -67,6 +67,9 @@ export default function CompetitorDossierPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setData(null);
 
     async function load() {
       try {
@@ -106,7 +109,7 @@ export default function CompetitorDossierPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [slug]);
 
   const derived = useMemo(() => {
     if (!data || !company) return null;
@@ -132,14 +135,13 @@ export default function CompetitorDossierPage() {
       (p) => p.company_id === latestRow?.company_id,
     );
 
+    const payMinFiltered = companyPayBenchmarks.filter(
+      (p) => p.pay_min_avg !== null,
+    );
     const avgPayMin =
-      companyPayBenchmarks.length > 0
-        ? companyPayBenchmarks
-            .filter((p) => p.pay_min_avg !== null)
-            .reduce(
-              (s, p, _, arr) => s + (p.pay_min_avg ?? 0) / arr.length,
-              0,
-            )
+      payMinFiltered.length > 0
+        ? payMinFiltered.reduce((s, p) => s + (p.pay_min_avg ?? 0), 0) /
+          payMinFiltered.length
         : null;
 
     const topRole =
@@ -296,7 +298,7 @@ export default function CompetitorDossierPage() {
           boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
         }}
       >
-        <p
+        <h2
           className="text-sm font-medium mb-4"
           style={{
             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
@@ -304,7 +306,7 @@ export default function CompetitorDossierPage() {
           }}
         >
           Pay Benchmarks by Role
-        </p>
+        </h2>
         {loading ? (
           <SkeletonBox className="h-[240px]" />
         ) : derived && derived.payChartData.length > 0 ? (
@@ -343,7 +345,7 @@ export default function CompetitorDossierPage() {
           className="px-4 py-3 border-b"
           style={{ borderColor: "#BFC0C0" }}
         >
-          <p
+          <h2
             className="text-sm font-medium"
             style={{
               fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
@@ -351,7 +353,7 @@ export default function CompetitorDossierPage() {
             }}
           >
             Job Postings
-          </p>
+          </h2>
         </div>
         {loading ? (
           <div className="p-4">

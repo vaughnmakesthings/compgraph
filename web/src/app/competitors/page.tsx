@@ -5,20 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/data/badge";
 import { api } from "@/lib/api-client";
 import type { DailyVelocity } from "@/lib/types";
-
-interface Company {
-  name: string;
-  slug: string;
-  ats: string;
-}
-
-export const COMPANIES: Company[] = [
-  { name: "Advantage Solutions", slug: "advantage", ats: "Workday" },
-  { name: "Acosta Group", slug: "acosta", ats: "Workday" },
-  { name: "BDS Connected Solutions", slug: "bds", ats: "iCIMS" },
-  { name: "MarketSource", slug: "marketsource", ats: "iCIMS" },
-  { name: "T-ROC", slug: "troc", ats: "Workday" },
-];
+import { COMPANIES, type Company } from "@/lib/constants";
 
 function CompanyCard({
   company,
