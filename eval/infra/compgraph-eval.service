@@ -1,0 +1,18 @@
+[Unit]
+Description=CompGraph Eval Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=compgraph-eval
+Group=compgraph-eval
+WorkingDirectory=/opt/compgraph-eval/web
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node /opt/compgraph-eval/web/.next/standalone/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

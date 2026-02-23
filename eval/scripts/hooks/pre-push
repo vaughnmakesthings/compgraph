@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-push: run tests before pushing. Skip for docs-only pushes.
+set -eo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CHANGED=$(git diff --name-only "@{upstream}..HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+
+# Docs-only → skip
+NON_DOCS=$(echo "$CHANGED" | grep -vE '\.(md|txt|rst)$' || true)
+if [ -z "$NON_DOCS" ]; then
+    echo "[pre-push] Docs-only changes, skipping tests."
+    exit 0
+fi
+
+# Python tests
+PY_CHANGED=$(echo "$CHANGED" | grep '\.py$' || true)
+if [ -n "$PY_CHANGED" ]; then
+    echo "[pre-push] Running Python tests..."
+    uv run pytest -x -q --tb=short
+fi
+
+# Frontend tests
+FE_CHANGED=$(echo "$CHANGED" | grep -E '^web/' || true)
+if [ -n "$FE_CHANGED" ]; then
+    echo "[pre-push] Running frontend tests..."
+    cd "$REPO_ROOT/web" && npx vitest run --reporter=dot
+    cd "$REPO_ROOT"
+fi
