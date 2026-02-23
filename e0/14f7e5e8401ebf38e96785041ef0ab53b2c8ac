@@ -1,0 +1,31 @@
+web/src/lib/types.ts
+  7dbaa9afd2c5b41b 110-137
+web/src/lib/api-client.ts
+  7dbaa9afd2c5b41b 4,40-41
+web/src/test/pages.test.tsx
+  7dbaa9afd2c5b41b 15,99
+web/src/app/settings/page.tsx
+  7dbaa9afd2c5b41b 3,5,109-140,150-166,294-379
+src/compgraph/api/routes/pipeline.py
+  7dbaa9afd2c5b41b 199-245,247-280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "e014f7e5e8401ebf38e96785041ef0ab53b2c8ac",
+  "prompts": {
+    "7dbaa9afd2c5b41b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0049afa5-7075-499a-9e1e-83faf091e15a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 255,
+      "total_deletions": 1,
+      "accepted_lines": 252,
+      "overriden_lines": 1
+    }
+  }
+}
