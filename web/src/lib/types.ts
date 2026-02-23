@@ -172,3 +172,63 @@ export interface EvalComparison {
   notes: string | null
   created_at: string
 }
+
+// --- Pipeline Control Types ---
+
+export type ScrapeStatus = 'pending' | 'running' | 'paused' | 'stopping' | 'success' | 'partial' | 'failed' | 'cancelled'
+
+export interface CompanyResult {
+  postings_found: number
+  snapshots_created: number
+}
+
+export interface ScrapeStatusResponse {
+  run_id: string
+  status: ScrapeStatus
+  started_at: string | null
+  finished_at: string | null
+  total_postings_found: number
+  total_snapshots_created: number
+  total_errors: number
+  companies_succeeded: number
+  companies_failed: number
+  /** Plain state strings keyed by company slug (e.g. "running", "completed") */
+  company_states: Record<string, string>
+  /** Per-company result details keyed by company slug */
+  company_results: Record<string, CompanyResult>
+}
+
+export interface EnrichPassResult {
+  succeeded: number
+  failed: number
+  skipped: number
+}
+
+export interface EnrichStatusResponse {
+  run_id: string
+  status: string
+  started_at: string | null
+  finished_at: string | null
+  pass1_result: EnrichPassResult | null
+  pass2_result: EnrichPassResult | null
+  total_input_tokens: number
+  total_output_tokens: number
+  total_api_calls: number
+  total_dedup_saved: number
+  circuit_breaker_tripped: boolean
+}
+
+export interface ScheduleInfo {
+  schedule_id: string
+  next_fire_time: string | null
+  last_fire_time: string | null
+  paused: boolean
+}
+
+export interface SchedulerStatusResponse {
+  enabled: boolean
+  schedules: ScheduleInfo[]
+  last_pipeline_finished_at: string | null
+  last_pipeline_success: boolean | null
+  missed_run: boolean
+}
