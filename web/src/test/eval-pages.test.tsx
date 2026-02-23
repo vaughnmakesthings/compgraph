@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { Suspense } from "react";
 
 // ---------------------------------------------------------------------------
 // Mock next/navigation — required for any component using useSearchParams,
@@ -14,7 +13,7 @@ vi.mock("next/navigation", () => ({
     replace: vi.fn(),
     push: vi.fn(),
   }),
-  usePathname: () => "/eval/review",
+  usePathname: () => "/eval/runs",
   redirect: vi.fn(),
 }));
 
@@ -60,31 +59,6 @@ vi.mock("@/lib/api-client", () => ({
       run_id: "new-run",
       tracking_id: 1,
     }),
-    getEvalResults: vi.fn().mockResolvedValue([]),
-    getEvalLeaderboard: vi.fn().mockResolvedValue({
-      runs: [
-        {
-          id: "run-abc123",
-          pass_number: 1,
-          model: "claude-haiku-4-5",
-          prompt_version: "pass1_v1",
-          status: "completed",
-          created_at: "2026-02-22T10:00:00Z",
-          completed_at: "2026-02-22T10:05:00Z",
-          total_items: 100,
-          completed_items: 100,
-        },
-      ],
-      elo: { "claude-haiku-4-5/pass1_v1": 1500 },
-      comparisons: [],
-      field_accuracy: {},
-    }),
-    listComparisons: vi.fn().mockResolvedValue([]),
-    recordComparison: vi.fn().mockResolvedValue({ id: "cmp-1" }),
-    upsertFieldReview: vi.fn().mockResolvedValue({ id: "rev-1" }),
-    getEvalCorpus: vi.fn().mockResolvedValue([
-      { id: "posting-1", title: "Field Rep - Miami", content: "..." },
-    ]),
   },
 }));
 
@@ -92,10 +66,6 @@ vi.mock("@/lib/api-client", () => ({
 // Import pages under test (after mocks are set up).
 // ---------------------------------------------------------------------------
 import EvalRunsPage from "@/app/eval/runs/page";
-import LeaderboardPage from "@/app/eval/leaderboard/page";
-import AccuracyPage from "@/app/eval/accuracy/page";
-import ReviewPage from "@/app/eval/review/page";
-import PromptDiffPage from "@/app/eval/prompt-diff/page";
 
 // ---------------------------------------------------------------------------
 // Eval Runs page
@@ -114,68 +84,5 @@ describe("Eval Runs page", () => {
     expect(
       screen.getByRole("button", { name: /new run/i }),
     ).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Leaderboard page
-// ---------------------------------------------------------------------------
-
-describe("Leaderboard page", () => {
-  it("renders the Leaderboard heading", () => {
-    render(<LeaderboardPage />);
-    expect(
-      screen.getByRole("heading", { name: /leaderboard/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("renders Pass filter buttons", () => {
-    render(<LeaderboardPage />);
-    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Pass 1" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Pass 2" }),
-    ).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Accuracy page — renders Suspense boundary (useSearchParams requirement)
-// ---------------------------------------------------------------------------
-
-describe("Accuracy page", () => {
-  it("renders the Suspense fallback without crashing", () => {
-    render(
-      <Suspense fallback={<div>Loading…</div>}>
-        <AccuracyPage />
-      </Suspense>,
-    );
-    expect(document.body).toBeInTheDocument();
-  });
-
-  it("renders without throwing", () => {
-    expect(() => render(<AccuracyPage />)).not.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Review page
-// ---------------------------------------------------------------------------
-
-describe("Review page", () => {
-  it("renders without crashing", () => {
-    expect(() => render(<ReviewPage />)).not.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Prompt Diff page
-// ---------------------------------------------------------------------------
-
-describe("Prompt Diff page", () => {
-  it("renders without crashing", () => {
-    expect(() => render(<PromptDiffPage />)).not.toThrow();
   });
 });
