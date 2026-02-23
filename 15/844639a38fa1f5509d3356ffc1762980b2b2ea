@@ -1,0 +1,62 @@
+web/src/components/content/mockup-banner.tsx
+  7d98b2db483d6b20 1-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "15844639a38fa1f5509d3356ffc1762980b2b2ea",
+  "prompts": {
+    "38c6568b0498e52e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "189f5a15-632f-4bdf-afcd-cfc4dd3f0977",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "7d98b2db483d6b20": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2270662c-a4af-4102-83ab-f89b273f0118",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 299,
+      "total_deletions": 0,
+      "accepted_lines": 299,
+      "overriden_lines": 0
+    },
+    "8a539f86f5f004f5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "20c24286-aa21-4c26-b2ff-dcc0b6c01b5d",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "a43bde97a729ceb4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3c36630d-746b-4d6e-831c-4e64e100bd3b",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 202,
+      "overriden_lines": 0
+    }
+  }
+}
