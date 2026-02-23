@@ -107,6 +107,34 @@ export interface PostingDetail extends PostingListItem {
   }>
 }
 
+export interface ScrapeRunSummary {
+  id: string
+  company_name: string
+  company_slug: string
+  status: string
+  started_at: string
+  completed_at: string | null
+  jobs_found: number
+  snapshots_created: number
+  postings_closed: number
+}
+
+export interface EnrichmentRunSummary {
+  id: string
+  status: string
+  started_at: string | null
+  finished_at: string | null
+  pass1_total: number
+  pass1_succeeded: number
+  pass2_total: number
+  pass2_succeeded: number
+}
+
+export interface PipelineRunsResponse {
+  scrape_runs: ScrapeRunSummary[]
+  enrichment_runs: EnrichmentRunSummary[]
+}
+
 export interface EvalRun {
   id: string
   pass_number: number

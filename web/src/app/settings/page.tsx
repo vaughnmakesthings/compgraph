@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
+import type { ScrapeRunSummary, EnrichmentRunSummary } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -105,6 +106,38 @@ function KvRow({ label, value }: KvRowProps) {
   );
 }
 
+function formatTs(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function StatusDot({ status }: { status: string }) {
+  const color =
+    status === "completed" ? "#1B998B"
+    : status === "running" ? "#DCB256"
+    : status === "failed" ? "#8C2C23"
+    : "#BFC0C0";
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        backgroundColor: color,
+        marginRight: 5,
+        verticalAlign: "middle",
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
 export default function SettingsPage() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [apiVersion, setApiVersion] = useState<string | null>(null);
@@ -113,6 +146,24 @@ export default function SettingsPage() {
   const [aggStatus, setAggStatus] = useState<"idle" | "ok" | "error">("idle");
   const [aggMessage, setAggMessage] = useState<string | null>(null);
   const [aggRunning, setAggRunning] = useState(false);
+
+  const [scrapeRuns, setScrapeRuns] = useState<ScrapeRunSummary[]>([]);
+  const [enrichRuns, setEnrichRuns] = useState<EnrichmentRunSummary[]>([]);
+  const [runsLoading, setRunsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api.getPipelineRuns().then((data) => {
+      if (!cancelled) {
+        setScrapeRuns(data.scrape_runs);
+        setEnrichRuns(data.enrichment_runs);
+        setRunsLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setRunsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleHealthCheck() {
     setHealthChecking(true);
@@ -239,6 +290,92 @@ export default function SettingsPage() {
           <KvRow label="Database" value="Supabase Postgres 17" />
           <KvRow label="Platform" value="Digital Ocean" />
         </div>
+      </SectionCard>
+
+      <SectionCard title="Scrape Run History" className="mt-4">
+        {runsLoading ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>
+        ) : scrapeRuns.length === 0 ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>No scrape runs recorded.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                  {["Company", "Status", "Started", "Duration", "Found", "Created", "Closed"].map((col) => (
+                    <th key={col} className="text-left px-3 py-2"
+                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {scrapeRuns.map((r) => {
+                  const dur = r.completed_at && r.started_at
+                    ? Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s"
+                    : "—";
+                  return (
+                    <tr key={r.id} style={{ borderBottom: "1px solid #E8E8E4" }}>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", color: "#2D3142" }}>{r.company_name}</td>
+                      <td className="px-3 py-1.5" style={{ color: "#4F5D75" }}>
+                        <StatusDot status={r.status} />{r.status}
+                      </td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#4F5D75", whiteSpace: "nowrap" }}>{formatTs(r.started_at)}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#4F5D75" }}>{dur}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#2D3142" }}>{r.jobs_found}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#2D3142" }}>{r.snapshots_created}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#2D3142" }}>{r.postings_closed}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Enrichment Run History" className="mt-4">
+        {runsLoading ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>
+        ) : enrichRuns.length === 0 ? (
+          <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>No enrichment runs recorded.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                  {["Status", "Started", "Duration", "P1 Total", "P1 OK", "P2 Total", "P2 OK"].map((col) => (
+                    <th key={col} className="text-left px-3 py-2"
+                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {enrichRuns.map((r) => {
+                  const dur = r.finished_at && r.started_at
+                    ? Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s"
+                    : "—";
+                  return (
+                    <tr key={r.id} style={{ borderBottom: "1px solid #E8E8E4" }}>
+                      <td className="px-3 py-1.5" style={{ color: "#4F5D75" }}>
+                        <StatusDot status={r.status} />{r.status}
+                      </td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#4F5D75", whiteSpace: "nowrap" }}>{formatTs(r.started_at)}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#4F5D75" }}>{dur}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#2D3142" }}>{r.pass1_total}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#1B998B" }}>{r.pass1_succeeded}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#2D3142" }}>{r.pass2_total}</td>
+                      <td className="px-3 py-1.5" style={{ fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)", color: "#1B998B" }}>{r.pass2_succeeded}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </SectionCard>
     </div>
   );

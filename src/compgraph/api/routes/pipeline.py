@@ -196,6 +196,88 @@ async def get_latest_scrape_run_from_db() -> dict | None:
         }
 
 
+class ScrapeRunSummary(BaseModel):
+    id: uuid.UUID
+    company_name: str
+    company_slug: str
+    status: str
+    started_at: datetime
+    completed_at: datetime | None
+    jobs_found: int
+    snapshots_created: int
+    postings_closed: int
+
+
+class EnrichmentRunSummary(BaseModel):
+    id: uuid.UUID
+    status: str
+    started_at: datetime | None
+    finished_at: datetime | None
+    pass1_total: int
+    pass1_succeeded: int
+    pass2_total: int
+    pass2_succeeded: int
+
+
+class PipelineRunsResponse(BaseModel):
+    scrape_runs: list[ScrapeRunSummary]
+    enrichment_runs: list[EnrichmentRunSummary]
+
+
+@router.get("/runs", response_model=PipelineRunsResponse)
+async def pipeline_runs() -> PipelineRunsResponse:
+    from sqlalchemy import select
+
+    from compgraph.db.models import Company, EnrichmentRunDB, ScrapeRun
+    from compgraph.db.session import async_session_factory
+
+    async with async_session_factory() as session:
+        scrape_stmt = (
+            select(
+                ScrapeRun, Company.name.label("company_name"), Company.slug.label("company_slug")
+            )
+            .join(Company, ScrapeRun.company_id == Company.id)
+            .order_by(ScrapeRun.started_at.desc())
+            .limit(50)
+        )
+        scrape_result = await session.execute(scrape_stmt)
+        scrape_rows = scrape_result.all()
+
+        enrich_stmt = select(EnrichmentRunDB).order_by(EnrichmentRunDB.started_at.desc()).limit(20)
+        enrich_result = await session.execute(enrich_stmt)
+        enrich_rows = enrich_result.scalars().all()
+
+    return PipelineRunsResponse(
+        scrape_runs=[
+            ScrapeRunSummary(
+                id=row.ScrapeRun.id,
+                company_name=row.company_name,
+                company_slug=row.company_slug,
+                status=row.ScrapeRun.status,
+                started_at=row.ScrapeRun.started_at,
+                completed_at=row.ScrapeRun.completed_at,
+                jobs_found=row.ScrapeRun.jobs_found,
+                snapshots_created=row.ScrapeRun.snapshots_created,
+                postings_closed=row.ScrapeRun.postings_closed,
+            )
+            for row in scrape_rows
+        ],
+        enrichment_runs=[
+            EnrichmentRunSummary(
+                id=r.id,
+                status=r.status,
+                started_at=r.started_at,
+                finished_at=r.finished_at,
+                pass1_total=r.pass1_total,
+                pass1_succeeded=r.pass1_succeeded,
+                pass2_total=r.pass2_total,
+                pass2_succeeded=r.pass2_succeeded,
+            )
+            for r in enrich_rows
+        ],
+    )
+
+
 @router.get("/status", response_model=PipelineStatusResponse)
 async def pipeline_status(request: Request) -> PipelineStatusResponse:
     scrape_run = get_latest_run()

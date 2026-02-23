@@ -12,6 +12,7 @@ vi.mock("../lib/api-client", () => ({
     listPostings: vi.fn(),
     health: vi.fn(),
     triggerAggregation: vi.fn(),
+    getPipelineRuns: vi.fn(),
   },
 }));
 
@@ -95,6 +96,7 @@ beforeEach(() => {
   vi.mocked(api.listPostings).mockResolvedValue(mockPostingsResponse);
   vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
   vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
+  vi.mocked(api.getPipelineRuns).mockResolvedValue({ scrape_runs: [], enrichment_runs: [] });
 });
 
 afterEach(() => {

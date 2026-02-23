@@ -1,6 +1,7 @@
 import { API_BASE } from './constants'
 import type {
   PipelineStatus,
+  PipelineRunsResponse,
   DailyVelocity,
   BrandTimeline,
   PayBenchmark,
@@ -35,6 +36,8 @@ export const api = {
   health: () => apiFetch<{ status: string; version?: string; checks?: Record<string, string> }>('/health'),
 
   getPipelineStatus: () => apiFetch<PipelineStatus>('/api/pipeline/status'),
+
+  getPipelineRuns: () => apiFetch<PipelineRunsResponse>('/api/pipeline/runs'),
 
   getVelocity: (params?: { company_id?: string; days?: number }) => {
     const q = new URLSearchParams()
