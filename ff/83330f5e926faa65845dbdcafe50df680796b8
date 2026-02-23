@@ -1,0 +1,25 @@
+docs/context-packs.md
+  7d98b2db483d6b20 359
+docs/references/operating-budget.md
+  7d98b2db483d6b20 1-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "ff83330f5e926faa65845dbdcafe50df680796b8",
+  "prompts": {
+    "7d98b2db483d6b20": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2270662c-a4af-4102-83ab-f89b273f0118",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 94,
+      "total_deletions": 0,
+      "accepted_lines": 94,
+      "overriden_lines": 0
+    }
+  }
+}
