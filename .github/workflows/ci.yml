@@ -84,9 +84,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v4
         with:
-          enable-cache: true
+          version: "latest"
       - name: Install eval dependencies
         run: uv sync --dev
         working-directory: eval
