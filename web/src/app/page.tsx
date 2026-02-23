@@ -19,8 +19,8 @@ function formatTimestamp(iso: string | null): string {
 function pipelineCardVariant(
   status: PipelineStatus["status"]
 ): "default" | "success" | "warning" {
-  if (status === "idle") return "default";
-  return "warning";
+  if (status === "idle") return "success";
+  return "default";
 }
 
 
@@ -82,11 +82,14 @@ export default function DashboardPage() {
 
     const { status, velocity } = data;
 
-    const latestByCompany: Record<string, number> = {};
+    const latestByCompany: Record<string, { date: string; active: number }> = {};
     for (const row of velocity) {
-      latestByCompany[row.company_id] = row.active_postings;
+      const existing = latestByCompany[row.company_id];
+      if (!existing || row.date > existing.date) {
+        latestByCompany[row.company_id] = { date: row.date, active: row.active_postings };
+      }
     }
-    const totalActive = Object.values(latestByCompany).reduce((s, n) => s + n, 0);
+    const totalActive = Object.values(latestByCompany).reduce((s, e) => s + e.active, 0);
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
@@ -172,7 +175,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div
+        className="grid grid-cols-4 gap-4 mb-6"
+        aria-busy={loading}
+        aria-label="KPI metrics"
+      >
         {loading ? (
           <>
             <SkeletonBox className="h-[96px]" />
@@ -211,7 +218,7 @@ export default function DashboardPage() {
           boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
         }}
       >
-        <p
+        <h2
           className="text-sm font-medium mb-4"
           style={{
             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
@@ -219,7 +226,7 @@ export default function DashboardPage() {
           }}
         >
           Daily Posting Velocity
-        </p>
+        </h2>
         {loading ? (
           <SkeletonBox className="h-[280px]" />
         ) : derived && derived.chartRows.length > 0 ? (

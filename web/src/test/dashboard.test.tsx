@@ -73,23 +73,8 @@ yesterday.setDate(today.getDate() - 1);
 const twoDaysAgo = new Date(today);
 twoDaysAgo.setDate(today.getDate() - 2);
 
+// Newest-first order — verifies totalActive uses max-date, not last-write-wins
 const mockVelocity: DailyVelocity[] = [
-  {
-    date: fmtDate(twoDaysAgo),
-    company_id: "troc",
-    company_name: "T-ROC",
-    new_postings: 5,
-    closed_postings: 2,
-    active_postings: 120,
-  },
-  {
-    date: fmtDate(twoDaysAgo),
-    company_id: "bds",
-    company_name: "BDS",
-    new_postings: 3,
-    closed_postings: 1,
-    active_postings: 85,
-  },
   {
     date: fmtDate(yesterday),
     company_id: "troc",
@@ -105,6 +90,22 @@ const mockVelocity: DailyVelocity[] = [
     new_postings: 4,
     closed_postings: 2,
     active_postings: 87,
+  },
+  {
+    date: fmtDate(twoDaysAgo),
+    company_id: "troc",
+    company_name: "T-ROC",
+    new_postings: 5,
+    closed_postings: 2,
+    active_postings: 120,
+  },
+  {
+    date: fmtDate(twoDaysAgo),
+    company_id: "bds",
+    company_name: "BDS",
+    new_postings: 3,
+    closed_postings: 1,
+    active_postings: 85,
   },
 ];
 
@@ -206,10 +207,23 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Daily Posting Velocity")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /daily posting velocity/i })
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+  });
+
+  it("KPI grid has aria-busy during loading and aria-label", () => {
+    mockedApi.getPipelineStatus.mockReturnValue(new Promise(() => {}));
+    mockedApi.getVelocity.mockReturnValue(new Promise(() => {}));
+
+    render(<DashboardPage />);
+
+    const kpiGrid = screen.getByLabelText("KPI metrics");
+    expect(kpiGrid).toHaveAttribute("aria-busy", "true");
+    expect(kpiGrid).toHaveAttribute("aria-label", "KPI metrics");
   });
 
   it("shows an error alert when the API call fails", async () => {
