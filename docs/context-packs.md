@@ -352,6 +352,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
 | `docs/references/nextjs-15-vitest-testing-patterns.md` | Next.js 15 App Router testing pyramid, RSC limitations, mocking patterns | Frontend testing (Next.js) |
 | `docs/references/ai-generated-design-complaints.md` | AI design visual tells, purple problem, practitioner complaints, antidotes | Frontend design (Next.js) |
+| `docs/UI/compgraph-design-handoff/compgraph-handoff/specs/map-visualizations.md` | Mapbox GL JS heatmap (H3 hex) + pin map patterns, color ramp, zoom-adaptive resolution, Supabase storage strategy | Frontend maps, geographic intel |
+| `docs/UI/compgraph-design-handoff/compgraph-handoff/specs/logo-dev-integration.md` | Logo.dev CDN + Brand Search API, CompetitorLogo component, presets by context, greyscale grid, caching, attribution | Frontend logos, competitor profiles |
 | `docs/references/supabase-auth-fastapi.md`  | Supabase Auth JWT verification, magic link flow, role-based middleware | Auth (M4d) |
 | `docs/references/truncate-insert-patterns.md`  | PostgreSQL truncate+insert rebuild patterns, transaction isolation, concurrent reads | Aggregation (M4a) |
 | `docs/references/fastapi-pagination-patterns.md`  | Cursor vs offset pagination, filter parameters, SQLAlchemy query builders | Detail API (M4c) |
