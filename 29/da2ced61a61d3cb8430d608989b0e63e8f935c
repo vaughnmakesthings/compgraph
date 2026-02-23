@@ -1,0 +1,25 @@
+web/src/components/layout/sidebar.tsx
+  7dbaa9afd2c5b41b 3,321
+web/src/app/eval/prompt-diff/page.tsx
+  7dbaa9afd2c5b41b 3,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "29da2ced61a61d3cb8430d608989b0e63e8f935c",
+  "prompts": {
+    "7dbaa9afd2c5b41b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0049afa5-7075-499a-9e1e-83faf091e15a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
