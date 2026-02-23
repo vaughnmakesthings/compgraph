@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.api.deps import get_db
 from compgraph.db.models import (
     Brand,
+    Company,
     Posting,
     PostingBrandMention,
     PostingEnrichment,
@@ -23,6 +24,8 @@ router = APIRouter()
 class PostingListItem(BaseModel):
     id: uuid.UUID
     company_id: uuid.UUID
+    company_name: str | None
+    company_slug: str | None
     title: str | None
     location: str | None
     first_seen_at: datetime
@@ -124,8 +127,11 @@ async def list_postings(
             PostingEnrichment.employment_type,
             PostingSnapshot.title_raw,
             PostingSnapshot.location_raw,
+            Company.name.label("company_name"),
+            Company.slug.label("company_slug"),
         )
         .outerjoin(PostingEnrichment, PostingEnrichment.posting_id == Posting.id)
+        .outerjoin(Company, Company.id == Posting.company_id)
         .outerjoin(
             PostingSnapshot,
             (PostingSnapshot.posting_id == Posting.id)
@@ -148,6 +154,8 @@ async def list_postings(
         PostingListItem(
             id=row[0].id,
             company_id=row[0].company_id,
+            company_name=row[7],
+            company_slug=row[8],
             title=row[5],
             location=row[6],
             first_seen_at=row[0].first_seen_at,

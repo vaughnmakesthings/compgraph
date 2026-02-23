@@ -74,6 +74,8 @@ export interface AgencyOverlap {
 export interface PostingListItem {
   id: string
   company_id: string
+  company_name?: string | null
+  company_slug?: string | null
   title: string | null
   location: string | null
   first_seen_at: string

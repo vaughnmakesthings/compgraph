@@ -79,8 +79,20 @@ def _make_list_row(
     employment_type: str | None = "full_time",
     title_raw: str | None = "Field Sales Rep",
     location_raw: str | None = "Atlanta, GA",
+    company_name: str | None = "Test Company",
+    company_slug: str | None = "test-company",
 ) -> tuple:
-    return (posting, role_archetype, pay_min, pay_max, employment_type, title_raw, location_raw)
+    return (
+        posting,
+        role_archetype,
+        pay_min,
+        pay_max,
+        employment_type,
+        title_raw,
+        location_raw,
+        company_name,
+        company_slug,
+    )
 
 
 def _make_mock_db_for_list(rows: list, total: int) -> AsyncMock:

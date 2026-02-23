@@ -75,7 +75,9 @@ const mockPostingsResponse: PostingListResponse = {
   items: [
     {
       id: "posting-1",
-      company_id: "troc",
+      company_id: "troc-uuid",
+      company_name: "T-ROC",
+      company_slug: "troc",
       title: "Field Marketing Rep",
       location: "Miami, FL",
       first_seen_at: "2026-01-15T10:00:00Z",

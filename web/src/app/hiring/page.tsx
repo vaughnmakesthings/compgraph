@@ -5,13 +5,6 @@ import { Badge } from "@/components/data/badge";
 import { api } from "@/lib/api-client";
 import type { PostingListItem } from "@/lib/types";
 
-const COMPANY_NAMES: Record<string, string> = {
-  troc: "T-ROC",
-  "2020-companies": "2020 Companies",
-  bds: "BDS",
-  marketsource: "MarketSource",
-};
-
 const PAGE_SIZE = 50;
 
 function formatDate(iso: string): string {
@@ -95,11 +88,13 @@ export default function HiringPage() {
   }, [items]);
 
   const uniqueCompanies = useMemo(() => {
-    const companies = new Set<string>();
+    const seen = new Map<string, string>();
     for (const item of items) {
-      companies.add(item.company_id);
+      if (!seen.has(item.company_id)) {
+        seen.set(item.company_id, item.company_name ?? item.company_id);
+      }
     }
-    return [...companies].sort();
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -180,9 +175,9 @@ export default function HiringPage() {
           aria-label="Filter by company"
         >
           <option value="">All Companies</option>
-          {uniqueCompanies.map((id) => (
+          {uniqueCompanies.map(([id, name]) => (
             <option key={id} value={id}>
-              {COMPANY_NAMES[id] ?? id}
+              {name}
             </option>
           ))}
         </select>
@@ -264,7 +259,7 @@ export default function HiringPage() {
                     className="px-4 py-3"
                     style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
                   >
-                    {COMPANY_NAMES[item.company_id] ?? item.company_id}
+                    {item.company_name ?? item.company_id}
                   </td>
                   <td
                     className="px-4 py-3"
