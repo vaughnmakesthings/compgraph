@@ -8,13 +8,15 @@ import { Callout } from "@/components/content/callout";
 import { BarChart } from "@/components/charts/bar-chart";
 import { COMPANIES } from "@/lib/constants";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
+import type { GlassdoorReview } from "@/lib/mock/dossiers";
 
-type Tab = "summary" | "brands" | "hiring";
+type Tab = "summary" | "brands" | "hiring" | "employees";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "summary", label: "Executive Summary" },
   { id: "brands", label: "Brand Intelligence" },
   { id: "hiring", label: "Hiring" },
+  { id: "employees", label: "Employee Insights" },
 ];
 
 function formatDate(iso: string): string {
@@ -24,6 +26,271 @@ function formatDate(iso: string): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
+  const filled = Math.round(rating);
+  return (
+    <span style={{ fontSize: `${size}px`, letterSpacing: "1px", lineHeight: 1 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span key={i} style={{ color: i <= filled ? "#EF8354" : "#BFC0C0" }}>
+          ★
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function SentimentCard({
+  pct,
+  label,
+  sublabel,
+}: {
+  pct: number;
+  label: string;
+  sublabel: string;
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #BFC0C0",
+        borderRadius: "8px",
+        padding: "16px",
+        boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+          fontSize: "26px",
+          fontWeight: 600,
+          color: "#2D3142",
+          lineHeight: 1,
+          marginBottom: "8px",
+        }}
+      >
+        {pct}%
+      </div>
+      <div
+        style={{
+          height: "4px",
+          backgroundColor: "#E8E8E4",
+          borderRadius: "2px",
+          marginBottom: "10px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            backgroundColor: "#EF8354",
+            borderRadius: "2px",
+            transition: "width 400ms ease",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: "#2D3142",
+          lineHeight: "1.3",
+          marginBottom: "2px",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+          fontSize: "11px",
+          color: "#4F5D75",
+        }}
+      >
+        {sublabel}
+      </div>
+    </div>
+  );
+}
+
+function ReviewCard({ review }: { review: GlassdoorReview }) {
+  const borderColor =
+    review.rating >= 4 ? "#3CA060" : review.rating >= 3 ? "#BFC0C0" : "#D64045";
+
+  const signals: Array<{ val: boolean | null; label: string }> = [
+    { val: review.recommend, label: "Recommend" },
+    { val: review.ceoApproval, label: "CEO approval" },
+    { val: review.businessOutlook, label: "Business outlook" },
+  ];
+
+  return (
+    <div
+      style={{
+        border: "1px solid #E8E8E4",
+        borderLeft: `3px solid ${borderColor}`,
+        borderRadius: "6px",
+        padding: "14px 16px",
+        backgroundColor: "#FAFAF9",
+      }}
+    >
+      {/* Rating + date */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "8px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span
+            style={{
+              fontFamily:
+                "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#2D3142",
+            }}
+          >
+            {review.rating.toFixed(1)}
+          </span>
+          <StarRating rating={review.rating} size={11} />
+        </div>
+        <span
+          style={{
+            fontFamily:
+              "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+            fontSize: "11px",
+            color: "#BFC0C0",
+          }}
+        >
+          {review.date}
+        </span>
+      </div>
+
+      {/* Title */}
+      <p
+        style={{
+          fontFamily: "var(--font-display, 'Sora Variable', sans-serif)",
+          fontSize: "14px",
+          fontWeight: 600,
+          color: "#2D3142",
+          marginBottom: "8px",
+          lineHeight: "1.3",
+        }}
+      >
+        {review.title}
+      </p>
+
+      {/* Role + status + location */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          marginBottom: "10px",
+        }}
+      >
+        <Badge variant="neutral" size="sm">
+          {review.role}
+        </Badge>
+        <Badge variant="neutral" size="sm">
+          {review.employmentStatus}
+        </Badge>
+        <Badge variant="neutral" size="sm">
+          {review.location}
+        </Badge>
+      </div>
+
+      {/* Signals */}
+      <div
+        style={{
+          display: "flex",
+          gap: "16px",
+          paddingBottom: "10px",
+          marginBottom: "10px",
+          borderBottom: "1px solid #E8E8E4",
+          flexWrap: "wrap",
+        }}
+      >
+        {signals.map(({ val, label }) => {
+          const sym = val === true ? "✓" : val === false ? "✗" : "—";
+          const color =
+            val === true ? "#3CA060" : val === false ? "#D64045" : "#BFC0C0";
+          return (
+            <span
+              key={label}
+              style={{
+                fontFamily:
+                  "var(--font-body, 'DM Sans Variable', sans-serif)",
+                fontSize: "12px",
+                color,
+              }}
+            >
+              {sym} {label}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Pros */}
+      <div style={{ marginBottom: "6px" }}>
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "10px",
+            fontWeight: 700,
+            color: "#3CA060",
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+            marginRight: "6px",
+          }}
+        >
+          Pros
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "13px",
+            color: "#2D3142",
+            lineHeight: "1.5",
+          }}
+        >
+          {review.pros}
+        </span>
+      </div>
+
+      {/* Cons */}
+      <div>
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "10px",
+            fontWeight: 700,
+            color: "#D64045",
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+            marginRight: "6px",
+          }}
+        >
+          Cons
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "13px",
+            color: "#2D3142",
+            lineHeight: "1.5",
+          }}
+        >
+          {review.cons}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function BarList({
@@ -249,14 +516,12 @@ export default function CompetitorDossierPage() {
       {/* Tab: Executive Summary */}
       {activeTab === "summary" && (
         <div>
-          {/* Finding Callout */}
           <div className="mb-6">
             <Callout variant="finding" title="Key Finding">
               {mock.insight}
             </Callout>
           </div>
 
-          {/* Narrative Prose */}
           <div
             className="rounded-lg border p-4 mb-6"
             style={{
@@ -293,7 +558,6 @@ export default function CompetitorDossierPage() {
             </p>
           </div>
 
-          {/* Brands + Channels */}
           <SectionCard title="Known Clients & Channels">
             <div className="mb-4">
               <p
@@ -343,7 +607,6 @@ export default function CompetitorDossierPage() {
             </div>
           </SectionCard>
 
-          {/* Posting Metrics */}
           <div
             className="grid gap-4 mb-6"
             style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
@@ -362,7 +625,6 @@ export default function CompetitorDossierPage() {
             />
           </div>
 
-          {/* Role Breakdown */}
           <SectionCard title="Hiring by Role">
             <BarList
               items={mock.roleDistribution.map((r) => ({
@@ -372,7 +634,6 @@ export default function CompetitorDossierPage() {
             />
           </SectionCard>
 
-          {/* Latest Roles Table */}
           <div
             className="rounded-lg border overflow-hidden mb-6"
             style={{
@@ -541,7 +802,6 @@ export default function CompetitorDossierPage() {
       {/* Tab: Hiring */}
       {activeTab === "hiring" && (
         <div>
-          {/* Pay Benchmarks Chart */}
           <SectionCard title="Pay Benchmarks by Role">
             {payChartData.length > 0 ? (
               <BarChart
@@ -567,7 +827,6 @@ export default function CompetitorDossierPage() {
             )}
           </SectionCard>
 
-          {/* Full Job Postings Table */}
           <div
             className="rounded-lg border overflow-hidden"
             style={{
@@ -713,6 +972,304 @@ export default function CompetitorDossierPage() {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab: Employee Insights */}
+      {activeTab === "employees" && (
+        <div>
+          {/* Rating hero */}
+          <div
+            className="rounded-lg border p-5 mb-6"
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderColor: "#BFC0C0",
+              boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "12px",
+                marginBottom: "6px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily:
+                    "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                  fontSize: "48px",
+                  fontWeight: 600,
+                  color: "#2D3142",
+                  lineHeight: 1,
+                }}
+              >
+                {mock.glassdoor.overallRating.toFixed(1)}
+              </span>
+              <StarRating rating={mock.glassdoor.overallRating} size={22} />
+              <span
+                style={{
+                  fontFamily:
+                    "var(--font-body, 'DM Sans Variable', sans-serif)",
+                  fontSize: "13px",
+                  color: "#4F5D75",
+                }}
+              >
+                {mock.glassdoor.totalReviews.toLocaleString()} reviews
+              </span>
+            </div>
+            <p
+              style={{
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                fontSize: "11px",
+                color: "#BFC0C0",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Sourced from Glassdoor
+            </p>
+          </div>
+
+          {/* Sentiment grid */}
+          <div
+            className="grid gap-4 mb-6"
+            style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+          >
+            <SentimentCard
+              pct={mock.glassdoor.recommendPct}
+              label="Would Recommend"
+              sublabel="to a friend"
+            />
+            <SentimentCard
+              pct={mock.glassdoor.businessOutlookPct}
+              label="Business Outlook"
+              sublabel="positive"
+            />
+            <SentimentCard
+              pct={mock.glassdoor.ceoApprovalPct}
+              label={`Approve ${mock.glassdoor.ceoName.split(" ")[0]}`}
+              sublabel={`CEO · ${mock.glassdoor.ceoName}`}
+            />
+            <SentimentCard
+              pct={mock.glassdoor.interviewPositivePct}
+              label="Interview"
+              sublabel="positive experience"
+            />
+          </div>
+
+          {/* Category ratings + interview snapshot */}
+          <div
+            className="grid gap-4 mb-6"
+            style={{ gridTemplateColumns: "3fr 2fr" }}
+          >
+            <SectionCard title="Ratings by Category">
+              <div className="space-y-2">
+                {mock.glassdoor.ratingsByCategory.map((cat) => {
+                  const fill = (cat.score / 5) * 100;
+                  const trendSym =
+                    cat.trend === "up" ? "↑" : cat.trend === "down" ? "↓" : "→";
+                  const trendColor =
+                    cat.trend === "up"
+                      ? "#3CA060"
+                      : cat.trend === "down"
+                        ? "#D64045"
+                        : "#BFC0C0";
+                  return (
+                    <div
+                      key={cat.label}
+                      style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                    >
+                      <span
+                        style={{
+                          fontFamily:
+                            "var(--font-body, 'DM Sans Variable', sans-serif)",
+                          fontSize: "12px",
+                          color: "#2D3142",
+                          width: "172px",
+                          flexShrink: 0,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={cat.label}
+                      >
+                        {cat.label}
+                      </span>
+                      <div
+                        style={{
+                          flex: 1,
+                          backgroundColor: "#E8E8E4",
+                          borderRadius: "3px",
+                          height: "6px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${fill}%`,
+                            height: "100%",
+                            backgroundColor: "#EF8354",
+                            borderRadius: "3px",
+                          }}
+                        />
+                      </div>
+                      <span
+                        style={{
+                          fontFamily:
+                            "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                          fontSize: "11px",
+                          color: "#4F5D75",
+                          width: "28px",
+                          textAlign: "right",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {cat.score.toFixed(1)}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: trendColor,
+                          width: "10px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {trendSym}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Interview Snapshot">
+              <div className="space-y-4">
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily:
+                          "var(--font-body, 'DM Sans Variable', sans-serif)",
+                        fontSize: "12px",
+                        color: "#4F5D75",
+                      }}
+                    >
+                      Positive experience
+                    </span>
+                    <span
+                      style={{
+                        fontFamily:
+                          "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#2D3142",
+                      }}
+                    >
+                      {mock.glassdoor.interviewPositivePct}%
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: "6px",
+                      backgroundColor: "#E8E8E4",
+                      borderRadius: "3px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${mock.glassdoor.interviewPositivePct}%`,
+                        height: "100%",
+                        backgroundColor: "#EF8354",
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily:
+                          "var(--font-body, 'DM Sans Variable', sans-serif)",
+                        fontSize: "12px",
+                        color: "#4F5D75",
+                      }}
+                    >
+                      Avg difficulty
+                    </span>
+                    <span
+                      style={{
+                        fontFamily:
+                          "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#2D3142",
+                      }}
+                    >
+                      {mock.glassdoor.interviewDifficulty.toFixed(1)} / 5
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: "6px",
+                      backgroundColor: "#E8E8E4",
+                      borderRadius: "3px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(mock.glassdoor.interviewDifficulty / 5) * 100}%`,
+                        height: "100%",
+                        backgroundColor: "#EF8354",
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    fontFamily:
+                      "var(--font-body, 'DM Sans Variable', sans-serif)",
+                    fontSize: "12px",
+                    color: "#4F5D75",
+                    paddingTop: "6px",
+                    borderTop: "1px solid #E8E8E4",
+                  }}
+                >
+                  Based on {mock.glassdoor.interviewReviewCount} Glassdoor
+                  interview reviews
+                </p>
+              </div>
+            </SectionCard>
+          </div>
+
+          {/* Reviews */}
+          <SectionCard title="Recent Reviews">
+            <div className="space-y-3">
+              {mock.glassdoor.reviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </SectionCard>
         </div>
       )}
     </div>

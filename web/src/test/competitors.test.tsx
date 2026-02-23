@@ -193,6 +193,7 @@ describe("Competitor dossier page", () => {
     expect(screen.getByText("Executive Summary")).toBeInTheDocument();
     expect(screen.getByText("Brand Intelligence")).toBeInTheDocument();
     expect(screen.getByText("Hiring")).toBeInTheDocument();
+    expect(screen.getByText("Employee Insights")).toBeInTheDocument();
   });
 
   it("renders the Key Finding callout on the summary tab", () => {
@@ -273,5 +274,34 @@ describe("Competitor dossier page", () => {
     render(<CompetitorDossierPage />);
     expect(screen.getByText("BDS Connected Solutions")).toBeInTheDocument();
     expect(screen.getByText(/in-store demo presence/i)).toBeInTheDocument();
+  });
+
+  it("renders Glassdoor overall rating on the employees tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Employee Insights"));
+    // T-ROC overall rating is 3.9
+    expect(screen.getAllByText("3.9").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders sentiment percentages on the employees tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Employee Insights"));
+    // T-ROC: 72% recommend, 68% outlook, 79% CEO, 50% interview
+    expect(screen.getByText("72%")).toBeInTheDocument();
+    expect(screen.getByText(/Brett Beveridge/i)).toBeInTheDocument();
+  });
+
+  it("renders review cards on the employees tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Employee Insights"));
+    expect(screen.getByText("Low Pay, High Standards")).toBeInTheDocument();
+    expect(screen.getByText("Great place to work and grow")).toBeInTheDocument();
+  });
+
+  it("renders category ratings on the employees tab", () => {
+    render(<CompetitorDossierPage />);
+    fireEvent.click(screen.getByText("Employee Insights"));
+    expect(screen.getByText("Ratings by Category")).toBeInTheDocument();
+    expect(screen.getByText("Diversity & inclusion")).toBeInTheDocument();
   });
 });

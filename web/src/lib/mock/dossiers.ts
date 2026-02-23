@@ -1,3 +1,18 @@
+export interface GlassdoorReview {
+  id: string
+  rating: number
+  date: string
+  title: string
+  role: string
+  employmentStatus: string
+  location: string
+  recommend: boolean | null
+  ceoApproval: boolean | null
+  businessOutlook: boolean | null
+  pros: string
+  cons: string
+}
+
 export interface DossierMock {
   slug: string
   hq: string
@@ -31,6 +46,23 @@ export interface DossierMock {
     is_active: boolean
     first_seen_at: string
   }>
+  glassdoor: {
+    overallRating: number
+    totalReviews: number
+    recommendPct: number
+    ceoName: string
+    ceoApprovalPct: number
+    businessOutlookPct: number
+    interviewPositivePct: number
+    interviewDifficulty: number
+    interviewReviewCount: number
+    ratingsByCategory: Array<{
+      label: string
+      score: number
+      trend: "up" | "down" | "flat"
+    }>
+    reviews: GlassdoorReview[]
+  }
 }
 
 export const DOSSIER_MOCKS: Record<string, DossierMock> = {
@@ -116,6 +148,83 @@ export const DOSSIER_MOCKS: Record<string, DossierMock> = {
         first_seen_at: "2026-02-15T00:00:00Z",
       },
     ],
+    glassdoor: {
+      overallRating: 3.9,
+      totalReviews: 938,
+      recommendPct: 72,
+      ceoName: "Brett Beveridge",
+      ceoApprovalPct: 79,
+      businessOutlookPct: 68,
+      interviewPositivePct: 50,
+      interviewDifficulty: 2.9,
+      interviewReviewCount: 69,
+      ratingsByCategory: [
+        { label: "Diversity & inclusion", score: 4.2, trend: "up" },
+        { label: "Work/Life balance", score: 4.0, trend: "up" },
+        { label: "Culture & values", score: 3.9, trend: "flat" },
+        { label: "Compensation & benefits", score: 3.8, trend: "up" },
+        { label: "Career opportunities", score: 3.8, trend: "up" },
+        { label: "Senior management", score: 3.7, trend: "flat" },
+      ],
+      reviews: [
+        {
+          id: "troc-r1",
+          rating: 2.0,
+          date: "Feb 5, 2026",
+          title: "Low Pay, High Standards",
+          role: "Sales Lead",
+          employmentStatus: "Current employee, >1 year",
+          location: "Vero Beach, FL",
+          recommend: false,
+          ceoApproval: false,
+          businessOutlook: null,
+          pros: "Wireless discounts, sales bonuses, autonomy running my own team.",
+          cons: "Terrible atmosphere. Standards placed on stores are unrealistic — it isn't a motivation issue, it's a systemic expectation problem.",
+        },
+        {
+          id: "troc-r2",
+          rating: 5.0,
+          date: "Oct 21, 2025",
+          title: "Great place to work and grow",
+          role: "Engagement Coordinator",
+          employmentStatus: "Current employee, <1 year",
+          location: "Guatemala City",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Supportive team, clear communication, great culture, and real learning opportunities.",
+          cons: "Sometimes busy days, but overall a very manageable workload.",
+        },
+        {
+          id: "troc-r3",
+          rating: 3.0,
+          date: "Jan 14, 2026",
+          title: "Solid opportunity, but execution varies by region",
+          role: "Field Marketing Representative",
+          employmentStatus: "Former employee, 2–3 years",
+          location: "Tampa, FL",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: false,
+          pros: "Good brand training, Samsung account is well-managed, pay is competitive for the market.",
+          cons: "Regional management quality is inconsistent. Southeast territories feel overworked heading into Q4.",
+        },
+        {
+          id: "troc-r4",
+          rating: 4.0,
+          date: "Dec 2, 2025",
+          title: "Good if you thrive in retail pace",
+          role: "Brand Ambassador",
+          employmentStatus: "Current employee, 1–2 years",
+          location: "Houston, TX",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Fast-paced, excellent product knowledge training, commissions are real and achievable.",
+          cons: "Benefits package is thin. Health coverage options need serious improvement.",
+        },
+      ],
+    },
   },
 
   bds: {
@@ -192,6 +301,83 @@ export const DOSSIER_MOCKS: Record<string, DossierMock> = {
         first_seen_at: "2026-01-20T00:00:00Z",
       },
     ],
+    glassdoor: {
+      overallRating: 3.4,
+      totalReviews: 189,
+      recommendPct: 62,
+      ceoName: "Jason Rosica",
+      ceoApprovalPct: 67,
+      businessOutlookPct: 55,
+      interviewPositivePct: 45,
+      interviewDifficulty: 2.6,
+      interviewReviewCount: 41,
+      ratingsByCategory: [
+        { label: "Diversity & inclusion", score: 3.8, trend: "flat" },
+        { label: "Work/Life balance", score: 3.6, trend: "up" },
+        { label: "Culture & values", score: 3.4, trend: "flat" },
+        { label: "Compensation & benefits", score: 3.1, trend: "down" },
+        { label: "Career opportunities", score: 3.3, trend: "up" },
+        { label: "Senior management", score: 3.2, trend: "flat" },
+      ],
+      reviews: [
+        {
+          id: "bds-r1",
+          rating: 4.0,
+          date: "Jan 22, 2026",
+          title: "Strong demos program, weak internal comms",
+          role: "Demo Specialist",
+          employmentStatus: "Current employee, 1–2 years",
+          location: "Chicago, IL",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "HP and Google programs are well-funded. Lots of product to demo, good retail visibility.",
+          cons: "Internal communication from corporate is scattered. You often hear about program changes from the client before BDS tells you.",
+        },
+        {
+          id: "bds-r2",
+          rating: 2.0,
+          date: "Dec 18, 2025",
+          title: "Pay hasn't kept up with cost of living",
+          role: "Merchandiser",
+          employmentStatus: "Former employee, 3–5 years",
+          location: "Detroit, MI",
+          recommend: false,
+          ceoApproval: false,
+          businessOutlook: false,
+          pros: "Flexible schedule, easy to get along with store staff.",
+          cons: "Pay has barely moved in three years while expectations increased. No clear promotion path for merchandisers.",
+        },
+        {
+          id: "bds-r3",
+          rating: 4.0,
+          date: "Nov 30, 2025",
+          title: "Great for product enthusiasts",
+          role: "Product Educator",
+          employmentStatus: "Current employee, <1 year",
+          location: "Columbus, OH",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: true,
+          pros: "Hands-on time with cutting-edge tech. Canon and Lenovo reps are invested in your success.",
+          cons: "Onboarding is rushed. Would benefit from a longer ramp-up period before hitting the floor.",
+        },
+        {
+          id: "bds-r4",
+          rating: 3.0,
+          date: "Oct 8, 2025",
+          title: "Middle of the road",
+          role: "Retail Sales Associate",
+          employmentStatus: "Current employee, 1–2 years",
+          location: "Indianapolis, IN",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: null,
+          pros: "Steady hours, good coworkers, decent brand exposure.",
+          cons: "Management visibility is low. Decisions feel made far away from the field.",
+        },
+      ],
+    },
   },
 
   marketsource: {
@@ -276,6 +462,83 @@ export const DOSSIER_MOCKS: Record<string, DossierMock> = {
         first_seen_at: "2026-01-28T00:00:00Z",
       },
     ],
+    glassdoor: {
+      overallRating: 3.7,
+      totalReviews: 412,
+      recommendPct: 68,
+      ceoName: "David Habiger",
+      ceoApprovalPct: 74,
+      businessOutlookPct: 62,
+      interviewPositivePct: 58,
+      interviewDifficulty: 3.1,
+      interviewReviewCount: 87,
+      ratingsByCategory: [
+        { label: "Diversity & inclusion", score: 4.0, trend: "up" },
+        { label: "Work/Life balance", score: 3.8, trend: "flat" },
+        { label: "Culture & values", score: 3.7, trend: "up" },
+        { label: "Compensation & benefits", score: 3.5, trend: "up" },
+        { label: "Career opportunities", score: 3.9, trend: "up" },
+        { label: "Senior management", score: 3.5, trend: "flat" },
+      ],
+      reviews: [
+        {
+          id: "ms-r1",
+          rating: 5.0,
+          date: "Feb 10, 2026",
+          title: "Best-in-class carrier sales training",
+          role: "Retail Sales Consultant",
+          employmentStatus: "Current employee, 2–3 years",
+          location: "Phoenix, AZ",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "AT&T program is phenomenal — structured training, clear metrics, real earning potential. Management knows the carrier business inside and out.",
+          cons: "High turnover in competitive markets makes team continuity hard.",
+        },
+        {
+          id: "ms-r2",
+          rating: 3.0,
+          date: "Jan 5, 2026",
+          title: "Scale creates blind spots",
+          role: "Sales Manager",
+          employmentStatus: "Current employee, 1–2 years",
+          location: "Los Angeles, CA",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: true,
+          pros: "Company size means stability and real career ladders. Lots of internal mobility across carriers.",
+          cons: "At this scale, individual stores can feel like afterthoughts. Process-heavy and slow to adapt.",
+        },
+        {
+          id: "ms-r3",
+          rating: 2.0,
+          date: "Dec 14, 2025",
+          title: "Overworked, under-recognized",
+          role: "Brand Ambassador",
+          employmentStatus: "Former employee, <1 year",
+          location: "Austin, TX",
+          recommend: false,
+          ceoApproval: false,
+          businessOutlook: false,
+          pros: "Good for learning the wireless industry quickly.",
+          cons: "Quotas are aggressive and reset monthly with no grace period. T-Mobile program had unrealistic attach targets.",
+        },
+        {
+          id: "ms-r4",
+          rating: 4.0,
+          date: "Nov 20, 2025",
+          title: "Solid platform for a carrier career",
+          role: "Area Director",
+          employmentStatus: "Current employee, 3–5 years",
+          location: "Scottsdale, AZ",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Multi-carrier exposure is unmatched. Verizon and AT&T experience gives you credibility anywhere in the industry.",
+          cons: "Director bandwidth is stretched thin. Would benefit from more regional support layers.",
+        },
+      ],
+    },
   },
 
   osl: {
@@ -349,6 +612,83 @@ export const DOSSIER_MOCKS: Record<string, DossierMock> = {
         first_seen_at: "2026-01-30T00:00:00Z",
       },
     ],
+    glassdoor: {
+      overallRating: 3.5,
+      totalReviews: 156,
+      recommendPct: 60,
+      ceoName: "Greg McDonald",
+      ceoApprovalPct: 68,
+      businessOutlookPct: 51,
+      interviewPositivePct: 47,
+      interviewDifficulty: 2.7,
+      interviewReviewCount: 38,
+      ratingsByCategory: [
+        { label: "Diversity & inclusion", score: 3.7, trend: "flat" },
+        { label: "Work/Life balance", score: 3.9, trend: "up" },
+        { label: "Culture & values", score: 3.5, trend: "flat" },
+        { label: "Compensation & benefits", score: 3.0, trend: "down" },
+        { label: "Career opportunities", score: 3.2, trend: "flat" },
+        { label: "Senior management", score: 3.3, trend: "flat" },
+      ],
+      reviews: [
+        {
+          id: "osl-r1",
+          rating: 4.0,
+          date: "Feb 1, 2026",
+          title: "Steady work, great for the Walmart channel",
+          role: "Sales Associate",
+          employmentStatus: "Current employee, 2–3 years",
+          location: "Jacksonville, FL",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Long-standing Walmart relationship gives the work real stability. Samsung program is well-run and consistent.",
+          cons: "Growth is limited unless you move to territory manager, and those roles rarely open up.",
+        },
+        {
+          id: "osl-r2",
+          rating: 2.0,
+          date: "Jan 10, 2026",
+          title: "Compensation hasn't kept pace",
+          role: "Retail Specialist",
+          employmentStatus: "Former employee, 1–2 years",
+          location: "Tampa, FL",
+          recommend: false,
+          ceoApproval: null,
+          businessOutlook: false,
+          pros: "Flexible hours, independent work style, low-pressure day-to-day.",
+          cons: "Pay is the lowest in the market for comparable roles. Benefits are minimal with no clear path upward.",
+        },
+        {
+          id: "osl-r3",
+          rating: 4.0,
+          date: "Dec 20, 2025",
+          title: "Best Buy accounts are well-run",
+          role: "Territory Manager",
+          employmentStatus: "Current employee, 3–5 years",
+          location: "Orlando, FL",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: null,
+          pros: "Best Buy account management is excellent. Strong store-level relationships make execution easy.",
+          cons: "Company-level communication could be stronger. Sometimes feels siloed between markets.",
+        },
+        {
+          id: "osl-r4",
+          rating: 3.0,
+          date: "Nov 14, 2025",
+          title: "Decent entry point into retail services",
+          role: "Sales Associate",
+          employmentStatus: "Current employee, <1 year",
+          location: "Charlotte, NC",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: null,
+          pros: "Low barrier to entry, good for learning the Costco and Samsung retail ecosystem.",
+          cons: "Inconsistent training across locations. What you learn depends heavily on your manager.",
+        },
+      ],
+    },
   },
 
   "2020": {
@@ -434,5 +774,82 @@ export const DOSSIER_MOCKS: Record<string, DossierMock> = {
         first_seen_at: "2026-01-22T00:00:00Z",
       },
     ],
+    glassdoor: {
+      overallRating: 3.8,
+      totalReviews: 247,
+      recommendPct: 70,
+      ceoName: "Dave Haas",
+      ceoApprovalPct: 76,
+      businessOutlookPct: 65,
+      interviewPositivePct: 55,
+      interviewDifficulty: 2.8,
+      interviewReviewCount: 52,
+      ratingsByCategory: [
+        { label: "Diversity & inclusion", score: 4.1, trend: "up" },
+        { label: "Work/Life balance", score: 3.9, trend: "up" },
+        { label: "Culture & values", score: 3.8, trend: "flat" },
+        { label: "Compensation & benefits", score: 3.6, trend: "up" },
+        { label: "Career opportunities", score: 3.7, trend: "up" },
+        { label: "Senior management", score: 3.6, trend: "flat" },
+      ],
+      reviews: [
+        {
+          id: "2020-r1",
+          rating: 5.0,
+          date: "Feb 8, 2026",
+          title: "Microsoft program is a standout",
+          role: "Brand Ambassador",
+          employmentStatus: "Current employee, 1–2 years",
+          location: "Austin, TX",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Microsoft Texas expansion is well-resourced. Real investment in specialist training and strong earning potential through demo commissions.",
+          cons: "Pace of new program launches sometimes outstrips the onboarding infrastructure.",
+        },
+        {
+          id: "2020-r2",
+          rating: 3.0,
+          date: "Jan 18, 2026",
+          title: "Good brand diversity, inconsistent management",
+          role: "Field Sales Representative",
+          employmentStatus: "Current employee, 2–3 years",
+          location: "New York, NY",
+          recommend: true,
+          ceoApproval: null,
+          businessOutlook: true,
+          pros: "Exposure to Microsoft, Samsung, and Bose builds a versatile retail resume.",
+          cons: "Regional managers vary wildly in quality. Some markets are well-run, others feel neglected.",
+        },
+        {
+          id: "2020-r3",
+          rating: 4.0,
+          date: "Dec 10, 2025",
+          title: "Best trainer role I've had in retail",
+          role: "Retail Trainer",
+          employmentStatus: "Current employee, 3–5 years",
+          location: "Houston, TX",
+          recommend: true,
+          ceoApproval: true,
+          businessOutlook: true,
+          pros: "Real investment in training content. LG and Sony programs have strong curriculum support from the brands themselves.",
+          cons: "Travel requirements can be demanding during peak campaign periods.",
+        },
+        {
+          id: "2020-r4",
+          rating: 2.0,
+          date: "Nov 5, 2025",
+          title: "High expectations, limited support",
+          role: "Area Manager",
+          employmentStatus: "Former employee, 1–2 years",
+          location: "San Francisco, CA",
+          recommend: false,
+          ceoApproval: null,
+          businessOutlook: false,
+          pros: "Meaningful title and solid experience for your resume.",
+          cons: "Area manager span of control is too wide. Managing 12+ stores with one admin budget is untenable.",
+        },
+      ],
+    },
   },
 }
