@@ -476,7 +476,7 @@ function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
           >
             {status.run_id.slice(0, 8)}
           </span>
-          <RunBadge status={status.status.toUpperCase()} />
+          <RunBadge status={status.status} />
         </div>
       </div>
 
