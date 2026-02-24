@@ -7,6 +7,19 @@ description: Triage and resolve GitHub bot review comments on a PR — fetch, cl
 
 Automates triage and resolution of GitHub bot review comments on a PR. Fetches unresolved bot threads, classifies severity, fixes/defers/rejects each, pushes, waits for CI + bots to re-review, and repeats until clean or max cycles reached.
 
+## Tool Preferences
+
+**Use GitHub MCP tools** for structured data retrieval and writes:
+- `mcp__github__pull_request_read` — PR details, reviews, review comments, status
+- `mcp__github__issue_write` — create deferred issues
+- `mcp__github__add_reply_to_pull_request_comment` — reply to review threads
+- `mcp__github__pull_request_review_write` — submit reviews
+
+**Use `gh` CLI** only for:
+- `gh pr checks <N>` — CI status polling (MCP has no polling mechanism)
+- `gh api graphql` — review thread resolution mutations (not in MCP)
+- `gh pr view --json isDraft` — quick draft detection
+
 ## Input
 
 Accepts an optional PR number (e.g., `/pr-feedback-cycle 86`). If not provided, detect from current branch:
@@ -62,17 +75,17 @@ Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.
 
 **This step is mandatory before the first triage cycle.** Slow bots (Cubic, Cursor) take 5-28 minutes to post reviews. Without this wait, the skill will falsely report "clean" and exit.
 
-1. Poll CI status first (same as Step 5):
+1. Poll CI status first:
    ```bash
    gh pr checks $PR_NUMBER
    ```
    Wait until CI passes (30s interval, 15 min timeout). If CI fails, stop and report.
 
-2. Once CI passes, poll for bot reviews:
-   ```bash
-   gh api repos/vaughnmakesthings/compgraph/pulls/$PR_NUMBER/reviews \
-     --jq '.[].user.login' | sort -u
+2. Once CI passes, poll for bot reviews via MCP:
    ```
+   mcp__github__pull_request_read(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, method="reviews")
+   ```
+   Extract reviewer logins from the response.
 
 3. Compare detected bot logins against `BOT_LOGINS`. Track which bots have posted at least one review.
 
@@ -94,7 +107,13 @@ Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.
 
 ### Step 1 — Fetch unresolved bot comments
 
-Use GraphQL to get review threads:
+Use MCP to get review comments:
+```
+mcp__github__pull_request_read(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, method="review_comments")
+```
+
+This returns structured review comment data. However, review **thread resolution status** (`isResolved`, `isOutdated`) is not available via MCP — use GraphQL for that:
+
 ```bash
 gh api graphql -f query='
 query($owner:String!,$repo:String!,$pr:Int!) {
@@ -172,7 +191,7 @@ For each thread, classify as Accept, Defer, or Reject:
 
 ### Resolve thread (shared helper)
 
-After **every** triage action (Accept, Defer, Reject), resolve the thread on GitHub:
+After **every** triage action (Accept, Defer, Reject), resolve the thread on GitHub via GraphQL (not available in MCP):
 
 ```bash
 gh api graphql -f query='
@@ -210,16 +229,11 @@ For each accepted thread:
    git add <specific files>
    git commit -m "fix: <description> (from <bot> review)"
    ```
-8. Reply to the thread with what was fixed and the commit hash:
-   ```bash
-   gh api graphql -f query='
-   mutation($threadId:ID!,$body:String!) {
-     addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId,body:$body}) {
-       comment { id }
-     }
-   }' -f threadId=$THREAD_ID -f body="Fixed in <short_hash> — <description of fix>"
+8. Reply to the thread via MCP:
    ```
-9. **Resolve the thread** (see shared helper above)
+   mcp__github__add_reply_to_pull_request_comment(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, commentId=$COMMENT_ID, body="Fixed in <short_hash> — <description of fix>")
+   ```
+9. **Resolve the thread** (see shared helper above — GraphQL)
 10. Add thread ID to `TRIAGED_THREAD_IDS`
 
 #### Defer flow
@@ -237,42 +251,29 @@ For each deferred thread:
    | `tests/` | Match the milestone of the code under test |
    | Default | `M6: Tuning & Hardening` (#6) |
 
-2. Create a GitHub issue:
-   ```bash
-   gh issue create \
-     --title "Review feedback: <short description>" \
-     --body "<bot name> flagged <file>:<line> — <original comment summary>" \
-     --milestone "<milestone name>"
+2. Create a GitHub issue via MCP:
+   ```
+   mcp__github__issue_write(owner="vaughnmakesthings", repo="compgraph", title="Review feedback: <short description>", body="<bot name> flagged <file>:<line> — <original comment summary>", milestone="<milestone name>")
    ```
 
-3. Reply to the PR thread:
-   ```bash
-   gh api graphql -f query='
-   mutation($threadId:ID!,$body:String!) {
-     addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId,body:$body}) {
-       comment { id }
-     }
-   }' -f threadId=$THREAD_ID -f body="Tracked as #<issue_number> (deferred to <milestone>)"
+3. Reply to the PR thread via MCP:
+   ```
+   mcp__github__add_reply_to_pull_request_comment(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, commentId=$COMMENT_ID, body="Tracked as #<issue_number> (deferred to <milestone>)")
    ```
 
-4. **Resolve the thread** (see shared helper above)
+4. **Resolve the thread** (see shared helper above — GraphQL)
 5. Add thread ID to `TRIAGED_THREAD_IDS`
 
 #### Reject flow
 
 For each rejected thread:
 
-1. Reply with a 1-2 sentence reason explaining why it's being dismissed:
-   ```bash
-   gh api graphql -f query='
-   mutation($threadId:ID!,$body:String!) {
-     addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$threadId,body:$body}) {
-       comment { id }
-     }
-   }' -f threadId=$THREAD_ID -f body="<rejection reason>"
+1. Reply with a 1-2 sentence reason via MCP:
+   ```
+   mcp__github__add_reply_to_pull_request_comment(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, commentId=$COMMENT_ID, body="<rejection reason>")
    ```
 
-2. **Resolve the thread** (see shared helper above)
+2. **Resolve the thread** (see shared helper above — GraphQL)
 3. Add thread ID to `TRIAGED_THREAD_IDS`
 
 ### Step 5 — Push and wait
@@ -290,7 +291,7 @@ Only execute this step if any Accepts were made (commits exist to push).
    git push origin HEAD
    ```
 
-3. Poll CI (same pattern as `merge-guardian.md`):
+3. Poll CI (CLI — MCP has no polling):
    ```bash
    gh pr checks $PR_NUMBER
    ```
@@ -298,7 +299,11 @@ Only execute this step if any Accepts were made (commits exist to push).
 
 4. If CI fails, **stop the cycle and report**. Do not attempt to fix CI failures automatically — report what failed and exit.
 
-5. **Wait for bots to re-analyze** after CI passes. Poll the reviews API (same as Step 0) for 3 minutes, checking every 60 seconds for new bot reviews posted after the push timestamp. This is shorter than Step 0's 10-minute timeout because bots only need to re-analyze the diff delta, not the full PR.
+5. **Wait for bots to re-analyze** after CI passes. Poll reviews via MCP:
+   ```
+   mcp__github__pull_request_read(owner="vaughnmakesthings", repo="compgraph", pullNumber=$PR_NUMBER, method="reviews")
+   ```
+   Check every 60 seconds for 3 minutes for new bot reviews posted after the push timestamp.
 
 ### Step 6 — Cycle detection
 

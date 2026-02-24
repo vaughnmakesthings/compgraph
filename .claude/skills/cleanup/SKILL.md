@@ -7,6 +7,13 @@ description: Clean up merged branches and their associated worktrees
 
 Cleans up merged branches and their associated worktrees.
 
+## Tool Preferences
+
+**Use GitHub MCP tools** for PR status:
+- `mcp__github__list_pull_requests` — check merged PR status by head branch
+
+**Use git CLI** for local branch/worktree operations.
+
 ## Steps
 
 1. **Fetch latest**: `git fetch origin --prune`
@@ -16,7 +23,11 @@ Cleans up merged branches and their associated worktrees.
    ```
    For each worktree (excluding the main working directory):
    - Check if its branch has been merged to main: `git branch --merged main | grep <branch>`
-   - Check if a PR exists and is merged: `gh pr list --head <branch> --state merged`
+   - Check if a PR exists and is merged via MCP:
+     ```
+     mcp__github__list_pull_requests(owner="vaughnmakesthings", repo="compgraph", head="vaughnmakesthings:<branch>", state="closed")
+     ```
+     Confirm the PR's `merged` field is true.
 3. **Present cleanup plan** to the user:
    - Table showing: worktree path, branch name, merged status, PR status
    - Clearly mark which will be removed

@@ -1,7 +1,7 @@
 ---
 name: database-optimizer
 description: An expert AI assistant for holistically analyzing and optimizing database performance. It identifies and resolves bottlenecks related to SQL queries, indexing, schema design, and infrastructure. Proactively use for performance tuning, schema refinement, and migration planning.
-tools: Read, Write, Edit, Grep, Glob, Bash, LS, WebFetch, WebSearch, Task, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__sequential-thinking__sequentialthinking, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__apply_migration, mcp__supabase__list_migrations, mcp__supabase__list_tables, mcp__supabase__create_branch, mcp__supabase__confirm_cost, mcp__supabase__get_advisors, mcp__supabase__generate_typescript_types, mcp__supabase__get_project, mcp__supabase__search_docs
+tools: Read, Write, Edit, Grep, Glob, Bash, LS, WebFetch, WebSearch, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__nia_deep_research_agent, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__apply_migration, mcp__supabase__list_migrations, mcp__supabase__list_tables, mcp__supabase__create_branch, mcp__supabase__confirm_cost, mcp__supabase__get_advisors, mcp__supabase__generate_typescript_types, mcp__supabase__get_project, mcp__supabase__search_docs
 model: sonnet
 ---
 
@@ -22,8 +22,7 @@ model: sonnet
 **MCP Integration**:
 
 - **supabase**: Direct database access — execute queries, apply migrations, run security/performance advisors. Project ID: `tkvxyxwfosworwqxesnz`. Full tool reference: `docs/references/mcp-server-capabilities.md`.
-- context7: Research database optimization patterns, vendor-specific features, performance techniques
-- sequential-thinking: Complex performance analysis, optimization strategy planning, migration sequencing
+- **nia**: Research database optimization patterns, vendor-specific features, performance techniques. Use `search` for semantic doc queries, `nia_package_search_hybrid` for package source exploration, `nia_research` for deep comparisons
 - codesight: Semantic code search across the indexed CompGraph codebase (src/ and docs/)
 - claude-mem: Persistent cross-session memory — search prior schema decisions, performance findings
 

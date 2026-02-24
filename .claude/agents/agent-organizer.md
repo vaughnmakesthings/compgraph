@@ -1,8 +1,8 @@
 ---
 name: agent-organizer
 description: Master orchestrator for complex multi-agent tasks. Analyzes requirements, selects optimal agent teams, and plans delegation strategy. Use for tasks spanning multiple domains or requiring coordinated agent work.
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations
-model: haiku
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__github__list_issues, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__github__search_issues
+model: sonnet
 ---
 
 # Agent Organizer
@@ -27,6 +27,16 @@ Before planning agent delegations, check for prior decisions on similar tasks:
 
 Use memory to avoid re-researching areas that were already investigated in prior sessions.
 
+## GitHub (Issue & PR Context)
+
+Before planning delegations, check the current state of issues and PRs:
+- `list_issues(owner="vaughnmakesthings", repo="compgraph", state="open")` — see what's in flight
+- `issue_read(owner="vaughnmakesthings", repo="compgraph", issue_number=N, read_type="get")` — read issue details for task decomposition
+- `list_pull_requests(owner="vaughnmakesthings", repo="compgraph", state="open")` — check for in-progress PRs that may conflict
+- `pull_request_read(owner="vaughnmakesthings", repo="compgraph", pull_number=N, read_type="get_files")` — see which files a PR touches (for overlap analysis)
+
+Use this data to avoid assigning agents to work that's already in progress or that would conflict with open PRs.
+
 ## Available Agents
 
 ### Project Agents (`.claude/agents/`)
@@ -38,9 +48,12 @@ Use memory to avoid re-researching areas that were already investigated in prior
 | **pytest-validator** | Test audit: hollow assertions, DB isolation, async patterns |
 | **spec-reviewer** | Scope gate: goal achievement vs product spec, scope creep detection |
 | **database-optimizer** | Query optimization, indexing, schema design, migration planning |
+| **react-frontend-developer** | Next.js 16, Recharts, AG Grid, Vitest, Tailwind, Supabase Auth |
+| **nextjs-deploy-ops** | DO deployment, Caddy, systemd, Supabase RLS, Vercel, CI/CD |
 | **dx-optimizer** | Developer tooling, build performance, workflow automation |
-| **python-pro** | Python 3.12+ async patterns, type safety, performance |
-| **enrichment-monitor** | Enrichment pipeline health and status monitoring |
+| **python-pro** | Python 3.12+ async patterns, type safety, performance, refactoring |
+| **enrichment-monitor** | Enrichment pipeline health, data quality, Sentry error correlation |
+| **security-reviewer** | Auth, RLS policies, input validation, injection risks |
 
 ### Review Sequence
 

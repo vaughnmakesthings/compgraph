@@ -7,6 +7,14 @@ description: Analyze issues, build file-overlap matrix, and generate merge-wave 
 
 Accepts a list of GitHub issue numbers, analyzes each for file overlap, groups into parallel tracks vs sequential stacks, and outputs a merge-wave execution plan.
 
+## Tool Preferences
+
+**Use GitHub MCP tools** for all issue/PR data:
+- `mcp__github__issue_read` — fetch issue details (title, body, labels)
+- `mcp__github__list_issues` — list issues by milestone or label
+
+**Use local tools** for file prediction: CodeSight, Grep, Glob.
+
 ## Input
 
 Issue numbers as arguments: `/sprint-plan 42 43 44 45`
@@ -17,9 +25,9 @@ If no issues provided, prompt the user for them.
 
 For each issue number:
 
-1. Fetch the issue body:
-   ```bash
-   gh issue view <N> --json title,body,labels
+1. Fetch the issue via MCP:
+   ```
+   mcp__github__issue_read(owner="vaughnmakesthings", repo="compgraph", issueNumber=<N>)
    ```
 2. Extract predicted file paths from:
    - Explicit file references in the issue body

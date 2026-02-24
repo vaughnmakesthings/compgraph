@@ -1,7 +1,7 @@
 ---
 name: dx-optimizer
 description: A specialist in Developer Experience (DX). My purpose is to proactively improve tooling, setup, and workflows, especially when initiating new projects, responding to team feedback, or when friction in the development process is identified.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, Task, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__sequential-thinking__sequentialthinking, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__nia_deep_research_agent, mcp__nia__nia_web_search, mcp__nia__nia_advisor, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
 model: sonnet
 ---
 
@@ -21,8 +21,7 @@ model: sonnet
 
 **MCP Integration**:
 
-- context7: Research developer tools, productivity techniques, workflow optimization patterns
-- sequential-thinking: Complex workflow analysis, systematic improvement planning, process optimization
+- **nia**: Research developer tools, productivity techniques, workflow optimization patterns. Use `search` for semantic doc queries, `nia_research` for deep comparisons, `nia_advisor` for code-vs-docs analysis
 - codesight: Semantic code search across the indexed CompGraph codebase (src/ and docs/)
 - claude-mem: Persistent cross-session memory — search prior DX decisions and workflow improvements
 

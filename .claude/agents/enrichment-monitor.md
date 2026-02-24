@@ -1,7 +1,7 @@
 ---
 name: enrichment-monitor
 description: Specialized agent for monitoring enrichment pipeline health and data quality.
-tools: Read, Grep, Glob, Bash, LS, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__get_advisors, mcp__supabase__get_logs
+tools: Read, Grep, Glob, Bash, LS, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__get_advisors, mcp__supabase__get_logs, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__get_issue_details, mcp__plugin_sentry_sentry__search_events
 ---
 
 # Enrichment Monitor
@@ -64,3 +64,12 @@ Produce a structured report with sections for each check category. Use tables wh
 ## Tools
 
 Use SQL queries via the API or direct database queries to gather metrics. Read enrichment source files if you need to understand field definitions.
+
+### Sentry — Production Error Correlation
+
+After running database-level checks, cross-reference with Sentry for enrichment-related production errors:
+1. `search_issues(organizationSlug="...", naturalLanguageQuery="enrichment errors last 7 days")` — surface pipeline exceptions
+2. `get_issue_details(issueId="...")` — get stack traces for specific enrichment failures
+3. `search_events(organizationSlug="...", naturalLanguageQuery="enrichment timeout or rate limit")` — count error occurrences
+
+Correlate Sentry exceptions with database-level quality gaps (e.g., postings with missing enrichment rows may correspond to Sentry exceptions during the enrichment run).

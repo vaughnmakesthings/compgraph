@@ -5,29 +5,65 @@
       "command": "op",
       "args": ["run", "--env-file=.env", "--no-masking", "--", "npx", "-y", "@supabase/mcp-server-supabase@latest"],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "op://DEV/SUPABASE_ACCESS_TOKEN/credential"
-      }
+        "SUPABASE_ACCESS_TOKEN": "op://DEV/SUPABASE_ACCESS_TOKEN/credential",
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "serverInstructions": "Database operations for PostgreSQL including queries, schema management, migrations, RLS policies, auth, and storage. Use for any database, authentication, or file storage tasks."
+    },
+    "github": {
+      "type": "stdio",
+      "command": "op",
+      "args": ["run", "--env-file=.env", "--no-masking", "--", "/opt/homebrew/bin/github-mcp-server", "stdio", "--toolsets", "default,pull_requests,actions,labels"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "op://DEV/GITHUB_TOKEN/token"
+      },
+      "serverInstructions": "GitHub's official MCP server (v0.31.0). Provides structured access to repos, issues, PRs, actions, and labels. Prefer MCP tools over `gh` CLI for all GitHub data operations — MCP returns structured JSON, avoids shell parsing. Use `gh` CLI only for operations not covered by MCP (e.g., `gh pr checks` polling, custom GraphQL mutations). Key tools: pull_request_read (details/diff/status/files/reviews/comments), create_pull_request, merge_pull_request, update_pull_request, pull_request_review_write, issue_read, issue_write, list_issues, actions_list, get_job_logs."
+    },
+    "nia": {
+      "type": "http",
+      "url": "https://apigcp.trynia.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer nk_StGHgmaPNVDXIZtXsnSBZ2pxAs3tiPx8"
+      },
+      "serverInstructions": "Primary documentation and API context layer for CompGraph. ROUTING: (1) For ANY library/framework API question (FastAPI, SQLAlchemy, Alembic, Supabase JS, Next.js 16, React 19, Recharts 3, Tailwind v4, APScheduler v4, httpx, BeautifulSoup, Anthropic SDK, Playwright, rapidfuzz, Pydantic, asyncpg, Radix UI, Tremor), use nia_package_search_hybrid or search FIRST — before WebSearch. (2) For architecture/pattern questions spanning multiple libraries, use nia_research or nia_deep_research_agent. (3) For exact API signatures or method lookups, use nia_package_search_grep. (4) Save significant research findings to nia context for cross-session and cross-agent persistence. (5) Indexed sources include compgraph repo and all major dependencies — run list_repositories to verify before assuming availability. TOOLS: search (universal semantic), nia_package_search_hybrid (AI semantic by package), nia_package_search_grep (regex by package), nia_research/nia_deep_research_agent (multi-step autonomous research — Pro only), context (save/list/retrieve/search/update/delete persistent context), index_repository/index_documentation (add new sources)."
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com",
+      "serverInstructions": "Deployment and infrastructure management for Vercel projects. Handles deployments, runtime logs, environment variables, domain configuration, and build status. Use for deployment, production debugging, or infrastructure tasks."
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp",
+      "serverInstructions": "Error tracking and performance monitoring for production applications. Search issues, analyze error patterns, investigate stack traces, and correlate errors with releases. Use for production debugging and error analysis."
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "serverInstructions": "Browser automation and end-to-end testing. Navigate pages, interact with elements, capture screenshots, run accessibility checks. Use for testing, web scraping, or visual verification tasks."
+    },
+    "next-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "serverInstructions": "Next.js development tools and runtime diagnostics. Access dev server errors, route information, logs, and application state. Use for Next.js debugging, development workflow, or runtime inspection."
     },
     "codesight": {
       "type": "stdio",
       "command": "op",
       "args": ["run", "--env-file=.env", "--no-masking", "--", "uv", "run", "--project", "/Users/vmud/Documents/dev/projects/codesight", "python", "-m", "codesight"],
       "env": {
-        "OPENAI_API_KEY": "op://DEV/OPENAI_API_KEY/credential"
-      }
-    },
-    "modelcontextprotocol-servers-git": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "mcp_server_git"]
-    },
-    "playwright": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
-    },
-    "sentry": {
-      "url": "https://mcp.sentry.dev/mcp"
+        "OPENAI_API_KEY": "op://DEV/OPENAI_API_KEY/credential",
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "serverInstructions": "Semantic code search across the CompGraph codebase. Hybrid BM25 and vector search for finding code by intent, not just keywords. Use for code discovery, architecture understanding, or finding implementations."
     }
   }
 }

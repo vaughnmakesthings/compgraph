@@ -7,6 +7,18 @@ description: Manage draft PR lifecycle — create drafts, convert to ready, chec
 
 Manages draft PR lifecycle for parallel development. Three modes: create draft PRs (bots skip), convert to ready-for-review (bots trigger), and check status across open PRs.
 
+## Tool Preferences
+
+**Use GitHub MCP tools** for all PR operations:
+- `mcp__github__create_pull_request` — create draft PRs (with `draft=true`)
+- `mcp__github__update_pull_request` — mark ready (`draft=false`), add labels
+- `mcp__github__list_pull_requests` — list open PRs with status
+- `mcp__github__pull_request_read` — get PR details, review status
+
+**Use `gh` CLI / git** for:
+- Local pre-flight (pytest, ruff, git push)
+- `gh pr checks <N>` — CI status polling
+
 ## Input
 
 Mode as first argument:
@@ -30,27 +42,17 @@ If no mode provided, default to `status`.
 ### Create
 
 1. Push branch: `git push -u origin HEAD`
-2. Create draft PR:
-   ```bash
-   gh pr create --draft \
-     --title "<title>" \
-     --body "$(cat <<'EOF'
-   ## Summary
-   <bullet points>
-
-   ## Linked Issue
-   Closes #<N>
-
-   ## Test Plan
-   - [ ] All existing tests pass
-   - [ ] <specific test items>
-
-   > Draft PR — bots will skip until marked ready.
-   > Use `/draft-pr ready` when ready for review.
-
-   Generated with [Claude Code](https://claude.com/claude-code)
-   EOF
-   )"
+2. Create draft PR via MCP:
+   ```
+   mcp__github__create_pull_request(
+     owner="vaughnmakesthings",
+     repo="compgraph",
+     head="<branch_name>",
+     base="main",
+     title="<title>",
+     draft=true,
+     body="## Summary\n<bullet points>\n\n## Linked Issue\nCloses #<N>\n\n## Test Plan\n- [ ] All existing tests pass\n- [ ] <specific test items>\n\n> Draft PR — bots will skip until marked ready.\n> Use `/draft-pr ready` when ready for review.\n\nGenerated with [Claude Code](https://claude.com/claude-code)"
+   )
    ```
 3. Report:
    ```
@@ -86,10 +88,13 @@ gh pr view --json number -q .number
 
 ### Convert
 
-1. Mark ready: `gh pr ready <N>`
+1. Mark ready via MCP:
+   ```
+   mcp__github__update_pull_request(owner="vaughnmakesthings", repo="compgraph", pullNumber=<N>, draft=false)
+   ```
 2. Add Gemini review label (if desired):
-   ```bash
-   gh pr edit <N> --add-label gemini-review
+   ```
+   mcp__github__update_pull_request(owner="vaughnmakesthings", repo="compgraph", pullNumber=<N>, labels=["gemini-review"])
    ```
 3. Report:
    ```
@@ -109,9 +114,14 @@ gh pr view --json number -q .number
 
 ## Mode: `status`
 
-Query all open PRs:
-```bash
-gh pr list --json number,title,isDraft,headRefName,statusCheckRollup,labels
+Query all open PRs via MCP:
+```
+mcp__github__list_pull_requests(owner="vaughnmakesthings", repo="compgraph", state="open")
+```
+
+For each PR, also fetch review status:
+```
+mcp__github__pull_request_read(owner="vaughnmakesthings", repo="compgraph", pullNumber=<N>, method="reviews")
 ```
 
 Display as table:

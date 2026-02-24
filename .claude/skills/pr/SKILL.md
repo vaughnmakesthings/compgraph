@@ -7,6 +7,15 @@ description: Create a pull request with validation, CI awareness, and issue link
 
 Creates a pull request with validation, CI awareness, and issue linking.
 
+## Tool Preferences
+
+**Use GitHub MCP tools** for PR creation:
+- `mcp__github__create_pull_request` — create the PR with structured params
+
+**Use `gh` CLI / git** for:
+- Local pre-flight (pytest, ruff, git push)
+- Branch detection and commit analysis
+
 ## Input
 
 Accepts an optional PR title. If not provided, derives from branch name and commit history.
@@ -25,23 +34,18 @@ Flags:
    - `git diff main...HEAD --stat` — files changed summary
 3. **Detect linked issue**: Parse branch name for issue number (e.g., `feat/issue-42` → #42)
 4. **Push branch**: `git push -u origin HEAD`
-5. **Create PR** with `gh pr create` (add `--draft` if flag was passed):
-   - Title: concise, under 70 chars
-   - Body format:
-     ```
-     ## Summary
-     <bullet points from commit analysis>
-
-     ## Linked Issue
-     Closes #<N>
-
-     ## Test Plan
-     - [ ] All existing tests pass
-     - [ ] New tests added for changed behavior
-     - [ ] Manual verification steps
-
-     Generated with [Claude Code](https://claude.com/claude-code)
-     ```
+5. **Create PR** via MCP:
+   ```
+   mcp__github__create_pull_request(
+     owner="vaughnmakesthings",
+     repo="compgraph",
+     head="<branch_name>",
+     base="main",
+     title="<concise title, under 70 chars>",
+     draft=<true if --draft flag>,
+     body="## Summary\n<bullet points from commit analysis>\n\n## Linked Issue\nCloses #<N>\n\n## Test Plan\n- [ ] All existing tests pass\n- [ ] New tests added for changed behavior\n- [ ] Manual verification steps\n\nGenerated with [Claude Code](https://claude.com/claude-code)"
+   )
+   ```
 6. **Report**:
    - **Standard PR**: PR URL + reminder to monitor CI checks
    - **Draft PR**: PR URL + note that bots will skip until marked ready. Suggest `/draft-pr ready <N>` when iteration is complete.
