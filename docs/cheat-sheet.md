@@ -39,6 +39,9 @@ START → worktree → implement → test → commit → pr → merge → cleanu
 | **Enrich Status** | `/enrich-status` | Check enrichment pipeline status on dev server |
 | **Migrate** | `/migrate` | Generate/run Alembic migrations |
 | **Docs Audit** | `/docs-audit` | Validate doc freshness, consistency, research gaps |
+| **Pre-Release** | `/pre-release` | Full verification before deploy/merge (lint, typecheck, test, build) |
+| **Gen-Test** | `/gen-test <path>` | Generate Vitest tests for frontend components/modules |
+| **Sentry Check** | `/sentry-check` | Check Sentry for unresolved critical issues |
 
 ## Plugin Skills (pre-installed)
 

@@ -379,6 +379,7 @@ Project-level agents in `.claude/agents/` have deep CompGraph context:
 - `dx-optimizer` — developer experience and tooling improvements
 - `enrichment-monitor` — enrichment pipeline health checks
 - `agent-organizer` — multi-agent orchestration and delegation
+- `security-reviewer` — auth, RLS, input validation, injection risks
 
 Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 
@@ -398,6 +399,9 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/migrate` — generate/run Alembic migrations
 - `/docs-audit` — validate doc freshness, cross-doc consistency, and research gaps
 - `/frontend-design` — enforce CompGraph design language, reject AI-default patterns
+- `/pre-release` — run full verification before deploy/merge (lint, typecheck, test, build)
+- `/gen-test` — generate Vitest tests following CompGraph patterns
+- `/sentry-check` — check Sentry for unresolved critical issues (pre/post deploy)
 
 ## Code Standards
 
