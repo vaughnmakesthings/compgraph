@@ -1,0 +1,52 @@
+tests/test_postings_api.py
+  39072c0d44c5a118 79,91,258-301
+web/src/components/data/table-pagination.tsx
+  39072c0d44c5a118 1-77
+src/compgraph/api/routes/postings.py
+  39072c0d44c5a118 37,87-91,96-98,106-115,121-122,124-126,128-135,145-146,149-154,156,159-161,171,180,182,192-195,202-203
+web/src/test/pages.test.tsx
+  39072c0d44c5a118 102,112-118,325-351
+web/package.json
+  39072c0d44c5a118 24-25
+web/package-lock.json
+  39072c0d44c5a118 19-20,1231-1243,1259-1265,1305-1336,2837-2932,3626-3650,3750-3825,3841,4004,4014,5606-5613,5732-5737,5739-5742,6522-6529,8077-8081,8760,8819-8830,8931-8943,8968-8991,9024-9032,9789-9792,9794-9803
+web/src/lib/api-client.ts
+  39072c0d44c5a118 84-85,93-94
+web/src/app/hiring/page.tsx
+  39072c0d44c5a118 3-4,6,12-20,32-33,39,41-46,64-66,74-75,79-85,87-90,109-114,135,145-169,217,221-222,227-236,238,240,242,244,257-266,268,270,272,274-285,287,290-406,431,442,482,520-527
+web/src/lib/types.ts
+  39072c0d44c5a118 87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "0770f7b8d1db655c4cca8f2fd40d3d5e33408e95",
+  "prompts": {
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1007,
+      "total_deletions": 286,
+      "accepted_lines": 856,
+      "overriden_lines": 0
+    },
+    "de17688ac03b5f57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac6fc002-7a26-43f3-82af-4557d06755e9",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 214,
+      "total_deletions": 2,
+      "accepted_lines": 213,
+      "overriden_lines": 0
+    }
+  }
+}
