@@ -4,6 +4,45 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-24 — M7 Strategic Planning & Roadmap
+
+**Goal:** Review strategic audit findings, lock product decisions, create authoritative M7 implementation roadmap.
+
+**What happened:**
+- Reviewed 3 audit reports from Gemini CLI (strategic roadmap, gap analysis, code review log) — added PM POV to all three
+- Verified codebase: 7 of 13 "critical" findings already resolved (SEC-02, SEC-03, DATA-01-03, SCRP-01, QA-01)
+- Resolved 3 engineering disagreements: accepted API v1 prefix (ARCH-03), partial-accepted SWR (UX-03), rejected factory-boy (QA-03)
+- Identified 12 items with undocumented prerequisites — created dependency map with topological sprint ordering
+- Scoped RLS policies (3-tier: viewer/admin/service_role), v1 cutover strategy (Option C with 308 redirect), auth testing (AUTH_DISABLED env bypass)
+- Locked product decisions: target user = business admin, auth = invite-only magic link, eval provider = OpenRouter/LiteLLM, standalone eval app = delete after merge
+- Created `docs/plans/m7-implementation-roadmap.md` — authoritative M7 plan (5 phases, 8-week timeline, 14 new files, 6 new dependencies)
+- Purged 17 stale docs (6 docs-audit snapshots, 11 completed plan files). Rewrote `docs/phases.md` (was stuck at M3). Updated `docs/context-packs.md` (added Packs I/J/K for M7).
+
+**Key files:** `docs/plans/m7-implementation-roadmap.md`, `docs/reports/gap-analysis-consolidated.md`, `docs/phases.md`, `docs/context-packs.md`
+
+**What's next:** Begin M7 Phase A (API v1 prefix + quick wins) and Phase B.0 (eval corpus bootstrap) in parallel.
+
+---
+
+## 2026-02-24 — CI Path Filters + Concurrency Cancellation
+
+**Goal:** Reduce CI waste and support parallel development workflows.
+
+**What changed:**
+- Added `dorny/paths-filter@v3` change detection job to `ci.yml`. Backend jobs (lint, typecheck, test, security) only run when `src/`, `tests/`, `pyproject.toml`, `uv.lock`, `alembic/`, or `scripts/` change. Frontend CI only runs when `web/` changes. Eval tests only run when `eval/` changes. Docs-only PRs trigger zero jobs.
+- Added workflow-level `concurrency` with `cancel-in-progress: true` to CI. Pushing a new commit to a PR while CI is running cancels the stale run.
+- Updated `docs/ci.md` to document path filter groups, per-PR-type CI timing, and the draft PR workflow for reducing review bot noise.
+
+**Key files:** `.github/workflows/ci.yml`, `docs/ci.md`
+
+**Impact:** Frontend-only PRs skip 4 backend jobs (~2 min saved). Backend-only PRs skip frontend build (~2 min saved). Docs-only PRs skip all jobs (~4 min saved). Rapid pushes no longer queue redundant CI runs.
+
+**Branch protection note:** Three required status checks (Lint & Format, Type Check, Test) use an always-run + step-level `if:` pattern instead of job-level `if:`. This ensures they report green to GitHub even when no backend changes exist, preventing merge blocks on frontend-only or docs-only PRs. Non-required jobs (Security, Eval, Frontend CI) skip entirely via job-level `if:`.
+
+**Context:** Part of M7 parallel development workflow improvements. See `docs/parallel-development-playbook.md` (not yet committed) for the full strategy including draft PRs, stacked PRs, file overlap mapping, and review bot management.
+
+---
+
 ## 2026-02-23 — Supabase Data Quality Assessment Implementation
 
 **Goal:** Implement fixes from the data quality assessment plan.
