@@ -399,6 +399,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/parallel-development-playbook.md` | Draft PR workflow, bot cascade prevention, merge-wave ordering, stacked PR patterns | ~500 |
 | `docs/git-github-cheatsheet.md` | Quick-reference for worktrees, draft PRs, rebase patterns, label management | ~500 |
 | `docs/secrets-reference.md` | 1Password references, env var setup | ~500 |
+| `docs/gap-analysis-consolidated.md` | Sprint planning, PM triage, dependency mapping | ~5K |
 
 ### External Research (load by section)
 
