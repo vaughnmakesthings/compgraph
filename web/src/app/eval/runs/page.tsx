@@ -5,11 +5,7 @@ import { api } from "@/lib/api-client";
 import type { EvalRun } from "@/lib/types";
 import { Badge } from "@/components/data/badge";
 import type { BadgeVariant } from "@/components/data/badge";
-
-function formatCost(usd: number | null): string {
-  if (usd === null) return "\u2014";
-  return `$${usd.toFixed(3)}`;
-}
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -140,7 +136,7 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [concurrency, setConcurrency] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmStep, setConfirmStep] = useState(false);
+  const [confirmStartOpen, setConfirmStartOpen] = useState(false);
 
   const [modelsRetry, setModelsRetry] = useState(0);
 
@@ -186,11 +182,10 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
       return;
     }
     setFormError(null);
-    setConfirmStep(true);
+    setConfirmStartOpen(true);
   };
 
   const executeRun = async () => {
-    setConfirmStep(false);
     setSubmitting(true);
     try {
       await api.createEvalRun({
@@ -395,101 +390,45 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         </p>
       )}
 
-      {confirmStep && (
-        <div
-          className="mt-4 rounded-lg border px-4 py-3"
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !model || !promptVersion.trim()}
+          className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
           style={{
-            backgroundColor: "#DCB2561A",
-            borderColor: "#DCB25640",
+            backgroundColor: "#EF8354",
+            color: "#FFFFFF",
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "13px",
             borderRadius: "var(--radius-sm, 4px)",
           }}
         >
-          <p
-            className="mb-2 font-medium"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              color: "#A07D28",
-            }}
-          >
-            Ready to start run:
-          </p>
-          <ul
-            className="mb-3 space-y-0.5"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              color: "#4F5D75",
-            }}
-          >
-            <li>
-              Pass {passNumber} · {model} · {promptVersion}
-            </li>
-            <li>Concurrency: {concurrency}</li>
-          </ul>
-          <div className="flex gap-2">
-            <button
-              onClick={executeRun}
-              className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90"
-              style={{
-                backgroundColor: "#EF8354",
-                color: "#FFFFFF",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                fontSize: "13px",
-                borderRadius: "var(--radius-sm, 4px)",
-              }}
-            >
-              Confirm &amp; Start
-            </button>
-            <button
-              onClick={() => setConfirmStep(false)}
-              className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4]"
-              style={{
-                borderColor: "#BFC0C0",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                fontSize: "13px",
-                color: "#4F5D75",
-                borderRadius: "var(--radius-sm, 4px)",
-              }}
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      )}
+          {submitting ? "Starting\u2026" : "Start Run"}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={submitting}
+          className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4] disabled:opacity-50"
+          style={{
+            borderColor: "#BFC0C0",
+            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            fontSize: "13px",
+            color: "#4F5D75",
+            borderRadius: "var(--radius-sm, 4px)",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
 
-      {!confirmStep && (
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !model || !promptVersion.trim()}
-            className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
-            style={{
-              backgroundColor: "#EF8354",
-              color: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
-          >
-            {submitting ? "Starting\u2026" : "Start Run"}
-          </button>
-          <button
-            onClick={onCancel}
-            disabled={submitting}
-            className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4] disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#4F5D75",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmStartOpen}
+        onOpenChange={setConfirmStartOpen}
+        title="Start Eval Run"
+        description={`Pass ${passNumber} · ${model} · ${promptVersion} · Concurrency ${concurrency}. LLM API calls will be made for each corpus item.`}
+        confirmLabel="Confirm & Start"
+        onConfirm={() => void executeRun()}
+      />
     </div>
   );
 }

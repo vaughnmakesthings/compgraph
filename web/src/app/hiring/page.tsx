@@ -1,12 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Select, SelectItem } from "@tremor/react";
 import { Badge } from "@/components/data/badge";
+import { TablePagination } from "@/components/data/table-pagination";
 import { api } from "@/lib/api-client";
 import { formatRoleArchetype } from "@/lib/utils";
 import type { PostingListItem } from "@/lib/types";
 
 const PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 300;
+
+const SORT_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "first_seen_desc", label: "First Seen ↓" },
+  { value: "first_seen_asc", label: "First Seen ↑" },
+  { value: "pay_desc", label: "Pay High–Low" },
+  { value: "pay_asc", label: "Pay Low–High" },
+  { value: "title_asc", label: "Title A–Z" },
+];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -16,13 +27,23 @@ function formatDate(iso: string): string {
   });
 }
 
-function formatPayRange(min: number | null, max: number | null): string {
+function formatPayRange(
+  min: number | null,
+  max: number | null,
+  currency?: string | null,
+): string {
   if (min === null && max === null) return "—";
   const fmt = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: n % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 });
-  if (min !== null && max !== null) return `$${fmt(min)}–$${fmt(max)}`;
-  if (min !== null) return `$${fmt(min)}+`;
-  return `up to $${fmt(max!)}`;
+    n.toLocaleString("en-US", {
+      minimumFractionDigits: n % 1 !== 0 ? 2 : 0,
+      maximumFractionDigits: 2,
+    });
+  let s: string;
+  if (min !== null && max !== null) s = `$${fmt(min)}–$${fmt(max)}`;
+  else if (min !== null) s = `$${fmt(min)}+`;
+  else s = `up to $${fmt(max!)}`;
+  if (currency && currency !== "USD") s += ` ${currency}`;
+  return s;
 }
 
 function SkeletonRow() {
@@ -40,6 +61,9 @@ function SkeletonRow() {
   );
 }
 
+const filterSelectClass =
+  "min-w-[10rem] [&_[data-headlessui-state]]:border-[#BFC0C0] [&_[data-headlessui-state]]:bg-white [&_[data-headlessui-state]]:text-[#2D3142] [&_[data-headlessui-state]]:focus:ring-[#EF8354] [&_[data-headlessui-state]]:focus:border-[#EF8354]";
+
 export default function HiringPage() {
   const [items, setItems] = useState<PostingListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,10 +71,23 @@ export default function HiringPage() {
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
 
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [roleFilter, setRoleFilter] = useState("");
+  const [sortBy, setSortBy] = useState("first_seen_desc");
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchInput.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setOffset(0);
+  }, [companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
 
   // All companies fetched once on mount — not derived from current page (#173)
   const [allCompanies, setAllCompanies] = useState<Array<{ id: string; name: string }>>([]);
@@ -67,7 +104,15 @@ export default function HiringPage() {
 
     async function load() {
       try {
-        const result = await api.listPostings({ limit: PAGE_SIZE, offset });
+        const result = await api.listPostings({
+          limit: PAGE_SIZE,
+          offset,
+          company_id: companyFilter || undefined,
+          is_active: statusFilter === "all" ? undefined : statusFilter === "active",
+          role_archetype: roleFilter || undefined,
+          sort_by: sortBy,
+          search: searchDebounced || undefined,
+        });
         if (!cancelled) {
           setItems(result.items);
           setTotal(result.total);
@@ -87,7 +132,7 @@ export default function HiringPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset]);
+  }, [offset, companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
 
   const uniqueRoles = useMemo(() => {
     const roles = new Set<string>();
@@ -97,20 +142,31 @@ export default function HiringPage() {
     return [...roles].sort();
   }, [items]);
 
-  const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (search && !(item.title ?? "").toLowerCase().includes(search.toLowerCase())) {
-        return false;
-      }
-      if (companyFilter && item.company_id !== companyFilter) {
-        return false;
-      }
-      if (statusFilter === "active" && !item.is_active) return false;
-      if (statusFilter === "inactive" && item.is_active) return false;
-      if (roleFilter && item.role_archetype !== roleFilter) return false;
-      return true;
-    });
-  }, [items, search, companyFilter, statusFilter, roleFilter]);
+  const hasActiveFilters =
+    companyFilter !== "" ||
+    statusFilter !== "all" ||
+    roleFilter !== "" ||
+    sortBy !== "first_seen_desc" ||
+    searchDebounced !== "";
+
+  const clearAll = useCallback(() => {
+    setCompanyFilter("");
+    setStatusFilter("all");
+    setRoleFilter("");
+    setSortBy("first_seen_desc");
+    setSearchInput("");
+    setSearchDebounced("");
+    setOffset(0);
+  }, []);
+
+  const removeCompanyChip = () => setCompanyFilter("");
+  const removeStatusChip = () => setStatusFilter("all");
+  const removeRoleChip = () => setRoleFilter("");
+  const removeSortChip = () => setSortBy("first_seen_desc");
+  const removeSearchChip = () => {
+    setSearchInput("");
+    setSearchDebounced("");
+  };
 
   const start = total === 0 ? 0 : offset + 1;
   const end = Math.min(offset + PAGE_SIZE, total);
@@ -158,29 +214,34 @@ export default function HiringPage() {
         </div>
       )}
 
-      <div className="flex flex-row gap-3 mb-4 flex-wrap">
+      <div className="flex flex-row gap-3 mb-2 flex-wrap">
         <input
           type="search"
           placeholder="Search postings..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           style={inputStyle}
           aria-label="Search postings"
         />
 
-        <select
-          value={companyFilter}
-          onChange={(e) => setCompanyFilter(e.target.value)}
-          style={inputStyle}
-          aria-label="Filter by company"
+        <label htmlFor="filter-company" className="sr-only">
+          Filter by company
+        </label>
+        <Select
+          id="filter-company"
+          value={companyFilter || " "}
+          onValueChange={(v) => setCompanyFilter(v === " " ? "" : v)}
+          placeholder="All Companies"
+          enableClear={false}
+          className={filterSelectClass}
         >
-          <option value="">All Companies</option>
+          <SelectItem value=" ">All Companies</SelectItem>
           {allCompanies.map(({ id, name }) => (
-            <option key={id} value={id}>
+            <SelectItem key={id} value={id}>
               {name}
-            </option>
+            </SelectItem>
           ))}
-        </select>
+        </Select>
 
         <select
           value={statusFilter}
@@ -193,20 +254,156 @@ export default function HiringPage() {
           <option value="inactive">Closed</option>
         </select>
 
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          style={inputStyle}
-          aria-label="Filter by role"
+        <label htmlFor="filter-role" className="sr-only">
+          Filter by role
+        </label>
+        <Select
+          id="filter-role"
+          value={roleFilter || " "}
+          onValueChange={(v) => setRoleFilter(v === " " ? "" : v)}
+          placeholder="All Roles"
+          enableClear={false}
+          className={filterSelectClass}
         >
-          <option value="">All Roles</option>
+          <SelectItem value=" ">All Roles</SelectItem>
           {uniqueRoles.map((role) => (
-            <option key={role} value={role}>
+            <SelectItem key={role} value={role}>
               {formatRoleArchetype(role)}
-            </option>
+            </SelectItem>
           ))}
-        </select>
+        </Select>
+
+        <Select
+          value={sortBy}
+          onValueChange={(v) => setSortBy(v || "first_seen_desc")}
+          placeholder="Sort By"
+          className={filterSelectClass}
+        >
+          {SORT_OPTIONS.map(({ value, label }) => (
+            <SelectItem key={value} value={value}>
+              {label}
+            </SelectItem>
+          ))}
+        </Select>
       </div>
+
+      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
+        <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
+          {companyFilter && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              style={{
+                backgroundColor: "#E8E8E4",
+                color: "#2D3142",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Company: {allCompanies.find((c) => c.id === companyFilter)?.name ?? companyFilter}
+              <button
+                type="button"
+                onClick={removeCompanyChip}
+                aria-label="Remove company filter"
+                className="ml-1 hover:opacity-70"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {statusFilter !== "all" && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              style={{
+                backgroundColor: "#E8E8E4",
+                color: "#2D3142",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Status: {statusFilter === "active" ? "Active" : "Closed"}
+              <button
+                type="button"
+                onClick={removeStatusChip}
+                aria-label="Remove status filter"
+                className="ml-1 hover:opacity-70"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {roleFilter && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              style={{
+                backgroundColor: "#E8E8E4",
+                color: "#2D3142",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Role: {formatRoleArchetype(roleFilter)}
+              <button
+                type="button"
+                onClick={removeRoleChip}
+                aria-label="Remove role filter"
+                className="ml-1 hover:opacity-70"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {searchDebounced && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              style={{
+                backgroundColor: "#E8E8E4",
+                color: "#2D3142",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Search: &quot;{searchDebounced}&quot;
+              <button
+                type="button"
+                onClick={removeSearchChip}
+                aria-label="Clear search"
+                className="ml-1 hover:opacity-70"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {sortBy !== "first_seen_desc" && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              style={{
+                backgroundColor: "#E8E8E4",
+                color: "#2D3142",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? sortBy}
+              <button
+                type="button"
+                onClick={removeSortChip}
+                aria-label="Reset sort"
+                className="ml-1 hover:opacity-70"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-sm underline"
+              style={{
+                color: "#4F5D75",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       <div
         className="rounded-lg border overflow-hidden"
@@ -231,7 +428,7 @@ export default function HiringPage() {
           <tbody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
-            ) : filtered.length === 0 ? (
+            ) : items.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
@@ -242,7 +439,7 @@ export default function HiringPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((item) => (
+              items.map((item) => (
                 <tr
                   key={item.id}
                   className="border-b last:border-b-0"
@@ -282,7 +479,7 @@ export default function HiringPage() {
                         color: "#4F5D75",
                       }}
                     >
-                      {formatPayRange(item.pay_min, item.pay_max)}
+                      {formatPayRange(item.pay_min, item.pay_max, item.pay_currency)}
                     </span>
                   </td>
                   {/* Status + date merged in one column (#182) */}
@@ -320,42 +517,16 @@ export default function HiringPage() {
         <span>
           {total === 0 ? "No postings" : `Showing ${start}–${end} of ${total}`}
         </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setOffset((prev) => Math.max(0, prev - PAGE_SIZE))}
-            disabled={offset === 0}
-            style={{
-              border: "1px solid #BFC0C0",
-              borderRadius: "var(--radius-md, 6px)",
-              padding: "4px 12px",
-              fontSize: "13px",
-              backgroundColor: "#FFFFFF",
-              color: offset === 0 ? "#BFC0C0" : "#2D3142",
-              cursor: offset === 0 ? "not-allowed" : "pointer",
-              opacity: offset === 0 ? 0.5 : 1,
-            }}
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
-            disabled={offset + PAGE_SIZE >= total}
-            style={{
-              border: "1px solid #BFC0C0",
-              borderRadius: "var(--radius-md, 6px)",
-              padding: "4px 12px",
-              fontSize: "13px",
-              backgroundColor: "#FFFFFF",
-              color: offset + PAGE_SIZE >= total ? "#BFC0C0" : "#2D3142",
-              cursor: offset + PAGE_SIZE >= total ? "not-allowed" : "pointer",
-              opacity: offset + PAGE_SIZE >= total ? 0.5 : 1,
-            }}
-          >
-            Next
-          </button>
-        </div>
+        <TablePagination
+          page={total === 0 ? 1 : Math.floor(offset / PAGE_SIZE) + 1}
+          totalPages={total === 0 ? 1 : Math.ceil(total / PAGE_SIZE)}
+          onFirst={() => setOffset(0)}
+          onPrev={() => setOffset((p) => Math.max(0, p - PAGE_SIZE))}
+          onNext={() => setOffset((p) => p + PAGE_SIZE)}
+          onLast={() =>
+            setOffset((Math.ceil(total / PAGE_SIZE) - 1) * PAGE_SIZE)
+          }
+        />
       </div>
     </div>
   );

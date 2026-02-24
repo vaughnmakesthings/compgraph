@@ -38,6 +38,9 @@ op run --env-file=.env -- uv run python scripts/backfill_enrichment.py          
 op run --env-file=.env -- uv run python scripts/backfill_enrichment.py --dry-run  # Count only
 op run --env-file=.env -- uv run python scripts/validate_enrichment.py          # Spot-check CSV
 
+# Eval
+op run --env-file=.env -- uv run python scripts/generate_eval_corpus.py         # Populate eval/data/corpus.json before eval runs
+
 # Preflight
 uv run preflight                                   # Validate environment before work
 ```

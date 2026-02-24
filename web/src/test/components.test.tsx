@@ -6,58 +6,49 @@ import { BarChart } from "@/components/charts/bar-chart";
 import { AreaChart } from "@/components/charts/area-chart";
 import { DonutChart } from "@/components/charts/donut-chart";
 
-// Recharts SVG rendering requires real browser layout which jsdom cannot provide.
-// We mock the chart primitives to render testable HTML representations of the data.
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// Tremor charts use Recharts internally; jsdom has no layout engine.
+// Mock Tremor chart components to render testable HTML.
+global.ResizeObserver = class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+};
 
-vi.mock("recharts", async () => {
-  const actual = await vi.importActual<typeof import("recharts")>("recharts");
+vi.mock("@tremor/react", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@tremor/react")>();
   return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div style={{ width: 800, height: 400 }}>{children}</div>
-    ),
-    BarChart: ({ children, data }: { children: React.ReactNode; data: Record<string, unknown>[] }) => (
+    ...mod,
+    BarChart: ({ data, categories }: { data: Record<string, unknown>[]; categories: string[] }) => (
       <div data-testid="bar-chart">
         <div data-testid="chart-data" style={{ display: "none" }}>
           {JSON.stringify(data)}
         </div>
-        {children}
+        {categories.map((c) => (
+          <div key={c} data-testid={`bar-${c}`}>
+            {c}
+          </div>
+        ))}
       </div>
     ),
-    AreaChart: ({ children, data }: { children: React.ReactNode; data: Record<string, unknown>[] }) => (
+    AreaChart: ({ data, categories }: { data: Record<string, unknown>[]; categories: string[] }) => (
       <div data-testid="area-chart">
         <div data-testid="chart-data" style={{ display: "none" }}>
           {JSON.stringify(data)}
         </div>
-        {children}
+        {categories.map((c) => (
+          <div key={c} data-testid={`area-${c}`}>
+            {c}
+          </div>
+        ))}
       </div>
     ),
-    PieChart: ({ children }: { children: React.ReactNode }) => (
-      <svg data-testid="pie-chart">{children}</svg>
-    ),
-    Bar: ({ name }: { name: string }) => (
-      <div data-testid={`bar-${name}`}>{name}</div>
-    ),
-    Area: ({ name }: { name: string }) => (
-      <div data-testid={`area-${name}`}>{name}</div>
-    ),
-    Pie: ({ children }: { children?: React.ReactNode }) => (
-      <g data-testid="pie">{children}</g>
-    ),
-    Cell: () => null,
-    XAxis: ({ dataKey }: { dataKey?: string }) => (
-      <div data-testid={`xaxis-${dataKey ?? "x"}`} />
-    ),
-    YAxis: () => <div data-testid="yaxis" />,
-    CartesianGrid: () => null,
-    Tooltip: () => null,
-    Legend: ({ wrapperStyle: _ws, ...props }: Record<string, unknown>) => (
-      <div data-testid="legend" {...props} />
+    DonutChart: ({ data }: { data: { name: string; value: number }[] }) => (
+      <div data-testid="pie-chart">
+        <div data-testid="chart-data" style={{ display: "none" }}>
+          {JSON.stringify(data)}
+        </div>
+        <div data-testid="pie" />
+      </div>
     ),
   };
 });
@@ -244,14 +235,14 @@ describe("BarChart", () => {
 
   it("renders a bar series for each bar definition", () => {
     render(<BarChart data={chartData} bars={bars} xDataKey="month" />);
-    expect(screen.getByTestId("bar-Postings")).toBeInTheDocument();
-    expect(screen.getByTestId("bar-Enriched")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-postings")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-enriched")).toBeInTheDocument();
   });
 
   it("renders bar series names as text", () => {
     render(<BarChart data={chartData} bars={bars} xDataKey="month" />);
-    expect(screen.getByText("Postings")).toBeInTheDocument();
-    expect(screen.getByText("Enriched")).toBeInTheDocument();
+    expect(screen.getByText("postings")).toBeInTheDocument();
+    expect(screen.getByText("enriched")).toBeInTheDocument();
   });
 
   it("accepts custom height prop without crashing", () => {
@@ -282,12 +273,12 @@ describe("AreaChart", () => {
 
   it("renders an area series for each area definition", () => {
     render(<AreaChart data={chartData} areas={areas} xDataKey="week" />);
-    expect(screen.getByTestId("area-Hiring Velocity")).toBeInTheDocument();
+    expect(screen.getByTestId("area-velocity")).toBeInTheDocument();
   });
 
   it("renders area series name as text", () => {
     render(<AreaChart data={chartData} areas={areas} xDataKey="week" />);
-    expect(screen.getByText("Hiring Velocity")).toBeInTheDocument();
+    expect(screen.getByText("velocity")).toBeInTheDocument();
   });
 });
 

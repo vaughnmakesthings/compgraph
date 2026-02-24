@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from compgraph.api.deps import get_db
+from compgraph.api.routes.postings import _escape_like
 from compgraph.main import app
 
 
@@ -76,6 +77,7 @@ def _make_list_row(
     role_archetype: str | None = "field_sales",
     pay_min: float | None = 18.0,
     pay_max: float | None = 24.0,
+    pay_currency: str | None = "USD",
     employment_type: str | None = "full_time",
     title_raw: str | None = "Field Sales Rep",
     location_raw: str | None = "Atlanta, GA",
@@ -87,6 +89,7 @@ def _make_list_row(
         role_archetype,
         pay_min,
         pay_max,
+        pay_currency,
         employment_type,
         title_raw,
         location_raw,
@@ -252,6 +255,57 @@ class TestPostingsListEndpoint:
         data = r.json()
         assert "items" in data
         assert "total" in data
+
+    def test_list_accepts_sort_by_param(self) -> None:
+        posting = _make_posting()
+        row = _make_list_row(posting)
+
+        for sort_val in ("first_seen_desc", "first_seen_asc", "pay_desc", "pay_asc", "title_asc"):
+            mock_session = _make_mock_db_for_list(rows=[row], total=1)
+            app.dependency_overrides[get_db] = lambda ms=mock_session: ms
+            try:
+                with TestClient(app) as client:
+                    r = client.get(f"/api/postings?sort_by={sort_val}")
+            finally:
+                app.dependency_overrides.clear()
+            assert r.status_code == 200, f"sort_by={sort_val}"
+
+    def test_list_rejects_unknown_sort_by_with_422(self) -> None:
+        mock_session = _make_mock_db_for_list(rows=[], total=0)
+        app.dependency_overrides[get_db] = lambda: mock_session
+
+        try:
+            with TestClient(app) as client:
+                r = client.get("/api/postings?sort_by=invalid_sort")
+        finally:
+            app.dependency_overrides.clear()
+
+        assert r.status_code == 422
+        assert "sort_by" in r.json().get("detail", "").lower()
+
+    def test_list_accepts_search_param(self) -> None:
+        posting = _make_posting()
+        row = _make_list_row(posting, title_raw="Field Sales Rep")
+        mock_session = _make_mock_db_for_list(rows=[row], total=1)
+        app.dependency_overrides[get_db] = lambda: mock_session
+
+        try:
+            with TestClient(app) as client:
+                r = client.get("/api/postings?search=Field")
+        finally:
+            app.dependency_overrides.clear()
+
+        assert r.status_code == 200
+        data = r.json()
+        assert data["total"] == 1
+        assert data["items"][0]["title"] == "Field Sales Rep"
+
+    def test_escape_like_escapes_metacharacters(self) -> None:
+        """Search input with % and _ is escaped for literal matching."""
+        assert _escape_like("test_file") == "test\\_file"
+        assert _escape_like("50%") == "50\\%"
+        assert _escape_like("a%b_c") == "a\\%b\\_c"
+        assert _escape_like("path\\to\\file") == "path\\\\to\\\\file"
 
 
 class TestPostingsDetailEndpoint:

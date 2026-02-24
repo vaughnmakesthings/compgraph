@@ -19,6 +19,11 @@ import type {
   SchedulerStatusResponse,
 } from './types'
 
+/** Strip HTML/script tags from API error detail to prevent XSS if ever rendered as HTML. */
+function sanitizeErrorDetail(s: string): string {
+  return s.replace(/<[^>]*>/g, '').trim()
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response
   try {
@@ -32,10 +37,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   if (!res.ok) {
     let detail: string | undefined
     try {
-      const body = await res.json()
-      detail = typeof body?.detail === 'string' ? body.detail : undefined
+      const body = (await res.json()) as { detail?: string }
+      detail = typeof body.detail === 'string' ? sanitizeErrorDetail(body.detail) : undefined
     } catch {
-      // non-JSON error body — fall through to generic message
+      /* non-JSON body — ignore */
     }
     throw new Error(detail ?? `API error ${res.status}: ${path}`)
   }
@@ -81,6 +86,8 @@ export const api = {
     company_id?: string
     is_active?: boolean
     role_archetype?: string
+    sort_by?: string
+    search?: string
   }) => {
     const q = new URLSearchParams()
     if (params?.limit !== undefined) q.set('limit', String(params.limit))
@@ -88,6 +95,8 @@ export const api = {
     if (params?.company_id) q.set('company_id', params.company_id)
     if (params?.is_active !== undefined) q.set('is_active', String(params.is_active))
     if (params?.role_archetype) q.set('role_archetype', params.role_archetype)
+    if (params?.sort_by) q.set('sort_by', params.sort_by)
+    if (params?.search) q.set('search', params.search)
     return apiFetch<PostingListResponse>(`/api/postings${q.size ? `?${q}` : ''}`)
   },
 

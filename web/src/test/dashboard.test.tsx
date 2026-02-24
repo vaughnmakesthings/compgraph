@@ -10,45 +10,29 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+global.ResizeObserver = class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+};
 
-vi.mock("recharts", async () => {
-  const actual = await vi.importActual<typeof import("recharts")>("recharts");
+vi.mock("@tremor/react", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@tremor/react")>();
   return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div style={{ width: 800, height: 400 }}>{children}</div>
-    ),
+    ...mod,
     BarChart: ({
-      children,
       data,
     }: {
-      children: React.ReactNode;
       data: Record<string, unknown>[];
     }) => (
       <div data-testid="bar-chart">
         <div data-testid="chart-data" style={{ display: "none" }}>
           {JSON.stringify(data)}
         </div>
-        {children}
       </div>
     ),
-    Bar: ({ name }: { name: string }) => (
-      <div data-testid={`bar-${name}`}>{name}</div>
-    ),
-    XAxis: ({ dataKey }: { dataKey?: string }) => (
-      <div data-testid={`xaxis-${dataKey ?? "x"}`} />
-    ),
-    YAxis: () => <div data-testid="yaxis" />,
-    CartesianGrid: () => null,
-    Tooltip: () => null,
-    Legend: ({ wrapperStyle: _ws, ...props }: Record<string, unknown>) => (
-      <div data-testid="legend" {...props} />
-    ),
+    AreaChart: () => <div data-testid="area-chart" />,
+    DonutChart: () => <div data-testid="donut-chart" />,
   };
 });
 
