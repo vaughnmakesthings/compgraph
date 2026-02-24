@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import sys
 from pathlib import Path
@@ -119,7 +120,7 @@ with col_left:
     st.html(
         f'<div style="height:600px;overflow-y:auto;padding:1rem;'
         f'background:#1a1a2e;color:#eee;border-radius:8px;font-size:14px;line-height:1.5">'
-        f"{full_text}</div>"
+        f"{html.escape(full_text)}</div>"
     )
 
 with col_right:

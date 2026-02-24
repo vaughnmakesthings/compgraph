@@ -8,6 +8,12 @@
             "type": "command",
             "command": "jq -r '.tool_input.file_path // empty' | { read f; echo \"$f\" | grep -q '\\.py$' || exit 0; cd \"$CLAUDE_PROJECT_DIR\" || exit 0; uv run ruff check --fix \"$f\" 2>/dev/null; uv run ruff format \"$f\" 2>/dev/null; base=$(basename \"$f\" .py); if [ \"$base\" != \"__init__\" ] && [ \"$base\" != \"conftest\" ]; then uv run pytest -x -q --tb=line -k \"$base\" -m \"not integration\" 2>/dev/null | tail -5; fi; echo \"$f\" | grep -q '^src/' && uv run mypy --no-error-summary \"$f\" 2>&1 | tail -5; exit 0; }",
             "timeout": 45
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/frontend-post-edit.sh\"",
+            "timeout": 60,
+            "statusMessage": "Frontend lint + test..."
           }
         ]
       },

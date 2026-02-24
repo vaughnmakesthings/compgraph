@@ -58,7 +58,7 @@ async def call_llm(
 
     if model in THINKING_MODELS:
         budget = thinking_budget or DEFAULT_THINKING_BUDGET
-        kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
+        kwargs["thinking"] = {"type": "enabled", "budget_tokens": min(budget, max_tokens)}
         # Thinking models don't accept temperature
     else:
         kwargs["temperature"] = 0.1

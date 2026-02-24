@@ -12,7 +12,8 @@ Project agents in `.claude/agents/`:
 - `pytest-validator` — test audit
 - `spec-reviewer` — scope gate
 - `database-optimizer` — query/index/schema
-- `agent-organizer` — multi-agent orchestration
+- `agent-organizer` — multi-agent orchestration and delegation
+- `security-reviewer` — auth, RLS, input validation, injection risks
 
 Review sequence: implement → code-reviewer → pytest-validator → spec-reviewer
 

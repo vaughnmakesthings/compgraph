@@ -18,13 +18,21 @@ interface BarChartProps {
 }
 
 export function BarChart({ data, bars, xDataKey, height = 300 }: BarChartProps) {
-  const categories = bars.map((b) => b.dataKey);
+  const categories = bars.map((b) => b.name);
   const colors = CHART_COLORS.slice(0, categories.length);
+
+  const chartData = data.map((row) => {
+    const out: Record<string, unknown> = { [xDataKey]: row[xDataKey] };
+    for (const b of bars) {
+      out[b.name] = row[b.dataKey];
+    }
+    return out;
+  });
 
   return (
     <div style={{ height, fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}>
       <TremorBarChart
-        data={data}
+        data={chartData}
         index={xDataKey}
         categories={categories}
         colors={colors}

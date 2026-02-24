@@ -1,23 +1,24 @@
-# MCP Server Capabilities — next-devtools, Vercel, Supabase
+# MCP Server Capabilities — next-devtools, Vercel, Supabase, Sentry, Playwright
 
 > **Audience:** Agent crew (react-frontend-developer, nextjs-deploy-ops, python-backend-developer, database-optimizer, etc.)
-> **Last updated:** 2026-02-23
+> **Last updated:** 2026-02-24
 > **Purpose:** Reference for when and how to use each MCP server, and how they compose for common workflows.
 
 ---
 
 ## Overview
 
-Three MCP servers cover the full CompGraph deployment stack. They are **complementary, not redundant** — each owns a distinct layer.
+Five MCP servers cover the full CompGraph deployment and debugging stack. They are **complementary, not redundant** — each owns a distinct layer.
 
 ```
 Supabase MCP          next-devtools MCP         Vercel MCP
-──────────────        ─────────────────         ──────────
-Database layer   →    Application layer    →    Hosting layer
-(data + schema)       (Next.js runtime)         (deploy + logs)
+Database layer   →    Application layer    →   Hosting layer
+
+Sentry MCP            Playwright MCP
+Production errors     Browser automation (E2E, smoke)
 ```
 
-They don't call each other. They give you simultaneous visibility into all three layers so you can correlate problems across them.
+They don't call each other. They give you simultaneous visibility so you can correlate problems across layers.
 
 ---
 
@@ -190,6 +191,61 @@ They don't call each other. They give you simultaneous visibility into all three
 | "What errors are happening in prod?" | Vercel: `get_runtime_logs` |
 | "Which deploy is live?" | Vercel: `list_deployments` |
 | "Fetch a preview URL I can't access" | Vercel: `web_fetch_vercel_url` |
+
+---
+
+---
+
+## Sentry MCP — Production Error Investigation
+
+**When to use:** Debugging production errors, pre/post-deploy health checks, correlating with Vercel runtime logs.
+
+### Key Tools
+
+| Tool | Purpose |
+|------|---------|
+| `find_organizations` | Get org slug (required for other tools) |
+| `find_projects` | Get project slug for CompGraph |
+| `search_issues` | List issues (naturalLanguageQuery: "unresolved critical bugs") |
+| `search_events` | Count/aggregate events |
+| `get_issue_details` | Full stack trace for an issue ID |
+
+### Workflow
+
+- **Post-deploy:** Run `search_issues` for "unresolved critical bugs from last 24 hours" to surface regressions
+- **Debugging:** Use with Vercel `get_runtime_logs` — Sentry has stack traces, Vercel has request context
+- **Skill:** `/sentry-check` — encapsulates this workflow
+
+### Prerequisites
+
+- Sentry SDK instrumented in app (frontend/backend)
+- OAuth authenticated (Cursor Settings → MCP)
+
+---
+
+## Playwright MCP — Browser Automation
+
+**When to use:** E2E test generation, smoke tests against any URL, debugging production UI behavior.
+
+### Key Tools
+
+| Tool | Purpose |
+|------|---------|
+| `browser_navigate` | Navigate to URL |
+| `browser_snapshot` | Get page structure and element refs |
+| `browser_click`, `browser_type` | Interact with elements |
+| `browser_take_screenshot` | Capture visual state |
+
+### Workflow
+
+- **Smoke tests:** `bash scripts/playwright-smoke.sh` or `cd web && npm run test:smoke` — hits backend health + frontend
+- **E2E generation:** Use when creating Playwright tests for new pages
+- **Prod debugging:** Navigate to production URL, snapshot, screenshot — no dev server required (unlike next-devtools `browser_eval`)
+
+### Prerequisites
+
+- Playwright MCP in `.mcp.json`
+- `@playwright/test` in `web/` for smoke script
 
 ---
 

@@ -17,6 +17,14 @@
       "type": "stdio",
       "command": "python",
       "args": ["-m", "mcp_server_git"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "sentry": {
+      "url": "https://mcp.sentry.dev/mcp"
     }
   }
 }

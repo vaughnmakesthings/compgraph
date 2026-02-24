@@ -70,7 +70,9 @@ ignore = [
 "src/compgraph/enrichment/prompts.py" = ["E501"]
 "src/compgraph/preflight.py" = ["S603", "S607", "T20"]
 "alembic/versions/**/*.py" = ["E501", "UP007", "UP035", "I001", "W291", "S608"]
+"src/compgraph/aggregation/coverage_gaps.py" = ["S608"]
 "src/compgraph/aggregation/pay_benchmarks.py" = ["S608"]
+"eval/eval/ui/pages/*.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.12"
