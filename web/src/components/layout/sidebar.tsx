@@ -182,13 +182,19 @@ interface Tier2ItemProps {
   isActive: boolean;
 }
 
-function Tier2Item({ item, isActive }: Tier2ItemProps) {
+interface Tier2ItemProps {
+  item: NavChild;
+  isActive: boolean;
+  indent?: number;
+}
+
+function Tier2Item({ item, isActive, indent = 36 }: Tier2ItemProps) {
   return (
     <Link
       href={item.href}
       className="flex items-center gap-2 rounded-[4px] py-1.5 pr-3 text-sm transition-colors duration-150"
       style={{
-        paddingLeft: "68px",
+        paddingLeft: `${indent}px`,
         color: isActive ? "#EF8354" : "rgba(255,255,255,0.6)",
         backgroundColor: isActive ? "rgba(239,131,84,0.08)" : "transparent",
       }}
@@ -197,8 +203,8 @@ function Tier2Item({ item, isActive }: Tier2ItemProps) {
       <span
         className="shrink-0 rounded-full"
         style={{
-          width: "7px",
-          height: "7px",
+          width: "6px",
+          height: "6px",
           backgroundColor: item.color ?? "#EF8354",
           boxShadow: isActive ? `0 0 4px ${item.color ?? "#EF8354"}` : "none",
         }}
@@ -233,10 +239,10 @@ function Tier1Category({
       <button
         type="button"
         onClick={() => onToggle(key)}
-        className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
+        className="flex w-full items-center gap-2 rounded-[4px] py-1 pr-3 text-[11px] font-semibold uppercase tracking-wider transition-colors duration-150"
         style={{
-          paddingLeft: "52px",
-          color: "rgba(255,255,255,0.45)",
+          paddingLeft: "32px",
+          color: "rgba(255,255,255,0.4)",
         }}
         aria-expanded={isExpanded}
         aria-controls={`nav-tier2-${category.id}`}
@@ -244,7 +250,7 @@ function Tier1Category({
         {hasActiveChild && (
           <span
             className="shrink-0 rounded-full"
-            style={{ width: "7px", height: "7px", backgroundColor: "#EF8354" }}
+            style={{ width: "5px", height: "5px", backgroundColor: "#EF8354" }}
             aria-hidden="true"
           />
         )}
@@ -264,6 +270,7 @@ function Tier1Category({
               key={child.id}
               item={child}
               isActive={pathname === child.href}
+              indent={48}
             />
           ))}
         </div>
@@ -350,23 +357,7 @@ function Tier0Item({
           <div id={`nav-sub-${item.id}`} className="mt-0.5">
             {/* Flat children — competitors companies */}
             {item.children && item.children.length > 0 && (
-              <div className="space-y-0.5">
-                {/* Sub-group label */}
-                <div
-                  style={{
-                    paddingLeft: "52px",
-                    paddingTop: "8px",
-                    paddingBottom: "4px",
-                    fontSize: "10px",
-                    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "rgba(191,192,192,0.45)",
-                  }}
-                >
-                  Companies
-                </div>
+              <div className="space-y-0.5 pt-0.5">
                 {item.children.map((child) => (
                   <Tier2Item
                     key={child.id}
@@ -379,15 +370,15 @@ function Tier0Item({
                   href={item.href}
                   className="block transition-colors duration-150 hover:underline"
                   style={{
-                    paddingLeft: "68px",
-                    paddingTop: "6px",
-                    paddingBottom: "10px",
-                    fontSize: "12px",
+                    paddingLeft: "36px",
+                    paddingTop: "4px",
+                    paddingBottom: "6px",
+                    fontSize: "11px",
                     fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                    color: "rgba(191,192,192,0.5)",
+                    color: "rgba(191,192,192,0.4)",
                   }}
                 >
-                  View All Competitors →
+                  View all →
                 </Link>
               </div>
             )}
