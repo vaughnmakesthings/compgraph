@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Select, SelectItem } from "@tremor/react";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
@@ -10,6 +10,19 @@ import type { PostingListItem } from "@/lib/types";
 
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
+
+/** Canonical role archetypes from enrichment schema — used for filter dropdown (not derived from current page). */
+const ROLE_ARCHETYPES = [
+  "field_rep",
+  "merchandiser",
+  "brand_ambassador",
+  "demo_specialist",
+  "team_lead",
+  "manager",
+  "recruiter",
+  "corporate",
+  "other",
+] as const;
 
 const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "first_seen_desc", label: "First Seen ↓" },
@@ -84,9 +97,10 @@ export default function HiringPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 and clear any stale error when filters change
   useEffect(() => {
     setOffset(0);
+    setError(null);
   }, [companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
 
   // All companies fetched once on mount — not derived from current page (#173)
@@ -114,6 +128,7 @@ export default function HiringPage() {
           search: searchDebounced || undefined,
         });
         if (!cancelled) {
+          setError(null);
           setItems(result.items);
           setTotal(result.total);
         }
@@ -133,14 +148,6 @@ export default function HiringPage() {
       cancelled = true;
     };
   }, [offset, companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
-
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set<string>();
-    for (const item of items) {
-      if (item.role_archetype) roles.add(item.role_archetype);
-    }
-    return [...roles].sort();
-  }, [items]);
 
   const hasActiveFilters =
     companyFilter !== "" ||
@@ -266,7 +273,7 @@ export default function HiringPage() {
           className={filterSelectClass}
         >
           <SelectItem value=" ">All Roles</SelectItem>
-          {uniqueRoles.map((role) => (
+          {ROLE_ARCHETYPES.map((role) => (
             <SelectItem key={role} value={role}>
               {formatRoleArchetype(role)}
             </SelectItem>
