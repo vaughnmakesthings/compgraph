@@ -1,0 +1,81 @@
+src/compgraph/api/routes/postings.py
+  962a58378addf249 92-96,114-115
+tests/test_postings_api.py
+  962a58378addf249 11,303-308
+web/src/app/hiring/page.tsx
+  76d228248f50ed3b 297
+  b90552d25ebe07f6 22-34,276
+  e62172eeb17a4121 100,103,133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "306c88ed4e251abf3fb1d1fd581a31f6540d9001",
+  "prompts": {
+    "76d228248f50ed3b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1ce0f167-e124-4a4f-906b-4293eaf8216c",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "962a58378addf249": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "79282312-e467-4d28-85d6-9f7896f41324",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 2,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    },
+    "b90552d25ebe07f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8a6119a8-6da5-4cec-8aba-80f6346c8d96",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 10,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    },
+    "bd133ba0df987aea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0b10d3c6-a3a2-4130-b119-cd47b3eeed81",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 145,
+      "total_deletions": 0,
+      "accepted_lines": 145,
+      "overriden_lines": 0
+    },
+    "e62172eeb17a4121": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fd93013d-4a7e-4761-8c25-5b922c8e474a",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
