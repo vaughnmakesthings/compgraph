@@ -199,9 +199,11 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 - Don't forget `exclude_ids` for failed postings in batch loops — prevents livelock on persistent failures.
 - Don't test mock behavior — test real behavior. Don't add test-only methods to production classes. Mock minimally and only after understanding the dependency chain.
 - Don't create GitHub issues or TaskCreate entries without checking for duplicates first. Search existing open issues (`gh issue list`) and the current task list (`TaskList`) before creating. Never create the same task twice.
+- When fetching multiple GitHub issues, query them individually (`gh issue view <N>`) rather than piping multiple `gh` commands into a single Python process — combined pipelines fail silently or produce malformed output.
 
 ## Platform Gotchas
 
+- **GitHub operations**: Prefer the GitHub MCP server (`mcp__plugin_github_github__*` tools) for all GitHub interactions — issues, PRs, comments, reviews. Fall back to `gh` CLI only when the MCP tool doesn't cover the operation (e.g., `gh pr merge`, `gh pr checks`).
 - **`grep` vs `rg`**: Always use the Grep tool or `rg` directly — never `grep --include` flags. The Grep tool uses ripgrep which doesn't support GNU grep flags and will silently return wrong results.
 - **macOS `find`**: Use `fd` or `Glob` tool instead — macOS `find` has different flag syntax than GNU `find` (e.g., `-regex` behavior differs).
 - **Docker**: Requires OrbStack on macOS dev machines (not Docker Desktop). The GitHub MCP server is a Go-based Docker image, not an npm package.
