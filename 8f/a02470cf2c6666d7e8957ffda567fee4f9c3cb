@@ -1,0 +1,37 @@
+src/compgraph/aggregation/pay_benchmarks.py
+  2ac4b7a4bf29eb57 10-55,59,68-70,73
+src/compgraph/aggregation/coverage_gaps.py
+  2ac4b7a4bf29eb57 19-50,60
+scripts/dedup_brands.py
+  2ac4b7a4bf29eb57 1-146
+src/compgraph/aggregation/daily_velocity.py
+  2ac4b7a4bf29eb57 10-11
+CLAUDE.md
+  2ac4b7a4bf29eb57 40-44,46-50,98,206
+docs/changelog.md
+  2ac4b7a4bf29eb57 7-23
+pyproject.toml
+  2ac4b7a4bf29eb57 73
+src/compgraph/aggregation/posting_lifecycle.py
+  2ac4b7a4bf29eb57 11-17,28-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "8fa02470cf2c6666d7e8957ffda567fee4f9c3cb",
+  "prompts": {
+    "2ac4b7a4bf29eb57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e10ac1ae-a978-473d-8911-1f328572c39a",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 271,
+      "overriden_lines": 0
+    }
+  }
+}
