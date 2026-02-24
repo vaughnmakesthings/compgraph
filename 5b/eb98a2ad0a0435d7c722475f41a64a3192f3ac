@@ -1,0 +1,23 @@
+.claude/skills/sprint-plan/SKILL.md
+  0efbbf43aa2a5806 1-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "5beb98a2ad0a0435d7c722475f41a64a3192f3ac",
+  "prompts": {
+    "0efbbf43aa2a5806": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "169ab947-d3fa-4818-a969-ea2002a58568",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 380,
+      "total_deletions": 18,
+      "accepted_lines": 379,
+      "overriden_lines": 0
+    }
+  }
+}
