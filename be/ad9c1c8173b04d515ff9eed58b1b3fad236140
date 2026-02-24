@@ -1,0 +1,33 @@
+docs/git-github-cheatsheet.md
+  0efbbf43aa2a5806 1-5
+docs/workflow.md
+  0efbbf43aa2a5806 197-238
+docs/context-packs.md
+  0efbbf43aa2a5806 399-400
+docs/ci.md
+  0efbbf43aa2a5806 96,98-108
+CLAUDE.md
+  0efbbf43aa2a5806 290-292,320-330,415-416,418-420
+docs/parallel-development-playbook.md
+  0efbbf43aa2a5806 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "bead9c1c8173b04d515ff9eed58b1b3fad236140",
+  "prompts": {
+    "0efbbf43aa2a5806": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "169ab947-d3fa-4818-a969-ea2002a58568",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 85,
+      "overriden_lines": 0
+    }
+  }
+}
