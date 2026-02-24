@@ -47,3 +47,6 @@ web/coverage/
 web/.tsbuildinfo
 # Override global gitignore "runs/" pattern so eval/runs/ pages are tracked
 !web/src/app/eval/runs/
+
+# Agent reference docs (cloned repos, not for version control)
+.agents/docs/

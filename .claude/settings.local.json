@@ -60,7 +60,10 @@
       "Bash(uv venv:*)",
       "Bash(gh repo create:*)",
       "mcp__plugin_claude-mem_mcp-search__save_memory",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "Bash(echo No matching issues:*)",
+      "Bash(gh milestone:*)"
     ]
   },
   "enabledPlugins": {

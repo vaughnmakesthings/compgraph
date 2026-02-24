@@ -1,0 +1,197 @@
+/*
+ * CompGraph Design System — Tailwind v4 Theme
+ * Drop this into your app's global CSS file.
+ * Tailwind v4 uses @theme inline — no tailwind.config.js needed.
+ *
+ * Font loading: Add to <head> or use next/font:
+ *   - Sora (display): weights 600, 700
+ *   - DM Sans (body): weights 400, 500, 600
+ *   - JetBrains Mono (data): weights 400, 500
+ */
+
+/* ═══════════════════════════════════════════════
+   §1  TAILWIND v4 THEME
+   ═══════════════════════════════════════════════ */
+
+@import "tailwindcss";
+
+@theme inline {
+  /* ── Source Palette ── */
+  --color-jet-black: #2D3142;
+  --color-coral: #EF8354;
+  --color-blue-slate: #4F5D75;
+  --color-silver: #BFC0C0;
+  --color-teal: #1B998B;
+  --color-chestnut: #8C2C23;
+  --color-gold: #DCB256;
+
+  /* ── Chart Palette (use in order) ── */
+  --color-chart-1: #EF8354;
+  --color-chart-2: #1B998B;
+  --color-chart-3: #4F5D75;
+  --color-chart-4: #DCB256;
+  --color-chart-5: #8C2C23;
+
+  /* ── Typography ── */
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── Border Radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   §2  CSS CUSTOM PROPERTIES — LIGHT MODE
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Surface Neutrals ── */
+  --background: #F4F4F0;
+  --surface: #FFFFFF;
+  --surface-raised: #FAFAF7;
+  --foreground: #2D3142;
+  --muted: #E8E8E3;
+  --muted-foreground: #4F5D75;
+
+  /* ── Primary / Secondary / Accent ── */
+  --primary: #EF8354;
+  --primary-foreground: #FFFFFF;
+  --secondary: #4F5D75;
+  --secondary-foreground: #FFFFFF;
+  --accent: rgba(239, 131, 84, 0.10);
+  --accent-foreground: #2D3142;
+  --border: #BFC0C0;
+  --input: #BFC0C0;
+  --ring: #EF8354;
+
+  /* ── Semantic States ── */
+  --success: #1B998B;
+  --success-foreground: #FFFFFF;
+  --success-muted: rgba(27, 153, 139, 0.10);
+  --warning: #DCB256;
+  --warning-foreground: #2D3142;
+  --warning-muted: rgba(220, 178, 86, 0.10);
+  --error: #8C2C23;
+  --error-foreground: #FFFFFF;
+  --error-muted: rgba(140, 44, 35, 0.10);
+
+  /* ── Sidebar (always dark) ── */
+  --sidebar-bg: #2D3142;
+  --sidebar-bg-active: #363B4D;
+  --sidebar-text: #D0D1D1;
+  --sidebar-text-muted: #B0B1B5;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-accent: #EF8354;
+  --sidebar-border: #4F5D75;
+}
+
+/* ═══════════════════════════════════════════════
+   §3  CSS CUSTOM PROPERTIES — DARK MODE
+   ═══════════════════════════════════════════════ */
+
+.dark {
+  --background: #1A1B26;
+  --surface: #2D3142;
+  --surface-raised: #363B4D;
+  --foreground: #E8E8E3;
+  --muted: #363B4D;
+  --muted-foreground: #9CA3B4;
+
+  --primary: #EF8354;
+  --primary-foreground: #1A1B26;
+  --secondary: #9CA3B4;
+  --secondary-foreground: #1A1B26;
+  --accent: rgba(239, 131, 84, 0.10);
+  --accent-foreground: #E8E8E3;
+  --border: #4F5D75;
+  --input: #4F5D75;
+  --ring: #EF8354;
+
+  --success: #22C4A8;
+  --success-foreground: #1A1B26;
+  --success-muted: rgba(34, 196, 168, 0.10);
+  --warning: #E8C76A;
+  --warning-foreground: #1A1B26;
+  --warning-muted: rgba(232, 199, 106, 0.10);
+  --error: #D4453A;
+  --error-foreground: #FFFFFF;
+  --error-muted: rgba(212, 69, 58, 0.10);
+
+  /* Sidebar tokens don't change — already dark */
+}
+
+/* ═══════════════════════════════════════════════
+   §4  BASE STYLES
+   ═══════════════════════════════════════════════ */
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════
+   §5  SHADCN/UI TOKEN OVERRIDES
+   Map every shadcn token to CompGraph values.
+   shadcn/ui reads these automatically.
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --destructive: var(--error);
+  --destructive-foreground: var(--error-foreground);
+}
+
+/* ═══════════════════════════════════════════════
+   §6  PROSE / TYPOGRAPHY PLUGIN OVERRIDES
+   For @tailwindcss/typography — LLM-generated
+   insight text, competitor summaries, narratives
+   ═══════════════════════════════════════════════ */
+
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--primary);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--muted);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+}
+
+/* ═══════════════════════════════════════════════
+   §7  NOISE TEXTURE (optional)
+   Add class "noise-overlay" to a wrapper element
+   ═══════════════════════════════════════════════ */
+
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+.dark .noise-overlay::before {
+  opacity: 0.04;
+}

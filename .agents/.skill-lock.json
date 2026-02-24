@@ -1,0 +1,15 @@
+{
+  "version": 3,
+  "skills": {
+    "frontend-code-review": {
+      "source": "langgenius/dify",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/langgenius/dify.git",
+      "skillPath": ".agents/skills/frontend-code-review/SKILL.md",
+      "skillFolderHash": "60482732c2f02d08387927cef66619ddf903b5b5",
+      "installedAt": "2026-02-23T21:22:36.598Z",
+      "updatedAt": "2026-02-23T21:22:36.598Z"
+    }
+  },
+  "dismissed": {}
+}
