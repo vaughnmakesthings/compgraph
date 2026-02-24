@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Select, SelectItem } from "@tremor/react";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
@@ -18,6 +18,19 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "pay_asc", label: "Pay Low–High" },
   { value: "title_asc", label: "Title A–Z" },
 ];
+
+/** Canonical role archetypes from enrichment pipeline — ensures all options appear in filter regardless of current page/filters (#173). */
+const ROLE_ARCHETYPES = [
+  "field_rep",
+  "merchandiser",
+  "brand_ambassador",
+  "demo_specialist",
+  "team_lead",
+  "manager",
+  "recruiter",
+  "corporate",
+  "other",
+] as const;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -84,9 +97,10 @@ export default function HiringPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change; clear stale error so retry is visible
   useEffect(() => {
     setOffset(0);
+    setError(null);
   }, [companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
 
   // All companies fetched once on mount — not derived from current page (#173)
@@ -116,6 +130,7 @@ export default function HiringPage() {
         if (!cancelled) {
           setItems(result.items);
           setTotal(result.total);
+          setError(null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -133,14 +148,6 @@ export default function HiringPage() {
       cancelled = true;
     };
   }, [offset, companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
-
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set<string>();
-    for (const item of items) {
-      if (item.role_archetype) roles.add(item.role_archetype);
-    }
-    return [...roles].sort();
-  }, [items]);
 
   const hasActiveFilters =
     companyFilter !== "" ||
@@ -266,7 +273,7 @@ export default function HiringPage() {
           className={filterSelectClass}
         >
           <SelectItem value=" ">All Roles</SelectItem>
-          {uniqueRoles.map((role) => (
+          {ROLE_ARCHETYPES.map((role) => (
             <SelectItem key={role} value={role}>
               {formatRoleArchetype(role)}
             </SelectItem>
@@ -287,7 +294,7 @@ export default function HiringPage() {
         </Select>
       </div>
 
-      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
+      {hasActiveFilters && (
         <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
           {companyFilter && (
             <span
