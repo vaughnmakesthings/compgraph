@@ -133,6 +133,8 @@ interface NewRunFormProps {
 function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [passNumber, setPassNumber] = useState(1);
   const [models, setModels] = useState<Array<{ id: string; label: string }>>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
+  const [modelsError, setModelsError] = useState<string | null>(null);
   const [model, setModel] = useState("");
   const [promptVersion, setPromptVersion] = useState("pass1_v1");
   const [concurrency, setConcurrency] = useState(5);
@@ -140,18 +142,40 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
 
+  const [modelsRetry, setModelsRetry] = useState(0);
+
   useEffect(() => {
+    let cancelled = false;
     api
       .getEvalModels()
       .then((list) => {
+        if (cancelled) return;
         setModels(list);
+        setModelsLoading(false);
+        setModelsError(null);
         setModel((prev) => {
           const ids = list.map((m) => m.id);
           return prev && ids.includes(prev) ? prev : list[0]?.id ?? "";
         });
       })
-      .catch(() => setModels([]));
-  }, []);
+      .catch((err) => {
+        if (cancelled) return;
+        setModels([]);
+        setModelsLoading(false);
+        setModelsError(
+          err instanceof Error ? err.message : "Failed to load models",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [modelsRetry]);
+
+  const retryModels = () => {
+    setModelsLoading(true);
+    setModelsError(null);
+    setModelsRetry((n) => n + 1);
+  };
 
   const handleSubmit = () => {
     if (!model) {
@@ -247,30 +271,51 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
           >
             Model
           </label>
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            disabled={submitting || models.length === 0}
-            className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              backgroundColor: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#2D3142",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
-          >
-            {models.length === 0 ? (
-              <option value="">Loading models…</option>
-            ) : (
-              models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))
+          <div className="flex items-center gap-1.5">
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              disabled={submitting || modelsLoading || !!modelsError}
+              className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
+              style={{
+                borderColor: modelsError ? "#8C2C23" : "#BFC0C0",
+                backgroundColor: "#FFFFFF",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                fontSize: "13px",
+                color: modelsError ? "#8C2C23" : "#2D3142",
+                borderRadius: "var(--radius-sm, 4px)",
+              }}
+            >
+              {modelsLoading ? (
+                <option value="">Loading models…</option>
+              ) : modelsError ? (
+                <option value="">Failed to load models</option>
+              ) : (
+                models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))
+              )}
+            </select>
+            {modelsError && (
+              <button
+                type="button"
+                onClick={retryModels}
+                className="shrink-0 rounded border px-1.5 py-1.5 transition-colors duration-150 hover:bg-[#E8E8E4]"
+                style={{
+                  borderColor: "#BFC0C0",
+                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                  fontSize: "12px",
+                  color: "#4F5D75",
+                  borderRadius: "var(--radius-sm, 4px)",
+                }}
+                title="Retry loading models"
+              >
+                Retry
+              </button>
             )}
-          </select>
+          </div>
         </div>
         <div>
           <label
