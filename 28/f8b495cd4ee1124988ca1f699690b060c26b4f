@@ -1,0 +1,25 @@
+.claude/skills/draft-pr/SKILL.md
+  0efbbf43aa2a5806 1-139
+.claude/skills/pr/SKILL.md
+  0efbbf43aa2a5806 14-16,28,46-47,55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "28f8b495cd4ee1124988ca1f699690b060c26b4f",
+  "prompts": {
+    "0efbbf43aa2a5806": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "169ab947-d3fa-4818-a969-ea2002a58568",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 279,
+      "overriden_lines": 0
+    }
+  }
+}
