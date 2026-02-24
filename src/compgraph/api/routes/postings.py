@@ -34,6 +34,7 @@ class PostingListItem(BaseModel):
     role_archetype: str | None
     pay_min: float | None
     pay_max: float | None
+    pay_currency: str | None
     employment_type: str | None
 
 
@@ -83,11 +84,18 @@ class PostingDetailResponse(BaseModel):
     brand_mentions: list[BrandMentionDetail]
 
 
+SORT_BY_ALLOWED = frozenset(
+    {"first_seen_desc", "first_seen_asc", "pay_desc", "pay_asc", "title_asc"}
+)
+
+
 def _build_filters(
     company_id: uuid.UUID | None,
     is_active: bool | None,
     role_archetype: str | None,
-) -> list:
+    search: str | None,
+) -> tuple[list, bool]:
+    """Return (filters, needs_snapshot_join). When search is set, snapshot join needed."""
     filters = []
     if company_id is not None:
         filters.append(Posting.company_id == company_id)  # already a uuid.UUID
@@ -95,7 +103,36 @@ def _build_filters(
         filters.append(Posting.is_active == is_active)
     if role_archetype is not None:
         filters.append(PostingEnrichment.role_archetype == role_archetype)
-    return filters
+    search_trimmed = search.strip() if search else ""
+    needs_snapshot = bool(search_trimmed)
+    if needs_snapshot:
+        filters.append(PostingSnapshot.title_raw.ilike(f"%{search_trimmed}%"))
+    return filters, needs_snapshot
+
+
+def _latest_snapshot_join():
+    """Correlated join to latest PostingSnapshot per Posting."""
+    return (PostingSnapshot.posting_id == Posting.id) & (
+        PostingSnapshot.snapshot_date
+        == select(func.max(PostingSnapshot.snapshot_date))
+        .where(PostingSnapshot.posting_id == Posting.id)
+        .correlate(Posting)
+        .scalar_subquery()
+    )
+
+
+def _order_by_clause(sort_by: str):
+    """Map sort_by string to SQLAlchemy order_by clause."""
+    from sqlalchemy.sql import nulls_last
+
+    mapping = {
+        "first_seen_desc": Posting.first_seen_at.desc(),
+        "first_seen_asc": Posting.first_seen_at.asc(),
+        "pay_desc": nulls_last(PostingEnrichment.pay_max.desc()),
+        "pay_asc": nulls_last(PostingEnrichment.pay_max.asc()),
+        "title_asc": nulls_last(PostingSnapshot.title_raw.asc()),
+    }
+    return mapping.get(sort_by, Posting.first_seen_at.desc())
 
 
 @router.get("", response_model=PostingListResponse)
@@ -105,16 +142,23 @@ async def list_postings(
     company_id: uuid.UUID | None = None,
     is_active: bool | None = None,
     role_archetype: str | None = None,
+    sort_by: str = "first_seen_desc",
+    search: str | None = None,
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> PostingListResponse:
-    filters = _build_filters(company_id, is_active, role_archetype)
+    if sort_by not in SORT_BY_ALLOWED:
+        raise HTTPException(
+            status_code=422,
+            detail=f"sort_by must be one of: {sorted(SORT_BY_ALLOWED)}",
+        )
+    filters, needs_snapshot = _build_filters(company_id, is_active, role_archetype, search)
 
-    count_subq = (
-        select(Posting)
-        .outerjoin(PostingEnrichment, PostingEnrichment.posting_id == Posting.id)
-        .where(*filters)
-        .subquery()
+    count_base = select(Posting).outerjoin(
+        PostingEnrichment, PostingEnrichment.posting_id == Posting.id
     )
+    if needs_snapshot:
+        count_base = count_base.outerjoin(PostingSnapshot, _latest_snapshot_join())
+    count_subq = count_base.where(*filters).subquery()
     count_result = await db.execute(select(func.count()).select_from(count_subq))
     total = count_result.scalar_one()
 
@@ -124,6 +168,7 @@ async def list_postings(
             PostingEnrichment.role_archetype,
             PostingEnrichment.pay_min,
             PostingEnrichment.pay_max,
+            PostingEnrichment.pay_currency,
             PostingEnrichment.employment_type,
             PostingSnapshot.title_raw,
             PostingSnapshot.location_raw,
@@ -132,19 +177,9 @@ async def list_postings(
         )
         .outerjoin(PostingEnrichment, PostingEnrichment.posting_id == Posting.id)
         .outerjoin(Company, Company.id == Posting.company_id)
-        .outerjoin(
-            PostingSnapshot,
-            (PostingSnapshot.posting_id == Posting.id)
-            & (
-                PostingSnapshot.snapshot_date
-                == select(func.max(PostingSnapshot.snapshot_date))
-                .where(PostingSnapshot.posting_id == Posting.id)
-                .correlate(Posting)
-                .scalar_subquery()
-            ),
-        )
+        .outerjoin(PostingSnapshot, _latest_snapshot_join())
         .where(*filters)
-        .order_by(Posting.first_seen_at.desc())
+        .order_by(_order_by_clause(sort_by))
         .limit(limit)
         .offset(offset)
     )
@@ -154,17 +189,18 @@ async def list_postings(
         PostingListItem(
             id=row[0].id,
             company_id=row[0].company_id,
-            company_name=row[7],
-            company_slug=row[8],
-            title=row[5],
-            location=row[6],
+            company_name=row[8],
+            company_slug=row[9],
+            title=row[6],
+            location=row[7],
             first_seen_at=row[0].first_seen_at,
             last_seen_at=row[0].last_seen_at,
             is_active=row[0].is_active,
             role_archetype=row[1],
             pay_min=row[2],
             pay_max=row[3],
-            employment_type=row[4],
+            pay_currency=row[4],
+            employment_type=row[5],
         )
         for row in rows
     ]

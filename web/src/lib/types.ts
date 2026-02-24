@@ -84,6 +84,7 @@ export interface PostingListItem {
   role_archetype: string | null
   pay_min: number | null
   pay_max: number | null
+  pay_currency: string | null
   employment_type: string | null
 }
 

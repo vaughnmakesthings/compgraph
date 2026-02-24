@@ -99,6 +99,7 @@ const mockPostingsResponse: PostingListResponse = {
       role_archetype: "FMR",
       pay_min: 45000,
       pay_max: 65000,
+      pay_currency: "USD",
       employment_type: "full_time",
     },
   ],
@@ -108,7 +109,13 @@ const mockPostingsResponse: PostingListResponse = {
 beforeEach(() => {
   vi.mocked(api.getVelocity).mockResolvedValue(mockVelocity);
   vi.mocked(api.getCoverageGaps).mockResolvedValue(mockGaps);
-  vi.mocked(api.listPostings).mockResolvedValue(mockPostingsResponse);
+  vi.mocked(api.listPostings).mockImplementation(async (params) => {
+    // Mock posting is active; when filtering for inactive, return empty (server-side filter)
+    if (params?.is_active === false) {
+      return { items: [], total: 0 };
+    }
+    return mockPostingsResponse;
+  });
   vi.mocked(api.getCompanies).mockResolvedValue([]);
   vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
   vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
@@ -314,6 +321,33 @@ describe("Job Feed page", () => {
       expect(screen.queryByText("Field Marketing Rep")).not.toBeInTheDocument()
     );
     expect(screen.getByText("No postings match your filters")).toBeInTheDocument();
+  });
+
+  it("shows Clear all when filters are active and resets on click", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getCompanies).mockResolvedValue([
+      { id: "troc-uuid", name: "T-ROC", slug: "troc", ats_platform: "icims" },
+    ]);
+    render(<HiringPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
+    );
+
+    const statusSelect = screen.getByRole("combobox", { name: /filter by status/i });
+    await user.selectOptions(statusSelect, "inactive");
+
+    await waitFor(() =>
+      expect(screen.getByText("No postings match your filters")).toBeInTheDocument()
+    );
+    expect(screen.getByText("Clear all")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Clear all"));
+
+    await waitFor(() =>
+      expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
+    );
+    expect(screen.queryByText("Clear all")).not.toBeInTheDocument();
   });
 });
 

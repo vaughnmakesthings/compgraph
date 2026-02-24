@@ -81,6 +81,8 @@ export const api = {
     company_id?: string
     is_active?: boolean
     role_archetype?: string
+    sort_by?: string
+    search?: string
   }) => {
     const q = new URLSearchParams()
     if (params?.limit !== undefined) q.set('limit', String(params.limit))
@@ -88,6 +90,8 @@ export const api = {
     if (params?.company_id) q.set('company_id', params.company_id)
     if (params?.is_active !== undefined) q.set('is_active', String(params.is_active))
     if (params?.role_archetype) q.set('role_archetype', params.role_archetype)
+    if (params?.sort_by) q.set('sort_by', params.sort_by)
+    if (params?.search) q.set('search', params.search)
     return apiFetch<PostingListResponse>(`/api/postings${q.size ? `?${q}` : ''}`)
   },
 
