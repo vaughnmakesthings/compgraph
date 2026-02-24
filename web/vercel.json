@@ -1,8 +1,6 @@
 {
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://dev.compgraph.io/api/:path*"
-    }
+    { "source": "/health", "destination": "https://dev.compgraph.io/health" },
+    { "source": "/api/:path*", "destination": "https://dev.compgraph.io/api/:path*" }
   ]
 }

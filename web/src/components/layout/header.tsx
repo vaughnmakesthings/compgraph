@@ -56,7 +56,7 @@ export function Header() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(5000) })
+    fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) })
       .then((r) => {
         if (!cancelled) setApiStatus(r.ok ? "ok" : "error");
       })

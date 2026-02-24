@@ -52,7 +52,7 @@ Object.defineProperty(globalThis, "localStorage", {
 beforeEach(() => {
   localStorageMock.clear();
   mockUsePathname.mockReturnValue("/");
-  // Header fetches /api/health — mock it so API status becomes "ok"
+  // Header fetches /health — mock it so API status becomes "ok"
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({ ok: true })
