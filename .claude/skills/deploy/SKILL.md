@@ -38,6 +38,8 @@ Deploys the current main branch to the Digital Ocean droplet via `infra/deploy.s
      ssh compgraph-do "journalctl -u compgraph -n 20 --no-pager"
      ```
 
+5. **Post-deploy (optional)** — Run `/sentry-check` to surface any new unresolved critical issues in Sentry. If Sentry is configured, report findings to user.
+
 ## Rollback
 
 If deployment fails, check recent logs and report to user. Do not attempt automatic rollback without user confirmation.

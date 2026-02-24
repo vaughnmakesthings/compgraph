@@ -357,7 +357,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/supabase-auth-fastapi.md`  | Supabase Auth JWT verification, magic link flow, role-based middleware | Auth (M4d) |
 | `docs/references/truncate-insert-patterns.md`  | PostgreSQL truncate+insert rebuild patterns, transaction isolation, concurrent reads | Aggregation (M4a) |
 | `docs/references/fastapi-pagination-patterns.md`  | Cursor vs offset pagination, filter parameters, SQLAlchemy query builders | Detail API (M4c) |
-| `docs/references/mcp-server-capabilities.md` | Tool catalog for Supabase, Vercel, and next-devtools MCP servers — tool tables, project IDs, composed workflows, and gap inventory | Deployment, Frontend, Database |
+| `docs/references/mcp-server-capabilities.md` | Tool catalog for Supabase, Vercel, next-devtools, Sentry, Playwright — tool tables, project IDs, composed workflows | Deployment, Frontend, Database, Debugging |
+| `docs/references/automation-setup.md` | MCP servers (Playwright, Sentry), hooks, skills, agents — setup reference for Claude Code and Cursor | Automation, DX |
 | `docs/references/operating-budget.md` | Infrastructure, LLM, and data enrichment cost line items with optimization levers and scaling plan | Cost planning, M6 planning |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)

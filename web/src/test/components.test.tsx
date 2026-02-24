@@ -235,14 +235,14 @@ describe("BarChart", () => {
 
   it("renders a bar series for each bar definition", () => {
     render(<BarChart data={chartData} bars={bars} xDataKey="month" />);
-    expect(screen.getByTestId("bar-postings")).toBeInTheDocument();
-    expect(screen.getByTestId("bar-enriched")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-Postings")).toBeInTheDocument();
+    expect(screen.getByTestId("bar-Enriched")).toBeInTheDocument();
   });
 
-  it("renders bar series names as text", () => {
+  it("renders bar series display names in legend", () => {
     render(<BarChart data={chartData} bars={bars} xDataKey="month" />);
-    expect(screen.getByText("postings")).toBeInTheDocument();
-    expect(screen.getByText("enriched")).toBeInTheDocument();
+    expect(screen.getByText("Postings")).toBeInTheDocument();
+    expect(screen.getByText("Enriched")).toBeInTheDocument();
   });
 
   it("accepts custom height prop without crashing", () => {
@@ -273,12 +273,12 @@ describe("AreaChart", () => {
 
   it("renders an area series for each area definition", () => {
     render(<AreaChart data={chartData} areas={areas} xDataKey="week" />);
-    expect(screen.getByTestId("area-velocity")).toBeInTheDocument();
+    expect(screen.getByTestId("area-Hiring Velocity")).toBeInTheDocument();
   });
 
-  it("renders area series name as text", () => {
+  it("renders area series display name in legend", () => {
     render(<AreaChart data={chartData} areas={areas} xDataKey="week" />);
-    expect(screen.getByText("velocity")).toBeInTheDocument();
+    expect(screen.getByText("Hiring Velocity")).toBeInTheDocument();
   });
 });
 

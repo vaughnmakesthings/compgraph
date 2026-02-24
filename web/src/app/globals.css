@@ -3,6 +3,20 @@
 @import "@fontsource-variable/jetbrains-mono";
 @import "tailwindcss";
 
+/* Safelist for Tremor chart hex colors — generated at runtime, not in source */
+@source inline(
+  "fill-[#EF8354]",
+  "stroke-[#EF8354]",
+  "fill-[#1B998B]",
+  "stroke-[#1B998B]",
+  "fill-[#4F5D75]",
+  "stroke-[#4F5D75]",
+  "fill-[#DCB256]",
+  "stroke-[#DCB256]",
+  "fill-[#8C2C23]",
+  "stroke-[#8C2C23]"
+);
+
 @theme {
   /* Source colors — CompGraph brand palette */
   --color-jet-black: #2D3142;

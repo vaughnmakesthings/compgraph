@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompGraph Dashboard — Lo-Fi Wireframe Redesign</title>
+  <style>
+    /* ─── Wireframe base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #f0f0f0;
+      color: #222;
+      font-size: 13px;
+    }
+
+    /* Legend labels */
+    .tag {
+      display: inline-block;
+      background: #222;
+      color: #fff;
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      padding: 1px 5px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      vertical-align: middle;
+    }
+    .tag.new  { background: #c94; }
+    .tag.fix  { background: #4a7cc9; }
+    .tag.spec { background: #777; }
+
+    /* annotation call-outs */
+    .note {
+      font-size: 10px;
+      color: #777;
+      border-left: 2px solid #aaa;
+      padding: 2px 6px;
+      margin: 4px 0;
+      font-style: italic;
+    }
+
+    /* ─── Layout shell ─── */
+    .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-height: 700px;
+      border: 3px solid #222;
+      background: #fff;
+      max-width: 1200px;
+      margin: 24px auto;
+      box-shadow: 6px 6px 0 #aaa;
+    }
+
+    /* Header */
+    .header {
+      height: 56px;
+      border-bottom: 2px solid #222;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .breadcrumb {
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .breadcrumb .sep { color: #aaa; }
+    .breadcrumb .active { font-weight: bold; color: #222; }
+    .api-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #555;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; border: 2px solid #777; display: inline-block; }
+    .dot.connected { background: #555; }
+
+    /* Body row */
+    .body-row {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      border-right: 2px solid #222;
+      background: #2a2a2a;
+      color: #ccc;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* Sidebar logo */
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #444;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: repeating-linear-gradient(45deg, #888 0, #888 2px, transparent 2px, transparent 8px);
+      border: 2px solid #aaa;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: bold; color: #eee;
+      flex-shrink: 0;
+    }
+    .logo-wordmark { font-size: 15px; font-weight: bold; color: #eee; letter-spacing: 0.02em; }
+
+    /* Section label */
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #666;
+      padding: 14px 20px 6px;
+    }
+
+    /* Tier 0 */
+    .tier0 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      font-size: 13px;
+      color: #ccc;
+      cursor: pointer;
+    }
+    .tier0.active { color: #eee; border-left: 3px solid #aaa; padding-left: 17px; background: #3a3a3a; }
+    .tier0 .icon-box { width: 18px; height: 18px; border: 1px solid #666; border-radius: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #888; }
+    .tier0 .label { flex: 1; }
+    .tier0 .chevron { color: #555; font-size: 10px; }
+
+    /* Sub-label */
+    .sub-label {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+      padding: 10px 20px 4px 52px;
+    }
+
+    /* Tier 1 */
+    .tier1 {
+      display: flex;
+      align-items: center;
+      padding: 7px 20px 7px 52px;
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+      gap: 6px;
+    }
+    .tier1 .t1-label { flex: 1; }
+    .tier1 .t1-count {
+      font-size: 10px;
+      color: #555;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid #444;
+      border-radius: 2px;
+      padding: 0 3px;
+    }
+    .tier1 .t1-chevron { color: #444; font-size: 9px; }
+
+    /* Tier 2 leaf */
+    .tier2 {
+      display: flex;
+      align-items: center;
+      padding: 6px 20px 6px 68px;
+      font-size: 12px;
+      color: #888;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .tier2.active { color: #eee; }
+    .tier2 .dot2 { width: 7px; height: 7px; border-radius: 50%; background: #666; border: 1px solid #888; flex-shrink: 0; }
+    .tier2.active .dot2 { background: #bbb; border-color: #ccc; box-shadow: 0 0 4px #bbb; }
+    .tier2 .t2-label { flex: 1; }
+    .tier2 .t2-count { font-size: 11px; color: #555; font-variant-numeric: tabular-nums; }
+
+    /* View all link */
+    .view-all {
+      padding: 6px 20px 10px 68px;
+      font-size: 11px;
+      color: #555;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid #444;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #777;
+    }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: repeating-linear-gradient(45deg, #555 0, #555 2px, #333 2px, #333 5px); border: 1px solid #666; flex-shrink: 0; }
+
+    /* Content */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+      background: #f7f7f5;
+    }
+
+    /* Page heading */
+    .page-heading { margin-bottom: 24px; }
+    .page-h1 { font-size: 20px; font-weight: bold; color: #111; letter-spacing: -0.01em; }
+    .page-subtitle { font-size: 12px; color: #777; margin-top: 4px; }
+
+    /* Error / alert banner */
+    .alert-banner {
+      border: 2px dashed #888;
+      border-left: 4px solid #555;
+      background: #eee;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .alert-text { font-size: 12px; color: #444; }
+    .alert-retry {
+      font-size: 11px;
+      border: 1px solid #666;
+      padding: 3px 10px;
+      border-radius: 3px;
+      color: #333;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* KPI row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      border: 2px solid #bbb;
+      background: #fff;
+      border-radius: 4px;
+      padding: 14px;
+    }
+    .kpi-icon-box {
+      width: 28px; height: 28px;
+      background: #e8e8e8;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #999;
+    }
+    .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 20px; font-weight: bold; color: #111; font-variant-numeric: tabular-nums; margin-bottom: 5px; }
+    .kpi-value.skeleton { background: repeating-linear-gradient(90deg, #ddd 0, #e8e8e8 40px, #ddd 80px); height: 24px; width: 70%; border-radius: 2px; }
+    .kpi-delta { font-size: 10px; font-variant-numeric: tabular-nums; color: #555; }
+    .kpi-delta .up { color: #444; }
+    .kpi-delta .down { color: #888; }
+    .kpi-delta .flat { color: #aaa; }
+
+    /* Skeleton row */
+    .kpi-skeleton { border: 2px dashed #ccc; background: #f0f0f0; border-radius: 4px; height: 96px; }
+
+    /* Chart card */
+    .chart-card {
+      border: 2px solid #bbb;
+      background: #fff;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ddd;
+    }
+    .chart-title { font-size: 13px; font-weight: bold; color: #222; }
+    .chart-toggles { display: flex; gap: 4px; }
+    .toggle-btn {
+      font-size: 10px;
+      border: 1px solid #bbb;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      color: #555;
+      background: #f5f5f5;
+    }
+    .toggle-btn.active { background: #333; color: #eee; border-color: #333; }
+    .chart-body { padding: 16px; height: 200px; position: relative; }
+    .chart-placeholder {
+      width: 100%;
+      height: 100%;
+      border: 1px dashed #ccc;
+      border-radius: 2px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 8px;
+      overflow: hidden;
+    }
+    .bar-group { display: flex; gap: 2px; align-items: flex-end; flex: 1; }
+    .bar { background: #bbb; border-radius: 2px 2px 0 0; flex: 1; }
+    .bar.s { background: #ccc; }
+    .bar.t { background: #ddd; }
+    .chart-legend {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px 12px;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #777; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; }
+
+    /* Empty state (chart) */
+    .chart-empty {
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .empty-icon { width: 32px; height: 32px; border: 2px solid #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ccc; }
+    .empty-text { font-size: 11px; color: #aaa; }
+    .empty-cta { font-size: 10px; border: 1px solid #aaa; padding: 3px 8px; border-radius: 2px; color: #777; cursor: pointer; }
+
+    /* Footer row */
+    .footer-row {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 4px;
+    }
+    .last-updated { font-size: 10px; color: #aaa; }
+
+    /* Annotation panel (right gutter) */
+    .annotation-gutter {
+      position: fixed;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 200px;
+      background: #fff;
+      border: 2px solid #222;
+      padding: 12px;
+      font-size: 10px;
+      box-shadow: 4px 4px 0 #aaa;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .ann-title { font-size: 11px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    .ann-item { margin-bottom: 6px; line-height: 1.5; }
+    .ann-item strong { display: block; font-size: 10px; }
+
+    /* Tabs (for state demonstration) */
+    .wireframe-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 0;
+      border-bottom: 2px solid #222;
+      flex-shrink: 0;
+    }
+    .wtab {
+      padding: 8px 16px;
+      font-size: 11px;
+      border-right: 1px solid #ccc;
+      cursor: pointer;
+      background: #e8e8e8;
+      color: #555;
+    }
+    .wtab.active { background: #fff; color: #111; font-weight: bold; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+
+    /* State toggles */
+    .state-bar {
+      background: #222;
+      color: #eee;
+      font-size: 10px;
+      padding: 6px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .state-bar span { color: #aaa; }
+    .state-pill {
+      border: 1px solid #aaa;
+      padding: 2px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 9px;
+    }
+    .state-pill.on { background: #555; border-color: #eee; }
+  </style>
+</head>
+<body>
+
+<!-- State controls -->
+<div class="state-bar">
+  <span>VIEW STATE:</span>
+  <div class="state-pill on" onclick="setLoaded()">Loaded ✓</div>
+  <div class="state-pill" onclick="setLoading()">Loading</div>
+  <div class="state-pill" onclick="setError()">API Error</div>
+  <span style="margin-left:16px">SIDEBAR TIER:</span>
+  <div class="state-pill on" onclick="toggleTier()">Expanded ✓</div>
+</div>
+
+<!-- Main wireframe shell -->
+<div class="shell" id="shell">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <span>Dashboard</span>
+        <span class="sep">›</span>
+        <span class="active">Pipeline Health</span>
+      </div>
+      <span class="tag fix">FIX</span>
+      <span style="font-size:10px;color:#aaa;margin-left:4px">route-aware breadcrumb replaces static "CompGraph"</span>
+    </div>
+    <div class="api-dot">
+      <div class="dot connected" id="api-dot"></div>
+      <span id="api-label">API connected</span>
+      <span class="tag fix">FIX</span>
+      <span style="font-size:10px;color:#aaa;margin-left:2px">dot reacts to fetch state</span>
+    </div>
+  </div>
+
+  <!-- ── BODY ROW ── -->
+  <div class="body-row">
+
+    <!-- ── SIDEBAR ── -->
+    <nav class="sidebar">
+
+      <!-- Logo block — MISSING in current impl -->
+      <div class="sidebar-logo">
+        <div class="logo-mark">CG</div>
+        <div class="logo-wordmark">CompGraph</div>
+        <span class="tag new" style="margin-left:auto;align-self:flex-start;margin-top:2px">NEW</span>
+      </div>
+      <div class="note" style="padding:4px 12px;color:#555;background:#222;font-size:9px">
+        32×32 coral mark · Sora 17px/600 wordmark · 1px separator
+      </div>
+
+      <!-- Simple items -->
+      <div class="tier0 active">
+        <div class="icon-box">⊞</div>
+        <span class="label">Dashboard</span>
+      </div>
+      <div class="tier0">
+        <div class="icon-box">▦</div>
+        <span class="label">Market Overview</span>
+      </div>
+
+      <!-- INTELLIGENCE section label — MISSING in current impl -->
+      <div class="section-label">
+        Intelligence
+        <span class="tag new" style="margin-left:6px">NEW</span>
+      </div>
+      <div class="note" style="padding:2px 12px;color:#555;background:#222;font-size:9px">
+        DM Sans 12px uppercase · rgba(191,192,192,0.5)
+      </div>
+
+      <!-- Tier 0: Competitors (expanded) -->
+      <div class="tier0">
+        <div class="icon-box">⊡</div>
+        <span class="label">Competitors</span>
+        <span class="chevron">›</span>
+        <span class="tag fix" style="margin-left:4px">FIX</span>
+      </div>
+      <div class="note" style="padding:2px 12px;color:#555;background:#222;font-size:9px">
+        ChevronRight → rotates 90° on open (not ChevronDown)
+      </div>
+
+      <!-- BY TIER sub-label — MISSING in current impl -->
+      <div class="sub-label">
+        By tier
+        <span class="tag new" style="margin-left:4px">NEW</span>
+      </div>
+
+      <!-- Tier 1: Direct — MISSING in current impl (only flat children exist) -->
+      <div class="tier1">
+        <span class="t1-label">Tier 1 — Direct</span>
+        <span class="t1-count">5</span>
+        <span class="t1-chevron">∨</span>
+        <span class="tag new" style="margin-left:4px">NEW</span>
+      </div>
+      <div class="note" style="padding:2px 12px;color:#555;background:#222;font-size:9px">
+        52px indent · DM Sans 13px · count JM Mono 11px
+      </div>
+
+      <!-- Tier 2 leaves — indent fix required -->
+      <div class="tier2 active">
+        <div class="dot2"></div>
+        <span class="t2-label">T-ROC</span>
+        <span class="t2-count">312</span>
+      </div>
+      <div class="tier2">
+        <div class="dot2"></div>
+        <span class="t2-label">BDS Connected Solutions</span>
+        <span class="t2-count">247</span>
+      </div>
+      <div class="tier2">
+        <div class="dot2"></div>
+        <span class="t2-label">MarketSource</span>
+        <span class="t2-count">156</span>
+      </div>
+      <div class="tier2">
+        <div class="dot2"></div>
+        <span class="t2-label">OSL Retail Services</span>
+        <span class="t2-count">191</span>
+      </div>
+      <div class="tier2">
+        <div class="dot2"></div>
+        <span class="t2-label">2020 Companies</span>
+        <span class="t2-count">118</span>
+      </div>
+      <div class="note" style="padding:2px 12px;color:#555;background:#222;font-size:9px">
+        68px indent (current: 36px) · 7×7px dot · JM Mono 12px count
+      </div>
+
+      <!-- View All link — MISSING in current impl -->
+      <div class="view-all">
+        View All Competitors
+        <span class="tag new" style="margin-left:4px">NEW</span>
+      </div>
+
+      <!-- Tier 0: Hiring Intel -->
+      <div class="tier0">
+        <div class="icon-box">≡</div>
+        <span class="label">Hiring Intel</span>
+        <span class="chevron">›</span>
+      </div>
+
+      <!-- SYSTEM section label — MISSING in current impl -->
+      <div class="section-label">
+        System
+        <span class="tag new" style="margin-left:6px">NEW</span>
+      </div>
+
+      <div class="tier0">
+        <div class="icon-box">◷</div>
+        <span class="label">Scrape History</span>
+      </div>
+      <div class="tier0">
+        <div class="icon-box">⚙</div>
+        <span class="label">Settings</span>
+      </div>
+
+      <!-- Avatar footer — MISSING in current impl -->
+      <div class="sidebar-footer">
+        <div class="avatar"></div>
+        <span>Admin User</span>
+        <span class="tag new" style="margin-left:auto">NEW</span>
+      </div>
+    </nav>
+
+    <!-- ── CONTENT AREA ── -->
+    <div class="content">
+
+      <!-- Page heading -->
+      <div class="page-heading">
+        <div class="page-h1">Pipeline Health</div>
+        <div class="page-subtitle">Hiring activity across tracked competitors</div>
+      </div>
+
+      <!-- Error state — replaces raw API path message -->
+      <div class="alert-banner" id="error-banner" style="display:none">
+        <div class="alert-text">
+          ⚠ Could not reach the pipeline API.
+          Check that the backend service is running.
+        </div>
+        <div class="alert-retry">↺ Retry</div>
+        <span class="tag fix">FIX</span>
+      </div>
+      <div class="note" id="error-note" style="display:none;margin-bottom:12px">
+        Replaces: "Network error: /api/pipeline/status" · Add Retry CTA · chestnut border · error-muted bg
+      </div>
+
+      <!-- KPI Cards row -->
+      <div class="kpi-row" id="kpi-area">
+        <!-- Card 1 -->
+        <div class="kpi-card">
+          <div class="kpi-icon-box">[⊞]
+            <span class="tag new" style="position:absolute;top:-4px;right:-4px;font-size:7px">NEW</span>
+          </div>
+          <div class="kpi-label">Active Postings <span class="tag spec">10px</span></div>
+          <div class="kpi-value">1,024</div>
+          <div class="kpi-delta">▲ <span class="up">18%</span> vs last wk
+            <span class="tag new" style="margin-left:4px">NEW</span>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="kpi-card">
+          <div class="kpi-icon-box">[+]</div>
+          <div class="kpi-label">New This Week <span class="tag spec">10px</span></div>
+          <div class="kpi-value">43</div>
+          <div class="kpi-delta">▲ <span class="up">3</span> vs prev wk
+            <span class="tag new" style="margin-left:4px">NEW</span>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="kpi-card">
+          <div class="kpi-icon-box">[%]</div>
+          <div class="kpi-label">Enriched <span class="tag spec">10px</span></div>
+          <div class="kpi-value">87%</div>
+          <div class="kpi-delta">— <span class="flat">flat vs Q3</span>
+            <span class="tag new" style="margin-left:4px">NEW</span>
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="kpi-card">
+          <div class="kpi-icon-box">[◉]</div>
+          <div class="kpi-label">Pipeline Status <span class="tag spec">10px</span></div>
+          <div class="kpi-value" style="font-size:16px;padding-top:4px">idle</div>
+          <div class="kpi-delta" style="color:#aaa">&nbsp;</div>
+        </div>
+      </div>
+
+      <!-- Loading skeleton row -->
+      <div class="kpi-row" id="skeleton-area" style="display:none">
+        <div class="kpi-skeleton"></div>
+        <div class="kpi-skeleton"></div>
+        <div class="kpi-skeleton"></div>
+        <div class="kpi-skeleton"></div>
+      </div>
+      <div class="note" id="skeleton-note" style="display:none;margin-bottom:12px">
+        On load: skeleton boxes remain · On error: boxes remain with "—" fallback values (not blank)
+      </div>
+
+      <!-- Error KPI fallback row (shown on API error) -->
+      <div class="kpi-row" id="fallback-area" style="display:none">
+        <div class="kpi-card" style="opacity:0.5">
+          <div class="kpi-icon-box">[⊞]</div>
+          <div class="kpi-label">Active Postings</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-delta">&nbsp;</div>
+        </div>
+        <div class="kpi-card" style="opacity:0.5">
+          <div class="kpi-icon-box">[+]</div>
+          <div class="kpi-label">New This Week</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-delta">&nbsp;</div>
+        </div>
+        <div class="kpi-card" style="opacity:0.5">
+          <div class="kpi-icon-box">[%]</div>
+          <div class="kpi-label">Enriched</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-delta">&nbsp;</div>
+        </div>
+        <div class="kpi-card" style="opacity:0.5">
+          <div class="kpi-icon-box">[◉]</div>
+          <div class="kpi-label">Pipeline Status</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-delta">&nbsp;</div>
+        </div>
+      </div>
+
+      <!-- Chart card -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            Daily Posting Velocity
+            <span class="tag fix" style="margin-left:6px">FIX</span>
+            <span style="font-size:9px;color:#999;margin-left:4px">Sora section head</span>
+          </div>
+          <div class="chart-toggles">
+            <div class="toggle-btn active">14d</div>
+            <div class="toggle-btn">30d</div>
+            <div class="toggle-btn">90d</div>
+            <span class="tag new" style="margin-left:6px">NEW</span>
+          </div>
+        </div>
+
+        <div class="chart-body" id="chart-body">
+          <div class="chart-placeholder" id="chart-bars">
+            <!-- Bar groups representing each date -->
+            <div class="bar-group"><div class="bar" style="height:40%"></div><div class="bar s" style="height:30%"></div><div class="bar t" style="height:20%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:55%"></div><div class="bar s" style="height:40%"></div><div class="bar t" style="height:25%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:35%"></div><div class="bar s" style="height:45%"></div><div class="bar t" style="height:30%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:70%"></div><div class="bar s" style="height:50%"></div><div class="bar t" style="height:35%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:60%"></div><div class="bar s" style="height:55%"></div><div class="bar t" style="height:40%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:45%"></div><div class="bar s" style="height:35%"></div><div class="bar t" style="height:50%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:80%"></div><div class="bar s" style="height:60%"></div><div class="bar t" style="height:45%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:65%"></div><div class="bar s" style="height:70%"></div><div class="bar t" style="height:55%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:50%"></div><div class="bar s" style="height:45%"></div><div class="bar t" style="height:60%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:75%"></div><div class="bar s" style="height:55%"></div><div class="bar t" style="height:50%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:85%"></div><div class="bar s" style="height:65%"></div><div class="bar t" style="height:60%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:70%"></div><div class="bar s" style="height:80%"></div><div class="bar t" style="height:70%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:60%"></div><div class="bar s" style="height:70%"></div><div class="bar t" style="height:65%"></div></div>
+            <div class="bar-group"><div class="bar" style="height:90%"></div><div class="bar s" style="height:75%"></div><div class="bar t" style="height:75%"></div></div>
+          </div>
+
+          <!-- Empty state (hidden by default) -->
+          <div class="chart-empty" id="chart-empty" style="display:none">
+            <div class="empty-icon">▦</div>
+            <div class="empty-text">No velocity data available yet</div>
+            <div class="empty-cta">↺ Refresh</div>
+            <span class="tag new">NEW</span>
+          </div>
+        </div>
+
+        <div class="chart-legend" id="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#888"></div>T-ROC</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#999"></div>BDS Connected</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#aaa"></div>MarketSource</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#bbb"></div>OSL</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ccc"></div>2020 Companies</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer-row">
+        <div class="last-updated" id="footer-text">Last updated: Feb 24, 2:15 AM</div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /body-row -->
+</div><!-- /shell -->
+
+<!-- Annotation gutter -->
+<div class="annotation-gutter">
+  <div class="ann-title">📐 Spec Annotations</div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> Sidebar Logo</strong>
+    32×32 coral mark + Sora 17/600 wordmark. Ref: <code>sidebar-logo</code>
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> Section Labels</strong>
+    INTELLIGENCE / SYSTEM — DM Sans 12px uppercase rgba(191,192,192,0.5). Padding 18px 20px 8px.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> Tier 1 Category</strong>
+    52px indent · DM Sans 13px · count JM Mono 11px · mini ›chevron
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Tier 2 Indent</strong>
+    68px (current: pl-9 = 36px). Dot 7×7px with active glow.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Chevron Icon</strong>
+    ChevronRight → rotates 90° open. Current uses ChevronDown.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Header</strong>
+    Route-aware breadcrumb. Reactive API dot (green = connected, red dot = unreachable).
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> KPI Icon</strong>
+    Heroicons outline in 32×32 muted-fg square. Always shown.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> KPI Anatomy</strong>
+    Label: 10px (not 12px). Value: JM Mono 24px (not 28px). Delta row always shown.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Error State</strong>
+    Friendly message + Retry CTA. KPIs show "—" not blank.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> Chart Toggle</strong>
+    14d / 30d / 90d time-range toggle buttons in chart header.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag new">NEW</span> Empty State</strong>
+    Icon + message + optional Retry CTA. Replaces bare text.
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Callout `finding`</strong>
+    Border + bg: coral #EF8354 (not blue-slate). Width: 3px (not 4px).
+  </div>
+
+  <div class="ann-item">
+    <strong><span class="tag fix">FIX</span> Badge</strong>
+    Remove border. warning text = #DCB256 (not darkened #A07D28).
+  </div>
+
+  <hr style="margin:8px 0;border-color:#ddd" />
+
+  <div style="font-size:9px;color:#999">
+    <span class="tag new">NEW</span> = Added vs current<br>
+    <span class="tag fix">FIX</span> = Correction of existing<br>
+    <span class="tag spec">SPEC</span> = Reference value
+  </div>
+</div>
+
+<script>
+  function setLoaded() {
+    document.getElementById('error-banner').style.display = 'none';
+    document.getElementById('error-note').style.display = 'none';
+    document.getElementById('kpi-area').style.display = 'grid';
+    document.getElementById('skeleton-area').style.display = 'none';
+    document.getElementById('skeleton-note').style.display = 'none';
+    document.getElementById('fallback-area').style.display = 'none';
+    document.getElementById('chart-bars').style.display = 'flex';
+    document.getElementById('chart-empty').style.display = 'none';
+    document.getElementById('chart-legend').style.display = 'flex';
+    document.getElementById('footer-text').textContent = 'Last updated: Feb 24, 2:15 AM';
+    document.getElementById('api-dot').className = 'dot connected';
+    document.getElementById('api-label').textContent = 'API connected';
+    updateStatePills('Loaded ✓');
+  }
+
+  function setLoading() {
+    document.getElementById('error-banner').style.display = 'none';
+    document.getElementById('error-note').style.display = 'none';
+    document.getElementById('kpi-area').style.display = 'none';
+    document.getElementById('skeleton-area').style.display = 'grid';
+    document.getElementById('skeleton-note').style.display = 'block';
+    document.getElementById('fallback-area').style.display = 'none';
+    document.getElementById('chart-bars').style.display = 'none';
+    document.getElementById('chart-empty').style.display = 'none';
+    document.getElementById('chart-legend').style.display = 'none';
+    document.getElementById('footer-text').textContent = '';
+    document.getElementById('api-dot').className = 'dot';
+    document.getElementById('api-label').textContent = 'Connecting…';
+    updateStatePills('Loading');
+  }
+
+  function setError() {
+    document.getElementById('error-banner').style.display = 'flex';
+    document.getElementById('error-note').style.display = 'block';
+    document.getElementById('kpi-area').style.display = 'none';
+    document.getElementById('skeleton-area').style.display = 'none';
+    document.getElementById('skeleton-note').style.display = 'none';
+    document.getElementById('fallback-area').style.display = 'grid';
+    document.getElementById('chart-bars').style.display = 'none';
+    document.getElementById('chart-empty').style.display = 'flex';
+    document.getElementById('chart-legend').style.display = 'none';
+    document.getElementById('footer-text').textContent = 'Last updated: unknown';
+    document.getElementById('api-dot').className = 'dot';
+    document.getElementById('api-label').textContent = 'API unreachable';
+    updateStatePills('API Error');
+  }
+
+  function updateStatePills(active) {
+    document.querySelectorAll('.state-pill').forEach(p => {
+      p.classList.toggle('on', p.textContent.trim() === active || p.textContent.trim() === active + ' ✓');
+    });
+  }
+</script>
+</body>
+</html>

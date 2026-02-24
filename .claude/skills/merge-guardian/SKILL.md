@@ -40,6 +40,7 @@ Display a table with each gate's status:
 | Code review: append-only | |
 | Code review: async patterns | |
 | Code review: no secrets | |
+| Sentry: no unresolved critical (optional) | Run `/sentry-check` if Sentry configured |
 
 ## Wait-and-Merge Mode
 
