@@ -1,0 +1,23 @@
+.claude/skills/merge-guardian/SKILL.md
+  0efbbf43aa2a5806 20-29,52,71-77,84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a7e4f34c8d3a66f1c1794c38d849f1154e154bf3",
+  "prompts": {
+    "0efbbf43aa2a5806": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "169ab947-d3fa-4818-a969-ea2002a58568",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 133,
+      "overriden_lines": 0
+    }
+  }
+}
