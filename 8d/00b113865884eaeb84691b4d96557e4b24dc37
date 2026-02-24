@@ -1,0 +1,33 @@
+eval/web/src/app/runs/page.tsx
+  ac3935507f056dac 38-39,116,186-187,191,206-217
+eval/eval/ui/pages/4_Accuracy_Review.py
+  ac3935507f056dac 6,123
+pyproject.toml
+  ac3935507f056dac 75
+eval/eval/ui/pages/2_Review.py
+  ac3935507f056dac 6,105
+eval/eval/validator.py
+  ac3935507f056dac 104
+eval/eval/providers.py
+  ac3935507f056dac 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "8d00b113865884eaeb84691b4d96557e4b24dc37",
+  "prompts": {
+    "ac3935507f056dac": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3046132e-2749-4f6f-8715-8e0629e513a3",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 6,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
