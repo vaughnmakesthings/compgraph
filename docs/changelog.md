@@ -4,6 +4,29 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-24 — Project Hygiene: Docs Audit, Issue Triage, Milestone Cleanup
+
+**Goal:** Update stale documentation, create web/CLAUDE.md, run docs audit, triage all 50 open issues, set up M7 sprint infrastructure.
+
+**What happened:**
+- Updated CLAUDE.md roadmap section (arq→M8, LiteLLM→M7 Phase B, removed DO deploy from "do not build")
+- Created `web/CLAUDE.md` — comprehensive frontend conventions extracted from actual code patterns (API client, design tokens, Tremor wrappers, test patterns, Tailwind v4 gotchas)
+- Added `docs/gap-analysis-consolidated.md` to repo and context-packs.md
+- Ran `/docs-audit`: YELLOW health — found 3 stale content items, 3 missing skills, incorrect Vercel deploy docs in ci.md. Applied 4 auto-fixes.
+- Created 5 M7 sprint milestones: Sprint 1 (Foundation), Sprint 2 (Infrastructure), Feature Sprint, Polish, Parallel — Eval Tool
+- Created 10 new labels: 4 severity, 4 effort, 2 workflow (blocked, quick-win)
+- Triaged all 50 open issues using 2 parallel research agents:
+  - 33 closed (19 shipped, 12 stale/wontfix, 2 duplicate) — each with explanatory comment
+  - 23 reassigned to M7 sprint milestones with severity + effort labels
+- Closed 8 completed milestones: M1, M2, M2.5, M3, M4, M5, M6, M7:Production UI
+- Backend coverage regression flagged: 82%→38% — needs pyproject.toml investigation
+
+**Key files:** `web/CLAUDE.md`, `docs/reports/2026-02-24-docs-audit.md`, `docs/ci.md`, `CLAUDE.md`, `docs/phases.md`
+
+**What's next:** Begin M7 Sprint 1 — Foundation (auth stack: #59, #19, #27, #156). Investigate backend coverage drop.
+
+---
+
 ## 2026-02-24 — M7 Strategic Planning & Roadmap
 
 **Goal:** Review strategic audit findings, lock product decisions, create authoritative M7 implementation roadmap.
