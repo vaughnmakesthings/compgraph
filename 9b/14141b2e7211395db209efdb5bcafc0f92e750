@@ -1,0 +1,54 @@
+pyproject.toml
+  fba7080f9d17dd8e 28-30,32
+web/src/app/eval/runs/page.tsx
+  3ac9216f5177971a 446
+  b73007d99cd9843a 136,144-145,155,158-160,256-257,261,263,271-273,280-296,298
+src/compgraph/eval/router.py
+  3ac9216f5177971a 394,399-414
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "9b14141b2e7211395db209efdb5bcafc0f92e750",
+  "prompts": {
+    "3ac9216f5177971a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ed37607d-9c32-4997-a94b-48434c86e9ad",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 1,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    },
+    "b73007d99cd9843a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "37a1cb9e-4719-4a62-a628-0796fe762939",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 51,
+      "total_deletions": 26,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    },
+    "fba7080f9d17dd8e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "daf0efa6-4dd3-4301-9a5c-f379854fdc9d",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 12,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
