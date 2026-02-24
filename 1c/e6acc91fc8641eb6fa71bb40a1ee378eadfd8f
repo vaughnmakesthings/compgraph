@@ -1,0 +1,23 @@
+docs/references/mcp-tool-inventory.md
+  c517b8bc09d906dc 1-327
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "1ce6acc91fc8641eb6fa71bb40a1ee378eadfd8f",
+  "prompts": {
+    "c517b8bc09d906dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b9edbf7-dad0-473f-8028-0d888088eca3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 327,
+      "total_deletions": 0,
+      "accepted_lines": 327,
+      "overriden_lines": 0
+    }
+  }
+}
