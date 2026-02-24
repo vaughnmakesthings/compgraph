@@ -37,6 +37,23 @@ BOT_WAIT      = Poll for bot reviews after CI passes (see Step 0). 10 min timeou
 
 **Implication:** A fixed wait is unreliable. The skill MUST poll for bot review presence before triaging.
 
+## Draft Detection
+
+Before entering the core loop, check if the PR is a draft:
+
+```bash
+gh pr view $PR_NUMBER --json isDraft -q .isDraft
+```
+
+If `true`:
+- Display: "PR #$PR_NUMBER is a draft — review bots skip draft PRs."
+- Recommend: "Use `/draft-pr ready $PR_NUMBER` to convert to ready-for-review, then re-run `/pr-feedback-cycle`."
+- **Exit immediately.** Do not proceed to the core loop.
+
+If `false`: continue to Core Loop.
+
+---
+
 ## Core Loop
 
 Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.

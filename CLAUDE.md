@@ -287,7 +287,9 @@ When running commands on the dev server via SSH:
 - **NEVER merge to main without explicit user approval.** Poll the user, don't assume.
 - **NEVER leave unactioned code review feedback before merge.** Fix, defer to issue, or explicitly reject with rationale.
 - Never merge a PR until ALL CI checks pass. Poll `gh pr checks <number>` if unsure.
-- 4 review bots active on PRs: Gemini, Cursor, Copilot, AND Cubic. Wait for all before merging.
+- 5 review bots active on PRs: CodeRabbit, Gemini (label-gated), Cursor, Copilot, AND Cubic. Wait for all that were triggered before merging.
+- **Draft PRs**: Use `gh pr create --draft` during active iteration. CodeRabbit skips drafts. Gemini is label-gated (`gemini-review` label required). Convert with `gh pr ready` when done iterating.
+- **Gemini reviews**: Label-gated — add `gemini-review` label to trigger. Does not auto-review on PR open.
 - Git hooks: pre-commit (ruff check+format+mypy), pre-push (pytest). Install via `bash scripts/setup-hooks.sh`.
 - Only use `--no-verify` for documentation-only pushes with explicit justification.
 
@@ -314,6 +316,17 @@ After squash-merging a PR to main:
 - This prevents branch divergence on subsequent PRs.
 
 SQL aggregate pattern reminder: Use `aggregate_order_by()` from `sqlalchemy.dialects.postgresql` for ordered aggregates. SELECT-level `.order_by()` is a no-op for scalar aggregate functions.
+
+### Parallel Development (Sprint Mode)
+
+When working on 3+ issues simultaneously, use the wave workflow to avoid bot cascade (5 bots x N PRs = O(N*5) review cycles on every rebase):
+
+1. `/sprint-plan <issues>` — build file-overlap matrix, assign merge waves
+2. Wave 1: `/worktree` per issue, implement in parallel, `/draft-pr create` each
+3. When Wave 1 is ready: `/draft-pr ready` one PR at a time → `/pr-feedback-cycle` → `/merge-guardian`
+4. After Wave 1 merges: rebase Wave 2 branches on main, repeat
+
+See `docs/parallel-development-playbook.md` and `docs/workflow.md` (Parallel Development Path section) for details.
 
 ## Pre-Session Validation
 
@@ -399,10 +412,12 @@ Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-
 
 Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/commit` — lint, test, diff review, commit, push
-- `/pr` — create PR with validation and CI awareness
+- `/pr` — create PR with validation and CI awareness (supports `--draft`)
+- `/draft-pr` — manage draft PR lifecycle (create/ready/status)
 - `/deploy` — deploy main to Digital Ocean dev server
-- `/merge-guardian` — enforce CI pass + review before merge
-- `/pr-feedback-cycle` — triage and resolve bot review comments
+- `/merge-guardian` — enforce CI pass + review before merge (detects stacked PRs)
+- `/pr-feedback-cycle` — triage and resolve bot review comments (draft-aware)
+- `/sprint-plan` — analyze issues, build file-overlap matrix, generate merge-wave plan
 - `/research` — structured codebase/web research with scope boundaries
 - `/worktree` — isolated git worktree for issue work
 - `/parallel-pipeline` — decompose issue into parallel agent subtasks

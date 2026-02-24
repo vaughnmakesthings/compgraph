@@ -93,11 +93,16 @@ PostToolUse hooks (Claude Code):
 
 ## Review Bots
 
-5 review systems active on PRs:
-- CodeRabbit (auto-review, configurable via `.coderabbit.yaml`)
-- Gemini (auto-review on PR open, on-demand via `@gemini-cli /review`)
-- Cursor Bugbot
-- Cubic AI
-- Copilot (GitHub)
+5 review systems active on PRs. Each has different trigger behavior:
 
-**Parallel development tip:** Use draft PRs (`gh pr create --draft`) during active iteration. CodeRabbit skips drafts (`drafts: false` in config). Convert to ready-for-review (`gh pr ready`) only when CI is green and you want bot feedback. This avoids re-triggering all bots on every push.
+| Bot | Trigger | Skips Drafts? | Skips Docs? | Config |
+|-----|---------|:---:|:---:|--------|
+| CodeRabbit | PR ready for review | Yes | Yes (path_filters) | `.coderabbit.yaml` |
+| Gemini | `gemini-review` label added | Yes (label-gated) | N/A | `.github/workflows/gemini-dispatch.yml` |
+| Cursor Bugbot | PR open/push | No | No | GitHub App |
+| Cubic AI | PR open/push | No | No | GitHub App |
+| Copilot | PR open/push (intermittent) | No | No | GitHub App |
+
+**Draft PR workflow:** Use `gh pr create --draft` during active iteration. CodeRabbit and Gemini skip drafts. Convert with `gh pr ready` when done, then add `gemini-review` label if Gemini review desired. This prevents the bot cascade problem (5 bots x N PRs on every push/rebase).
+
+**Title keywords:** CodeRabbit also skips PRs with "WIP" or "DO NOT REVIEW" in the title.
