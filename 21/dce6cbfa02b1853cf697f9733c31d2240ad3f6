@@ -1,0 +1,33 @@
+web/src/test/api-client.test.ts
+  b73007d99cd9843a 426-438
+web/src/test/eval-pages.test.tsx
+  b73007d99cd9843a 46-51
+src/compgraph/eval/router.py
+  b73007d99cd9843a 391-393,411,413
+web/src/app/settings/page.tsx
+  b73007d99cd9843a 664,686
+web/src/app/hiring/page.tsx
+  b73007d99cd9843a 193
+web/src/app/eval/runs/page.tsx
+  b73007d99cd9843a 135,235,246-249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "21dce6cbfa02b1853cf697f9733c31d2240ad3f6",
+  "prompts": {
+    "b73007d99cd9843a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "37a1cb9e-4719-4a62-a628-0796fe762939",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 5,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  }
+}
