@@ -1,0 +1,23 @@
+CLAUDE.md
+  0efbbf43aa2a5806 290
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "6c8e4ab9b37fed9a846dac157083c351239a9954",
+  "prompts": {
+    "0efbbf43aa2a5806": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "169ab947-d3fa-4818-a969-ea2002a58568",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
