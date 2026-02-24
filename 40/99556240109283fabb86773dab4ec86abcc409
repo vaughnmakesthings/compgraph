@@ -1,0 +1,62 @@
+web/src/app/competitors/[slug]/page.tsx
+  c6dac1230474010e 10,735,947
+src/compgraph/eval/router.py
+  c6dac1230474010e 391-425,435-442
+web/src/app/eval/runs/page.tsx
+  c6dac1230474010e 135-138,145-178,180-185,273-274,277,280,284-309,311-317,465
+web/src/app/hiring/page.tsx
+  c6dac1230474010e 6,21-25,31,55-63,178,193,205,218,237,272,288,290-294,296-298,301-307
+tests/test_eval_router.py
+  c6dac1230474010e 85-100,120,140,191
+web/src/lib/utils.ts
+  c6dac1230474010e 1-11
+web/src/app/settings/page.tsx
+  c6dac1230474010e 627,629-649,653,655,662,665,668,671,675,679,681,688,691,694,697
+web/src/test/api-client.test.ts
+  c6dac1230474010e 426-438
+web/src/app/eval/prompt-diff/page.tsx
+  c6dac1230474010e 3,101-105,107-109,112-114,117-119
+web/src/test/pages.test.tsx
+  c6dac1230474010e 13,112,123-149,267
+web/src/lib/index.ts
+  c6dac1230474010e 4
+web/src/lib/api-client.ts
+  c6dac1230474010e 33-40,98-99
+web/src/lib/types.ts
+  c6dac1230474010e 207-208,211
+web/src/test/eval-pages.test.tsx
+  c6dac1230474010e 46-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "4099556240109283fabb86773dab4ec86abcc409",
+  "prompts": {
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 804,
+      "total_deletions": 0,
+      "accepted_lines": 804,
+      "overriden_lines": 0
+    },
+    "c6dac1230474010e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6a4d8409-83eb-4bd0-8e19-32acad403228",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 333,
+      "total_deletions": 87,
+      "accepted_lines": 312,
+      "overriden_lines": 0
+    }
+  }
+}
