@@ -1,0 +1,50 @@
+.mcp.json
+  f1a659efa71aebd3 10-14
+  b2063e8577d52cd9 15-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "b24930f7a9d931588b7f4ae776e3fcb3d6838461",
+  "prompts": {
+    "b2063e8577d52cd9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d3c4a5a6-2523-49c3-b829-24f8ac3fb915",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 1,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "f1a659efa71aebd3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8d4983b7-103d-4e57-af10-5734cf8764e2",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 12,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    },
+    "f284c1784acef127": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2f18ed25-d859-49a0-82f4-7e49a60ef2f2",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 230,
+      "total_deletions": 1,
+      "accepted_lines": 229,
+      "overriden_lines": 0
+    }
+  }
+}
