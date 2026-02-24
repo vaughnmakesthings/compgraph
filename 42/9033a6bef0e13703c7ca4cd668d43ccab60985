@@ -1,0 +1,27 @@
+web/src/components/ui/confirm-dialog.tsx
+  adfb4d5a5c3ea9e1 3,14-15,30,33-46,48,97-98,107-108,111
+web/src/app/eval/runs/page.tsx
+  adfb4d5a5c3ea9e1 397-403,563-589,592,599-602
+src/compgraph/eval/router.py
+  adfb4d5a5c3ea9e1 11,34-36,48-51,148-158,167-169,175-176,237-239
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "429033a6bef0e13703c7ca4cd668d43ccab60985",
+  "prompts": {
+    "adfb4d5a5c3ea9e1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "52fe5108-6588-4f8f-b3cc-431168145a78",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 275,
+      "total_deletions": 53,
+      "accepted_lines": 244,
+      "overriden_lines": 2
+    }
+  }
+}
