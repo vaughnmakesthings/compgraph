@@ -88,10 +88,3 @@ addopts = "-m 'not integration' --cov=compgraph --cov-report=term-missing --cov-
 markers = [
     "integration: requires live database connection",
 ]
-[dependency-groups]
-dev = [
-    "mypy>=1.19.1",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.0.0",
-]

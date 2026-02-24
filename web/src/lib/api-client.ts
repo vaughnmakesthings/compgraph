@@ -32,10 +32,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   if (!res.ok) {
     let detail: string | undefined
     try {
-      const body = await res.json()
-      detail = typeof body?.detail === 'string' ? body.detail : undefined
+      const body = (await res.json()) as { detail?: string }
+      detail = typeof body.detail === 'string' ? body.detail : undefined
     } catch {
-      // non-JSON error body — fall through to generic message
+      /* non-JSON body — ignore */
     }
     throw new Error(detail ?? `API error ${res.status}: ${path}`)
   }

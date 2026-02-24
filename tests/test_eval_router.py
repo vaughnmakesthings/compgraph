@@ -195,3 +195,25 @@ class TestEvalRunsPostEndpoint:
             )
         assert resp.status_code == 400
         assert "corpus" in resp.json()["detail"].lower()
+
+    def test_create_run_rejects_unknown_model(self, mock_empty_db) -> None:
+        with (
+            patch("compgraph.eval.router._CORPUS_PATH") as mock_path,
+            TestClient(app) as client,
+        ):
+            mock_path.exists.return_value = True
+            mock_path.read_text.return_value = "[]"
+            resp = client.post(
+                "/api/eval/runs",
+                json={
+                    "pass_number": 1,
+                    "model": "gpt-4",
+                    "prompt_version": "pass1_v1",
+                    "concurrency": 5,
+                },
+            )
+        assert resp.status_code == 422
+        detail = resp.json().get("detail", [])
+        assert isinstance(detail, list)
+        msg = detail[0].get("msg", "") if detail else ""
+        assert "Unsupported model" in msg or "gpt-4" in msg

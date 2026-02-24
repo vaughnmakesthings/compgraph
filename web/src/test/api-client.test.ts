@@ -93,6 +93,22 @@ describe('api error handling', () => {
 
     await expect(api.getPipelineStatus()).rejects.toThrow('API error 500')
   })
+
+  it('throws with FastAPI detail when response has detail field', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ detail: 'No corpus file found' }),
+    } as Response)
+
+    await expect(
+      api.createEvalRun({
+        pass_number: 1,
+        model: 'claude-haiku-4-5-20251001',
+        prompt_version: 'pass1_v1',
+      }),
+    ).rejects.toThrow('No corpus file found')
+  })
 })
 
 describe('api.getVelocity', () => {
