@@ -3,18 +3,20 @@
     "supabase": {
       "type": "stdio",
       "command": "op",
-      "args": [
-        "run",
-        "--env-file=.env",
-        "--no-masking",
-        "--",
-        "npx",
-        "-y",
-        "@supabase/mcp-server-supabase@latest"
-      ],
+      "args": ["run", "--env-file=.env", "--no-masking", "--", "npx", "-y", "@supabase/mcp-server-supabase@latest"],
       "env": {
         "SUPABASE_ACCESS_TOKEN": "op://DEV/SUPABASE_ACCESS_TOKEN/credential"
       }
+    },
+    "codesight": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--project", "/Users/vmud/Documents/dev/projects/codesight", "python", "-m", "codesight"]
+    },
+    "modelcontextprotocol-servers-git": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "mcp_server_git"]
     }
   }
 }
