@@ -1,0 +1,29 @@
+docs/reports/2026-02-24-docs-audit.md
+  5ae15b8bc27f9e67 1,8,10-15,17,26-28,34,39-40,46-48,50-51,54,57,64,67-68,73,76,80,82-102,106,110,117,120,123,129,132-133,136,139-140,153,156-157,159-160,163,165-175,177,179-181,189-195,197,204-207,209,211-217,219,221,223-226,228-229,235,237-242,244-249,251-252,254,256-257,259-260,262-263,269-275,279-281,283
+docs/context-packs.md
+  5ae15b8bc27f9e67 457-458
+docs/phases.md
+  5ae15b8bc27f9e67 45
+CLAUDE.md
+  5ae15b8bc27f9e67 420-423,451-454
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "e241192791c498ec85285d396aa7548221ef0fb0",
+  "prompts": {
+    "5ae15b8bc27f9e67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcd3665b-4110-4dc1-a7ed-f4765b5aff10",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 153,
+      "overriden_lines": 0
+    }
+  }
+}
