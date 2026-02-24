@@ -52,6 +52,11 @@ Object.defineProperty(globalThis, "localStorage", {
 beforeEach(() => {
   localStorageMock.clear();
   mockUsePathname.mockReturnValue("/");
+  // Header fetches /api/health — mock it so API status becomes "ok"
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({ ok: true })
+  );
 });
 
 describe("Sidebar", () => {
@@ -153,14 +158,16 @@ describe("Sidebar", () => {
 });
 
 describe("Header", () => {
-  it("renders the CompGraph wordmark", () => {
+  it("renders the breadcrumb for current route", () => {
     render(<Header />);
-    expect(screen.getByText("CompGraph")).toBeInTheDocument();
+    expect(screen.getByText("Pipeline Health")).toBeInTheDocument();
   });
 
-  it("renders the API connection status label", () => {
+  it("renders the API connection status label", async () => {
     render(<Header />);
-    expect(screen.getByText(/api connected/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/api connected/i)).toBeInTheDocument();
+    });
   });
 
   it("renders as a header landmark", () => {
