@@ -1,0 +1,25 @@
+GEMINI.md
+  11604f0767cfa6e3 85-92
+.mcp.json
+  11604f0767cfa6e3 13-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "f0129706eba20c22e2072fdad2d459fa5a6cd3a7",
+  "prompts": {
+    "11604f0767cfa6e3": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "42b5eb83-f5ca-4035-8150-35fe9d5475ed",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}
