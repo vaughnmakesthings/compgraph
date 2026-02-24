@@ -434,6 +434,7 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         title="Start Eval Run"
         description={`Pass ${passNumber} · ${model} · ${promptVersion} · Concurrency ${concurrency}. LLM API calls will be made for each corpus item.`}
         confirmLabel="Confirm & Start"
+        confirmingLabel="Starting…"
         onConfirm={() => executeRun()}
       />
     </div>

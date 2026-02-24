@@ -9,6 +9,8 @@ export interface ConfirmDialogProps {
   title: string;
   description: string;
   confirmLabel?: string;
+  /** Shown during async onConfirm. Defaults to "Confirming…". */
+  confirmingLabel?: string;
   cancelLabel?: string;
   confirmVariant?: "default" | "danger";
   /** May return a Promise; dialog stays open until it resolves. */
@@ -23,6 +25,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirm",
+  confirmingLabel = "Confirming…",
   cancelLabel = "Cancel",
   confirmVariant = "default",
   onConfirm,
@@ -109,7 +112,7 @@ export function ConfirmDialog({
               opacity: confirming ? 0.8 : 1,
             }}
           >
-            {confirming ? "Starting…" : confirmLabel}
+            {confirming ? confirmingLabel : confirmLabel}
           </button>
         </div>
       </DialogPanel>

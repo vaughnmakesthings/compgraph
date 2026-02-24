@@ -136,6 +136,30 @@ async def _get_field_accuracy_for_run(db: AsyncSession, run_id: uuid.UUID) -> di
     return {row.field_name: row.accuracy for row in rows}
 
 
+async def _get_field_accuracy_batch(
+    db: AsyncSession, run_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, dict[str, float]]:
+    """Return mapping of run_id -> {field_name: accuracy} for all runs in one query."""
+    if not run_ids:
+        return {}
+    stmt = (
+        select(
+            EvalResult.run_id,
+            EvalFieldReview.field_name,
+            func.avg(EvalFieldReview.is_correct.cast(float)).label("accuracy"),
+        )
+        .join(EvalFieldReview, EvalFieldReview.result_id == EvalResult.id)
+        .where(EvalResult.run_id.in_(run_ids))
+        .where(EvalFieldReview.is_correct >= 0)
+        .group_by(EvalResult.run_id, EvalFieldReview.field_name)
+    )
+    rows = (await db.execute(stmt)).all()
+    out: dict[uuid.UUID, dict[str, float]] = {rid: {} for rid in run_ids}
+    for row in rows:
+        out[row.run_id][row.field_name] = float(row.accuracy)
+    return out
+
+
 # --- Corpus ---
 
 
@@ -238,19 +262,18 @@ async def get_leaderboard_data(db: DbDep) -> dict:
     counts = await _get_result_counts(db, run_ids)
     runs_list = [_run_to_dict(r, counts.get(r.id, 0)) for r in runs]
 
-    field_accuracy: dict[str, dict[str, float]] = {}
-    results: dict[str, list[dict]] = {}
+    field_accuracy_batch = await _get_field_accuracy_batch(db, run_ids)
+    field_accuracy = {str(rid): field_accuracy_batch.get(rid, {}) for rid in run_ids}
 
-    for run in runs:
-        run_id_str = str(run.id)
-
-        field_accuracy[run_id_str] = await _get_field_accuracy_for_run(db, run.id)
-
-        res_stmt = (
-            select(EvalResult).where(EvalResult.run_id == run.id).order_by(EvalResult.posting_id)
-        )
-        res_rows = (await db.execute(res_stmt)).scalars().all()
-        results[run_id_str] = [_result_to_dict(r) for r in res_rows]
+    res_stmt = (
+        select(EvalResult)
+        .where(EvalResult.run_id.in_(run_ids))
+        .order_by(EvalResult.run_id, EvalResult.posting_id)
+    )
+    res_rows = (await db.execute(res_stmt)).scalars().all()
+    results: dict[str, list[dict]] = {str(rid): [] for rid in run_ids}
+    for r in res_rows:
+        results[str(r.run_id)].append(_result_to_dict(r))
 
     comp_rows = (
         (await db.execute(select(EvalComparison).order_by(EvalComparison.created_at)))
