@@ -1,0 +1,38 @@
+tests/test_postings_api.py
+  39072c0d44c5a118 11,303-308
+src/compgraph/api/routes/postings.py
+  39072c0d44c5a118 92-96,114-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "2c8c86b219eafe92ebadfed47a7b6809687bd3b8",
+  "prompts": {
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 2,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    },
+    "de17688ac03b5f57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac6fc002-7a26-43f3-82af-4557d06755e9",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 517,
+      "overriden_lines": 0
+    }
+  }
+}
