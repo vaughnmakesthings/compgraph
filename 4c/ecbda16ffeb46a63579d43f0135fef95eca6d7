@@ -1,0 +1,23 @@
+docs/changelog.md
+  4b29416aa4b97fc2 7-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "4cecbda16ffeb46a63579d43f0135fef95eca6d7",
+  "prompts": {
+    "4b29416aa4b97fc2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67938ed5-cf1a-40be-b80f-681834c118dc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
