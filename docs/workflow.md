@@ -194,6 +194,48 @@ No manual action required. Monitor at: GitHub Actions → CD workflow runs.
 
 ---
 
+## Parallel Development Path
+
+When working on multiple issues simultaneously (sprint mode), use merge-wave ordering to avoid bot cascade and rebase churn.
+
+### Wave Execution Pattern
+
+```
+/sprint-plan <issues>     → analyze file overlap, assign waves
+  ↓
+Wave 1: /worktree per issue → /draft-pr create (parallel, no bot noise)
+  ↓
+Wave 1 ready: /draft-pr ready → /pr-feedback-cycle → /merge-guardian (one at a time)
+  ↓
+Rebase Wave 2 branches on main
+  ↓
+Wave 2: repeat
+```
+
+### Modified Steps for Sprint Mode
+
+| Step | Standard | Sprint Mode |
+|------|----------|-------------|
+| 8. Create PR | `gh pr create` | `gh pr create --draft` (bots skip) |
+| 9. CI Testing | CI runs, bots review | CI runs, bots skip (draft) |
+| 10. Ready for review | N/A | `/draft-pr ready` (triggers bots) |
+| 10b. Bot feedback | `/pr-feedback-cycle` | `/pr-feedback-cycle` (same) |
+| 11. Merge | `/merge-guardian` | `/merge-guardian` (checks stacked PRs) |
+
+### Skill Map
+
+| Phase | Skill | Purpose |
+|-------|-------|---------|
+| Plan | `/sprint-plan` | File overlap matrix, wave assignment |
+| Isolate | `/worktree` | Isolated git worktree per issue |
+| Draft | `/draft-pr create` | Draft PR, no bot cascade |
+| Iterate | Push freely | No bot re-triggers on draft PRs |
+| Ready | `/draft-pr ready` | Convert to ready, trigger bots |
+| Triage | `/pr-feedback-cycle` | Process bot feedback |
+| Merge | `/merge-guardian` | Stacked PR detection, merge, cleanup |
+
+---
+
 ## Agent Handoff Protocol
 
 When delegating to a project-level agent:

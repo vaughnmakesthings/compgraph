@@ -396,6 +396,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/failure-patterns.md` | Known failure modes — load when debugging any pipeline issue | ~1K+ |
 | `docs/workflow.md` | Development workflow, agent crew integration, review gates | ~2K |
 | `docs/ci.md` | CI jobs (lint, type, test, security), CD auto-deploy pipeline, local hooks, review bots | ~1K |
+| `docs/parallel-development-playbook.md` | Draft PR workflow, bot cascade prevention, merge-wave ordering, stacked PR patterns | ~500 |
+| `docs/git-github-cheatsheet.md` | Quick-reference for worktrees, draft PRs, rebase patterns, label management | ~500 |
 | `docs/secrets-reference.md` | 1Password references, env var setup | ~500 |
 
 ### External Research (load by section)
