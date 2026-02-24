@@ -1,0 +1,64 @@
+web/src/test/dashboard.test.tsx
+  39072c0d44c5a118 13-17,19-20,22,34-35
+web/package.json
+  de17688ac03b5f57 13-14,29
+web/src/test/competitors.test.tsx
+  39072c0d44c5a118 68,70-74,76-77,79-82
+web/src/components/ui/confirm-dialog.tsx
+  39072c0d44c5a118 1-99
+web/src/components/charts/bar-chart.tsx
+  39072c0d44c5a118 3-4,21-22,25-26,28-37
+web/.npmrc
+  39072c0d44c5a118 1
+web/src/app/settings/page.tsx
+  39072c0d44c5a118 4,602-610,858,864,870,936-943,1101-1104,1233-1287
+web/src/lib/api-client.ts
+  39072c0d44c5a118 22-26,41
+web/src/test/pages.test.tsx
+  39072c0d44c5a118 32-33,35-38,42-45,512,526
+web/src/components/charts/donut-chart.tsx
+  39072c0d44c5a118 4,20,23-24,26-34
+web/src/test/page.test.tsx
+  39072c0d44c5a118 12-16,18-19,21-24
+web/src/app/eval/runs/page.tsx
+  39072c0d44c5a118 8,139,185,424-431
+tests/test_eval_router.py
+  39072c0d44c5a118 219
+web/src/test/components/confirm-dialog.test.tsx
+  39072c0d44c5a118 1-123
+web/src/test/components.test.tsx
+  39072c0d44c5a118 9-14,17-18,20-21,26-30,33,38-42,45-51,238-239,244-245,276,281
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "51100474e2abcb584f2666a8f5dc91910cd41491",
+  "prompts": {
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 465,
+      "total_deletions": 440,
+      "accepted_lines": 430,
+      "overriden_lines": 0
+    },
+    "de17688ac03b5f57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac6fc002-7a26-43f3-82af-4557d06755e9",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 548,
+      "total_deletions": 29,
+      "accepted_lines": 529,
+      "overriden_lines": 0
+    }
+  }
+}
