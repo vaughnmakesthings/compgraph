@@ -133,6 +133,7 @@ interface NewRunFormProps {
 function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [passNumber, setPassNumber] = useState(1);
   const [models, setModels] = useState<Array<{ id: string; label: string }>>([]);
+  const [modelsError, setModelsError] = useState(false);
   const [model, setModel] = useState("");
   const [promptVersion, setPromptVersion] = useState("pass1_v1");
   const [concurrency, setConcurrency] = useState(5);
@@ -140,7 +141,8 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmStep, setConfirmStep] = useState(false);
 
-  useEffect(() => {
+  const fetchModels = useCallback(() => {
+    setModelsError(false);
     api
       .getEvalModels()
       .then((list) => {
@@ -150,8 +152,12 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
           return prev && ids.includes(prev) ? prev : list[0]?.id ?? "";
         });
       })
-      .catch(() => setModels([]));
+      .catch(() => setModelsError(true));
   }, []);
+
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   const handleSubmit = () => {
     if (!model) {
@@ -247,30 +253,49 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
           >
             Model
           </label>
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            disabled={submitting || models.length === 0}
-            className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              backgroundColor: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#2D3142",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
-          >
-            {models.length === 0 ? (
-              <option value="">Loading models…</option>
-            ) : (
-              models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))
+          <div className="flex gap-2 items-center">
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              disabled={submitting || models.length === 0}
+              className="flex-1 rounded border px-2 py-1.5 disabled:opacity-50"
+              style={{
+                borderColor: modelsError ? "#BF616A" : "#BFC0C0",
+                backgroundColor: "#FFFFFF",
+                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                fontSize: "13px",
+                color: "#2D3142",
+                borderRadius: "var(--radius-sm, 4px)",
+              }}
+            >
+              {modelsError ? (
+                <option value="">Failed to load models</option>
+              ) : models.length === 0 ? (
+                <option value="">Loading models…</option>
+              ) : (
+                models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))
+              )}
+            </select>
+            {modelsError && (
+              <button
+                type="button"
+                onClick={fetchModels}
+                disabled={submitting}
+                className="shrink-0 rounded border px-2 py-1.5 text-sm disabled:opacity-50 hover:bg-[#E8E8E4]"
+                style={{
+                  borderColor: "#BFC0C0",
+                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                  color: "#2D3142",
+                }}
+              >
+                Retry
+              </button>
             )}
-          </select>
+          </div>
         </div>
         <div>
           <label
@@ -418,7 +443,7 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         <div className="mt-4 flex gap-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting || !promptVersion.trim()}
+            disabled={submitting || !model || !promptVersion.trim()}
             className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
             style={{
               backgroundColor: "#EF8354",
