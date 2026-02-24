@@ -1,0 +1,27 @@
+docs/context-packs.md
+  40fa3d730bb27528 119,158-159,161-162,168-171,263,265,269-272,275-280,286-287,289-295,297,299,303-355,357,367-368,372,376-377,379,416
+docs/phases.md
+  40fa3d730bb27528 5-6,11,18-25,33,35-36,38-39,43,45,47,62,81,83,87-88,92-94,98,100,102-109,113,115,117-121,125,127,129-138,142,144,146,148-154,156,158-166,177,179,181,183,185,187,189,191,193,198-207
+docs/changelog.md
+  40fa3d730bb27528 7-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "0e1293a79f53edc5c6f9c484215602321d78d36c",
+  "prompts": {
+    "40fa3d730bb27528": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3614ead5-5e2a-46d2-ac06-9b7a3b137a67",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 215,
+      "total_deletions": 297,
+      "accepted_lines": 214,
+      "overriden_lines": 0
+    }
+  }
+}
