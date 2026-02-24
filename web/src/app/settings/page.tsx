@@ -75,8 +75,6 @@ function OutlineButton({
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.5 : 1,
         transition: "background-color 150ms",
-        width: "100%",
-        textAlign: "left",
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
@@ -347,7 +345,7 @@ function LiveScrapePanel({
         <div style={{ borderBottom: "1px solid #BFC0C0" }}>
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ backgroundColor: "#F9F9F7" }}>
+              <tr style={{ backgroundColor: "#FAFAF7" }}>
                 {["Company", "State", "Postings", "Snapshots"].map((col) => (
                   <th
                     key={col}
@@ -805,6 +803,12 @@ export default function SettingsPage() {
         >
           Settings
         </h1>
+        <p
+          className="mt-1 text-sm"
+          style={{ color: "var(--color-muted-foreground)" }}
+        >
+          Pipeline controls, scheduler status, and system configuration
+        </p>
       </div>
 
       {/* API Health */}
@@ -853,7 +857,7 @@ export default function SettingsPage() {
 
       {/* Pipeline Controls */}
       <SectionCard title="Pipeline Controls" className="mt-4">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-row flex-wrap gap-3">
           <OutlineButton
             onClick={() => setConfirmAggOpen(true)}
             disabled={aggRunning}
@@ -1028,7 +1032,7 @@ export default function SettingsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                    <tr style={{ borderBottom: "1px solid #BFC0C0" }}>
                       {["Schedule", "Status", "Next Run", "Last Run", "Actions"].map((col) => (
                         <th
                           key={col}
@@ -1036,9 +1040,10 @@ export default function SettingsPage() {
                           style={{
                             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                             fontWeight: 600,
-                            color: "#4F5D75",
+                            color: "rgba(79,93,117,0.5)",
                             textTransform: "uppercase",
                             letterSpacing: "0.04em",
+                            fontSize: "10px",
                           }}
                         >
                           {col}
@@ -1153,10 +1158,10 @@ export default function SettingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                <tr style={{ borderBottom: "1px solid #BFC0C0" }}>
                   {["Company", "Status", "Started", "Duration", "Found", "Created", "Closed"].map((col) => (
                     <th key={col} className="text-left px-3 py-2"
-                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "rgba(79,93,117,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", fontSize: "10px" }}>
                       {col}
                     </th>
                   ))}
@@ -1197,10 +1202,10 @@ export default function SettingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr style={{ borderBottom: "1px solid #BFC0C0", backgroundColor: "#F4F4F0" }}>
+                <tr style={{ borderBottom: "1px solid #BFC0C0" }}>
                   {["Status", "Started", "Duration", "P1 Total", "P1 OK", "P2 Total", "P2 OK"].map((col) => (
                     <th key={col} className="text-left px-3 py-2"
-                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "#4F5D75", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontWeight: 600, color: "rgba(79,93,117,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", fontSize: "10px" }}>
                       {col}
                     </th>
                   ))}

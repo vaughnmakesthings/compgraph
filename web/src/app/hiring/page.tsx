@@ -411,13 +411,20 @@ export default function HiringPage() {
       >
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#E8E8E4" }}>
+            <tr>
               {["Title", "Company", "Location", "Role", "Pay Range", "Status"].map(
                 (col) => (
                   <th
                     key={col}
-                    className="text-left px-4 py-2 font-semibold"
-                    style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
+                    className="text-left px-4 py-2"
+                    style={{
+                      color: "rgba(79,93,117,0.5)",
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
                   >
                     {col}
                   </th>
@@ -491,7 +498,7 @@ export default function HiringPage() {
                       <span
                         style={{
                           fontSize: "11px",
-                          color: "#8A8F98",
+                          color: "var(--color-muted-foreground)",
                           fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                         }}
                       >

@@ -79,7 +79,7 @@ describe("KpiCard", () => {
       />
     );
     expect(screen.getByText(/12%/)).toBeInTheDocument();
-    expect(screen.getByText(/↑/)).toBeInTheDocument();
+    expect(screen.getByText(/▲/)).toBeInTheDocument();
   });
 
   it("renders negative trend with down arrow", () => {
@@ -91,7 +91,7 @@ describe("KpiCard", () => {
       />
     );
     expect(screen.getByText(/5%/)).toBeInTheDocument();
-    expect(screen.getByText(/↓/)).toBeInTheDocument();
+    expect(screen.getByText(/▼/)).toBeInTheDocument();
   });
 
   it("renders icon when provided", () => {
