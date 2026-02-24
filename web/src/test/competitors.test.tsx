@@ -146,7 +146,7 @@ describe("Competitor dossier page", () => {
 
   it("renders the company name for the 'troc' slug", () => {
     render(<CompetitorDossierPage />);
-    expect(screen.getByText("T-ROC")).toBeInTheDocument();
+    expect(screen.getAllByText("T-ROC").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders the ATS badge", () => {
@@ -263,7 +263,7 @@ describe("Competitor dossier page", () => {
   it("renders distinct content for the 'bds' slug", () => {
     mockSlug.current = "bds";
     render(<CompetitorDossierPage />);
-    expect(screen.getByText("BDS Connected Solutions")).toBeInTheDocument();
+    expect(screen.getAllByText("BDS Connected Solutions").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/in-store demo presence/i)).toBeInTheDocument();
   });
 

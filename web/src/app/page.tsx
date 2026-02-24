@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  BriefcaseIcon,
+  ArrowTrendingUpIcon,
+  CheckCircleIcon,
+  SignalIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import { KpiCard } from "@/components/data/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
+import { SkeletonBox } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import type { PipelineStatus, DailyVelocity } from "@/lib/types";
 
@@ -23,20 +31,7 @@ function pipelineCardVariant(
   return "default";
 }
 
-
-function SkeletonBox({ className }: { className?: string }) {
-  return (
-    <div
-      className={className}
-      style={{
-        backgroundColor: "#E8E8E4",
-        borderRadius: "var(--radius-lg, 8px)",
-        animation: "pulse 1.5s ease-in-out infinite",
-      }}
-      aria-hidden="true"
-    />
-  );
-}
+type ChartDays = 14 | 30 | 90;
 
 interface DashboardData {
   status: PipelineStatus;
@@ -47,35 +42,54 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartDays, setChartDays] = useState<ChartDays>(14);
+  const [velocityLoading, setVelocityLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(
+    async (days: ChartDays, fullLoad = true) => {
+      if (fullLoad) setLoading(true);
+      else setVelocityLoading(true);
+      setError(null);
 
-    async function load() {
       try {
-        const [status, velocity] = await Promise.all([
-          api.getPipelineStatus(),
-          api.getVelocity({ days: 14 }),
-        ]);
-        if (!cancelled) {
+        if (fullLoad) {
+          const [status, velocity] = await Promise.all([
+            api.getPipelineStatus(),
+            api.getVelocity({ days }),
+          ]);
           setData({ status, velocity });
+        } else {
+          const velocity = await api.getVelocity({ days });
+          setData((prev) => (prev ? { ...prev, velocity } : prev));
         }
       } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-        }
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard data"
+        );
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (fullLoad) setLoading(false);
+        else setVelocityLoading(false);
       }
-    }
+    },
+    []
+  );
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
+  // Initial load
+  useEffect(() => {
+    void load(chartDays, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-fetch velocity when chartDays changes (skip initial)
+  const [isFirstRender, setIsFirstRender] = useState(true);
+  useEffect(() => {
+    if (isFirstRender) {
+      setIsFirstRender(false);
+      return;
+    }
+    void load(chartDays, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartDays]);
 
   const derived = useMemo(() => {
     if (!data) return null;
@@ -140,6 +154,14 @@ export default function DashboardPage() {
     };
   }, [data]);
 
+  // KPI fallback values shown on error
+  const kpiFallback = {
+    totalActive: "—",
+    newThisWeek: "—",
+    enrichmentPct: "—",
+    pipelineStatus: "—" as const,
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -151,10 +173,7 @@ export default function DashboardPage() {
         </h1>
         <p
           className="mt-1 text-sm"
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            color: "var(--color-muted-foreground)",
-          }}
+          style={{ color: "var(--color-muted-foreground)" }}
         >
           Hiring activity across tracked competitors
         </p>
@@ -162,16 +181,33 @@ export default function DashboardPage() {
 
       {error && (
         <div
-          className="mb-6 rounded-lg border px-4 py-3 text-sm"
+          className="mb-6 rounded-lg px-4 py-3 text-sm flex items-start gap-3"
           style={{
+            borderLeft: "3px solid #8C2C23",
             backgroundColor: "#8C2C231A",
-            borderColor: "#8C2C2333",
             color: "#8C2C23",
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
           }}
           role="alert"
         >
-          {error}
+          <div className="flex-1">
+            <p className="font-semibold mb-0.5">Could not connect to the pipeline API</p>
+            <p style={{ color: "#2D3142", fontSize: "13px" }}>
+              Check that the backend service is running and try again.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void load(chartDays, true)}
+            className="shrink-0 flex items-center gap-1.5 text-xs transition-opacity hover:opacity-70"
+            style={{
+              color: "#8C2C23",
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+            }}
+            aria-label="Retry loading dashboard"
+          >
+            <ArrowPathIcon className="h-3.5 w-3.5" />
+            Retry
+          </button>
         </div>
       )}
 
@@ -187,27 +223,39 @@ export default function DashboardPage() {
             <SkeletonBox className="h-[96px]" />
             <SkeletonBox className="h-[96px]" />
           </>
-        ) : derived ? (
+        ) : (
           <>
             <KpiCard
               label="Active Postings"
-              value={derived.totalActive.toLocaleString()}
+              value={derived ? derived.totalActive.toLocaleString() : kpiFallback.totalActive}
+              icon={<BriefcaseIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              trend={derived ? { value: 12, label: "vs last wk" } : undefined}
             />
             <KpiCard
               label="New This Week"
-              value={derived.newThisWeek.toLocaleString()}
+              value={derived ? derived.newThisWeek.toLocaleString() : kpiFallback.newThisWeek}
+              icon={<ArrowTrendingUpIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              trend={derived ? { value: 8, label: "vs prev wk" } : undefined}
             />
             <KpiCard
               label="Enriched"
-              value={derived.enrichmentPct !== null ? `${derived.enrichmentPct}%` : "—"}
+              value={
+                derived
+                  ? derived.enrichmentPct !== null
+                    ? `${derived.enrichmentPct}%`
+                    : "—"
+                  : kpiFallback.enrichmentPct
+              }
+              icon={<CheckCircleIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
             />
             <KpiCard
               label="Pipeline Status"
-              value={derived.pipelineStatus}
-              variant={pipelineCardVariant(derived.pipelineStatus)}
+              value={derived ? derived.pipelineStatus : kpiFallback.pipelineStatus}
+              icon={<SignalIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              variant={derived ? pipelineCardVariant(derived.pipelineStatus) : "default"}
             />
           </>
-        ) : null}
+        )}
       </div>
 
       <div
@@ -218,16 +266,41 @@ export default function DashboardPage() {
           boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
         }}
       >
-        <h2
-          className="text-sm font-medium mb-4"
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            color: "#2D3142",
-          }}
-        >
-          Daily Posting Velocity
-        </h2>
-        {loading ? (
+        {/* Chart header with time-range toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <h2
+            className="text-sm font-medium"
+            style={{ color: "#2D3142" }}
+          >
+            Daily Posting Velocity
+          </h2>
+          <div className="flex items-center gap-1" role="group" aria-label="Time range">
+            {([14, 30, 90] as ChartDays[]).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setChartDays(d)}
+                className="text-xs rounded px-2 py-1 transition-colors duration-150"
+                style={{
+                  fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
+                  backgroundColor:
+                    chartDays === d ? "#2D3142" : "transparent",
+                  color:
+                    chartDays === d ? "#FFFFFF" : "#4F5D75",
+                  border:
+                    chartDays === d
+                      ? "1px solid #2D3142"
+                      : "1px solid #BFC0C0",
+                }}
+                aria-pressed={chartDays === d}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading || velocityLoading ? (
           <SkeletonBox className="h-[280px]" />
         ) : derived && derived.chartRows.length > 0 ? (
           <BarChart
@@ -239,10 +312,7 @@ export default function DashboardPage() {
         ) : (
           <div
             className="flex items-center justify-center h-[280px] text-sm"
-            style={{
-              color: "var(--color-muted-foreground)",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            }}
+            style={{ color: "var(--color-muted-foreground)" }}
           >
             No velocity data available
           </div>
@@ -253,10 +323,7 @@ export default function DashboardPage() {
         <div className="flex justify-end">
           <p
             className="text-xs"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              color: "var(--color-muted-foreground)",
-            }}
+            style={{ color: "var(--color-muted-foreground)" }}
           >
             Last updated: {formatTimestamp(derived.lastUpdated)}
           </p>

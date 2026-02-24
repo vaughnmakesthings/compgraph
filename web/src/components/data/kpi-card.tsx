@@ -48,7 +48,7 @@ export function KpiCard({
             className="text-[#4F5D75] font-medium tracking-wider uppercase mb-1"
             style={{
               fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
+              fontSize: "10px",
             }}
           >
             {label}
@@ -58,7 +58,7 @@ export function KpiCard({
             style={{
               fontFamily:
                 "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-              fontSize: "28px",
+              fontSize: "24px",
             }}
           >
             {value}
@@ -69,7 +69,7 @@ export function KpiCard({
               style={{
                 fontFamily:
                   "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-                fontSize: "12px",
+                fontSize: "10px",
                 color: trendIsPositive
                   ? "#1B998B"
                   : trendIsNegative
@@ -77,7 +77,7 @@ export function KpiCard({
                     : "#4F5D75",
               }}
             >
-              {trendIsPositive ? "↑" : trendIsNegative ? "↓" : "→"}{" "}
+              {trendIsPositive ? "▲" : trendIsNegative ? "▼" : "—"}{" "}
               {Math.abs(trend.value)}% {trend.label}
             </p>
           )}

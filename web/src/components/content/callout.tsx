@@ -15,24 +15,24 @@ const variantStyles: Record<
   { borderColor: string; bg: string; titleColor: string }
 > = {
   finding: {
-    borderColor: "#4F5D75",
-    bg: "#4F5D750D",
-    titleColor: "#4F5D75",
+    borderColor: "#EF8354",
+    bg: "rgba(239,131,84,0.10)",
+    titleColor: "#EF8354",
   },
   positive: {
     borderColor: "#1B998B",
-    bg: "#1B998B0D",
+    bg: "rgba(27,153,139,0.10)",
     titleColor: "#1B998B",
   },
   risk: {
     borderColor: "#8C2C23",
-    bg: "#8C2C230D",
+    bg: "rgba(140,44,35,0.10)",
     titleColor: "#8C2C23",
   },
   caution: {
     borderColor: "#DCB256",
-    bg: "#DCB2560D",
-    titleColor: "#A07D28",
+    bg: "rgba(220,178,86,0.10)",
+    titleColor: "#DCB256",
   },
 };
 
@@ -42,7 +42,7 @@ export function Callout({ variant, title, children }: CalloutProps) {
   return (
     <div
       style={{
-        borderLeft: `4px solid ${styles.borderColor}`,
+        borderLeft: `3px solid ${styles.borderColor}`,
         backgroundColor: styles.bg,
         borderRadius: "var(--radius-lg, 8px)",
         padding: "1rem",
