@@ -444,6 +444,16 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/mcp-server-capabilities.md` | Tool catalog for Supabase, Vercel, next-devtools, Sentry, Playwright — tool tables, project IDs, composed workflows | Deployment, Frontend, Database, Debugging |
 | `docs/references/automation-setup.md` | MCP servers (Playwright, Sentry), hooks, skills, agents — setup reference for Claude Code and Cursor | Automation, DX |
 | `docs/references/operating-budget.md` | Infrastructure, LLM, and data enrichment cost line items with optimization levers and scaling plan | Cost planning, M6 planning |
+| `docs/references/http-308-redirect-handling.md` | 308 redirect behavior across fetch/httpx/requests, CORS preflight quirks, Vercel rewrite vs redirect | API versioning (M7 Pack K) |
+| `docs/references/vercel-do-timeout-patterns.md` | Vercel timeout limits by tier, HTTP 202 + SWR polling pattern, BackgroundTasks vs job queue | Long-running operations (M7) |
+| `docs/references/litellm-openrouter-resilience.md` | LiteLLM Router retry/fallback config, OpenRouter error codes, asyncio.Semaphore concurrency, cost tracking | Eval tool (M7 Pack J) |
+| `docs/references/rls-aggregation-patterns.md` | RLS on agg tables (filtered vs global-only vs view-based), CompGraph verdict: Pattern B global-only | Auth + RLS (M7 Pack I) |
+| `docs/references/llm-schema-repair-patterns.md` | Pydantic v2 repair prompt vs nullification vs tiered validation, WrapValidator patterns, pay cap analysis | Enrichment pipeline (M7) |
+| `docs/references/sqlalchemy-multi-role-sessions.md` | Dual async engine setup (service_role vs user-scoped), SET LOCAL JWT claims, FastAPI DI patterns | Auth + RLS (M7 Pack I) |
+| `docs/references/httpx-proxy-rotation.md` | Sticky proxy sessions per company, ProxyManager class, SOCKS5, anti-detection headers, migration path | Scraper hardening (M7) |
+| `docs/references/high-speed-labeling-ux.md` | Pre-filled confirmation UX, keyboard-first labeling, diff-based review, interaction math (1500→325 clicks) | Eval tool labeling (M7 Pack J) |
+| `docs/references/jsonb-deep-diffing.md` | SQL jsonb_each FULL OUTER JOIN, deepdiff/dictdiffer Python, weighted scoring, UI diff format | Eval comparison (M7 Pack J) |
+| `docs/references/skeleton-loader-accessibility.md` | aria-busy/aria-live patterns, SkeletonContainer component, layout shift prevention, vitest-axe testing | Frontend a11y (M7) |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 
