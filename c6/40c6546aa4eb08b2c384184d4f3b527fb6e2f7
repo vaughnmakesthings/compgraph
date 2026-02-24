@@ -1,0 +1,38 @@
+.claude/skills/nia/SKILL.md
+  ba3fb4cf54e17db3 1-43
+.claude/agents/nia.md
+  ba3fb4cf54e17db3 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "c640c6546aa4eb08b2c384184d4f3b527fb6e2f7",
+  "prompts": {
+    "5ae15b8bc27f9e67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcd3665b-4110-4dc1-a7ed-f4765b5aff10",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 158,
+      "total_deletions": 115,
+      "accepted_lines": 157,
+      "overriden_lines": 0
+    },
+    "ba3fb4cf54e17db3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113fc847-55a2-4d31-b59b-9c0764e19a69",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 87,
+      "total_deletions": 0,
+      "accepted_lines": 87,
+      "overriden_lines": 0
+    }
+  }
+}
