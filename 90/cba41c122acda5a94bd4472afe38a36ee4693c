@@ -1,0 +1,23 @@
+docs/phases.md
+  5ae15b8bc27f9e67 45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "90cba41c122acda5a94bd4472afe38a36ee4693c",
+  "prompts": {
+    "5ae15b8bc27f9e67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcd3665b-4110-4dc1-a7ed-f4765b5aff10",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
