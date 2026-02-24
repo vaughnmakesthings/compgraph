@@ -8,7 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.aggregation.base import AggregationJob
 
 _QUERY = """
-WITH posting_durations AS (
+WITH latest_enrichment AS (
+    SELECT DISTINCT ON (posting_id)
+        posting_id,
+        id AS enrichment_id
+    FROM posting_enrichments
+    ORDER BY posting_id, enriched_at DESC NULLS LAST
+),
+posting_durations AS (
     SELECT
         p.company_id,
         pe.role_archetype,
@@ -18,7 +25,8 @@ WITH posting_durations AS (
         )) / 86400.0) AS days_open,
         p.times_reposted
     FROM postings p
-    JOIN posting_enrichments pe ON pe.posting_id = p.id
+    JOIN latest_enrichment le ON le.posting_id = p.id
+    JOIN posting_enrichments pe ON pe.id = le.enrichment_id
     WHERE p.first_seen_at IS NOT NULL
 )
 SELECT

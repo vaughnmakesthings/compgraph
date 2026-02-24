@@ -8,7 +8,7 @@ from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
@@ -31,7 +31,9 @@ _background_tasks: set[asyncio.Task] = set()
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-def _run_to_dict(run: EvalRun) -> dict[str, Any]:
+def _run_to_dict(run: EvalRun, result_count: int = 0) -> dict[str, Any]:
+    completed = run.total_duration_ms is not None
+    status = "completed" if completed else ("running" if result_count > 0 else "starting")
     return {
         "id": str(run.id),
         "pass_number": run.pass_number,
@@ -43,6 +45,10 @@ def _run_to_dict(run: EvalRun) -> dict[str, Any]:
         "total_cost_usd": run.total_cost_usd,
         "total_duration_ms": run.total_duration_ms,
         "created_at": run.created_at.isoformat() if run.created_at else None,
+        "status": status,
+        "total_items": run.corpus_size,
+        "completed_items": result_count,
+        "completed_at": None,
     }
 
 
@@ -130,6 +136,30 @@ async def _get_field_accuracy_for_run(db: AsyncSession, run_id: uuid.UUID) -> di
     return {row.field_name: row.accuracy for row in rows}
 
 
+async def _get_field_accuracy_batch(
+    db: AsyncSession, run_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, dict[str, float]]:
+    """Return mapping of run_id -> {field_name: accuracy} for all runs in one query."""
+    if not run_ids:
+        return {}
+    stmt = (
+        select(
+            EvalResult.run_id,
+            EvalFieldReview.field_name,
+            func.avg(EvalFieldReview.is_correct.cast(float)).label("accuracy"),
+        )
+        .join(EvalFieldReview, EvalFieldReview.result_id == EvalResult.id)
+        .where(EvalResult.run_id.in_(run_ids))
+        .where(EvalFieldReview.is_correct >= 0)
+        .group_by(EvalResult.run_id, EvalFieldReview.field_name)
+    )
+    rows = (await db.execute(stmt)).all()
+    out: dict[uuid.UUID, dict[str, float]] = {rid: {} for rid in run_ids}
+    for row in rows:
+        out[row.run_id][row.field_name] = float(row.accuracy)
+    return out
+
+
 # --- Corpus ---
 
 
@@ -139,19 +169,35 @@ async def get_corpus(db: DbDep) -> list[dict]:
     return [_corpus_to_dict(r) for r in rows]
 
 
+async def _get_result_counts(db: AsyncSession, run_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Return mapping of run_id -> count of EvalResult rows."""
+    if not run_ids:
+        return {}
+    stmt = (
+        select(EvalResult.run_id, func.count(EvalResult.id).label("cnt"))
+        .where(EvalResult.run_id.in_(run_ids))
+        .group_by(EvalResult.run_id)
+    )
+    rows = (await db.execute(stmt)).all()
+    return {r.run_id: r.cnt for r in rows}
+
+
 # --- Runs ---
 
 
 @router.get("/runs")
 async def get_runs(db: DbDep) -> list[dict]:
     rows = (await db.execute(select(EvalRun).order_by(EvalRun.created_at.desc()))).scalars().all()
-    return [_run_to_dict(r) for r in rows]
+    run_ids = [r.id for r in rows]
+    counts = await _get_result_counts(db, run_ids)
+    return [_run_to_dict(r, counts.get(r.id, 0)) for r in rows]
 
 
 @router.get("/runs/{run_id}")
 async def get_run(run_id: uuid.UUID, db: DbDep) -> dict:
     run = await _get_run_or_404(run_id, db)
-    return _run_to_dict(run)
+    counts = await _get_result_counts(db, [run.id])
+    return _run_to_dict(run, counts.get(run.id, 0))
 
 
 @router.delete("/runs/{run_id}")
@@ -212,21 +258,22 @@ async def get_run_progress(run_id: uuid.UUID, db: DbDep) -> dict:
 @router.get("/leaderboard-data")
 async def get_leaderboard_data(db: DbDep) -> dict:
     runs = (await db.execute(select(EvalRun).order_by(EvalRun.created_at.desc()))).scalars().all()
-    runs_list = [_run_to_dict(r) for r in runs]
+    run_ids = [r.id for r in runs]
+    counts = await _get_result_counts(db, run_ids)
+    runs_list = [_run_to_dict(r, counts.get(r.id, 0)) for r in runs]
 
-    field_accuracy: dict[str, dict[str, float]] = {}
-    results: dict[str, list[dict]] = {}
+    field_accuracy_batch = await _get_field_accuracy_batch(db, run_ids)
+    field_accuracy = {str(rid): field_accuracy_batch.get(rid, {}) for rid in run_ids}
 
-    for run in runs:
-        run_id_str = str(run.id)
-
-        field_accuracy[run_id_str] = await _get_field_accuracy_for_run(db, run.id)
-
-        res_stmt = (
-            select(EvalResult).where(EvalResult.run_id == run.id).order_by(EvalResult.posting_id)
-        )
-        res_rows = (await db.execute(res_stmt)).scalars().all()
-        results[run_id_str] = [_result_to_dict(r) for r in res_rows]
+    res_stmt = (
+        select(EvalResult)
+        .where(EvalResult.run_id.in_(run_ids))
+        .order_by(EvalResult.run_id, EvalResult.posting_id)
+    )
+    res_rows = (await db.execute(res_stmt)).scalars().all()
+    results: dict[str, list[dict]] = {str(rid): [] for rid in run_ids}
+    for r in res_rows:
+        results[str(r.run_id)].append(_result_to_dict(r))
 
     comp_rows = (
         (await db.execute(select(EvalComparison).order_by(EvalComparison.created_at)))

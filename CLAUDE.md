@@ -37,6 +37,17 @@ uv run mypy src/compgraph/                         # Typecheck
 op run --env-file=.env -- uv run python scripts/backfill_enrichment.py          # Run full backfill
 op run --env-file=.env -- uv run python scripts/backfill_enrichment.py --dry-run  # Count only
 op run --env-file=.env -- uv run python scripts/validate_enrichment.py          # Spot-check CSV
+op run --env-file=.env -- uv run python scripts/backfill_title_normalization.py # Backfill title_normalized
+
+# Data quality (one-time)
+op run --env-file=.env -- uv run python scripts/dedup_brands.py                 # Merge duplicate brands
+op run --env-file=.env -- uv run python scripts/dedup_brands.py --dry-run       # Preview only
+
+# Market normalization (required for agg_market_coverage_gaps)
+# Run in order: first seed_location_mappings, then populate_markets
+op run --env-file=.env -- uv run python scripts/seed_location_mappings.py      # LLM maps city→metro
+op run --env-file=.env -- uv run python scripts/seed_location_mappings.py --dry-run  # Count only
+op run --env-file=.env -- uv run python scripts/populate_markets.py            # Create markets from mappings
 
 # Eval
 op run --env-file=.env -- uv run python scripts/generate_eval_corpus.py         # Populate eval/data/corpus.json before eval runs
@@ -84,7 +95,7 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 
 - **Scrape**: 4 adapters (iCIMS×2, Workday CXS×2). Each isolated — one failing doesn't block others. Output: `postings` + `posting_snapshots` (append-only).
 - **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
-- **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert.
+- **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert. `agg_daily_velocity` is company-level only (brand_id/market_id intentionally NULL).
 - **Scheduler**: APScheduler v4 cron jobs trigger scrape→enrich→aggregate pipeline. Config in `src/compgraph/scheduler/`.
 - **Frontend**: Next.js 16 at `web/` — Pipeline Health, Posting Explorer, Brand Intel, and Scheduler views. Deployed to Vercel.
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
@@ -192,6 +203,7 @@ Coverage threshold: 50% minimum enforced via `--cov-fail-under=50`.
 ## Common Pitfalls
 
 - Don't mutate `posting_snapshots` — always INSERT new rows, never UPDATE.
+- Don't run aggregation expecting `agg_market_coverage_gaps` data without first running `seed_location_mappings.py` then `populate_markets.py` — both tables must be populated in that order.
 - Don't load all of `docs/design.md` at once — use section references (§1-§10), see `docs/context-packs.md`.
 - Don't hardcode iCIMS page sizes — they vary per company.
 - Don't assume Workday CXS API is stable — it's undocumented.
