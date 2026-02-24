@@ -7,7 +7,7 @@ import { Suspense } from "react";
 // ---------------------------------------------------------------------------
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({
-    get: (_key: string) => null,
+    get: () => null,
     toString: () => "",
   }),
   useRouter: () => ({

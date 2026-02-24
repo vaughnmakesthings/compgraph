@@ -88,10 +88,10 @@ export default function LeaderboardPage() {
     };
   }, []);
 
-  const runs = rawData?.runs ?? [];
-  const eloRatings = rawData?.elo ?? {};
-  const comparisons = rawData?.comparisons ?? [];
-  const fieldAccuracyMap = rawData?.field_accuracy ?? {};
+  const runs = useMemo(() => rawData?.runs ?? [], [rawData]);
+  const eloRatings = useMemo(() => rawData?.elo ?? {}, [rawData]);
+  const comparisons = useMemo(() => rawData?.comparisons ?? [], [rawData]);
+  const fieldAccuracyMap = useMemo(() => rawData?.field_accuracy ?? {}, [rawData]);
 
   const modelOptions = useMemo(
     () => ["all", ...[...new Set(runs.map((r) => r.model))].sort()],
