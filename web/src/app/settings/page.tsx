@@ -650,6 +650,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!scrapeActiveRunId) return;
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     async function poll() {
       try {
@@ -661,17 +662,21 @@ export default function SettingsPage() {
           return;
         }
       } catch { /* ignore — keep polling */ }
-      if (mounted) setTimeout(() => void poll(), 3000);
+      if (mounted) timeoutId = setTimeout(() => void poll(), 3000);
     }
 
     void poll();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   }, [scrapeActiveRunId]);
 
   // Poll enrichment status while run is active (recursive setTimeout — no overlap) (#169)
   useEffect(() => {
     if (!enrichActiveRunId) return;
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     async function poll() {
       try {
@@ -683,11 +688,14 @@ export default function SettingsPage() {
           return;
         }
       } catch { /* ignore — keep polling */ }
-      if (mounted) setTimeout(() => void poll(), 3000);
+      if (mounted) timeoutId = setTimeout(() => void poll(), 3000);
     }
 
     void poll();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   }, [enrichActiveRunId]);
 
   // Handlers
