@@ -1,0 +1,59 @@
+web/src/components/ui/confirm-dialog.tsx
+  a68d607d59944e0a 3,34,36-49,52,61-62
+pyproject.toml
+  e835fa9f119edd20 73
+src/compgraph/aggregation/pay_benchmarks.py
+  a9ffafd5a759d647 42
+  e835fa9f119edd20 9
+src/compgraph/aggregation/location_norm.py
+  e835fa9f119edd20 1-17
+src/compgraph/aggregation/coverage_gaps.py
+  e835fa9f119edd20 10,12,26-27
+  a9ffafd5a759d647 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "ce32920d2a5e7355bbb2f07aea238ca69bc4721b",
+  "prompts": {
+    "a68d607d59944e0a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "dbbd3f48-194b-45a0-a73c-c60a1c8b059f",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 3,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    },
+    "a9ffafd5a759d647": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "aa85a43c-b3e0-493d-9928-aa7bd3204bd2",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "e835fa9f119edd20": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "c896e904-33e0-46f7-8b97-b1c33d06fdf5",
+        "model": "default"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 23,
+      "total_deletions": 33,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
