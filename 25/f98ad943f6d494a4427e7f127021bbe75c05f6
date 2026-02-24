@@ -1,0 +1,312 @@
+web/playwright.config.ts
+  de17688ac03b5f57 1-15
+CLAUDE.md
+  43d454a49692b1ab 128-161,401
+  de17688ac03b5f57 382,402-404
+  bfc15aa77a1bafc9 372-373
+  39072c0d44c5a118 41-43
+  05b1e3edfa45ea80 203,213,215,275-276,278
+  68f335c7ada541c9 229-230,234-235,247-256,299
+  6b99906f96cd906f 326,330,343,347-353,358-363,365-366,413-414
+  a57fe4432df39e54 236-246
+  8744901f4c938a6d 391
+.claude/skills/deploy/SKILL.md
+  de17688ac03b5f57 41-42
+docs/references/mcp-server-capabilities.md
+  de17688ac03b5f57 1,4,11,16-18,21,197-251
+  c6dac1230474010e 2-3,5-10,12-14,19-20,22-196,252-258
+.claude/settings.json
+  de17688ac03b5f57 11-16
+  8aec1106922da70b 19-29
+docs/context-packs.md
+  7d98b2db483d6b20 362
+  8744901f4c938a6d 349
+  a10be16931c01235 344
+  43d454a49692b1ab 352-353
+  de17688ac03b5f57 360-361
+  0158602c098e622a 62,106,119,122-125,127-136,138,158-160,163-171,175,201,228,263-291,357-359,423,425,427
+  77ecc8fe9394a9e2 355-356
+  68f335c7ada541c9 331
+.claude/agents/security-reviewer.md
+  de17688ac03b5f57 1-68
+.claude/skills/merge-guardian/SKILL.md
+  de17688ac03b5f57 43
+web/src/components/charts/bar-chart.tsx
+  39072c0d44c5a118 3-4,21-22,24-30,33-45
+.claude/agents/nextjs-deploy-ops.md
+  de17688ac03b5f57 4,379-389
+  bfc15aa77a1bafc9 1-3,5-333,338,378,390-413
+.claude/skills/pre-release/SKILL.md
+  de17688ac03b5f57 1-53
+scripts/playwright-smoke.sh
+  de17688ac03b5f57 1-57
+.claude/skills/gen-test/SKILL.md
+  de17688ac03b5f57 1-70
+web/src/app/globals.css
+  39072c0d44c5a118 6-19
+docs/cheat-sheet.md
+  68f335c7ada541c9 36
+  de17688ac03b5f57 42-44
+web/src/components/charts/area-chart.tsx
+  39072c0d44c5a118 21,24-30,35
+web/src/test/components.test.tsx
+  39072c0d44c5a118 9-14,17-18,20-21,26-30,33,38-42,45-51,238-239,242,244-245,276,279,281
+.claude/agents/react-frontend-developer.md
+  de17688ac03b5f57 4,530-543
+  bfc15aa77a1bafc9 1-3,5-488,546-572
+AGENTS.md
+  de17688ac03b5f57 15-16
+  f1a659efa71aebd3 1-14,17-26
+docs/references/automation-setup.md
+  de17688ac03b5f57 1-58
+.mcp.json
+  b2063e8577d52cd9 15-19
+  5058dda422c12985 3-5,7-9,28
+  f1a659efa71aebd3 10-14
+  de17688ac03b5f57 20-27
+.claude/skills/sentry-check/SKILL.md
+  de17688ac03b5f57 1-50
+.claude/hooks/frontend-post-edit.sh
+  de17688ac03b5f57 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "25f98ad943f6d494a4427e7f127021bbe75c05f6",
+  "prompts": {
+    "0158602c098e622a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34fb8ac0-21a3-4f71-972f-5c445acf0db3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3018,
+      "total_deletions": 50,
+      "accepted_lines": 68,
+      "overriden_lines": 0
+    },
+    "05b1e3edfa45ea80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d47a75e8-4c54-4a6e-80e4-08203dab3f8d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 1,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    },
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 12,
+      "accepted_lines": 86,
+      "overriden_lines": 0
+    },
+    "43d454a49692b1ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c9ca8d83-1d35-4aa6-9f7d-fdf0fcfbe07b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 150,
+      "total_deletions": 0,
+      "accepted_lines": 37,
+      "overriden_lines": 0
+    },
+    "5058dda422c12985": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0657f91a-527d-4e62-9c91-5370382994a7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 1,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    },
+    "68f335c7ada541c9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82971f9c-5bd1-4d2e-b11f-48dc340d5c95",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 121,
+      "total_deletions": 19,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    },
+    "6b99906f96cd906f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5988e122-4bd9-4195-944a-4d713ad1ecd9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    },
+    "77ecc8fe9394a9e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc5e9811-8cae-42b8-91a1-0263a01e2e55",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "7d98b2db483d6b20": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2270662c-a4af-4102-83ab-f89b273f0118",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 94,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "8744901f4c938a6d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "287d7e89-c6f6-434d-906c-8ab12ab1db8c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 144,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "8aec1106922da70b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3630a4ad-551b-4978-80d3-96969cc27b84",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 25,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    },
+    "a10be16931c01235": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9df2c197-4a9f-4a5f-b06c-7ba9aa667b26",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1057,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "a57fe4432df39e54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "88c53a7d-c496-42ac-a4a1-7215e5a9894c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 0,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    },
+    "b2063e8577d52cd9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d3c4a5a6-2523-49c3-b829-24f8ac3fb915",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 1,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "bfc15aa77a1bafc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "689e4286-beca-460a-a111-20ff6c90670b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 991,
+      "total_deletions": 110,
+      "accepted_lines": 874,
+      "overriden_lines": 0
+    },
+    "c6dac1230474010e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6a4d8409-83eb-4bd0-8e19-32acad403228",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 333,
+      "total_deletions": 87,
+      "accepted_lines": 195,
+      "overriden_lines": 0
+    },
+    "de17688ac03b5f57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac6fc002-7a26-43f3-82af-4557d06755e9",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 517,
+      "overriden_lines": 0
+    },
+    "f1a659efa71aebd3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8d4983b7-103d-4e57-af10-5734cf8764e2",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    }
+  }
+}
