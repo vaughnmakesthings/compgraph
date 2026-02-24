@@ -31,19 +31,20 @@ export function ConfirmDialog({
   const handleClose = () => onOpenChange(false);
 
   const handleConfirm = async () => {
-    const result = onConfirm();
-    if (result && typeof result.then === "function") {
-      setConfirming(true);
-      try {
+    let isAsync = false;
+    try {
+      const result = onConfirm();
+      if (result && typeof result.then === "function") {
+        isAsync = true;
+        setConfirming(true);
         await result;
-        handleClose();
-      } catch {
-        /* Caller handles error (e.g. setFormError); close so user can see it */
-        handleClose();
-      } finally {
+      }
+    } catch (err) {
+      console.error("ConfirmDialog onConfirm failed:", err);
+    } finally {
+      if (isAsync) {
         setConfirming(false);
       }
-    } else {
       handleClose();
     }
   };
