@@ -89,6 +89,11 @@ SORT_BY_ALLOWED = frozenset(
 )
 
 
+def _escape_like(s: str) -> str:
+    """Escape SQL LIKE metacharacters (%, _) for literal matching."""
+    return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def _build_filters(
     company_id: uuid.UUID | None,
     is_active: bool | None,
@@ -106,7 +111,8 @@ def _build_filters(
     search_trimmed = search.strip() if search else ""
     needs_snapshot = bool(search_trimmed)
     if needs_snapshot:
-        filters.append(PostingSnapshot.title_raw.ilike(f"%{search_trimmed}%"))
+        escaped = _escape_like(search_trimmed)
+        filters.append(PostingSnapshot.title_raw.ilike(f"%{escaped}%", escape="\\"))
     return filters, needs_snapshot
 
 
