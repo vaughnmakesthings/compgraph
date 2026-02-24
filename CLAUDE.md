@@ -116,9 +116,8 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 **Next:** M7 — Production UI (auth, production infra, Prompt Evaluation Tool).
 
 **Do NOT build yet:**
-- arq (replace APScheduler) → M6/M7
-- LiteLLM (provider abstraction) → M7 (needs Prompt Evaluation Tool #128 first)
-- Digital Ocean production deploy → M7
+- arq (replace APScheduler) → M8 (needs Redis OPS-06 first)
+- LiteLLM (provider abstraction) → M7 Phase B (needs Prompt Evaluation Tool #128 first)
 - Prisma / second ORM → never (frontend is pure API consumer)
 - Custom JWT → never (using Supabase Auth)
 
