@@ -1,0 +1,222 @@
+.agents/skills/vercel-react-best-practices/rules/js-cache-storage.md
+  c6dac1230474010e 1-70
+.agents/skills/vercel-react-best-practices/rules/rerender-simple-expression-in-memo.md
+  c6dac1230474010e 1-35
+.agents/skills/vercel-react-best-practices/rules/client-localstorage-schema.md
+  c6dac1230474010e 1-71
+.agents/skills/vercel-react-best-practices/rules/js-combine-iterations.md
+  c6dac1230474010e 1-32
+.agents/skills/vercel-react-best-practices/rules/rerender-memo.md
+  c6dac1230474010e 1-44
+docs/UI/design-tokens.md
+  c6dac1230474010e 1-429
+.agents/skills/vercel-react-best-practices/rules/js-batch-dom-css.md
+  c6dac1230474010e 1-107
+.agents/skills/vercel-react-best-practices/rules/bundle-preload.md
+  c6dac1230474010e 1-50
+.agents/skills/vercel-react-best-practices/rules/js-cache-function-results.md
+  c6dac1230474010e 1-80
+docs/UI/compgraph-sidebar-spec.md
+  c6dac1230474010e 1-217
+.agents/skills/vercel-react-best-practices/rules/async-dependencies.md
+  c6dac1230474010e 1-51
+AGENTS.md
+  f1a659efa71aebd3 1-25
+.agents/skills/vercel-react-best-practices/rules/js-tosorted-immutable.md
+  c6dac1230474010e 1-57
+.agents/skills/vercel-react-best-practices/rules/js-hoist-regexp.md
+  c6dac1230474010e 1-45
+docs/COMPGRAPH_PROJECT_CONTEXT.md
+  c6dac1230474010e 1-348
+.agents/skills/vercel-react-best-practices/rules/server-parallel-fetching.md
+  c6dac1230474010e 1-83
+docs/plans/2026-02-22-data-quality-aggregation-plan.md
+  c6dac1230474010e 1-2238
+.agents/skills/vercel-react-best-practices/rules/server-cache-lru.md
+  c6dac1230474010e 1-41
+docs/UI/compgraph-design-handoff/compgraph-handoff/CLAUDE.md
+  c6dac1230474010e 1-72
+.agents/skills/vercel-react-best-practices/rules/rendering-animate-svg-wrapper.md
+  c6dac1230474010e 1-47
+docs/plans/2026-02-23-mockup-banner-plan.md
+  c6dac1230474010e 1-251
+.agents/skills/vercel-react-best-practices/rules/server-cache-react.md
+  c6dac1230474010e 1-76
+.agents/skills/vercel-react-best-practices/rules/bundle-barrel-imports.md
+  c6dac1230474010e 1-59
+.agents/skills/vercel-react-best-practices/rules/js-min-max-loop.md
+  c6dac1230474010e 1-82
+package-lock.json
+  c6dac1230474010e 1-4660
+.agents/skills/vercel-react-best-practices/rules/async-defer-await.md
+  c6dac1230474010e 1-80
+docs/UI/compgraph-design-handoff/compgraph-handoff/specs/component-patterns.md
+  c6dac1230474010e 1-261
+.agents/skills/vercel-react-best-practices/rules/js-set-map-lookups.md
+  c6dac1230474010e 1-24
+.agents/skills/vercel-react-best-practices/rules/advanced-event-handler-refs.md
+  c6dac1230474010e 1-55
+docs/UI/compgraph-component-spec.md
+  c6dac1230474010e 1-261
+package.json
+  c6dac1230474010e 1-5
+.agents/skills/web-design-guidelines/SKILL.md
+  c6dac1230474010e 1-39
+.agents/skills/vercel-react-best-practices/rules/rerender-memo-with-default-value.md
+  c6dac1230474010e 1-38
+.agents/skills/vercel-react-best-practices/rules/client-event-listeners.md
+  c6dac1230474010e 1-74
+.agents/skills/vercel-react-best-practices/rules/rerender-derived-state.md
+  c6dac1230474010e 1-29
+skills-lock.json
+  c6dac1230474010e 1-15
+.agents/skills/vercel-react-best-practices/README.md
+  c6dac1230474010e 1-123
+.agents/.skill-lock.json
+  c6dac1230474010e 1-15
+.agents/skills/vercel-react-best-practices/SKILL.md
+  c6dac1230474010e 1-136
+.agents/skills/vercel-react-best-practices/rules/async-api-routes.md
+  c6dac1230474010e 1-38
+.agents/skills/vercel-react-best-practices/rules/rendering-content-visibility.md
+  c6dac1230474010e 1-38
+.agents/skills/vercel-react-best-practices/rules/js-cache-property-access.md
+  c6dac1230474010e 1-28
+.agents/skills/frontend-code-review/references/code-quality.md
+  c6dac1230474010e 1-44
+.agents/skills/vercel-react-best-practices/rules/rendering-svg-precision.md
+  c6dac1230474010e 1-28
+.agents/skills/frontend-code-review/references/performance.md
+  c6dac1230474010e 1-45
+.agents/skills/vercel-react-best-practices/rules/rerender-dependencies.md
+  c6dac1230474010e 1-45
+.agents/skills/vercel-react-best-practices/rules/rendering-activity.md
+  c6dac1230474010e 1-26
+.agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md
+  c6dac1230474010e 1-74
+.agents/skills/vercel-react-best-practices/rules/server-auth-actions.md
+  c6dac1230474010e 1-96
+.agents/skills/vercel-react-best-practices/rules/rerender-transitions.md
+  c6dac1230474010e 1-40
+.agents/skills/vercel-react-best-practices/rules/advanced-use-latest.md
+  c6dac1230474010e 1-39
+.agents/skills/vercel-react-best-practices/rules/async-parallel.md
+  c6dac1230474010e 1-28
+.agents/skills/vercel-react-best-practices/rules/js-early-exit.md
+  c6dac1230474010e 1-50
+.agents/skills/frontend-code-review/SKILL.md
+  c6dac1230474010e 1-73
+.agents/skills/vercel-react-best-practices/rules/rendering-conditional-render.md
+  c6dac1230474010e 1-40
+docs/UI/compgraph-CLAUDE.md
+  c6dac1230474010e 1-72
+.agents/skills/vercel-react-best-practices/rules/async-suspense-boundaries.md
+  c6dac1230474010e 1-99
+.agents/skills/vercel-react-best-practices/rules/rendering-usetransition-loading.md
+  c6dac1230474010e 1-75
+.agents/skills/frontend-code-review/references/business-logic.md
+  c6dac1230474010e 1-15
+.agents/skills/vercel-react-best-practices/rules/bundle-conditional.md
+  c6dac1230474010e 1-31
+.agents/skills/vercel-react-best-practices/rules/rendering-hoist-jsx.md
+  c6dac1230474010e 1-46
+.agents/skills/vercel-react-best-practices/rules/server-after-nonblocking.md
+  c6dac1230474010e 1-73
+.agents/skills/vercel-react-best-practices/AGENTS.md
+  c6dac1230474010e 1-2934
+.agents/skills/vercel-react-best-practices/rules/rerender-use-ref-transient-values.md
+  c6dac1230474010e 1-73
+.claude/settings.local.json
+  c6dac1230474010e 63-66
+.cursor/settings.json
+  c6dac1230474010e 1-19
+.agents/skills/vercel-react-best-practices/rules/rerender-derived-state-no-effect.md
+  c6dac1230474010e 1-40
+.gitignore
+  c6dac1230474010e 50-52
+docs/UI/compgraph-design-handoff/compgraph-handoff/design-system/reference.html
+  c6dac1230474010e 1-2547
+.agents/skills/vercel-react-best-practices/rules/rendering-hydration-no-flicker.md
+  c6dac1230474010e 1-82
+.agents/skills/vercel-react-best-practices/rules/bundle-defer-third-party.md
+  c6dac1230474010e 1-49
+.agents/skills/vercel-react-best-practices/rules/client-swr-dedup.md
+  c6dac1230474010e 1-56
+.agents/skills/vercel-react-best-practices/rules/js-length-check-first.md
+  c6dac1230474010e 1-49
+.agents/skills/vercel-react-best-practices/rules/rendering-hydration-suppress-warning.md
+  c6dac1230474010e 1-30
+.agents/skills/vercel-react-best-practices/rules/advanced-init-once.md
+  c6dac1230474010e 1-42
+docs/UI/compgraph-design-handoff/compgraph-handoff/design-system/theme.css
+  c6dac1230474010e 1-197
+docs/UI/compgraph-design-handoff/compgraph-handoff/design-system/tokens.md
+  c6dac1230474010e 1-429
+.agents/skills/vercel-react-best-practices/rules/bundle-dynamic-imports.md
+  c6dac1230474010e 1-35
+.agents/skills/vercel-react-best-practices/rules/server-dedup-props.md
+  c6dac1230474010e 1-65
+.agents/skills/vercel-react-best-practices/rules/client-passive-event-listeners.md
+  c6dac1230474010e 1-48
+.agents/skills/vercel-react-best-practices/rules/rerender-move-effect-to-event.md
+  c6dac1230474010e 1-45
+.agents/skills/vercel-react-best-practices/rules/js-index-maps.md
+  c6dac1230474010e 1-37
+docs/UI/compgraph-design-system.html
+  c6dac1230474010e 1-2547
+docs/plans/2026-02-22-eval-dashboard-brand-rebrand.md
+  c6dac1230474010e 1-683
+docs/reports/2026-02-22c-docs-audit.md
+  c6dac1230474010e 1-189
+.agents/skills/vercel-react-best-practices/rules/rerender-defer-reads.md
+  c6dac1230474010e 1-39
+.agents/skills/vercel-react-best-practices/rules/rerender-lazy-state-init.md
+  c6dac1230474010e 1-58
+.agents/skills/vercel-react-best-practices/rules/server-serialization.md
+  c6dac1230474010e 1-38
+docs/UI/compgraph-design-handoff/compgraph-handoff/README.md
+  c6dac1230474010e 1-43
+docs/UI/compgraph-theme.css
+  c6dac1230474010e 1-197
+docs/UI/compgraph-design-handoff/compgraph-handoff/specs/sidebar-navigation.md
+  c6dac1230474010e 1-217
+docs/UI/frontend-handoff.md
+  c6dac1230474010e 1-299
+docs/plans/2026-02-22-m4-infra-fixes.md
+  c6dac1230474010e 1-585
+docs/references/mcp-server-capabilities.md
+  c6dac1230474010e 1-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "31b72ac0253fd514e4298f6ab284b173400de33c",
+  "prompts": {
+    "c6dac1230474010e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6a4d8409-83eb-4bd0-8e19-32acad403228",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 23424,
+      "total_deletions": 1,
+      "accepted_lines": 23424,
+      "overriden_lines": 0
+    },
+    "f1a659efa71aebd3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8d4983b7-103d-4e57-af10-5734cf8764e2",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
