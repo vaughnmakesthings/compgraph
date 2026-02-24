@@ -1,0 +1,80 @@
+web/playwright.config.ts
+  de17688ac03b5f57 1-15
+CLAUDE.md
+  de17688ac03b5f57 382,402-404
+.claude/settings.json
+  de17688ac03b5f57 11-16
+web/src/components/charts/bar-chart.tsx
+  39072c0d44c5a118 21,24-30,35
+.claude/agents/react-frontend-developer.md
+  de17688ac03b5f57 4,530-543
+docs/references/automation-setup.md
+  de17688ac03b5f57 1-58
+.claude/hooks/frontend-post-edit.sh
+  de17688ac03b5f57 1-29
+web/src/components/charts/area-chart.tsx
+  39072c0d44c5a118 21,24-30,35
+.claude/skills/pre-release/SKILL.md
+  de17688ac03b5f57 1-53
+web/src/test/components.test.tsx
+  39072c0d44c5a118 238-239,242,244-245,276,279,281
+.mcp.json
+  de17688ac03b5f57 20-27
+AGENTS.md
+  de17688ac03b5f57 15-16
+docs/cheat-sheet.md
+  de17688ac03b5f57 42-44
+.claude/skills/gen-test/SKILL.md
+  de17688ac03b5f57 1-70
+.claude/agents/security-reviewer.md
+  de17688ac03b5f57 1-68
+.claude/skills/sentry-check/SKILL.md
+  de17688ac03b5f57 1-50
+scripts/playwright-smoke.sh
+  de17688ac03b5f57 1-57
+docs/context-packs.md
+  de17688ac03b5f57 360-361
+web/src/app/globals.css
+  39072c0d44c5a118 6-19
+.claude/skills/deploy/SKILL.md
+  de17688ac03b5f57 41-42
+docs/references/mcp-server-capabilities.md
+  de17688ac03b5f57 1,4,11,16-18,21,197-251
+.claude/skills/merge-guardian/SKILL.md
+  de17688ac03b5f57 43
+.claude/agents/nextjs-deploy-ops.md
+  de17688ac03b5f57 4,379-389
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "1ed124ddc1aee1f0047044e0b440938f74f5b441",
+  "prompts": {
+    "39072c0d44c5a118": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "004da057-6946-4089-a317-6b1bab4f55d3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 12,
+      "accepted_lines": 42,
+      "overriden_lines": 0
+    },
+    "de17688ac03b5f57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac6fc002-7a26-43f3-82af-4557d06755e9",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 517,
+      "overriden_lines": 0
+    }
+  }
+}
