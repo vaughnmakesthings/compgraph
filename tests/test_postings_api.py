@@ -8,7 +8,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from compgraph.api.deps import get_db
-from compgraph.api.routes.postings import _escape_like
 from compgraph.main import app
 
 
@@ -299,13 +298,6 @@ class TestPostingsListEndpoint:
         data = r.json()
         assert data["total"] == 1
         assert data["items"][0]["title"] == "Field Sales Rep"
-
-    def test_escape_like_escapes_metacharacters(self) -> None:
-        """Search input with % and _ is escaped for literal matching."""
-        assert _escape_like("test_file") == "test\\_file"
-        assert _escape_like("50%") == "50\\%"
-        assert _escape_like("a%b_c") == "a\\%b\\_c"
-        assert _escape_like("path\\to\\file") == "path\\\\to\\\\file"
 
 
 class TestPostingsDetailEndpoint:

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Select, SelectItem } from "@tremor/react";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
@@ -18,21 +18,6 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "pay_asc", label: "Pay Low–High" },
   { value: "title_asc", label: "Title A–Z" },
 ];
-
-/** Canonical role archetypes from enrichment schema — used for filter dropdown (not derived from current page). */
-const ROLE_ARCHETYPES = [
-  "field_rep",
-  "merchandiser",
-  "brand_ambassador",
-  "demo_specialist",
-  "team_lead",
-  "manager",
-  "recruiter",
-  "corporate",
-  "other",
-] as const;
-
-const ALL_VALUE = " ";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -99,10 +84,9 @@ export default function HiringPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset to page 1 and clear error when filters change
+  // Reset to page 1 when filters change
   useEffect(() => {
     setOffset(0);
-    setError(null);
   }, [companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
 
   // All companies fetched once on mount — not derived from current page (#173)
@@ -149,6 +133,14 @@ export default function HiringPage() {
       cancelled = true;
     };
   }, [offset, companyFilter, statusFilter, roleFilter, sortBy, searchDebounced]);
+
+  const uniqueRoles = useMemo(() => {
+    const roles = new Set<string>();
+    for (const item of items) {
+      if (item.role_archetype) roles.add(item.role_archetype);
+    }
+    return [...roles].sort();
+  }, [items]);
 
   const hasActiveFilters =
     companyFilter !== "" ||
@@ -237,13 +229,13 @@ export default function HiringPage() {
         </label>
         <Select
           id="filter-company"
-          value={companyFilter || ALL_VALUE}
-          onValueChange={(v) => setCompanyFilter(v === ALL_VALUE ? "" : v)}
+          value={companyFilter || " "}
+          onValueChange={(v) => setCompanyFilter(v === " " ? "" : v)}
           placeholder="All Companies"
           enableClear={false}
           className={filterSelectClass}
         >
-          <SelectItem value={ALL_VALUE}>All Companies</SelectItem>
+          <SelectItem value=" ">All Companies</SelectItem>
           {allCompanies.map(({ id, name }) => (
             <SelectItem key={id} value={id}>
               {name}
@@ -267,25 +259,21 @@ export default function HiringPage() {
         </label>
         <Select
           id="filter-role"
-          value={roleFilter || ALL_VALUE}
-          onValueChange={(v) => setRoleFilter(v === ALL_VALUE ? "" : v)}
+          value={roleFilter || " "}
+          onValueChange={(v) => setRoleFilter(v === " " ? "" : v)}
           placeholder="All Roles"
           enableClear={false}
           className={filterSelectClass}
         >
-          <SelectItem value={ALL_VALUE}>All Roles</SelectItem>
-          {ROLE_ARCHETYPES.map((role) => (
+          <SelectItem value=" ">All Roles</SelectItem>
+          {uniqueRoles.map((role) => (
             <SelectItem key={role} value={role}>
               {formatRoleArchetype(role)}
             </SelectItem>
           ))}
         </Select>
 
-        <label htmlFor="filter-sort" className="sr-only">
-          Sort by
-        </label>
         <Select
-          id="filter-sort"
           value={sortBy}
           onValueChange={(v) => setSortBy(v || "first_seen_desc")}
           placeholder="Sort By"
@@ -299,7 +287,7 @@ export default function HiringPage() {
         </Select>
       </div>
 
-      {hasActiveFilters && (
+      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
         <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
           {companyFilter && (
             <span
@@ -418,26 +406,18 @@ export default function HiringPage() {
       )}
 
       <div
-        className="rounded-lg border overflow-x-auto overflow-y-hidden"
+        className="rounded-lg border overflow-hidden"
         style={{ borderColor: "#BFC0C0", backgroundColor: "#FFFFFF" }}
       >
-        <table className="w-full text-sm min-w-[600px]">
+        <table className="w-full text-sm">
           <thead>
-            <tr>
+            <tr style={{ backgroundColor: "#E8E8E4" }}>
               {["Title", "Company", "Location", "Role", "Pay Range", "Status"].map(
                 (col) => (
                   <th
                     key={col}
-                    scope="col"
-                    className="text-left px-4 py-2"
-                    style={{
-                      color: "rgba(79,93,117,0.5)",
-                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                    }}
+                    className="text-left px-4 py-2 font-semibold"
+                    style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
                   >
                     {col}
                   </th>
@@ -511,7 +491,7 @@ export default function HiringPage() {
                       <span
                         style={{
                           fontSize: "11px",
-                          color: "var(--color-muted-foreground)",
+                          color: "#8A8F98",
                           fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                         }}
                       >
