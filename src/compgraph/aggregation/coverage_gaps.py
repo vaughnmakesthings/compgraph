@@ -16,22 +16,48 @@ WITH latest_snapshots AS (
     FROM posting_snapshots ps
     ORDER BY ps.posting_id, ps.snapshot_date DESC
 ),
+-- Normalize location_raw to match seed_location_mappings (normalize_location_raw logic)
+-- Strip: ", US"/", CA" suffix, ZIP codes, company suffixes (e.g. "- 2020 Companies")
+normalized_locations AS (
+    SELECT
+        ls.posting_id,
+        ls.location_raw,
+        LOWER(TRIM(INITCAP(TRIM(SPLIT_PART(
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    REGEXP_REPLACE(
+                        REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
+                        '\\s+\\d{5}(-\\d{4})?', '', 'g'),
+                    '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|'
+                    'marketsource|t-roc|mosaic sales solutions|advantage solutions|acosta)'
+                    '\\s*$', '', 'i'),
+                '\\s+', ' ', 'g'),
+            ',', 1)))) AS city_normalized,
+        UPPER(TRIM(SPLIT_PART(TRIM(SPLIT_PART(
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    REGEXP_REPLACE(
+                        REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
+                        '\\s+\\d{5}(-\\d{4})?', '', 'g'),
+                    '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|'
+                    'marketsource|t-roc|mosaic sales solutions|advantage solutions|acosta)'
+                    '\\s*$', '', 'i'),
+                '\\s+', ' ', 'g'),
+            ',', 2)), ' ', 1))) AS state
+    FROM latest_snapshots ls
+    WHERE ls.location_raw IS NOT NULL
+      AND ls.location_raw LIKE '%,%'
+),
 posting_markets AS (
     SELECT
         p.id AS posting_id,
         p.company_id,
         m.id AS market_id
     FROM postings p
-    JOIN latest_snapshots ls ON ls.posting_id = p.id
+    JOIN normalized_locations nl ON nl.posting_id = p.id
     JOIN location_mappings lm
-        ON ls.location_raw IS NOT NULL
-        AND LOWER(TRIM(
-            SPLIT_PART(ls.location_raw, ',', 1)
-        )) = LOWER(lm.city_normalized)
-        AND LOWER(TRIM(SPLIT_PART(
-            TRIM(SPLIT_PART(ls.location_raw, ',', 2)),
-            ' ', 1
-        ))) = LOWER(lm.state)
+        ON nl.city_normalized = LOWER(lm.city_normalized)
+        AND nl.state = lm.state
     JOIN markets m
         ON LOWER(m.name) = LOWER(lm.metro_name)
         AND LOWER(COALESCE(m.state, '')) = LOWER(lm.metro_state)

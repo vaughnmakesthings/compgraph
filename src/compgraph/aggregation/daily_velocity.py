@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
 
+# Company-level only. brand_id/market_id are intentionally NULL — breakdown by brand/market
+# would require extending the query to join posting_brand_mentions and location_mappings.
 _QUERY = """
 WITH active_by_date AS (
     SELECT

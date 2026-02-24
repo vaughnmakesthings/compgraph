@@ -7,11 +7,56 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
 
-_QUERY = """
+# Location normalization (matches coverage_gaps / seed_location_mappings)
+_LOC_NORM_SQL = """REGEXP_REPLACE(
+    REGEXP_REPLACE(
+        REGEXP_REPLACE(
+            REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
+            '\\s+\\d{5}(-\\d{4})?', '', 'g'),
+        '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|marketsource|'
+        't-roc|mosaic sales solutions|advantage solutions|acosta)\\s*$', '', 'i'),
+    '\\s+', ' ', 'g')"""
+
+_QUERY = f"""
+WITH latest_enrichment AS (
+    SELECT DISTINCT ON (posting_id)
+        posting_id,
+        id AS enrichment_id
+    FROM posting_enrichments
+    ORDER BY posting_id, enriched_at DESC NULLS LAST
+),
+latest_snapshots AS (
+    SELECT DISTINCT ON (posting_id)
+        posting_id,
+        location_raw
+    FROM posting_snapshots
+    ORDER BY posting_id, snapshot_date DESC
+),
+normalized_locations AS (
+    SELECT
+        ls.posting_id,
+        LOWER(TRIM(INITCAP(TRIM(SPLIT_PART({_LOC_NORM_SQL}, ',', 1))))) AS city_normalized,
+        UPPER(TRIM(SPLIT_PART(TRIM(SPLIT_PART({_LOC_NORM_SQL}, ',', 2)), ' ', 1))) AS state
+    FROM latest_snapshots ls
+    WHERE ls.location_raw IS NOT NULL
+      AND ls.location_raw LIKE '%,%'
+),
+posting_markets AS (
+    SELECT
+        nl.posting_id,
+        m.id AS market_id
+    FROM normalized_locations nl
+    JOIN location_mappings lm
+        ON nl.city_normalized = LOWER(lm.city_normalized)
+        AND nl.state = lm.state
+    JOIN markets m
+        ON LOWER(m.name) = LOWER(lm.metro_name)
+        AND LOWER(COALESCE(m.state, '')) = LOWER(lm.metro_state)
+)
 SELECT
     p.company_id,
     pe.role_archetype,
-    pe.market_id,
+    COALESCE(pe.market_id, pm.market_id) AS market_id,
     pe.brand_id,
     DATE_TRUNC('month', p.first_seen_at)::date AS period,
     AVG(pe.pay_min) AS avg_pay_min,
@@ -20,10 +65,12 @@ SELECT
     PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY pe.pay_max) AS median_pay_max,
     COUNT(*) AS sample_size
 FROM postings p
-JOIN posting_enrichments pe ON pe.posting_id = p.id
+JOIN latest_enrichment le ON le.posting_id = p.id
+JOIN posting_enrichments pe ON pe.id = le.enrichment_id
+LEFT JOIN posting_markets pm ON pm.posting_id = p.id
 WHERE pe.pay_min IS NOT NULL
   AND pe.pay_max IS NOT NULL
-GROUP BY p.company_id, pe.role_archetype, pe.market_id, pe.brand_id,
+GROUP BY p.company_id, pe.role_archetype, COALESCE(pe.market_id, pm.market_id), pe.brand_id,
          DATE_TRUNC('month', p.first_seen_at)
 HAVING COUNT(*) >= 3
 ORDER BY p.company_id, pe.role_archetype, period
