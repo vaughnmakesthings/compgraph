@@ -428,6 +428,9 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/pre-release` — run full verification before deploy/merge (lint, typecheck, test, build)
 - `/gen-test` — generate Vitest tests following CompGraph patterns
 - `/sentry-check` — check Sentry for unresolved critical issues (pre/post deploy)
+- `/frontend-code-review` — review frontend files against checklist
+- `/vercel-react-best-practices` — React/Next.js performance optimization guidelines
+- `/web-design-guidelines` — Web Interface Guidelines compliance audit
 
 ## Code Standards
 

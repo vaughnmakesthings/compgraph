@@ -66,17 +66,16 @@ Triggers automatically via `workflow_run` after CI succeeds on `main`:
 - `DEPLOY_SSH_KEY` — ED25519 private key for `root@165.232.128.28`
 - `DEPLOY_SSH_KNOWN_HOSTS` — Server host key fingerprint
 
-### Frontend CD (Vercel via CD workflow)
+### Frontend CD (Vercel GitHub App)
 
-Vercel deploys the Next.js frontend via the CD workflow after CI passes on `main`:
+Vercel deploys the Next.js frontend automatically via its GitHub App integration:
 
-1. CI succeeds on push to `main` → CD workflow triggers
-2. `npx vercel deploy --prod` runs in `web/`
-3. Built output deployed to Vercel's CDN edge network
-4. API calls from the frontend are rewritten: `/api/*` → `https://dev.compgraph.io/api/*` (via `web/vercel.json`)
+1. Push to `main` → Vercel detects changes in `web/`
+2. Vercel builds and deploys to its CDN edge network
+3. API calls rewritten: `/api/*` → `https://dev.compgraph.io/api/*` (via `web/vercel.json`)
 
+**No workflow file or GitHub secrets needed** — Vercel manages the integration directly.
 **Env vars (Vercel dashboard):** `NEXT_PUBLIC_API_URL=https://dev.compgraph.io`
-**Secrets (GitHub):** `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 
 ## Local Pre-Commit (via hooks)
 

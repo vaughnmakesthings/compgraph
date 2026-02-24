@@ -42,7 +42,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ## Current State (2026-02-24)
 
-**M6 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy. Backend: 703 tests, 82% coverage. Frontend: 164 tests, 52% coverage.
+**M6 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy. Backend: 703 tests, 82% coverage. Frontend: 174 tests, 52% coverage.
 
 **M7 roadmap approved.** See `docs/plans/m7-implementation-roadmap.md` for the authoritative implementation plan with 5 phases, dependency graph, and sprint sequencing.
 
@@ -132,7 +132,7 @@ Goal: Production-grade frontend, data quality, and operational reliability.
 | Vercel deployment | compgraph.vercel.app, API proxy via vercel.json rewrite | Done |
 | Pipeline controls UI | Trigger/pause/resume/stop scrape, enrichment status, scheduler controls | Done (PR #167) |
 | Data quality fixes | Latest-enrichment CTE, brand dedup, coverage gaps alignment | Done |
-| Frontend tests | 164 tests, 52.3% coverage | Done |
+| Frontend tests | 174 tests, 52.3% coverage | Done |
 | Backend tests | 703 tests, 82.27% coverage | Done |
 | Eval tool scaffold | 5 pages (Runs, Review, Accuracy, Leaderboard, Prompt Diff) + 5 Postgres models | Done (PR #161) |
 | Deployment security | deploy-ci.sh hardening, password encoding, sudo env quoting | Done |
