@@ -1,0 +1,23 @@
+docs/sprints/m7-sprint1-context.md
+  d29b5ddd9700e1d5 1-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a9d3821bccc2034c38df9ac9e95185b989aa20a8",
+  "prompts": {
+    "d29b5ddd9700e1d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34a0292b-959c-436e-bdd2-704e509ba166",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 118,
+      "total_deletions": 0,
+      "accepted_lines": 118,
+      "overriden_lines": 0
+    }
+  }
+}
