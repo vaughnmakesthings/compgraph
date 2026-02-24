@@ -51,7 +51,7 @@ fi
 
 # Run smoke tests (headless)
 export NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://dev.compgraph.io}"
-npx playwright test tests/smoke.spec.ts --project=chromium 2>/dev/null || {
+npx playwright test tests/smoke.spec.ts --project=chromium || {
     echo "Playwright smoke failed. Run: bash scripts/playwright-smoke.sh --install"
     exit 1
 }
