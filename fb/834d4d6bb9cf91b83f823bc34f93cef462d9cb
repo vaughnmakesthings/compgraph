@@ -1,0 +1,43 @@
+docs/references/rls-aggregation-patterns.md
+  5274a302ba4c75fc 1-198
+docs/references/jsonb-deep-diffing.md
+  5274a302ba4c75fc 1-312
+docs/references/sqlalchemy-multi-role-sessions.md
+  5274a302ba4c75fc 1-262
+docs/references/http-308-redirect-handling.md
+  5274a302ba4c75fc 1-247
+docs/references/httpx-proxy-rotation.md
+  5274a302ba4c75fc 1-199
+docs/references/high-speed-labeling-ux.md
+  5274a302ba4c75fc 1-196
+docs/references/vercel-do-timeout-patterns.md
+  5274a302ba4c75fc 1-329
+docs/references/skeleton-loader-accessibility.md
+  5274a302ba4c75fc 1-378
+docs/context-packs.md
+  5274a302ba4c75fc 447-456
+docs/references/litellm-openrouter-resilience.md
+  5274a302ba4c75fc 1-235
+docs/references/llm-schema-repair-patterns.md
+  5274a302ba4c75fc 1-204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "fb834d4d6bb9cf91b83f823bc34f93cef462d9cb",
+  "prompts": {
+    "5274a302ba4c75fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5356f9a7-031d-41e6-96d6-f98c3c47dcb1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2570,
+      "total_deletions": 0,
+      "accepted_lines": 2570,
+      "overriden_lines": 0
+    }
+  }
+}
