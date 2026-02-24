@@ -287,7 +287,7 @@ When running commands on the dev server via SSH:
 - **NEVER merge to main without explicit user approval.** Poll the user, don't assume.
 - **NEVER leave unactioned code review feedback before merge.** Fix, defer to issue, or explicitly reject with rationale.
 - Never merge a PR until ALL CI checks pass. Poll `gh pr checks <number>` if unsure.
-- 5 review bots active on PRs: CodeRabbit, Gemini, Cursor, Copilot, AND Cubic. Wait for all before merging.
+- 5 review bots active on PRs: CodeRabbit, Gemini (label-gated), Cursor, Copilot, AND Cubic. Wait for all that were triggered before merging.
 - **Draft PRs**: Use `gh pr create --draft` during active iteration. CodeRabbit skips drafts. Gemini is label-gated (`gemini-review` label required). Convert with `gh pr ready` when done iterating.
 - **Gemini reviews**: Label-gated — add `gemini-review` label to trigger. Does not auto-review on PR open.
 - Git hooks: pre-commit (ruff check+format+mypy), pre-push (pytest). Install via `bash scripts/setup-hooks.sh`.
