@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { KpiCard } from "@/components/data/kpi-card";
 import { AreaChart } from "@/components/charts/area-chart";
+import { SkeletonBox } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import type { DailyVelocity, CoverageGap } from "@/lib/types";
 
@@ -22,15 +23,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SkeletonBox({ className }: { className?: string }) {
-  return (
-    <div
-      className={className}
-      style={{ backgroundColor: "#E8E8E4", borderRadius: "var(--radius-lg, 8px)" }}
-      aria-hidden="true"
-    />
-  );
-}
 
 export default function MarketPage() {
   const [data, setData] = useState<MarketData | null>(null);
@@ -218,16 +210,30 @@ export default function MarketPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ backgroundColor: "#E8E8E4" }}>
+                <tr>
                   <th
-                    className="text-left px-4 py-2 font-semibold"
-                    style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
+                    className="text-left px-4 py-2"
+                    style={{
+                      color: "rgba(79,93,117,0.5)",
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
                   >
                     Market
                   </th>
                   <th
-                    className="text-left px-4 py-2 font-semibold"
-                    style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
+                    className="text-left px-4 py-2"
+                    style={{
+                      color: "rgba(79,93,117,0.5)",
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
                   >
                     Missing Companies
                   </th>

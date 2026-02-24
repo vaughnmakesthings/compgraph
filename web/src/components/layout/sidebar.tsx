@@ -11,7 +11,7 @@ import {
   BriefcaseIcon,
   BeakerIcon,
   Cog6ToothIcon,
-  ChevronDownIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 
 interface NavChild {
@@ -34,74 +34,90 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   href: string;
-  /** Flat sub-items rendered without a category header */
   children?: NavChild[];
-  /** Grouped sub-items rendered with collapsible category headers */
   categories?: NavCategory[];
 }
 
-const NAV_ITEMS: NavItem[] = [
+interface NavSection {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: HomeIcon,
-    href: "/",
-  },
-  {
-    id: "competitors",
-    label: "Competitors",
-    icon: BuildingOfficeIcon,
-    href: "/competitors",
-    children: [
-      { id: "troc", label: "T-ROC", href: "/competitors/troc" },
-      { id: "bds", label: "BDS Connected Solutions", href: "/competitors/bds" },
-      { id: "marketsource", label: "MarketSource", href: "/competitors/marketsource" },
-      { id: "osl", label: "OSL Retail Services", href: "/competitors/osl" },
-      { id: "2020", label: "2020 Companies", href: "/competitors/2020" },
-    ],
-  },
-  {
-    id: "prospects",
-    label: "Prospects",
-    icon: BuildingStorefrontIcon,
-    href: "/prospects",
-  },
-  {
-    id: "market",
-    label: "Market Overview",
-    icon: ChartBarIcon,
-    href: "/market",
-  },
-  {
-    id: "hiring",
-    label: "Job Feed",
-    icon: BriefcaseIcon,
-    href: "/hiring",
-  },
-  {
-    id: "eval",
-    label: "Prompt Evaluation Tool",
-    icon: BeakerIcon,
-    href: "/eval",
-    categories: [
+    id: "intelligence",
+    label: "INTELLIGENCE",
+    items: [
       {
-        id: "eval-pages",
-        label: "Evaluation",
+        id: "dashboard",
+        label: "Dashboard",
+        icon: HomeIcon,
+        href: "/",
+      },
+      {
+        id: "competitors",
+        label: "Competitors",
+        icon: BuildingOfficeIcon,
+        href: "/competitors",
         children: [
-          { id: "runs", label: "Runs", href: "/eval/runs" },
-          { id: "review", label: "Review", href: "/eval/review" },
-          { id: "accuracy", label: "Accuracy", href: "/eval/accuracy" },
-          { id: "leaderboard", label: "Leaderboard", href: "/eval/leaderboard" },
-          { id: "prompt-diff", label: "Run Diff", href: "/eval/prompt-diff" },
+          { id: "troc", label: "T-ROC", href: "/competitors/troc" },
+          { id: "bds", label: "BDS Connected Solutions", href: "/competitors/bds" },
+          { id: "marketsource", label: "MarketSource", href: "/competitors/marketsource" },
+          { id: "osl", label: "OSL Retail Services", href: "/competitors/osl" },
+          { id: "2020", label: "2020 Companies", href: "/competitors/2020" },
         ],
+      },
+      {
+        id: "prospects",
+        label: "Prospects",
+        icon: BuildingStorefrontIcon,
+        href: "/prospects",
+      },
+      {
+        id: "market",
+        label: "Market Overview",
+        icon: ChartBarIcon,
+        href: "/market",
+      },
+      {
+        id: "hiring",
+        label: "Job Feed",
+        icon: BriefcaseIcon,
+        href: "/hiring",
       },
     ],
   },
   {
-    id: "settings",
-    label: "Settings",
-    icon: Cog6ToothIcon,
-    href: "/settings",
+    id: "system",
+    label: "SYSTEM",
+    items: [
+      {
+        id: "eval",
+        label: "Prompt Evaluation Tool",
+        icon: BeakerIcon,
+        href: "/eval",
+        categories: [
+          {
+            id: "eval-pages",
+            label: "Evaluation",
+            children: [
+              { id: "runs", label: "Runs", href: "/eval/runs" },
+              { id: "review", label: "Review", href: "/eval/review" },
+              { id: "accuracy", label: "Accuracy", href: "/eval/accuracy" },
+              { id: "leaderboard", label: "Leaderboard", href: "/eval/leaderboard" },
+              { id: "prompt-diff", label: "Run Diff", href: "/eval/prompt-diff" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "settings",
+        label: "Settings",
+        icon: Cog6ToothIcon,
+        href: "/settings",
+      },
+    ],
   },
 ];
 
@@ -127,13 +143,15 @@ function writeStoredState(state: Record<string, boolean>): void {
 
 function buildDefaultExpanded(): Record<string, boolean> {
   const defaults: Record<string, boolean> = {};
-  for (const item of NAV_ITEMS) {
-    const hasSubItems =
-      (item.children?.length ?? 0) > 0 || (item.categories?.length ?? 0) > 0;
-    if (hasSubItems) {
-      defaults[item.id] = true;
-      for (const cat of item.categories ?? []) {
-        defaults[`${item.id}-${cat.id}`] = true;
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      const hasSubItems =
+        (item.children?.length ?? 0) > 0 || (item.categories?.length ?? 0) > 0;
+      if (hasSubItems) {
+        defaults[item.id] = true;
+        for (const cat of item.categories ?? []) {
+          defaults[`${item.id}-${cat.id}`] = true;
+        }
       }
     }
   }
@@ -168,16 +186,22 @@ function Tier2Item({ item, isActive }: Tier2ItemProps) {
   return (
     <Link
       href={item.href}
-      className="flex items-center gap-2 rounded-[4px] py-1.5 pl-9 pr-3 text-sm transition-colors duration-150"
+      className="flex items-center gap-2 rounded-[4px] py-1.5 pr-3 text-sm transition-colors duration-150"
       style={{
+        paddingLeft: "68px",
         color: isActive ? "#EF8354" : "rgba(255,255,255,0.6)",
         backgroundColor: isActive ? "rgba(239,131,84,0.08)" : "transparent",
       }}
       aria-current={isActive ? "page" : undefined}
     >
       <span
-        className="shrink-0 h-1.5 w-1.5 rounded-full"
-        style={{ backgroundColor: item.color ?? "#EF8354" }}
+        className="shrink-0 rounded-full"
+        style={{
+          width: "7px",
+          height: "7px",
+          backgroundColor: item.color ?? "#EF8354",
+          boxShadow: isActive ? `0 0 4px ${item.color ?? "#EF8354"}` : "none",
+        }}
         aria-hidden="true"
       />
       <span className="flex-1 truncate">{item.label}</span>
@@ -209,23 +233,26 @@ function Tier1Category({
       <button
         type="button"
         onClick={() => onToggle(key)}
-        className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pl-9 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
-        style={{ color: "rgba(255,255,255,0.45)" }}
+        className="flex w-full items-center gap-2 rounded-[4px] py-1.5 pr-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-150"
+        style={{
+          paddingLeft: "52px",
+          color: "rgba(255,255,255,0.45)",
+        }}
         aria-expanded={isExpanded}
         aria-controls={`nav-tier2-${category.id}`}
       >
         {hasActiveChild && (
           <span
-            className="shrink-0 h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: "#EF8354" }}
+            className="shrink-0 rounded-full"
+            style={{ width: "7px", height: "7px", backgroundColor: "#EF8354" }}
             aria-hidden="true"
           />
         )}
         <span className="flex-1 truncate">{category.label}</span>
         {category.count !== undefined && <CountBadge count={category.count} />}
-        <ChevronDownIcon
+        <ChevronRightIcon
           className="h-3 w-3 shrink-0 transition-transform duration-150"
-          style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+          style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
           aria-hidden="true"
         />
       </button>
@@ -270,14 +297,13 @@ function Tier0Item({
   const activeBg = isActive ? "rgba(255,255,255,0.07)" : "transparent";
 
   if (hasSubItems) {
-    // Split layout: Link navigates, chevron button toggles expand
     return (
       <div>
         <div
           className="relative flex w-full items-center rounded-[4px] transition-colors duration-150 hover:bg-[#3D4357]"
           style={{ color: activeColor, backgroundColor: activeBg }}
         >
-          {/* Active indicator */}
+          {/* Active indicator bar */}
           <span
             className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-[3px] transition-opacity duration-150"
             style={{
@@ -312,9 +338,9 @@ function Tier0Item({
             aria-controls={`nav-sub-${item.id}`}
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label}`}
           >
-            <ChevronDownIcon
+            <ChevronRightIcon
               className="h-4 w-4 shrink-0 transition-transform duration-150"
-              style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+              style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
               aria-hidden="true"
             />
           </button>
@@ -322,9 +348,25 @@ function Tier0Item({
 
         {isExpanded && (
           <div id={`nav-sub-${item.id}`} className="mt-0.5">
-            {/* Flat children (no category header) */}
+            {/* Flat children — competitors companies */}
             {item.children && item.children.length > 0 && (
               <div className="space-y-0.5">
+                {/* Sub-group label */}
+                <div
+                  style={{
+                    paddingLeft: "52px",
+                    paddingTop: "8px",
+                    paddingBottom: "4px",
+                    fontSize: "10px",
+                    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "rgba(191,192,192,0.45)",
+                  }}
+                >
+                  Companies
+                </div>
                 {item.children.map((child) => (
                   <Tier2Item
                     key={child.id}
@@ -332,6 +374,21 @@ function Tier0Item({
                     isActive={pathname === child.href}
                   />
                 ))}
+                {/* View All link */}
+                <Link
+                  href={item.href}
+                  className="block transition-colors duration-150 hover:underline"
+                  style={{
+                    paddingLeft: "68px",
+                    paddingTop: "6px",
+                    paddingBottom: "10px",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                    color: "rgba(191,192,192,0.5)",
+                  }}
+                >
+                  View All Competitors →
+                </Link>
               </div>
             )}
 
@@ -380,13 +437,31 @@ function Tier0Item({
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: "14px 20px 6px",
+        fontSize: "11px",
+        fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        color: "rgba(191,192,192,0.5)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>(
     buildDefaultExpanded
   );
 
-  // Apply persisted state after mount (client-only — avoids SSR hydration mismatch)
+  // Apply persisted state after mount
   useEffect(() => {
     const stored = readStoredState();
     if (Object.keys(stored).length > 0) {
@@ -404,28 +479,83 @@ export function Sidebar() {
 
   return (
     <nav
-      className="flex h-full w-[280px] shrink-0 flex-col overflow-y-auto py-4"
+      className="flex h-full w-[280px] shrink-0 flex-col overflow-y-auto"
       style={{ backgroundColor: "#2D3142" }}
       aria-label="Main navigation"
     >
-      <div className="space-y-0.5 px-2">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
-          return (
-            <Tier0Item
-              key={item.id}
-              item={item}
-              isActive={isActive}
-              isExpanded={expandedKeys[item.id] ?? true}
-              onToggle={handleToggle}
-              expandedKeys={expandedKeys}
-              pathname={pathname}
-            />
-          );
-        })}
+      {/* Logo block */}
+      <div
+        style={{
+          padding: "20px 20px 18px",
+          borderBottom: "1px solid rgba(79,93,117,0.4)",
+          marginBottom: "8px",
+          flexShrink: 0,
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              backgroundColor: "#EF8354",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--font-display, 'Sora Variable', sans-serif)",
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#FFFFFF",
+                lineHeight: 1,
+              }}
+            >
+              CG
+            </span>
+          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-display, 'Sora Variable', sans-serif)",
+              fontSize: "17px",
+              fontWeight: 600,
+              color: "#FFFFFF",
+            }}
+          >
+            CompGraph
+          </span>
+        </div>
+      </div>
+
+      {/* Nav sections */}
+      <div className="flex-1 px-2 pb-4">
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.id}>
+            <SectionLabel>{section.label}</SectionLabel>
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const isActive =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname.startsWith(item.href);
+                return (
+                  <Tier0Item
+                    key={item.id}
+                    item={item}
+                    isActive={isActive}
+                    isExpanded={expandedKeys[item.id] ?? true}
+                    onToggle={handleToggle}
+                    expandedKeys={expandedKeys}
+                    pathname={pathname}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </nav>
   );

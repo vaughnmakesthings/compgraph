@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { KpiCard } from "@/components/data/kpi-card";
 import { Badge } from "@/components/data/badge";
@@ -11,6 +12,13 @@ import { formatRoleArchetype } from "@/lib/utils";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
 import type { GlassdoorReview } from "@/lib/mock/dossiers";
 import { MockupBanner } from "@/components/content/mockup-banner";
+import {
+  StarIcon as StarSolid,
+} from "@heroicons/react/24/solid";
+import {
+  StarIcon as StarOutline,
+  ChevronLeftIcon,
+} from "@heroicons/react/24/outline";
 
 type Tab = "summary" | "brands" | "hiring" | "employees";
 
@@ -33,12 +41,20 @@ function formatDate(iso: string): string {
 function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
   const filled = Math.round(rating);
   return (
-    <span style={{ fontSize: `${size}px`, letterSpacing: "1px", lineHeight: 1 }}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ color: i <= filled ? "#EF8354" : "#BFC0C0" }}>
-          ★
-        </span>
-      ))}
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => {
+        const Icon = i <= filled ? StarSolid : StarOutline;
+        return (
+          <Icon
+            key={i}
+            style={{
+              width: size,
+              height: size,
+              color: i <= filled ? "#EF8354" : "#BFC0C0",
+            }}
+          />
+        );
+      })}
     </span>
   );
 }
@@ -120,7 +136,7 @@ function SentimentCard({
 
 function ReviewCard({ review }: { review: GlassdoorReview }) {
   const borderColor =
-    review.rating >= 4 ? "#3CA060" : review.rating >= 3 ? "#BFC0C0" : "#D64045";
+    review.rating >= 4 ? "#1B998B" : review.rating >= 3 ? "#BFC0C0" : "#8C2C23";
 
   const signals: Array<{ val: boolean | null; label: string }> = [
     { val: review.recommend, label: "Recommend" },
@@ -135,7 +151,7 @@ function ReviewCard({ review }: { review: GlassdoorReview }) {
         borderLeft: `3px solid ${borderColor}`,
         borderRadius: "6px",
         padding: "14px 16px",
-        backgroundColor: "#FAFAF9",
+        backgroundColor: "#FAFAF7",
       }}
     >
       {/* Rating + date */}
@@ -221,7 +237,7 @@ function ReviewCard({ review }: { review: GlassdoorReview }) {
         {signals.map(({ val, label }) => {
           const sym = val === true ? "✓" : val === false ? "✗" : "—";
           const color =
-            val === true ? "#3CA060" : val === false ? "#D64045" : "#BFC0C0";
+            val === true ? "#1B998B" : val === false ? "#8C2C23" : "#BFC0C0";
           return (
             <span
               key={label}
@@ -245,7 +261,7 @@ function ReviewCard({ review }: { review: GlassdoorReview }) {
             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
             fontSize: "10px",
             fontWeight: 700,
-            color: "#3CA060",
+            color: "#1B998B",
             textTransform: "uppercase",
             letterSpacing: "0.07em",
             marginRight: "6px",
@@ -272,7 +288,7 @@ function ReviewCard({ review }: { review: GlassdoorReview }) {
             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
             fontSize: "10px",
             fontWeight: 700,
-            color: "#D64045",
+            color: "#8C2C23",
             textTransform: "uppercase",
             letterSpacing: "0.07em",
             marginRight: "6px",
@@ -426,6 +442,21 @@ export default function CompetitorDossierPage() {
   return (
     <div>
       <MockupBanner />
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 mb-4">
+        <Link
+          href="/competitors"
+          className="flex items-center gap-1 text-xs transition-opacity hover:opacity-70"
+          style={{ color: "var(--color-muted-foreground)", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
+        >
+          <ChevronLeftIcon className="h-3 w-3" />
+          Competitors
+        </Link>
+        <span style={{ color: "rgba(79,93,117,0.4)", fontSize: "12px" }}>›</span>
+        <span className="text-xs" style={{ color: "#2D3142", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}>
+          {company.name}
+        </span>
+      </div>
       {/* Header */}
       <div className="flex items-start gap-3 mb-6 flex-wrap">
         <div className="flex-1 min-w-0">
@@ -666,7 +697,6 @@ export default function CompetitorDossierPage() {
                 <thead>
                   <tr
                     style={{
-                      backgroundColor: "#E8E8E4",
                       borderBottom: "1px solid #BFC0C0",
                     }}
                   >
@@ -680,7 +710,7 @@ export default function CompetitorDossierPage() {
                               "var(--font-body, 'DM Sans Variable', sans-serif)",
                             fontSize: "11px",
                             fontWeight: 600,
-                            color: "#4F5D75",
+                            color: "rgba(79,93,117,0.5)",
                             textTransform: "uppercase",
                             letterSpacing: "0.04em",
                             whiteSpace: "nowrap",
@@ -859,7 +889,6 @@ export default function CompetitorDossierPage() {
                 <thead>
                   <tr
                     style={{
-                      backgroundColor: "#E8E8E4",
                       borderBottom: "1px solid #BFC0C0",
                     }}
                   >
@@ -878,7 +907,7 @@ export default function CompetitorDossierPage() {
                             "var(--font-body, 'DM Sans Variable', sans-serif)",
                           fontSize: "11px",
                           fontWeight: 600,
-                          color: "#4F5D75",
+                          color: "rgba(79,93,117,0.5)",
                           textTransform: "uppercase",
                           letterSpacing: "0.04em",
                           whiteSpace: "nowrap",
@@ -1076,9 +1105,9 @@ export default function CompetitorDossierPage() {
                     cat.trend === "up" ? "↑" : cat.trend === "down" ? "↓" : "→";
                   const trendColor =
                     cat.trend === "up"
-                      ? "#3CA060"
+                      ? "#1B998B"
                       : cat.trend === "down"
-                        ? "#D64045"
+                        ? "#8C2C23"
                         : "#BFC0C0";
                   return (
                     <div
