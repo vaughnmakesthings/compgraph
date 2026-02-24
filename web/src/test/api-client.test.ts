@@ -423,6 +423,19 @@ describe('api simple GET endpoints', () => {
     expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/aggregation/churn-signals')
   })
 
+  it('api.getEvalModels fetches /api/eval/models', async () => {
+    const mockModels = [
+      { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (fast, cheap)' },
+    ]
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockModels,
+    } as Response)
+    const result = await api.getEvalModels()
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/models')
+    expect(result).toEqual(mockModels)
+  })
+
   it('api.listEvalRuns fetches /api/eval/runs', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
     await api.listEvalRuns()

@@ -388,15 +388,25 @@ async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, s
     return {"id": str(row.id)}
 
 
+# --- Supported Models (single source of truth) ---
+
+_SUPPORTED_MODELS: list[dict[str, str]] = [
+    {"id": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast, cheap)"},
+    {"id": "claude-sonnet-4-5-20251001", "label": "Sonnet 4.5 (balanced)"},
+    {"id": "claude-sonnet-4-6", "label": "Sonnet 4.6 (latest)"},
+    {"id": "claude-opus-4-6", "label": "Opus 4.6 (highest quality)"},
+]
+
+_SUPPORTED_MODEL_IDS = {m["id"] for m in _SUPPORTED_MODELS}
+
+
+@router.get("/models")
+async def list_models() -> list[dict[str, str]]:
+    """Return supported eval models. Frontend uses this to populate the model selector."""
+    return _SUPPORTED_MODELS
+
+
 # --- POST: Run Execution ---
-
-
-_SUPPORTED_MODELS = {
-    "claude-haiku-4-5-20251001",
-    "claude-sonnet-4-5-20251001",
-    "claude-sonnet-4-6",
-    "claude-opus-4-6",
-}
 
 
 class RunCreate(BaseModel):
@@ -408,9 +418,9 @@ class RunCreate(BaseModel):
     @field_validator("model")
     @classmethod
     def model_must_be_supported(cls, v: str) -> str:
-        if v not in _SUPPORTED_MODELS:
+        if v not in _SUPPORTED_MODEL_IDS:
             raise ValueError(
-                f"Unsupported model '{v}'. Must be one of: {sorted(_SUPPORTED_MODELS)}"
+                f"Unsupported model '{v}'. Must be one of: {sorted(_SUPPORTED_MODEL_IDS)}"
             )
         return v
 
