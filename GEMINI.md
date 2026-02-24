@@ -82,4 +82,12 @@ cd web && npm test                      # Run frontend Vitest suite
 - **Three-Tier Entity Resolution**: Exact slug matching → Normalized name matching → Fuzzy matching (RapidFuzz).
 - **Session-Mode Pooler**: Use the Supabase pooler for application traffic; use direct connections only for migrations.
 
+## Code Search Protocol
+
+This project is indexed by **codesight** (semantic code search). When exploring the codebase:
+1.  **Semantic Queries**: For behavioral queries (e.g., "how is auth handled?") use `search_code` first.
+2.  **Keyword Search**: For exact names or keywords, use standard Grep.
+3.  **Two-Stage Retrieval**: Always call `search_code` first, then expand the top 2-3 results with `get_chunk_code` to save context tokens.
+4.  **Index Staleness**: If `get_indexing_status` shows `is_stale: true`, run `index_codebase` to refresh the semantic index.
+
 For detailed design specifications, refer to `docs/design.md`. For the current development status, see `docs/phases.md`.

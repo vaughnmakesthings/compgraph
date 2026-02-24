@@ -10,8 +10,11 @@
     },
     "codesight": {
       "type": "stdio",
-      "command": "uv",
-      "args": ["run", "--project", "/Users/vmud/Documents/dev/projects/codesight", "python", "-m", "codesight"]
+      "command": "op",
+      "args": ["run", "--env-file=.env", "--no-masking", "--", "uv", "run", "--project", "/Users/vmud/Documents/dev/projects/codesight", "python", "-m", "codesight"],
+      "env": {
+        "OPENAI_API_KEY": "op://DEV/OPENAI_API_KEY/credential"
+      }
     },
     "modelcontextprotocol-servers-git": {
       "type": "stdio",
