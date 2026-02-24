@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogPanel } from "@tremor/react";
 
 export interface ConfirmDialogProps {
@@ -10,7 +11,8 @@ export interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   confirmVariant?: "default" | "danger";
-  onConfirm: () => void;
+  /** May return a Promise; dialog stays open until it resolves. */
+  onConfirm: () => void | Promise<void>;
 }
 
 const bodyFont = "var(--font-body, 'DM Sans Variable', sans-serif)";
@@ -25,11 +27,25 @@ export function ConfirmDialog({
   confirmVariant = "default",
   onConfirm,
 }: ConfirmDialogProps) {
+  const [confirming, setConfirming] = useState(false);
   const handleClose = () => onOpenChange(false);
 
-  const handleConfirm = () => {
-    onConfirm();
-    handleClose();
+  const handleConfirm = async () => {
+    const result = onConfirm();
+    if (result && typeof result.then === "function") {
+      setConfirming(true);
+      try {
+        await result;
+        handleClose();
+      } catch {
+        /* Caller handles error (e.g. setFormError); close so user can see it */
+        handleClose();
+      } finally {
+        setConfirming(false);
+      }
+    } else {
+      handleClose();
+    }
   };
 
   const confirmBg = confirmVariant === "danger" ? "#8C2C23" : "#EF8354";
@@ -78,7 +94,8 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
+            onClick={() => void handleConfirm()}
+            disabled={confirming}
             style={{
               fontFamily: bodyFont,
               fontSize: "14px",
@@ -87,10 +104,11 @@ export function ConfirmDialog({
               border: "none",
               color: "#FFFFFF",
               backgroundColor: confirmBg,
-              cursor: "pointer",
+              cursor: confirming ? "wait" : "pointer",
+              opacity: confirming ? 0.8 : 1,
             }}
           >
-            {confirmLabel}
+            {confirming ? "Starting…" : confirmLabel}
           </button>
         </div>
       </DialogPanel>
