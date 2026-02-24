@@ -1,0 +1,36 @@
+web/src/components/ui/confirm-dialog.tsx
+  9841c4ed2bc1c371 34-35,38-39,42-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "65c68b7ac801cf60585c2990564ea5e17fb9f2bb",
+  "prompts": {
+    "2ac4b7a4bf29eb57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e10ac1ae-a978-473d-8911-1f328572c39a",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 58,
+      "total_deletions": 12,
+      "accepted_lines": 57,
+      "overriden_lines": 0
+    },
+    "9841c4ed2bc1c371": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "af66206c-1dfa-422b-85d7-2a601acb59f3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 10,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    }
+  }
+}
