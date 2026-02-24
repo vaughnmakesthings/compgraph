@@ -82,6 +82,22 @@ class TestEvalCorpusEndpoint:
             app.dependency_overrides.clear()
 
 
+class TestEvalModelsEndpoint:
+    def test_get_models_returns_supported_list(self) -> None:
+        with TestClient(app) as client:
+            resp = client.get("/api/eval/models")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 4
+        ids = [m["id"] for m in data]
+        assert "claude-haiku-4-5-20251001" in ids
+        assert "claude-sonnet-4-5-20251001" in ids
+        assert "claude-sonnet-4-6" in ids
+        assert "claude-opus-4-6" in ids
+        assert all(isinstance(m["id"], str) and isinstance(m["label"], str) for m in data)
+
+
 class TestEvalRunsEndpoint:
     def test_get_runs_returns_empty_list(self, mock_empty_db) -> None:
         with TestClient(app) as client:
@@ -101,7 +117,7 @@ class TestEvalRunsEndpoint:
         fake_run = MagicMock()
         fake_run.id = run_id
         fake_run.pass_number = 1
-        fake_run.model = "claude-haiku-4-5"
+        fake_run.model = "claude-haiku-4-5-20251001"
         fake_run.prompt_version = "v1"
         fake_run.corpus_size = 10
         fake_run.total_input_tokens = None
@@ -121,7 +137,7 @@ class TestEvalRunsEndpoint:
             assert resp.status_code == 200
             data = resp.json()
             assert data["id"] == str(run_id)
-            assert data["model"] == "claude-haiku-4-5"
+            assert data["model"] == "claude-haiku-4-5-20251001"
             assert data["pass_number"] == 1
         finally:
             app.dependency_overrides.clear()
@@ -172,7 +188,7 @@ class TestEvalRunsPostEndpoint:
                 "/api/eval/runs",
                 json={
                     "pass_number": 1,
-                    "model": "claude-haiku-4-5",
+                    "model": "claude-haiku-4-5-20251001",
                     "prompt_version": "v1",
                     "concurrency": 5,
                 },

@@ -10,6 +10,7 @@ vi.mock("../lib/api-client", () => ({
     getVelocity: vi.fn(),
     getCoverageGaps: vi.fn(),
     listPostings: vi.fn(),
+    getCompanies: vi.fn(),
     health: vi.fn(),
     triggerAggregation: vi.fn(),
     getPipelineRuns: vi.fn(),
@@ -108,6 +109,7 @@ beforeEach(() => {
   vi.mocked(api.getVelocity).mockResolvedValue(mockVelocity);
   vi.mocked(api.getCoverageGaps).mockResolvedValue(mockGaps);
   vi.mocked(api.listPostings).mockResolvedValue(mockPostingsResponse);
+  vi.mocked(api.getCompanies).mockResolvedValue([]);
   vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
   vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
   vi.mocked(api.getPipelineRuns).mockResolvedValue({ scrape_runs: [], enrichment_runs: [] });
@@ -117,6 +119,33 @@ beforeEach(() => {
     last_pipeline_finished_at: null,
     last_pipeline_success: null,
     missed_run: false,
+  });
+  // Return terminal status on mount so resumeIfActive does not start polling
+  vi.mocked(api.getScrapeStatus).mockResolvedValue({
+    run_id: "",
+    status: "success",
+    started_at: null,
+    finished_at: null,
+    total_postings_found: 0,
+    total_snapshots_created: 0,
+    total_errors: 0,
+    companies_succeeded: 0,
+    companies_failed: 0,
+    company_states: {},
+    company_results: {},
+  });
+  vi.mocked(api.getEnrichStatus).mockResolvedValue({
+    run_id: "",
+    status: "success",
+    started_at: null,
+    finished_at: null,
+    pass1_result: null,
+    pass2_result: null,
+    total_input_tokens: 0,
+    total_output_tokens: 0,
+    total_api_calls: 0,
+    total_dedup_saved: 0,
+    circuit_breaker_tripped: false,
   });
 });
 
@@ -235,8 +264,8 @@ describe("Job Feed page", () => {
     expect(screen.getByText("Title")).toBeInTheDocument();
     expect(screen.getByText("Company")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();
+    // Status column now includes the date — "First Seen" header removed (#182)
     expect(screen.getByText("Status")).toBeInTheDocument();
-    expect(screen.getByText("First Seen")).toBeInTheDocument();
   });
 
   it("renders Prev and Next pagination buttons", () => {

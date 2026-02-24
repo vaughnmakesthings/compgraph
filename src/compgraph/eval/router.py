@@ -388,6 +388,41 @@ async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, s
     return {"id": str(row.id)}
 
 
+# --- Supported Models (single source of truth) ---
+
+_SUPPORTED_MODELS: list[dict[str, str]] = [
+    # Anthropic (direct API)
+    {"id": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast, cheap)"},
+    {"id": "claude-sonnet-4-5-20251001", "label": "Sonnet 4.5 (balanced)"},
+    {"id": "claude-sonnet-4-6", "label": "Sonnet 4.6 (latest)"},
+    {"id": "claude-opus-4-6", "label": "Opus 4.6 (highest quality)"},
+    # OpenRouter — Anthropic
+    {"id": "openrouter/anthropic/claude-haiku-4-5", "label": "OpenRouter: Haiku 4.5"},
+    {"id": "openrouter/anthropic/claude-sonnet-4-5", "label": "OpenRouter: Sonnet 4.5"},
+    {"id": "openrouter/anthropic/claude-sonnet-4-6", "label": "OpenRouter: Sonnet 4.6"},
+    {"id": "openrouter/anthropic/claude-opus-4-6", "label": "OpenRouter: Opus 4.6"},
+    # OpenRouter — OpenAI
+    {"id": "openrouter/openai/gpt-4o-mini", "label": "OpenRouter: GPT-4o Mini"},
+    {"id": "openrouter/openai/gpt-4o", "label": "OpenRouter: GPT-4o"},
+    {"id": "openrouter/openai/gpt-4.1-mini", "label": "OpenRouter: GPT-4.1 Mini"},
+    {"id": "openrouter/openai/gpt-4.1", "label": "OpenRouter: GPT-4.1"},
+    # OpenRouter — Google
+    {"id": "openrouter/google/gemini-2.0-flash-001", "label": "OpenRouter: Gemini 2.0 Flash"},
+    {"id": "openrouter/google/gemini-2.5-pro-preview", "label": "OpenRouter: Gemini 2.5 Pro"},
+    # OpenRouter — DeepSeek
+    {"id": "openrouter/deepseek/deepseek-chat-v3-0324", "label": "OpenRouter: DeepSeek V3"},
+    {"id": "openrouter/deepseek/deepseek-r1", "label": "OpenRouter: DeepSeek R1"},
+]
+
+_SUPPORTED_MODEL_IDS = {m["id"] for m in _SUPPORTED_MODELS}
+
+
+@router.get("/models")
+async def list_models() -> list[dict[str, str]]:
+    """Return supported eval models. Frontend uses this to populate the model selector."""
+    return _SUPPORTED_MODELS
+
+
 # --- POST: Run Execution ---
 
 
@@ -396,6 +431,15 @@ class RunCreate(BaseModel):
     model: str
     prompt_version: str
     concurrency: int = Field(default=5, ge=1, le=50)
+
+    @field_validator("model")
+    @classmethod
+    def model_must_be_supported(cls, v: str) -> str:
+        if v not in _SUPPORTED_MODEL_IDS:
+            raise ValueError(
+                f"Unsupported model '{v}'. Must be one of: {sorted(_SUPPORTED_MODEL_IDS)}"
+            )
+        return v
 
 
 @router.post("/runs")

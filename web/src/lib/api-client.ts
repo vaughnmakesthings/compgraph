@@ -30,7 +30,14 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`Network error: ${path}`, { cause })
   }
   if (!res.ok) {
-    throw new Error(`API error ${res.status}: ${path}`)
+    let detail: string | undefined
+    try {
+      const body = await res.json()
+      detail = typeof body?.detail === 'string' ? body.detail : undefined
+    } catch {
+      // non-JSON error body — fall through to generic message
+    }
+    throw new Error(detail ?? `API error ${res.status}: ${path}`)
   }
   return res.json() as Promise<T>
 }
@@ -87,6 +94,9 @@ export const api = {
   getPosting: (id: string) => apiFetch<PostingDetail>(`/api/postings/${id}`),
 
   listEvalRuns: () => apiFetch<EvalRun[]>('/api/eval/runs'),
+
+  getEvalModels: () =>
+    apiFetch<Array<{ id: string; label: string }>>('/api/eval/models'),
 
   createEvalRun: (body: {
     pass_number: number

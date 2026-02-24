@@ -624,48 +624,78 @@ export default function SettingsPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Poll scrape status while run is active
+  // On mount, check for in-progress runs and resume polling if found (#172)
+  useEffect(() => {
+    let cancelled = false;
+    async function resumeIfActive() {
+      const [scrape, enrich] = await Promise.allSettled([
+        api.getScrapeStatus(),
+        api.getEnrichStatus(),
+      ]);
+      if (cancelled) return;
+      if (scrape.status === "fulfilled" && !TERMINAL_STATES.has(scrape.value.status)) {
+        setScrapeStatus(scrape.value);
+        setScrapeActiveRunId(scrape.value.run_id);
+      }
+      if (enrich.status === "fulfilled" && !TERMINAL_STATES.has(enrich.value.status)) {
+        setEnrichStatus(enrich.value);
+        setEnrichActiveRunId(enrich.value.run_id);
+      }
+    }
+    void resumeIfActive();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Poll scrape status while run is active (recursive setTimeout — no overlap) (#169)
   useEffect(() => {
     if (!scrapeActiveRunId) return;
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    async function fetchScrapeStatus(id: ReturnType<typeof setInterval>) {
+    async function poll() {
       try {
         const s = await api.getScrapeStatus();
         if (!mounted) return;
         setScrapeStatus(s);
         if (TERMINAL_STATES.has(s.status)) {
-          clearInterval(id);
           setScrapeActiveRunId(null);
+          return;
         }
       } catch { /* ignore — keep polling */ }
+      if (mounted) timeoutId = setTimeout(() => void poll(), 3000);
     }
 
-    const intervalId = setInterval(() => void fetchScrapeStatus(intervalId), 3000);
-    void fetchScrapeStatus(intervalId);
-    return () => { mounted = false; clearInterval(intervalId); };
+    void poll();
+    return () => {
+      mounted = false;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   }, [scrapeActiveRunId]);
 
-  // Poll enrichment status while run is active
+  // Poll enrichment status while run is active (recursive setTimeout — no overlap) (#169)
   useEffect(() => {
     if (!enrichActiveRunId) return;
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    async function fetchEnrichStatus(id: ReturnType<typeof setInterval>) {
+    async function poll() {
       try {
         const s = await api.getEnrichStatus();
         if (!mounted) return;
         setEnrichStatus(s);
         if (TERMINAL_STATES.has(s.status)) {
-          clearInterval(id);
           setEnrichActiveRunId(null);
+          return;
         }
       } catch { /* ignore — keep polling */ }
+      if (mounted) timeoutId = setTimeout(() => void poll(), 3000);
     }
 
-    const intervalId = setInterval(() => void fetchEnrichStatus(intervalId), 3000);
-    void fetchEnrichStatus(intervalId);
-    return () => { mounted = false; clearInterval(intervalId); };
+    void poll();
+    return () => {
+      mounted = false;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   }, [enrichActiveRunId]);
 
   // Handlers

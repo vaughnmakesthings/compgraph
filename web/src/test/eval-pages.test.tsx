@@ -43,6 +43,12 @@ vi.mock("next/link", () => ({
 // ---------------------------------------------------------------------------
 vi.mock("@/lib/api-client", () => ({
   api: {
+    getEvalModels: vi.fn().mockResolvedValue([
+      { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (fast, cheap)" },
+      { id: "claude-sonnet-4-5-20251001", label: "Sonnet 4.5 (balanced)" },
+      { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (latest)" },
+      { id: "claude-opus-4-6", label: "Opus 4.6 (highest quality)" },
+    ]),
     listEvalRuns: vi.fn().mockResolvedValue([
       {
         id: "run-abc123",
