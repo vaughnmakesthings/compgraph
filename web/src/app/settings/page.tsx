@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api-client";
 import type {
   ScrapeRunSummary,
@@ -598,6 +599,15 @@ export default function SettingsPage() {
   const [enrichRuns, setEnrichRuns] = useState<EnrichmentRunSummary[]>([]);
   const [runsLoading, setRunsLoading] = useState(true);
 
+  // Confirm dialogs (#184)
+  const [confirmAggOpen, setConfirmAggOpen] = useState(false);
+  const [confirmScrapeOpen, setConfirmScrapeOpen] = useState(false);
+  const [confirmEnrichOpen, setConfirmEnrichOpen] = useState(false);
+  const [confirmScrapeControlOpen, setConfirmScrapeControlOpen] = useState(false);
+  const [confirmScrapeAction, setConfirmScrapeAction] = useState<"stop" | "force-stop">("stop");
+  const [confirmSchedulerOpen, setConfirmSchedulerOpen] = useState(false);
+  const [confirmSchedulerJobId, setConfirmSchedulerJobId] = useState<string | null>(null);
+
   // Load run history on mount
   useEffect(() => {
     let cancelled = false;
@@ -845,19 +855,19 @@ export default function SettingsPage() {
       <SectionCard title="Pipeline Controls" className="mt-4">
         <div className="flex flex-col gap-2">
           <OutlineButton
-            onClick={() => void handleTriggerAggregation()}
+            onClick={() => setConfirmAggOpen(true)}
             disabled={aggRunning}
           >
             {aggRunning ? "Running..." : "Trigger Aggregation"}
           </OutlineButton>
           <OutlineButton
-            onClick={() => void handleTriggerScrape()}
+            onClick={() => setConfirmScrapeOpen(true)}
             disabled={scrapeTriggerRunning || !!scrapeActiveRunId}
           >
             {scrapeTriggerRunning ? "Starting..." : scrapeActiveRunId ? "Scrape running…" : "Trigger Scrape"}
           </OutlineButton>
           <OutlineButton
-            onClick={() => void handleTriggerEnrichment()}
+            onClick={() => setConfirmEnrichOpen(true)}
             disabled={enrichTriggerRunning || !!enrichActiveRunId}
           >
             {enrichTriggerRunning ? "Starting..." : enrichActiveRunId ? "Enrichment running…" : "Trigger Enrichment"}
@@ -923,7 +933,14 @@ export default function SettingsPage() {
         {scrapeStatus && (
           <LiveScrapePanel
             status={scrapeStatus}
-            onControl={(action) => void handleScrapeControl(action)}
+            onControl={(action) => {
+              if (action === "stop" || action === "force-stop") {
+                setConfirmScrapeAction(action);
+                setConfirmScrapeControlOpen(true);
+              } else {
+                void handleScrapeControl(action);
+              }
+            }}
             controlRunning={scrapeControlRunning}
           />
         )}
@@ -1081,7 +1098,10 @@ export default function SettingsPage() {
                           <td className="px-3 py-2">
                             <div className="flex gap-1.5">
                               <SmallButton
-                                onClick={() => void handleSchedulerJob(sched.schedule_id, "trigger")}
+                                onClick={() => {
+                                  setConfirmSchedulerJobId(sched.schedule_id);
+                                  setConfirmSchedulerOpen(true);
+                                }}
                                 disabled={!!isRunning}
                               >
                                 Trigger
@@ -1210,6 +1230,61 @@ export default function SettingsPage() {
           </div>
         )}
       </SectionCard>
+
+      {/* Confirm dialogs (#184) */}
+      <ConfirmDialog
+        open={confirmAggOpen}
+        onOpenChange={setConfirmAggOpen}
+        title="Trigger Aggregation"
+        description="Truncate and rebuild all 4 aggregation tables (velocity, brand timeline, pay benchmarks, lifecycle). Existing aggregated data will be overwritten."
+        confirmLabel="Confirm"
+        confirmVariant="danger"
+        onConfirm={() => void handleTriggerAggregation()}
+      />
+      <ConfirmDialog
+        open={confirmScrapeOpen}
+        onOpenChange={setConfirmScrapeOpen}
+        title="Trigger Scrape"
+        description="Start a full scrape across all 5 competitor ATS platforms. Runs in the background and typically takes 5–10 minutes."
+        confirmLabel="Confirm"
+        onConfirm={() => void handleTriggerScrape()}
+      />
+      <ConfirmDialog
+        open={confirmEnrichOpen}
+        onOpenChange={setConfirmEnrichOpen}
+        title="Trigger Enrichment"
+        description="Run the LLM enrichment pipeline on unenriched postings. Anthropic API calls will be made for each posting."
+        confirmLabel="Confirm"
+        onConfirm={() => void handleTriggerEnrichment()}
+      />
+      <ConfirmDialog
+        open={confirmScrapeControlOpen}
+        onOpenChange={setConfirmScrapeControlOpen}
+        title={confirmScrapeAction === "force-stop" ? "Force-Stop Scrape" : "Stop Scrape"}
+        description={
+          confirmScrapeAction === "force-stop"
+            ? "Immediately kill the active scrape run. Any in-progress company scrapes will be abandoned. Use Stop for a graceful shutdown."
+            : "Request a graceful stop of the active scrape run. In-progress company scrapes will complete before stopping."
+        }
+        confirmLabel="Confirm"
+        confirmVariant={confirmScrapeAction === "force-stop" ? "danger" : "default"}
+        onConfirm={() => void handleScrapeControl(confirmScrapeAction)}
+      />
+      <ConfirmDialog
+        open={confirmSchedulerOpen}
+        onOpenChange={(open) => {
+          setConfirmSchedulerOpen(open);
+          if (!open) setConfirmSchedulerJobId(null);
+        }}
+        title="Trigger Scheduler Job"
+        description="Manually trigger this scheduled job outside its normal schedule."
+        confirmLabel="Confirm"
+        onConfirm={() => {
+          if (confirmSchedulerJobId) {
+            void handleSchedulerJob(confirmSchedulerJobId, "trigger");
+          }
+        }}
+      />
     </div>
   );
 }

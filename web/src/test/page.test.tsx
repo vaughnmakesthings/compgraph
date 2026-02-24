@@ -9,28 +9,19 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+global.ResizeObserver = class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+};
 
-vi.mock("recharts", async () => {
-  const actual = await vi.importActual<typeof import("recharts")>("recharts");
+vi.mock("@tremor/react", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@tremor/react")>();
   return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div style={{ width: 800, height: 400 }}>{children}</div>
-    ),
-    BarChart: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="bar-chart">{children}</div>
-    ),
-    Bar: () => null,
-    XAxis: () => null,
-    YAxis: () => null,
-    CartesianGrid: () => null,
-    Tooltip: () => null,
-    Legend: () => null,
+    ...mod,
+    BarChart: () => <div data-testid="bar-chart" />,
+    AreaChart: () => <div data-testid="area-chart" />,
+    DonutChart: () => <div data-testid="donut-chart" />,
   };
 });
 

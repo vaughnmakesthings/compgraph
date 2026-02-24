@@ -19,6 +19,11 @@ import type {
   SchedulerStatusResponse,
 } from './types'
 
+/** Strip HTML/script tags from API error detail to prevent XSS if ever rendered as HTML. */
+function sanitizeErrorDetail(s: string): string {
+  return s.replace(/<[^>]*>/g, '').trim()
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response
   try {
@@ -33,7 +38,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     let detail: string | undefined
     try {
       const body = (await res.json()) as { detail?: string }
-      detail = typeof body.detail === 'string' ? body.detail : undefined
+      detail = typeof body.detail === 'string' ? sanitizeErrorDetail(body.detail) : undefined
     } catch {
       /* non-JSON body — ignore */
     }

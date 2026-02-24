@@ -216,4 +216,4 @@ class TestEvalRunsPostEndpoint:
         detail = resp.json().get("detail", [])
         assert isinstance(detail, list)
         msg = detail[0].get("msg", "") if detail else ""
-        assert "Unsupported model" in msg or "gpt-4" in msg
+        assert "Unsupported model 'gpt-4'" in msg
