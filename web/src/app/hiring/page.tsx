@@ -11,15 +11,7 @@ import type { PostingListItem } from "@/lib/types";
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
 
-const SORT_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "first_seen_desc", label: "First Seen ↓" },
-  { value: "first_seen_asc", label: "First Seen ↑" },
-  { value: "pay_desc", label: "Pay High–Low" },
-  { value: "pay_asc", label: "Pay Low–High" },
-  { value: "title_asc", label: "Title A–Z" },
-];
-
-/** Canonical role archetypes from enrichment pipeline — ensures all options appear in filter regardless of current page/filters (#173). */
+/** Canonical role archetypes from enrichment schema — used for filter dropdown (not derived from current page). */
 const ROLE_ARCHETYPES = [
   "field_rep",
   "merchandiser",
@@ -31,6 +23,14 @@ const ROLE_ARCHETYPES = [
   "corporate",
   "other",
 ] as const;
+
+const SORT_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "first_seen_desc", label: "First Seen ↓" },
+  { value: "first_seen_asc", label: "First Seen ↑" },
+  { value: "pay_desc", label: "Pay High–Low" },
+  { value: "pay_asc", label: "Pay Low–High" },
+  { value: "title_asc", label: "Title A–Z" },
+];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -97,7 +97,7 @@ export default function HiringPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset to page 1 when filters change; clear stale error so retry is visible
+  // Reset to page 1 and clear any stale error when filters change
   useEffect(() => {
     setOffset(0);
     setError(null);
@@ -128,9 +128,9 @@ export default function HiringPage() {
           search: searchDebounced || undefined,
         });
         if (!cancelled) {
+          setError(null);
           setItems(result.items);
           setTotal(result.total);
-          setError(null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -294,7 +294,7 @@ export default function HiringPage() {
         </Select>
       </div>
 
-      {hasActiveFilters && (
+      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
         <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
           {companyFilter && (
             <span
