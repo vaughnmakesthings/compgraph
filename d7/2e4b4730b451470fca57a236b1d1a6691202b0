@@ -1,0 +1,23 @@
+web/src/app/hiring/page.tsx
+  b73007d99cd9843a 193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "d72e4b4730b451470fca57a236b1d1a6691202b0",
+  "prompts": {
+    "b73007d99cd9843a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "37a1cb9e-4719-4a62-a628-0796fe762939",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
