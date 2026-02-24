@@ -11,6 +11,9 @@ Creates a pull request with validation, CI awareness, and issue linking.
 
 Accepts an optional PR title. If not provided, derives from branch name and commit history.
 
+Flags:
+- `--draft` — create as a draft PR (bots skip drafts, use `/draft-pr ready` to convert later)
+
 ## Steps
 
 1. **Pre-flight checks**:
@@ -22,7 +25,7 @@ Accepts an optional PR title. If not provided, derives from branch name and comm
    - `git diff main...HEAD --stat` — files changed summary
 3. **Detect linked issue**: Parse branch name for issue number (e.g., `feat/issue-42` → #42)
 4. **Push branch**: `git push -u origin HEAD`
-5. **Create PR** with `gh pr create`:
+5. **Create PR** with `gh pr create` (add `--draft` if flag was passed):
    - Title: concise, under 70 chars
    - Body format:
      ```
@@ -39,7 +42,9 @@ Accepts an optional PR title. If not provided, derives from branch name and comm
 
      Generated with [Claude Code](https://claude.com/claude-code)
      ```
-6. **Report**: PR URL + reminder to monitor CI checks
+6. **Report**:
+   - **Standard PR**: PR URL + reminder to monitor CI checks
+   - **Draft PR**: PR URL + note that bots will skip until marked ready. Suggest `/draft-pr ready <N>` when iteration is complete.
 
 ## Guardrails
 
@@ -47,3 +52,4 @@ Accepts an optional PR title. If not provided, derives from branch name and comm
 - Never force-push unless explicitly asked
 - Always link the issue if detectable from branch name
 - If no commits exist beyond main, abort and explain
+- For full draft PR lifecycle management (create/ready/status), use `/draft-pr`

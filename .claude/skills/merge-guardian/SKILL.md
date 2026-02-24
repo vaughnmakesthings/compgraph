@@ -17,7 +17,16 @@ Accepts a PR number or URL. If not provided, detect from current branch with `gh
    ```bash
    gh pr view <N> --json title,body,headRefName,baseRefName,additions,deletions,changedFiles,reviews,statusCheckRollup
    ```
-2. **Code review** against CLAUDE.md standards:
+2. **Stacked PR detection**:
+   - Check `baseRefName` from PR details
+   - If base branch is NOT `main`:
+     - Warn: "Stacked PR detected — base branch is `<baseRefName>`, not `main`"
+     - Check if the base branch has an open PR: `gh pr list --head <baseRefName> --json number,state,merged`
+     - If base branch PR is **still open**: abort with "Merge the base PR first (#<N>), then retarget this PR to main"
+     - If base branch PR is **merged**: suggest `gh pr edit <N> --base main` + `git rebase main` to retarget
+   - If base branch IS `main`: continue normally
+
+3. **Code review** against CLAUDE.md standards:
    - Append-only data model compliance (no UPDATE/DELETE on historical tables)
    - Async patterns (no sync DB calls)
    - UUID PKs on new tables
@@ -40,6 +49,8 @@ Display a table with each gate's status:
 | Code review: append-only | |
 | Code review: async patterns | |
 | Code review: no secrets | |
+| Base branch is main (or parent merged) | |
+| Sentry: no unresolved critical (optional) | Run `/sentry-check` if Sentry configured |
 
 ## Wait-and-Merge Mode
 
@@ -57,12 +68,19 @@ After successful merge:
 1. `git checkout main && git pull`
 2. Delete local feature branch: `git branch -d <branch>`
 3. Remove worktree if one exists: `git worktree remove <path>` (with confirmation)
-4. Report: merged PR URL, closed issues, deleted branches
+4. **Check for dependent PRs**: `gh pr list --base <merged-branch> --json number,title,headRefName`
+   - If other PRs target the just-merged branch, offer to retarget them to main:
+     ```bash
+     gh pr edit <N> --base main
+     ```
+   - Suggest rebase for each: `git checkout <branch> && git rebase main`
+5. Report: merged PR URL, closed issues, deleted branches, retargeted PRs
 
 ## Guardrails
 
 - NEVER merge if ANY check is `pending`, `queued`, or `failure`
 - NEVER force-merge or bypass required reviews
 - NEVER delete branches that aren't fully merged
+- NEVER merge a stacked PR whose base PR is still open
 - If timeout reached, report what's still pending — don't merge
 - Always confirm destructive cleanup actions with the user

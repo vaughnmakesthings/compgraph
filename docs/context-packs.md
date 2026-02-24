@@ -116,7 +116,7 @@ Use when implementing any file in `src/compgraph/aggregation/`.
 | `docs/design.md` → §5 Aggregation Engine | Rebuild strategy, table definitions | ~500 |
 | `src/compgraph/db/models.py` → all 4 agg_* models | Target schema | ~400 |
 | `src/compgraph/db/models.py` → source models (postings, enrichments) | Input schema | ~400 |
-| `src/compgraph/dashboard/queries.py` | Existing SQL query patterns as reference | ~500 |
+| Existing aggregation module (e.g. `daily_velocity.py`) | SQL query patterns as reference | ~500 |
 | The aggregation module being built/modified | Current state | ~200–500 |
 
 **Key patterns:**
@@ -155,20 +155,20 @@ Use when implementing any file in `src/compgraph/api/`.
 
 | Type | Also load | Why |
 |------|-----------|-----|
-| Dashboard endpoints (`/api/velocity`, `/api/brands`, `/api/pay`, `/api/lifecycle`) | agg_* models | Query aggregation tables |
-| Detail endpoints (`/api/postings`, `/api/companies`) | fact + enrichment models | Query source tables, pagination patterns |
+| Aggregation endpoints (`/api/v1/aggregation/*`) | agg_* models | Query aggregation tables |
+| Detail endpoints (`/api/v1/postings`, `/api/v1/companies`) | fact + enrichment models | Query source tables, pagination patterns |
 | Auth endpoints | Use **Pack I** instead | Supabase Auth is complex enough for dedicated pack |
-| System endpoints | Pipeline status tracking (when exists) | Scrape/enrichment status |
+| Eval endpoints | Use **Pack J** instead | Eval tool consolidation has its own pack |
+| System endpoints (`/api/v1/pipeline/*`, `/api/v1/scrape/*`) | Orchestrator state | Pipeline status, run history |
 
 **Endpoint → agg table mapping:**
 
 | Endpoint | Agg Table | Notes |
 |----------|-----------|-------|
-| `GET /api/velocity` | `agg_daily_velocity` | Time series, filter by company |
-| `GET /api/brands`, `/api/brands/:id/timeline` | `agg_brand_timeline` | Brand list + single brand history |
-| `GET /api/pay` | `agg_pay_benchmarks` | Filter by role/company |
-| `GET /api/lifecycle` | `agg_posting_lifecycle` | Days open, repost metrics |
-| `GET /api/alerts` | All agg tables | Cross-table significant changes |
+| `GET /api/v1/aggregation/velocity` | `agg_daily_velocity` | Time series, filter by company |
+| `GET /api/v1/aggregation/brand-timeline` | `agg_brand_timeline` | Brand timeline + agency overlap |
+| `GET /api/v1/aggregation/pay-benchmarks` | `agg_pay_benchmarks` | Filter by role/company |
+| `GET /api/v1/aggregation/lifecycle` | `agg_posting_lifecycle` | Days open, repost metrics |
 
 **Total: ~2K–3K tokens**
 
@@ -260,34 +260,115 @@ Use when implementing alert generation or delivery.
 
 ---
 
-### Pack I: Auth & Access Control
+### Pack I: Auth & Access Control (M7 Phase C)
 
-Use when implementing Supabase Auth integration, JWT middleware, or role-based access (M4d).
+Use when implementing Supabase Auth integration, JWT middleware, RLS policies, or role-based access.
 
 | Load | Why | Tokens (est.) |
 |------|-----|:---:|
-| `docs/design.md` → §6 API Surface (auth section) | Endpoint auth requirements | ~200 |
-| `src/compgraph/db/models.py` → User model | Existing user schema, roles | ~200 |
-| `src/compgraph/config.py` | Auth-related settings (JWT, Supabase project ref) | ~300 |
-| `src/compgraph/api/deps.py` | Dependency injection — add auth middleware here | ~200 |
+| `docs/plans/m7-implementation-roadmap.md` → Section 6 (Phase C) | Full auth implementation plan with code snippets, route matrix, RLS tiers | ~2K |
+| `src/compgraph/db/models.py` → User model | Existing schema: id, email, name, role, invited_by, created_at | ~200 |
+| `src/compgraph/config.py` | Settings class — add SUPABASE_JWT_SECRET, AUTH_DISABLED | ~300 |
+| `src/compgraph/api/deps.py` | Current get_db() dependency — add get_current_user, require_admin | ~200 |
 | `docs/references/supabase-auth-fastapi.md` | Supabase Auth patterns (JWT verification, magic link, RBAC) | ~800 |
 
-**Pre-commitments (from CLAUDE.md):**
-- Auth = Supabase Auth (invite via magic link, password login, admin/user roles)
-- No custom JWT — use Supabase-issued JWTs
-- Frontend = pure API consumer (Next.js calls FastAPI, no direct DB)
+**Locked decisions (from roadmap Section 2):**
+- Auth = Supabase Auth (invite-only via magic link, password login)
+- No public signup — admin creates invite via in-app form
+- Frontend SDK: `@supabase/supabase-js` only (no `@supabase/auth-ui-react`)
+- Background jobs use service_role connection (bypass RLS)
+- Test strategy: AUTH_DISABLED=true for unit/integration tests
 
 **Roles:**
 
 | Role | Access |
 |------|--------|
-| Admin | Invite users, pipeline control, full dashboard, export |
-| User | Read-only dashboard, export |
+| Admin | Invite users, pipeline control, eval tool, full access |
+| Viewer | Read-only dashboard |
 
-**Total: ~1.7K tokens**
+**New files to create:**
+- `src/compgraph/api/auth.py` — JWT middleware, get_current_user, require_admin
+- `web/src/app/login/page.tsx` — Login page
+- `web/src/app/setup/page.tsx` — Account provisioning (magic link landing)
+- `web/src/lib/auth-context.tsx` — Auth context provider + route protection
+- `alembic/versions/xxxx_add_auth_uid.py` — Add auth_uid to users table
+- `alembic/versions/xxxx_enable_rls.py` — Enable RLS + policies on all tables
 
-**Recommended agent:** `python-backend-developer` for implementation.
+**Total: ~3.5K tokens**
 
+**Recommended agents:** `python-backend-developer` (backend middleware + migration), `react-frontend-developer` (login/setup pages + auth context), `security-reviewer` (RLS policy audit).
+
+---
+
+### Pack J: Eval Tool Consolidation (M7 Phase B)
+
+Use when merging the standalone eval runner into the integrated Postgres-backed system.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/plans/m7-implementation-roadmap.md` → Section 5 (Phase B) | Full consolidation plan with file mapping, code snippets, phase breakdown | ~2K |
+| `eval/eval/runner.py` | Source: working LLM runner to port | ~500 |
+| `eval/eval/providers.py` | Source: LiteLLM wrapper with OpenRouter | ~400 |
+| `eval/eval/config.py` | Source: 16-model catalog, concurrency, max_tokens | ~200 |
+| `src/compgraph/eval/router.py` → line 529 area | Target: the stub TODO to replace | ~500 |
+| `src/compgraph/eval/models.py` | Target: EvalRun, EvalResult, EvalCorpus, EvalComparison, EvalFieldReview models | ~600 |
+
+**Key context:**
+- The standalone `eval/` app has a working runner with LiteLLM/OpenRouter — this is the execution engine to port
+- The integrated `src/compgraph/eval/` has Postgres models + API routes — this is the target
+- `POST /api/eval/runs` is a stub at router.py:529 — it creates a DB record but calls zero LLMs
+- OpenRouter is the provider (API credits available, `OPENROUTER_API_KEY` via 1Password)
+- Target user is a business admin with some technical knowledge
+
+**File mapping:**
+
+| Source (eval/eval/) | Destination (src/compgraph/eval/) | Action |
+|---------------------|----------------------------------|--------|
+| runner.py | logic.py (new) | Port, replace EvalStore with AsyncSession |
+| providers.py | providers.py (new) | Keep LiteLLM wrapper, use Settings |
+| config.py | Merge into config.py | OPENROUTER_API_KEY, EVAL_MODELS dict |
+| schemas.py | schemas.py (existing) | Align Pydantic models |
+| prompts/*.py | prompts/*.py (new dir) | Copy, fix imports |
+| store.py | DELETE | Replaced by Postgres |
+| ui/ | DELETE | Replaced by Next.js |
+
+**Total: ~4K tokens**
+
+**Recommended agents:** `python-backend-developer` (runner port + router wiring), `react-frontend-developer` (eval UX improvements).
+
+---
+
+### Pack K: API Versioning (M7 Phase A)
+
+Use when implementing the `/api/v1/` prefix cutover.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/plans/m7-implementation-roadmap.md` → Section 4 (Phase A) | Full cutover plan with code snippets, 3-step approach | ~1.5K |
+| `src/compgraph/main.py` | Current router registration — 8 include_router() calls | ~300 |
+| `web/src/lib/api-client.ts` | Frontend API paths to update | ~500 |
+| `web/src/lib/constants.ts` | API_BASE definition | ~100 |
+| `web/vercel.json` | Vercel rewrite rules (no change needed) | ~100 |
+
+**Approach:** Option C — backend first with 308 redirect, then frontend, then cleanup. See roadmap Section 4.1 for exact file list and code snippets.
+
+**Total: ~2.5K tokens**
+
+**Recommended agents:** `python-backend-developer` (backend prefix), `react-frontend-developer` (frontend paths).
+
+---
+
+### Pack S1: M7 Sprint 1 Brief
+
+Use when starting any Sprint 1 work item — gives scope, issue numbers, acceptance criteria, build order, and manual prerequisites in one load.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/sprints/m7-sprint1-context.md` | Sprint scope, items, acceptance criteria, build order, context pack map | ~1K |
+
+**Total: ~1K tokens**
+
+**Recommended agents:** any agent picking up a Sprint 1 issue; `agent-organizer` for multi-issue sprint planning.
 
 ---
 
@@ -297,19 +378,19 @@ Use when planning work, assessing scope, transitioning milestones, or delegating
 
 | Load | Why | Tokens (est.) |
 |------|-----|:---:|
-| `docs/phases.md` → Roadmap Summary section | Current milestone, constraints, pre-commitments | ~500 |
-| `docs/phases.md` → current + next phase sections | Task tables, dependencies, exit criteria | ~1K |
+| `docs/phases.md` → Roadmap Summary + M7 section | Current milestone, constraints, pre-commitments, sprint sequence | ~1K |
+| `docs/plans/m7-implementation-roadmap.md` → Sections 1-2, 9-12 | Locked decisions, sprint sequence, dependencies, definition of done | ~2K |
 | `docs/compgraph-product-spec.md` → milestones section | Original requirements per milestone | ~800 |
 | `docs/changelog.md` (latest entry) | What happened last session | ~500 |
 
-**Tier 2 escalation (load for scaling/infra planning):**
+**Tier 2 escalation (load for dependency/audit analysis):**
 
 | Load | Why | Tokens (est.) |
 |------|-----|:---:|
-| `docs/phases.md` → M6c (Scaling Prep) tasks | LLM eval, LiteLLM, Batch API, arq details | ~500 |
-| Scaling strategy from `docs/changelog.md` | Infrastructure decisions, cost projections | ~500 |
+| `docs/reports/gap-analysis-consolidated.md` → Section 10 (Dependency Map) | Prereq chains, topological sprint order | ~1K |
+| `docs/reports/gap-analysis-consolidated.md` → Section 11 (PM Disposition) | Accepted/rejected/deferred items | ~500 |
 
-**Total: ~3K core + ~1K Tier 2**
+**Total: ~4K core + ~1.5K Tier 2**
 
 **Recommended agents:** `agent-organizer` (always loads Pack R), `spec-reviewer` (loads Roadmap Summary for scope checks).
 
@@ -329,7 +410,10 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/failure-patterns.md` | Known failure modes — load when debugging any pipeline issue | ~1K+ |
 | `docs/workflow.md` | Development workflow, agent crew integration, review gates | ~2K |
 | `docs/ci.md` | CI jobs (lint, type, test, security), CD auto-deploy pipeline, local hooks, review bots | ~1K |
+| `docs/parallel-development-playbook.md` | Draft PR workflow, bot cascade prevention, merge-wave ordering, stacked PR patterns | ~500 |
+| `docs/git-github-cheatsheet.md` | Quick-reference for worktrees, draft PRs, rebase patterns, label management | ~500 |
 | `docs/secrets-reference.md` | 1Password references, env var setup | ~500 |
+| `docs/gap-analysis-consolidated.md` | Sprint planning, PM triage, dependency mapping | ~5K |
 
 ### External Research (load by section)
 
@@ -346,7 +430,7 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/osl-careers-research.md` | OSL careers site analysis | Competitor integration |
 | `docs/references/silent-failure-audit.md` | Silent failure identification and mitigation | Pipeline debugging |
 | `docs/references/troc-ats-research.md` | T-ROC ATS platform analysis | Workday scraper |
-| `docs/references/metabase-oss-evaluation.md` | Metabase OSS evaluation for dashboard replacement | Dashboard, M5 planning |
+| `docs/references/metabase-oss-evaluation.md` | Metabase OSS evaluation for complementary data exploration | Deferred — evaluate post-M7 |
 | `docs/references/openrouter-model-candidates.md` | OpenRouter model pricing, 16 candidate models for eval, cost projections | Enrichment pipeline, Prompt Evaluation Tool |
 | `docs/references/llm-eval-best-practices.md` | Eval frameworks, scoring, statistical rigor, prompt optimization from human feedback, error taxonomy, cost optimization | Prompt Evaluation Tool, prompt improvement |
 | `docs/references/vitest-infrastructure-best-practices.md` | Vitest 4 setup, practitioner pain points, Jest migration, CI config | Frontend testing (Next.js) |
@@ -357,7 +441,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/supabase-auth-fastapi.md`  | Supabase Auth JWT verification, magic link flow, role-based middleware | Auth (M4d) |
 | `docs/references/truncate-insert-patterns.md`  | PostgreSQL truncate+insert rebuild patterns, transaction isolation, concurrent reads | Aggregation (M4a) |
 | `docs/references/fastapi-pagination-patterns.md`  | Cursor vs offset pagination, filter parameters, SQLAlchemy query builders | Detail API (M4c) |
-| `docs/references/mcp-server-capabilities.md` | Tool catalog for Supabase, Vercel, and next-devtools MCP servers — tool tables, project IDs, composed workflows, and gap inventory | Deployment, Frontend, Database |
+| `docs/references/mcp-server-capabilities.md` | Tool catalog for Supabase, Vercel, next-devtools, Sentry, Playwright — tool tables, project IDs, composed workflows | Deployment, Frontend, Database, Debugging |
+| `docs/references/automation-setup.md` | MCP servers (Playwright, Sentry), hooks, skills, agents — setup reference for Claude Code and Cursor | Automation, DX |
 | `docs/references/operating-budget.md` | Infrastructure, LLM, and data enrichment cost line items with optimization levers and scaling plan | Cost planning, M6 planning |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)

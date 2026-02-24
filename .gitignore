@@ -51,3 +51,9 @@ web/.tsbuildinfo
 
 # Agent reference docs (cloned repos, not for version control)
 .agents/docs/
+
+# Claude Code agent worktrees (ephemeral)
+.claude/worktrees/
+
+.gemini/
+gha-creds-*.json

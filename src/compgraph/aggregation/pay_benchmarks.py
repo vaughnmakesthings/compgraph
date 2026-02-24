@@ -6,16 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
-
-# Location normalization (matches coverage_gaps / seed_location_mappings)
-_LOC_NORM_SQL = """REGEXP_REPLACE(
-    REGEXP_REPLACE(
-        REGEXP_REPLACE(
-            REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
-            '\\s+\\d{5}(-\\d{4})?', '', 'g'),
-        '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|marketsource|'
-        't-roc|mosaic sales solutions|advantage solutions|acosta)\\s*$', '', 'i'),
-    '\\s+', ' ', 'g')"""
+from compgraph.aggregation.location_norm import _LOC_NORM_SQL
 
 _QUERY = f"""
 WITH latest_enrichment AS (
@@ -48,7 +39,7 @@ posting_markets AS (
     FROM normalized_locations nl
     JOIN location_mappings lm
         ON nl.city_normalized = LOWER(lm.city_normalized)
-        AND nl.state = lm.state
+        AND nl.state = UPPER(lm.state)
     JOIN markets m
         ON LOWER(m.name) = LOWER(lm.metro_name)
         AND LOWER(COALESCE(m.state, '')) = LOWER(lm.metro_state)

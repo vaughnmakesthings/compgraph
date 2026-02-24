@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogPanel } from "@tremor/react";
 
 export interface ConfirmDialogProps {
@@ -31,9 +31,25 @@ export function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   const [confirming, setConfirming] = useState(false);
-  const handleClose = () => onOpenChange(false);
+  const dismissedWhileConfirmingRef = useRef(false);
+
+  // Reset state when dialog closes (avoids stale confirming when reopening)
+  useEffect(() => {
+    if (!open) {
+      setConfirming(false);
+      dismissedWhileConfirmingRef.current = false;
+    }
+  }, [open]);
+
+  const handleClose = () => {
+    if (confirming) {
+      dismissedWhileConfirmingRef.current = true;
+    }
+    onOpenChange(false);
+  };
 
   const handleConfirm = async () => {
+    dismissedWhileConfirmingRef.current = false;
     let isAsync = false;
     try {
       const result = onConfirm();
@@ -42,13 +58,16 @@ export function ConfirmDialog({
         setConfirming(true);
         await result;
       }
+      if (!dismissedWhileConfirmingRef.current) {
+        handleClose();
+      }
     } catch (err) {
       console.error("ConfirmDialog onConfirm failed:", err);
+      // Do not close on error — let user retry
     } finally {
       if (isAsync) {
         setConfirming(false);
       }
-      handleClose();
     }
   };
 

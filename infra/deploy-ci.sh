@@ -24,20 +24,18 @@ sudo -u compgraph uv sync
 echo "[3/5] Running migrations..."
 # Build pooler URL from .env — avoids IPv6 direct connection issues
 DB_PASSWORD=$(sudo grep '^DATABASE_PASSWORD=' "$APP_DIR/.env" | cut -d= -f2-)
-ENCODED_PW=$(python3 -c "from urllib.parse import quote_plus; print(quote_plus('$DB_PASSWORD'))")
+ENCODED_PW=$(DB_PASSWORD="$DB_PASSWORD" python3 -c "import os; from urllib.parse import quote_plus; print(quote_plus(os.environ['DB_PASSWORD']))")
 SUPABASE_REF="tkvxyxwfosworwqxesnz"
 export ALEMBIC_DATABASE_URL="postgresql+asyncpg://postgres.${SUPABASE_REF}:${ENCODED_PW}@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
 
-ALEMBIC="sudo -u compgraph env ALEMBIC_DATABASE_URL=$ALEMBIC_DATABASE_URL $APP_DIR/.venv/bin/alembic"
-
-CURRENT=$($ALEMBIC current 2>&1 | tail -1)
-HEAD=$($ALEMBIC heads 2>&1 | tail -1 | awk '{print $1}')
+CURRENT=$(sudo -u compgraph env ALEMBIC_DATABASE_URL="$ALEMBIC_DATABASE_URL" "$APP_DIR/.venv/bin/alembic" current 2>&1 | tail -1 | awk '{print $1}')
+HEAD=$(sudo -u compgraph env ALEMBIC_DATABASE_URL="$ALEMBIC_DATABASE_URL" "$APP_DIR/.venv/bin/alembic" heads 2>&1 | tail -1 | awk '{print $1}')
 
 if [ "$CURRENT" = "$HEAD" ]; then
     echo "  Database already at head ($HEAD). Skipping."
 else
     echo "  Migrating: $CURRENT -> $HEAD"
-    $ALEMBIC upgrade head
+    sudo -u compgraph env ALEMBIC_DATABASE_URL="$ALEMBIC_DATABASE_URL" "$APP_DIR/.venv/bin/alembic" upgrade head
     echo "  Migration complete."
 fi
 

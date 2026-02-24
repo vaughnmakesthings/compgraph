@@ -35,6 +35,8 @@ function formatDate(iso: string): string {
   });
 }
 
+const MAX_POLL_FAILURES = 5;
+
 function deriveStatus(run: Run): string {
   if (run.total_duration_ms !== null) {
     return "completed";
@@ -111,6 +113,7 @@ export default function RunsPage() {
   const [progress, setProgress] = useState<RunProgress | null>(null);
   const [trackingId, setTrackingId] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollFailuresRef = useRef(0);
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -180,9 +183,12 @@ export default function RunsPage() {
   useEffect(() => {
     if (trackingId === null) return;
 
+    pollFailuresRef.current = 0;
+
     const poll = async () => {
       try {
         const p = await getProgress(trackingId);
+        pollFailuresRef.current = 0;
         setProgress(p);
         if (p.status === "completed" || p.status === "failed") {
           if (pollRef.current) {
@@ -197,7 +203,18 @@ export default function RunsPage() {
           }
         }
       } catch {
-        // polling error, keep trying
+        pollFailuresRef.current += 1;
+        if (pollFailuresRef.current >= MAX_POLL_FAILURES) {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+          setTrackingId(null);
+          setSubmitting(false);
+          setFormError(
+            `Progress polling failed after ${MAX_POLL_FAILURES} attempts. The run may still be running.`
+          );
+        }
       }
     };
 

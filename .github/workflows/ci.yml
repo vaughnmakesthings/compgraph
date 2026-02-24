@@ -6,68 +6,135 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress CI runs on the same PR when new commits are pushed.
+# Prevents wasting Actions minutes on stale code.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  # Detect which areas of the codebase changed to skip irrelevant jobs.
+  # Saves ~2-4 min on frontend-only, backend-only, eval-only, and docs-only PRs.
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      eval: ${{ steps.filter.outputs.eval }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'src/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - 'alembic/**'
+              - 'scripts/**'
+            frontend:
+              - 'web/**'
+            eval:
+              - 'eval/**'
+
   lint:
     name: Lint & Format
+    needs: changes
+    if: ${{ always() && needs.changes.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        if: needs.changes.outputs.backend == 'true'
       - uses: astral-sh/setup-uv@v4
+        if: needs.changes.outputs.backend == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
+        if: needs.changes.outputs.backend == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
+        if: needs.changes.outputs.backend == 'true'
       - run: uv run ruff check src/ tests/
+        if: needs.changes.outputs.backend == 'true'
       - run: uv run ruff format --check src/ tests/
+        if: needs.changes.outputs.backend == 'true'
+      - name: Skip (no backend changes)
+        if: needs.changes.outputs.backend != 'true'
+        run: echo "No backend changes detected — skipping lint"
 
   typecheck:
     name: Type Check
+    needs: changes
+    if: ${{ always() && needs.changes.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        if: needs.changes.outputs.backend == 'true'
       - uses: astral-sh/setup-uv@v4
+        if: needs.changes.outputs.backend == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
+        if: needs.changes.outputs.backend == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
+        if: needs.changes.outputs.backend == 'true'
       - run: uv run mypy src/compgraph/
+        if: needs.changes.outputs.backend == 'true'
+      - name: Skip (no backend changes)
+        if: needs.changes.outputs.backend != 'true'
+        run: echo "No backend changes detected — skipping typecheck"
 
   test:
     name: Test
+    needs: changes
+    if: ${{ always() && needs.changes.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        if: needs.changes.outputs.backend == 'true'
       - uses: astral-sh/setup-uv@v4
+        if: needs.changes.outputs.backend == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
+        if: needs.changes.outputs.backend == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
+        if: needs.changes.outputs.backend == 'true'
       - name: Run tests with coverage
+        if: needs.changes.outputs.backend == 'true'
         run: |
           uv run pytest -x -q -m "not integration" \
             --cov=compgraph --cov-report=xml --cov-report=term-missing
         env:
           DATABASE_PASSWORD: "ci-placeholder"
       - name: Upload coverage to Codecov
-        if: always()
+        if: ${{ always() && needs.changes.outputs.backend == 'true' }}
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Skip (no backend changes)
+        if: needs.changes.outputs.backend != 'true'
+        run: echo "No backend changes detected — skipping tests"
 
   security:
     name: Security Scan
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +148,8 @@ jobs:
 
   eval-python-test:
     name: Eval Python Tests
+    needs: changes
+    if: needs.changes.outputs.eval == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,6 +168,8 @@ jobs:
 
   frontend-ci:
     name: Frontend CI
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

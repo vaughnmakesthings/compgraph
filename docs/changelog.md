@@ -4,6 +4,68 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-24 — Project Hygiene: Docs Audit, Issue Triage, Milestone Cleanup
+
+**Goal:** Update stale documentation, create web/CLAUDE.md, run docs audit, triage all 50 open issues, set up M7 sprint infrastructure.
+
+**What happened:**
+- Updated CLAUDE.md roadmap section (arq→M8, LiteLLM→M7 Phase B, removed DO deploy from "do not build")
+- Created `web/CLAUDE.md` — comprehensive frontend conventions extracted from actual code patterns (API client, design tokens, Tremor wrappers, test patterns, Tailwind v4 gotchas)
+- Added `docs/gap-analysis-consolidated.md` to repo and context-packs.md
+- Ran `/docs-audit`: YELLOW health — found 3 stale content items, 3 missing skills, incorrect Vercel deploy docs in ci.md. Applied 4 auto-fixes.
+- Created 5 M7 sprint milestones: Sprint 1 (Foundation), Sprint 2 (Infrastructure), Feature Sprint, Polish, Parallel — Eval Tool
+- Created 10 new labels: 4 severity, 4 effort, 2 workflow (blocked, quick-win)
+- Triaged all 50 open issues using 2 parallel research agents:
+  - 33 closed (19 shipped, 12 stale/wontfix, 2 duplicate) — each with explanatory comment
+  - 23 reassigned to M7 sprint milestones with severity + effort labels
+- Closed 8 completed milestones: M1, M2, M2.5, M3, M4, M5, M6, M7:Production UI
+- Backend coverage regression flagged: 82%→38% — needs pyproject.toml investigation
+
+**Key files:** `web/CLAUDE.md`, `docs/reports/2026-02-24-docs-audit.md`, `docs/ci.md`, `CLAUDE.md`, `docs/phases.md`
+
+**What's next:** Begin M7 Sprint 1 — Foundation (auth stack: #59, #19, #27, #156). Investigate backend coverage drop.
+
+---
+
+## 2026-02-24 — M7 Strategic Planning & Roadmap
+
+**Goal:** Review strategic audit findings, lock product decisions, create authoritative M7 implementation roadmap.
+
+**What happened:**
+- Reviewed 3 audit reports from Gemini CLI (strategic roadmap, gap analysis, code review log) — added PM POV to all three
+- Verified codebase: 7 of 13 "critical" findings already resolved (SEC-02, SEC-03, DATA-01-03, SCRP-01, QA-01)
+- Resolved 3 engineering disagreements: accepted API v1 prefix (ARCH-03), partial-accepted SWR (UX-03), rejected factory-boy (QA-03)
+- Identified 12 items with undocumented prerequisites — created dependency map with topological sprint ordering
+- Scoped RLS policies (3-tier: viewer/admin/service_role), v1 cutover strategy (Option C with 308 redirect), auth testing (AUTH_DISABLED env bypass)
+- Locked product decisions: target user = business admin, auth = invite-only magic link, eval provider = OpenRouter/LiteLLM, standalone eval app = delete after merge
+- Created `docs/plans/m7-implementation-roadmap.md` — authoritative M7 plan (5 phases, 8-week timeline, 14 new files, 6 new dependencies)
+- Purged 17 stale docs (6 docs-audit snapshots, 11 completed plan files). Rewrote `docs/phases.md` (was stuck at M3). Updated `docs/context-packs.md` (added Packs I/J/K for M7).
+
+**Key files:** `docs/plans/m7-implementation-roadmap.md`, `docs/reports/gap-analysis-consolidated.md`, `docs/phases.md`, `docs/context-packs.md`
+
+**What's next:** Begin M7 Phase A (API v1 prefix + quick wins) and Phase B.0 (eval corpus bootstrap) in parallel.
+
+---
+
+## 2026-02-24 — CI Path Filters + Concurrency Cancellation
+
+**Goal:** Reduce CI waste and support parallel development workflows.
+
+**What changed:**
+- Added `dorny/paths-filter@v3` change detection job to `ci.yml`. Backend jobs (lint, typecheck, test, security) only run when `src/`, `tests/`, `pyproject.toml`, `uv.lock`, `alembic/`, or `scripts/` change. Frontend CI only runs when `web/` changes. Eval tests only run when `eval/` changes. Docs-only PRs trigger zero jobs.
+- Added workflow-level `concurrency` with `cancel-in-progress: true` to CI. Pushing a new commit to a PR while CI is running cancels the stale run.
+- Updated `docs/ci.md` to document path filter groups, per-PR-type CI timing, and the draft PR workflow for reducing review bot noise.
+
+**Key files:** `.github/workflows/ci.yml`, `docs/ci.md`
+
+**Impact:** Frontend-only PRs skip 4 backend jobs (~2 min saved). Backend-only PRs skip frontend build (~2 min saved). Docs-only PRs skip all jobs (~4 min saved). Rapid pushes no longer queue redundant CI runs.
+
+**Branch protection note:** Three required status checks (Lint & Format, Type Check, Test) use an always-run + step-level `if:` pattern instead of job-level `if:`. This ensures they report green to GitHub even when no backend changes exist, preventing merge blocks on frontend-only or docs-only PRs. Non-required jobs (Security, Eval, Frontend CI) skip entirely via job-level `if:`.
+
+**Context:** Part of M7 parallel development workflow improvements. See `docs/parallel-development-playbook.md` (not yet committed) for the full strategy including draft PRs, stacked PRs, file overlap mapping, and review bot management.
+
+---
+
 ## 2026-02-23 — Supabase Data Quality Assessment Implementation
 
 **Goal:** Implement fixes from the data quality assessment plan.

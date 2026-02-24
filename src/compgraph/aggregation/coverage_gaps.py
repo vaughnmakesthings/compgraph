@@ -7,8 +7,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.location_norm import _LOC_NORM_SQL
 
-_QUERY = """\
+_QUERY = f"""\
 WITH latest_snapshots AS (
     SELECT DISTINCT ON (ps.posting_id)
         ps.posting_id,
@@ -22,28 +23,8 @@ normalized_locations AS (
     SELECT
         ls.posting_id,
         ls.location_raw,
-        LOWER(TRIM(INITCAP(TRIM(SPLIT_PART(
-            REGEXP_REPLACE(
-                REGEXP_REPLACE(
-                    REGEXP_REPLACE(
-                        REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
-                        '\\s+\\d{5}(-\\d{4})?', '', 'g'),
-                    '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|'
-                    'marketsource|t-roc|mosaic sales solutions|advantage solutions|acosta)'
-                    '\\s*$', '', 'i'),
-                '\\s+', ' ', 'g'),
-            ',', 1)))) AS city_normalized,
-        UPPER(TRIM(SPLIT_PART(TRIM(SPLIT_PART(
-            REGEXP_REPLACE(
-                REGEXP_REPLACE(
-                    REGEXP_REPLACE(
-                        REGEXP_REPLACE(COALESCE(ls.location_raw, ''), ',\\s*(US|CA)\\s*$', '', 'i'),
-                        '\\s+\\d{5}(-\\d{4})?', '', 'g'),
-                    '\\s*[-\x2013\x2014]\\s*(2020 companies|bds connected solutions|'
-                    'marketsource|t-roc|mosaic sales solutions|advantage solutions|acosta)'
-                    '\\s*$', '', 'i'),
-                '\\s+', ' ', 'g'),
-            ',', 2)), ' ', 1))) AS state
+        LOWER(TRIM(INITCAP(TRIM(SPLIT_PART({_LOC_NORM_SQL}, ',', 1))))) AS city_normalized,
+        UPPER(TRIM(SPLIT_PART(TRIM(SPLIT_PART({_LOC_NORM_SQL}, ',', 2)), ' ', 1))) AS state
     FROM latest_snapshots ls
     WHERE ls.location_raw IS NOT NULL
       AND ls.location_raw LIKE '%,%'
@@ -57,7 +38,7 @@ posting_markets AS (
     JOIN normalized_locations nl ON nl.posting_id = p.id
     JOIN location_mappings lm
         ON nl.city_normalized = LOWER(lm.city_normalized)
-        AND nl.state = lm.state
+        AND nl.state = UPPER(lm.state)
     JOIN markets m
         ON LOWER(m.name) = LOWER(lm.metro_name)
         AND LOWER(COALESCE(m.state, '')) = LOWER(lm.metro_state)

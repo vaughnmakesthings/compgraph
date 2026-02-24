@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Investigate Supabase instance. Run with: op run --env-file=.env -- uv run python scripts/investigate_eval_data.py"""
+"""Diagnostic-only: investigate eval tables and run statuses in Supabase.
+
+Run with: op run --env-file=.env -- uv run python scripts/investigate_eval_data.py
+"""
 
 from __future__ import annotations
 

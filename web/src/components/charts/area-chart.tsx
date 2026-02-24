@@ -18,13 +18,21 @@ interface AreaChartProps {
 }
 
 export function AreaChart({ data, areas, xDataKey, height = 300 }: AreaChartProps) {
-  const categories = areas.map((a) => a.dataKey);
+  const categories = areas.map((a) => a.name);
   const colors = CHART_COLORS.slice(0, categories.length);
+
+  const chartData = data.map((row) => {
+    const out: Record<string, unknown> = { [xDataKey]: row[xDataKey] };
+    for (const a of areas) {
+      out[a.name] = row[a.dataKey];
+    }
+    return out;
+  });
 
   return (
     <div style={{ height, fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}>
       <TremorAreaChart
-        data={data}
+        data={chartData}
         index={xDataKey}
         categories={categories}
         colors={colors}

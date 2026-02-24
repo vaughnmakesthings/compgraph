@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import random
 import sys
@@ -101,7 +102,7 @@ if posting:
         st.html(
             f'<div style="max-height:500px;overflow-y:auto;padding:1rem;'
             f'background:#1a1a2e;color:#eee;border-radius:8px;font-size:14px;line-height:1.5">'
-            f"{posting['full_text']}</div>"
+            f"{html.escape(posting.get('full_text', ''))}</div>"
         )
 
 swapped = st.session_state.swap_map.get(posting_id, False)

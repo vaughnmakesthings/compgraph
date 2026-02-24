@@ -101,7 +101,7 @@ def _check_pay_range(
             continue
 
         # Reasonable range check based on frequency
-        freq = (pay_frequency or "").lower()
+        freq = (pay_frequency if isinstance(pay_frequency, str) else "").lower()
         if freq in ("hour", "hourly") and val > 500:
             results.append(
                 ValidationResult(

@@ -7,6 +7,14 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT REVIEW"
+    path_filters:
+      - "!docs/**"
+      - "!**/*.md"
+      - "!.claude/**"
+      - "!.github/commands/**"
   path_instructions:
     - path: "src/compgraph/db/models.py"
       instructions: |

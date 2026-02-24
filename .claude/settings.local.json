@@ -63,7 +63,8 @@
       "Bash(git reset:*)",
       "mcp__plugin_claude-mem_mcp-search__search",
       "Bash(echo No matching issues:*)",
-      "Bash(gh milestone:*)"
+      "Bash(gh milestone:*)",
+      "Bash(claude doctor:*)"
     ]
   },
   "enabledPlugins": {
