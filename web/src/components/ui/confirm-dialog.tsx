@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogPanel } from "@tremor/react";
 
 export interface ConfirmDialogProps {
@@ -8,9 +9,12 @@ export interface ConfirmDialogProps {
   title: string;
   description: string;
   confirmLabel?: string;
+  /** Shown during async onConfirm. Defaults to "Confirming…". */
+  confirmingLabel?: string;
   cancelLabel?: string;
   confirmVariant?: "default" | "danger";
-  onConfirm: () => void;
+  /** May return a Promise; dialog stays open until it resolves. */
+  onConfirm: () => void | Promise<void>;
 }
 
 const bodyFont = "var(--font-body, 'DM Sans Variable', sans-serif)";
@@ -21,15 +25,31 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirm",
+  confirmingLabel = "Confirming…",
   cancelLabel = "Cancel",
   confirmVariant = "default",
   onConfirm,
 }: ConfirmDialogProps) {
+  const [confirming, setConfirming] = useState(false);
   const handleClose = () => onOpenChange(false);
 
-  const handleConfirm = () => {
-    onConfirm();
-    handleClose();
+  const handleConfirm = async () => {
+    let isAsync = false;
+    try {
+      const result = onConfirm();
+      if (result && typeof result.then === "function") {
+        isAsync = true;
+        setConfirming(true);
+        await result;
+      }
+    } catch (err) {
+      console.error("ConfirmDialog onConfirm failed:", err);
+    } finally {
+      if (isAsync) {
+        setConfirming(false);
+      }
+      handleClose();
+    }
   };
 
   const confirmBg = confirmVariant === "danger" ? "#8C2C23" : "#EF8354";
@@ -78,7 +98,8 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
+            onClick={() => void handleConfirm()}
+            disabled={confirming}
             style={{
               fontFamily: bodyFont,
               fontSize: "14px",
@@ -87,10 +108,11 @@ export function ConfirmDialog({
               border: "none",
               color: "#FFFFFF",
               backgroundColor: confirmBg,
-              cursor: "pointer",
+              cursor: confirming ? "wait" : "pointer",
+              opacity: confirming ? 0.8 : 1,
             }}
           >
-            {confirmLabel}
+            {confirming ? confirmingLabel : confirmLabel}
           </button>
         </div>
       </DialogPanel>

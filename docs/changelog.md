@@ -4,6 +4,23 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-23 — Supabase Data Quality Assessment Implementation
+
+**Goal:** Implement fixes from the data quality assessment plan.
+
+**What happened:**
+- P0: Added latest-enrichment-only subquery to pay_benchmarks and posting_lifecycle (fixes DB-1 double-counting)
+- P0: Documented markets + location_mappings run order in CLAUDE.md; added Common Pitfalls entry
+- P0: Aligned coverage_gaps location parsing with normalize_location_raw (strip company suffix, ZIP, country)
+- P1: Created scripts/dedup_brands.py for Reliant/LG/Virgin merge pairs; documented in CLAUDE.md
+- P1: Documented backfill_title_normalization in CLAUDE.md (script already existed)
+- P2: Derived market_id in pay_benchmarks from posting_snapshots via location_mappings + markets
+- P2: Documented agg_daily_velocity as company-level only (brand_id/market_id intentionally NULL)
+
+**Key files:** `src/compgraph/aggregation/pay_benchmarks.py`, `posting_lifecycle.py`, `coverage_gaps.py`, `daily_velocity.py`, `scripts/dedup_brands.py`, `CLAUDE.md`
+
+---
+
 ## 2026-02-23 — Pipeline Controls: Scrape/Enrich/Scheduler UI with Live Polling (PR #167)
 
 **Goal:** Wire existing backend pipeline endpoints to the Next.js Settings page — trigger, pause, resume, stop scrape; live status polling; enrichment status; scheduler controls.

@@ -394,6 +394,13 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         <button
           onClick={handleSubmit}
           disabled={submitting || !model || !promptVersion.trim()}
+          title={
+            !model
+              ? "Select a model first"
+              : !promptVersion.trim()
+                ? "Enter prompt version"
+                : undefined
+          }
           className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
           style={{
             backgroundColor: "#EF8354",
@@ -427,7 +434,8 @@ function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
         title="Start Eval Run"
         description={`Pass ${passNumber} · ${model} · ${promptVersion} · Concurrency ${concurrency}. LLM API calls will be made for each corpus item.`}
         confirmLabel="Confirm & Start"
-        onConfirm={() => void executeRun()}
+        confirmingLabel="Starting…"
+        onConfirm={() => executeRun()}
       />
     </div>
   );
@@ -553,16 +561,46 @@ export default function EvalRunsPage() {
           >
             Loading runs\u2026
           </div>
-        ) : runs.length === 0 ? (
+        ) : error ? (
           <div
-            className="flex items-center justify-center py-16"
+            className="flex flex-col items-center justify-center gap-4 py-16 px-4"
             style={{
               fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
               fontSize: "13px",
               color: "#4F5D75",
             }}
           >
-            No runs yet. Start your first eval run above.
+            <p>Unable to load runs. Check the error above.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                void fetchRuns();
+              }}
+              className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4]"
+              style={{
+                borderColor: "#BFC0C0",
+                color: "#4F5D75",
+                borderRadius: "var(--radius-sm, 4px)",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        ) : runs.length === 0 ? (
+          <div
+            className="flex flex-col items-center justify-center gap-2 py-16 px-4"
+            style={{
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              fontSize: "13px",
+              color: "#4F5D75",
+            }}
+          >
+            <p>No runs yet.</p>
+            <p className="text-sm">
+              Click &quot;New Run&quot; above to start your first eval run.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
