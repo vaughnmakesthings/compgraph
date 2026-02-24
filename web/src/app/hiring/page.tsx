@@ -190,7 +190,7 @@ export default function HiringPage() {
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="inactive">Closed</option>
         </select>
 
         <select
