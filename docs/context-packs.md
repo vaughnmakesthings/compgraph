@@ -454,6 +454,8 @@ These are NOT loaded by default. Pull them in only when needed.
 | `docs/references/high-speed-labeling-ux.md` | Pre-filled confirmation UX, keyboard-first labeling, diff-based review, interaction math (1500→325 clicks) | Eval tool labeling (M7 Pack J) |
 | `docs/references/jsonb-deep-diffing.md` | SQL jsonb_each FULL OUTER JOIN, deepdiff/dictdiffer Python, weighted scoring, UI diff format | Eval comparison (M7 Pack J) |
 | `docs/references/skeleton-loader-accessibility.md` | aria-busy/aria-live patterns, SkeletonContainer component, layout shift prevention, vitest-axe testing | Frontend a11y (M7) |
+| `docs/references/mcp-tool-inventory.md` | Full MCP tool catalog with project IDs, composed workflows, and tool tables | MCP/automation context |
+| `docs/references/nia-indexing-plan.md` | NIA dependency indexing commands for all CompGraph libraries and docs | DX/automation |
 
 #### `docs/references/supabase-alembic-migrations.md` (~2K tokens total)
 

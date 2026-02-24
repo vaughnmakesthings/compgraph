@@ -42,7 +42,7 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ## Current State (2026-02-24)
 
-**M6 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy. Backend: 703 tests, 82% coverage. Frontend: 174 tests, 52% coverage.
+**M6 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy. Backend: 703 tests, 38.69% coverage (dropped from 82% — pyproject.toml coverage scope issue, see MEMORY.md). Frontend: 174 tests, 52% coverage.
 
 **M7 roadmap approved.** See `docs/plans/m7-implementation-roadmap.md` for the authoritative implementation plan with 5 phases, dependency graph, and sprint sequencing.
 

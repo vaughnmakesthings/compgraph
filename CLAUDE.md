@@ -368,12 +368,24 @@ This is incremental (~2-4s for no changes, ~15s for many). Do it once at session
 
 ## Context Loading
 
-**Exploration hierarchy (follow this order — do NOT skip to step 3):**
+**Exploration hierarchy (follow this order — do NOT skip steps):**
 1. **Claude-Mem** — search persistent memory for prior research and decisions: `search(query="<topic>", project="compgraph")` → `get_observations(ids=[...])` for details. If memory answers the question, stop here.
-2. **CodeSight** — semantic search across code and docs: `search_code(query="<topic>", project="compgraph")` → `get_chunk_code(chunk_ids)` for source. If CodeSight locates the relevant code, read only that file.
-3. **Targeted reads** — Glob/Grep/Read for specific files identified by steps 1-2. Do NOT speculatively read files hoping to find something — that's what steps 1-2 are for.
+2. **Nia** — library docs, API patterns, and indexed dependency context. Use for ANY question about external libraries or frameworks:
+   - `nia_package_search_hybrid` → "how do I do X with library Y" (semantic, AI-powered)
+   - `nia_package_search_grep` → exact method/class/pattern lookups
+   - `search` → cross-source semantic search across all indexed repos and docs
+   - `nia_research` / `nia_deep_research_agent` → multi-source architecture questions (Pro, costs credits)
+   - `context(action="search", query="...")` → check for prior Nia research on this topic
+3. **CodeSight** — semantic search across CompGraph source code and project docs: `search_code(query="<topic>", project="compgraph")` → `get_chunk_code(chunk_ids)` for source. If CodeSight locates the relevant code, read only that file.
+4. **Targeted reads** — Glob/Grep/Read for specific files identified by steps 1-3. Do NOT speculatively read files hoping to find something — that's what steps 1-3 are for.
 
-**Anti-pattern:** Opening 5+ files with Read/Glob before trying Claude-Mem or CodeSight. If you catch yourself doing this, stop and use the tools above first.
+**Routing rules:**
+- Library/framework API question → Nia (step 2), NOT WebSearch
+- CompGraph implementation question → CodeSight (step 3)
+- Current events, pricing, or non-code info → WebSearch
+- Save significant Nia findings to both Claude-Mem AND Nia context (`context(action="save", ...)`) for cross-agent access
+
+**Anti-pattern:** Using WebSearch for library documentation questions. Nia has indexed all major CompGraph dependencies — use it first. WebSearch is for non-code information only.
 
 Read `docs/changelog.md` (latest entry only) for session continuity. The Roadmap section above provides milestone awareness at Tier 0. Load context packs from `docs/context-packs.md` based on task type — use Pack R for planning sessions. Never load all of `docs/design.md` at once (~5.5K tokens).
 
@@ -395,6 +407,7 @@ Project-level agents in `.claude/agents/` have deep CompGraph context:
 - `python-backend-developer` — implementation (scrapers, enrichment, aggregation, API)
 - `react-frontend-developer` — Next.js pages, Recharts charts, AG Grid tables, Supabase Auth, Vitest tests
 - `nextjs-deploy-ops` — DO deployment, Caddy, systemd, Supabase RLS, CI/CD
+- `nia-oracle` — deep research specialist via Nia Oracle/Deep Research. Delegate complex multi-source library, architecture, and migration questions here.
 - `code-reviewer` — quality gate (plan alignment, async patterns, append-only rules)
 - `pytest-validator` — test audit (hollow assertions, DB isolation)
 - `spec-reviewer` — scope gate (goal achievement vs product spec)
@@ -404,6 +417,10 @@ Project-level agents in `.claude/agents/` have deep CompGraph context:
 - `enrichment-monitor` — enrichment pipeline health checks
 - `agent-organizer` — multi-agent orchestration and delegation
 - `security-reviewer` — auth, RLS, input validation, injection risks
+- `aggregation-specialist` — materialized aggregation layer debugging and optimization
+- `scraper-developer` — ATS adapter implementation, HTTP debugging, anti-scraping countermeasures
+- `production-debugger` — cross-service production failure diagnosis (Vercel, Sentry, Supabase, browser)
+- `nia` — external documentation, repos, and package research via Nia MCP
 
 Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 
@@ -431,6 +448,10 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/frontend-code-review` — review frontend files against checklist
 - `/vercel-react-best-practices` — React/Next.js performance optimization guidelines
 - `/web-design-guidelines` — Web Interface Guidelines compliance audit
+- `/ci-debug` — debug GitHub Actions CI failures
+- `/health-check` — comprehensive production health check across all services
+- `/nia` — Nia MCP indexing and search for external docs, repos, and packages
+- `/schema-change` — end-to-end schema change workflow with migration and verification
 
 ## Code Standards
 
@@ -440,6 +461,7 @@ When scaffolding new modules, create fully-implemented files — never empty stu
 
 Before ending a non-trivial session, write a structured summary instead of running parallel observer agents:
 - Save key decisions and findings to claude-mem: `save_memory(text="...", project="compgraph")` — this is the primary persistence method
+- Save technical findings to Nia context for cross-agent access: `context(action="save", key="<category>:<topic>", content="<findings>")` — key categories: `research:`, `decision:`, `pattern:`, `debug:`, `migration:`
 - Also append to `docs/changelog.md` for file-based continuity
 - Include: date, goal, files changed, key decisions, and open questions
 - Keep summaries concise — 5-10 lines maximum
