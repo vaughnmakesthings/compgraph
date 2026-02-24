@@ -95,6 +95,9 @@ export const api = {
 
   listEvalRuns: () => apiFetch<EvalRun[]>('/api/eval/runs'),
 
+  getEvalModels: () =>
+    apiFetch<Array<{ id: string; label: string }>>('/api/eval/models'),
+
   createEvalRun: (body: {
     pass_number: number
     model: string
