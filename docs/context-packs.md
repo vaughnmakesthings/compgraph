@@ -358,6 +358,20 @@ Use when implementing the `/api/v1/` prefix cutover.
 
 ---
 
+### Pack S1: M7 Sprint 1 Brief
+
+Use when starting any Sprint 1 work item — gives scope, issue numbers, acceptance criteria, build order, and manual prerequisites in one load.
+
+| Load | Why | Tokens (est.) |
+|------|-----|:---:|
+| `docs/sprints/m7-sprint1-context.md` | Sprint scope, items, acceptance criteria, build order, context pack map | ~1K |
+
+**Total: ~1K tokens**
+
+**Recommended agents:** any agent picking up a Sprint 1 issue; `agent-organizer` for multi-issue sprint planning.
+
+---
+
 ### Pack R: Roadmap & Phase Planning
 
 Use when planning work, assessing scope, transitioning milestones, or delegating multi-agent tasks.
