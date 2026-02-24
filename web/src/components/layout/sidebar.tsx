@@ -97,18 +97,12 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Prompt Evaluation Tool",
         icon: BeakerIcon,
         href: "/eval",
-        categories: [
-          {
-            id: "eval-pages",
-            label: "Evaluation",
-            children: [
-              { id: "runs", label: "Runs", href: "/eval/runs" },
-              { id: "review", label: "Review", href: "/eval/review" },
-              { id: "accuracy", label: "Accuracy", href: "/eval/accuracy" },
-              { id: "leaderboard", label: "Leaderboard", href: "/eval/leaderboard" },
-              { id: "prompt-diff", label: "Run Diff", href: "/eval/prompt-diff" },
-            ],
-          },
+        children: [
+          { id: "runs", label: "Runs", href: "/eval/runs" },
+          { id: "review", label: "Review", href: "/eval/review" },
+          { id: "accuracy", label: "Accuracy", href: "/eval/accuracy" },
+          { id: "leaderboard", label: "Leaderboard", href: "/eval/leaderboard" },
+          { id: "prompt-diff", label: "Run Diff", href: "/eval/prompt-diff" },
         ],
       },
       {
@@ -355,7 +349,7 @@ function Tier0Item({
 
         {isExpanded && (
           <div id={`nav-sub-${item.id}`} className="mt-0.5">
-            {/* Flat children — competitors companies */}
+            {/* Flat children */}
             {item.children && item.children.length > 0 && (
               <div className="space-y-0.5 pt-0.5">
                 {item.children.map((child) => (
@@ -365,21 +359,23 @@ function Tier0Item({
                     isActive={pathname === child.href}
                   />
                 ))}
-                {/* View All link */}
-                <Link
-                  href={item.href}
-                  className="block transition-colors duration-150 hover:underline"
-                  style={{
-                    paddingLeft: "36px",
-                    paddingTop: "4px",
-                    paddingBottom: "6px",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                    color: "rgba(191,192,192,0.4)",
-                  }}
-                >
-                  View all →
-                </Link>
+                {/* "View all" only for competitor-like lists, not eval sub-pages */}
+                {item.id === "competitors" && (
+                  <Link
+                    href={item.href}
+                    className="block transition-colors duration-150 hover:underline"
+                    style={{
+                      paddingLeft: "36px",
+                      paddingTop: "4px",
+                      paddingBottom: "6px",
+                      fontSize: "11px",
+                      fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                      color: "rgba(191,192,192,0.4)",
+                    }}
+                  >
+                    View all →
+                  </Link>
+                )}
               </div>
             )}
 
