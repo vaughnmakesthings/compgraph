@@ -302,7 +302,7 @@ export default function HiringPage() {
                           ? `Since: ${formatDate(item.first_seen_at)}`
                           : item.last_seen_at
                             ? `Closed: ${formatDate(item.last_seen_at)}`
-                            : `Start: ${formatDate(item.first_seen_at)}`}
+                            : `Seen: ${formatDate(item.first_seen_at)}`}
                       </span>
                     </div>
                   </td>
