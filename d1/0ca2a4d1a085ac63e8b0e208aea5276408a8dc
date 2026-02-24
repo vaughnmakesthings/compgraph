@@ -1,0 +1,40 @@
+src/compgraph/eval/router.py
+  9841c4ed2bc1c371 139-162,265-266,270-271,274-276
+web/src/components/ui/confirm-dialog.tsx
+  9841c4ed2bc1c371 12-13,28,115
+web/src/app/eval/runs/page.tsx
+  9841c4ed2bc1c371 437
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "d10ca2a4d1a085ac63e8b0e208aea5276408a8dc",
+  "prompts": {
+    "2ac4b7a4bf29eb57": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e10ac1ae-a978-473d-8911-1f328572c39a",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 289,
+      "total_deletions": 75,
+      "accepted_lines": 321,
+      "overriden_lines": 0
+    },
+    "9841c4ed2bc1c371": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "af66206c-1dfa-422b-85d7-2a601acb59f3",
+        "model": "composer-1.5"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 55,
+      "total_deletions": 28,
+      "accepted_lines": 36,
+      "overriden_lines": 0
+    }
+  }
+}
