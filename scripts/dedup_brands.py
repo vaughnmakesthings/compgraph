@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
 
 
 async def run_dedup(args: argparse.Namespace) -> int:
-    from sqlalchemy import select, update
+    from sqlalchemy import func, select, update
     from sqlalchemy.exc import IntegrityError
 
     from compgraph.db.models import Brand, PostingBrandMention, PostingEnrichment
@@ -68,29 +68,19 @@ async def run_dedup(args: argparse.Namespace) -> int:
                     logger.info("'%s' and '%s' are same brand — skipping", dup_name, canon_name)
                     continue
 
-                # Count affected rows
-                pbm_count = (
-                    (
-                        await session.execute(
-                            select(PostingBrandMention).where(
-                                PostingBrandMention.resolved_brand_id == dup_brand.id
-                            )
-                        )
-                    )
-                    .scalars()
-                    .all()
+                # Count affected rows (use count query, do not load rows)
+                pbm_stmt = (
+                    select(func.count())
+                    .select_from(PostingBrandMention)
+                    .where(PostingBrandMention.resolved_brand_id == dup_brand.id)
                 )
-                pe_count = (
-                    (
-                        await session.execute(
-                            select(PostingEnrichment).where(
-                                PostingEnrichment.brand_id == dup_brand.id
-                            )
-                        )
-                    )
-                    .scalars()
-                    .all()
+                pe_stmt = (
+                    select(func.count())
+                    .select_from(PostingEnrichment)
+                    .where(PostingEnrichment.brand_id == dup_brand.id)
                 )
+                pbm_count = (await session.execute(pbm_stmt)).scalar() or 0
+                pe_count = (await session.execute(pe_stmt)).scalar() or 0
 
                 logger.info(
                     "Would merge '%s' (id=%s) → '%s' (id=%s): "
@@ -99,8 +89,8 @@ async def run_dedup(args: argparse.Namespace) -> int:
                     dup_brand.id,
                     canon_name,
                     canon_brand.id,
-                    len(pbm_count),
-                    len(pe_count),
+                    pbm_count,
+                    pe_count,
                 )
 
                 if args.dry_run:
