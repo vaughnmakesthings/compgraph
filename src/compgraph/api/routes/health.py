@@ -18,12 +18,6 @@ DB_CHECK_TIMEOUT = 2.0
 SCHEDULER_CHECK_TIMEOUT = 2.0
 
 
-@router.get("/sentry-debug")
-async def trigger_sentry_error() -> dict[str, str]:
-    """Temporary endpoint to verify Sentry integration. Remove after testing."""
-    raise RuntimeError("Sentry test error from CompGraph backend")
-
-
 @router.get("/health")
 async def health_check(
     request: Request,
