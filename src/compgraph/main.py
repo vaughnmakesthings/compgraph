@@ -29,6 +29,18 @@ from compgraph.config import settings
 from compgraph.db.session import engine
 from compgraph.eval.router import router as eval_router
 
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.anthropic import AnthropicIntegration
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=0.2 if settings.ENVIRONMENT == "production" else 1.0,
+        integrations=[AnthropicIntegration(include_prompts=True)],
+        send_default_pii=False,
+    )
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
