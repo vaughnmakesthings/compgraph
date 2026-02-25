@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import sentry_sdk
 
@@ -22,11 +23,20 @@ from compgraph.scrapers.orchestrator import (
     _store_run as _store_scrape_run,
 )
 
+if TYPE_CHECKING:
+    from sentry_sdk._types import MonitorConfig
+
 logger = logging.getLogger(__name__)
 
-# In-process state — resets on server restart. After restart, missed-run
-# detection will not trigger until the first pipeline run completes.
-# Upgrade to persistent store (SQLAlchemy data store) in M6 if needed.
+_MONITOR_CONFIG: MonitorConfig = {
+    "schedule": {"type": "crontab", "value": "0 2 * * 1,3,5"},
+    "timezone": "America/New_York",
+    "checkin_margin": 10,
+    "max_runtime": 120,
+    "failure_issue_threshold": 1,
+    "recovery_threshold": 1,
+}
+
 _last_pipeline_finished_at: datetime | None = None
 _last_pipeline_success: bool = False
 
@@ -59,6 +69,10 @@ async def get_last_pipeline_run_from_db() -> dict[str, datetime | bool | None]:
         return {"finished_at": row.completed_at, "success": True}
 
 
+@sentry_sdk.monitor(
+    monitor_slug="daily-pipeline",
+    monitor_config=_MONITOR_CONFIG,  # type: ignore[arg-type]
+)
 async def pipeline_job() -> None:
     global _last_pipeline_finished_at, _last_pipeline_success
 
@@ -78,64 +92,96 @@ async def pipeline_job() -> None:
         sentry_sdk.capture_exception()
 
     # --- Scrape phase ---
-    logger.info("[SCRAPE] Starting scrape phase")
-    pipeline_run = PipelineRun()
-    _store_scrape_run(pipeline_run)
-    orchestrator = PipelineOrchestrator()
+    with sentry_sdk.start_span(op="pipeline.scrape", name="Scrape ATS sites"):
+        logger.info("[SCRAPE] Starting scrape phase")
+        pipeline_run = PipelineRun()
+        _store_scrape_run(pipeline_run)
+        orchestrator = PipelineOrchestrator()
 
-    try:
-        await orchestrator.run(pipeline_run)
-    except Exception:
-        logger.exception("[SCRAPE] Scrape phase failed with unhandled exception")
-        sentry_sdk.capture_exception()
-        pipeline_run.status = PipelineStatus.FAILED
-        pipeline_run.finished_at = datetime.now(UTC)
+        try:
+            await orchestrator.run(pipeline_run)
+        except Exception:
+            logger.exception("[SCRAPE] Scrape phase failed with unhandled exception")
+            sentry_sdk.capture_exception()
+            pipeline_run.status = PipelineStatus.FAILED
+            pipeline_run.finished_at = datetime.now(UTC)
 
-    scrape_succeeded = pipeline_run.status in (
-        PipelineStatus.SUCCESS,
-        PipelineStatus.PARTIAL,
-    )
+        scrape_succeeded = pipeline_run.status in (
+            PipelineStatus.SUCCESS,
+            PipelineStatus.PARTIAL,
+        )
 
-    logger.info(
-        "[SCRAPE] Scrape phase finished: status=%s, companies_succeeded=%d, "
-        "companies_failed=%d, postings=%d",
-        pipeline_run.status.value,
-        pipeline_run.companies_succeeded,
-        pipeline_run.companies_failed,
-        pipeline_run.total_postings_found,
-    )
+        sentry_sdk.set_context(
+            "pipeline_scrape",
+            {
+                "phase": "scrape",
+                "status": pipeline_run.status.value,
+                "companies_succeeded": pipeline_run.companies_succeeded,
+                "companies_failed": pipeline_run.companies_failed,
+                "postings_found": pipeline_run.total_postings_found,
+            },
+        )
+
+        logger.info(
+            "[SCRAPE] Scrape phase finished: status=%s, companies_succeeded=%d, "
+            "companies_failed=%d, postings=%d",
+            pipeline_run.status.value,
+            pipeline_run.companies_succeeded,
+            pipeline_run.companies_failed,
+            pipeline_run.total_postings_found,
+        )
 
     # --- Enrich phase ---
     enrich_succeeded = False
     if scrape_succeeded:
-        logger.info("[ENRICH] Starting enrichment phase (scrape had successes)")
-        enrichment_run = EnrichmentRun()
-        _store_enrichment_run(enrichment_run)
-        enrich_orchestrator = EnrichmentOrchestrator()
+        with sentry_sdk.start_span(op="pipeline.enrich", name="LLM enrichment (Haiku + Sonnet)"):
+            logger.info("[ENRICH] Starting enrichment phase (scrape had successes)")
+            enrichment_run = EnrichmentRun()
+            _store_enrichment_run(enrichment_run)
+            enrich_orchestrator = EnrichmentOrchestrator()
 
-        try:
-            await enrich_orchestrator.run_full(enrichment_run)
-        except Exception:
-            logger.exception("[ENRICH] Enrichment phase failed with unhandled exception")
-            sentry_sdk.capture_exception()
-            enrichment_run.status = EnrichmentStatus.FAILED
-            enrichment_run.finished_at = datetime.now(UTC)
+            try:
+                await enrich_orchestrator.run_full(enrichment_run)
+            except Exception:
+                logger.exception("[ENRICH] Enrichment phase failed with unhandled exception")
+                sentry_sdk.capture_exception()
+                enrichment_run.status = EnrichmentStatus.FAILED
+                enrichment_run.finished_at = datetime.now(UTC)
 
-        enrich_succeeded = enrichment_run.status in (
-            EnrichmentStatus.SUCCESS,
-            EnrichmentStatus.PARTIAL,
-        )
+            enrich_succeeded = enrichment_run.status in (
+                EnrichmentStatus.SUCCESS,
+                EnrichmentStatus.PARTIAL,
+            )
 
-        logger.info(
-            "[ENRICH] Enrichment phase finished: status=%s, pass1=%s, pass2=%s",
-            enrichment_run.status.value,
-            f"{enrichment_run.pass1_result.succeeded}ok/{enrichment_run.pass1_result.failed}fail"
-            if enrichment_run.pass1_result
-            else "none",
-            f"{enrichment_run.pass2_result.succeeded}ok/{enrichment_run.pass2_result.failed}fail"
-            if enrichment_run.pass2_result
-            else "none",
-        )
+            pass1_summary = (
+                f"{enrichment_run.pass1_result.succeeded}ok/"
+                f"{enrichment_run.pass1_result.failed}fail"
+                if enrichment_run.pass1_result
+                else "none"
+            )
+            pass2_summary = (
+                f"{enrichment_run.pass2_result.succeeded}ok/"
+                f"{enrichment_run.pass2_result.failed}fail"
+                if enrichment_run.pass2_result
+                else "none"
+            )
+
+            sentry_sdk.set_context(
+                "pipeline_enrich",
+                {
+                    "phase": "enrich",
+                    "status": enrichment_run.status.value,
+                    "pass1": pass1_summary,
+                    "pass2": pass2_summary,
+                },
+            )
+
+            logger.info(
+                "[ENRICH] Enrichment phase finished: status=%s, pass1=%s, pass2=%s",
+                enrichment_run.status.value,
+                pass1_summary,
+                pass2_summary,
+            )
     else:
         logger.warning(
             "[ENRICH] Skipping enrichment — scrape fully failed (status=%s)",
@@ -145,24 +191,35 @@ async def pipeline_job() -> None:
     # --- Aggregate phase ---
     agg_succeeded = True
     if enrich_succeeded:
-        logger.info("[AGGREGATE] Starting aggregation phase")
-        try:
-            from compgraph.aggregation.orchestrator import AggregationOrchestrator
+        with sentry_sdk.start_span(op="pipeline.aggregate", name="Rebuild aggregation tables"):
+            logger.info("[AGGREGATE] Starting aggregation phase")
+            try:
+                from compgraph.aggregation.orchestrator import AggregationOrchestrator
 
-            agg_orchestrator = AggregationOrchestrator()
-            agg_result = await agg_orchestrator.run()
-            agg_succeeded = agg_result.ok
-            if agg_result.failed:
-                logger.warning("[AGGREGATE] Partial failure: %s", agg_result.failed)
-            logger.info(
-                "[AGGREGATE] Aggregation phase finished: %d succeeded, %d failed",
-                len(agg_result.succeeded),
-                len(agg_result.failed),
-            )
-        except Exception:
-            logger.exception("[AGGREGATE] Aggregation phase failed")
-            sentry_sdk.capture_exception()
-            agg_succeeded = False
+                agg_orchestrator = AggregationOrchestrator()
+                agg_result = await agg_orchestrator.run()
+                agg_succeeded = agg_result.ok
+                if agg_result.failed:
+                    logger.warning("[AGGREGATE] Partial failure: %s", agg_result.failed)
+
+                sentry_sdk.set_context(
+                    "pipeline_aggregate",
+                    {
+                        "phase": "aggregate",
+                        "succeeded_tables": list(agg_result.succeeded),
+                        "failed_tables": list(agg_result.failed),
+                    },
+                )
+
+                logger.info(
+                    "[AGGREGATE] Aggregation phase finished: %d succeeded, %d failed",
+                    len(agg_result.succeeded),
+                    len(agg_result.failed),
+                )
+            except Exception:
+                logger.exception("[AGGREGATE] Aggregation phase failed")
+                sentry_sdk.capture_exception()
+                agg_succeeded = False
     else:
         logger.warning("[AGGREGATE] Skipping aggregation — enrichment failed")
         agg_succeeded = False
