@@ -41,4 +41,4 @@ class TestLegacyApiRedirect:
     def test_health_not_redirected(self, _mock_db: None) -> None:
         with TestClient(app) as tc:
             resp = tc.get("/health", follow_redirects=False)
-        assert resp.status_code != 308
+        assert resp.status_code == 200
