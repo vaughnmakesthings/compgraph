@@ -1,0 +1,39 @@
+web/src/test/competitors.test.tsx
+  61e7082a51894b90 96-97
+web/src/test/page.test.tsx
+  61e7082a51894b90 2
+src/compgraph/config.py
+  61e7082a51894b90 17
+web/src/test/components/confirm-dialog.test.tsx
+  61e7082a51894b90 106-107
+tests/test_auth_config.py
+  61e7082a51894b90 24
+web/src/components/ui/input.tsx
+  61e7082a51894b90 20
+web/src/test/dashboard.test.tsx
+  61e7082a51894b90 2
+web/src/test/pages.test.tsx
+  61e7082a51894b90 3-5
+web/src/test/eval-pages.test.tsx
+  61e7082a51894b90 100-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "d375e2df1b07af75d1cb40194a58f11009e50dd5",
+  "prompts": {
+    "61e7082a51894b90": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97da7c70-596d-4b41-8e16-8fb31cf75ade",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 17,
+      "total_deletions": 16,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}
