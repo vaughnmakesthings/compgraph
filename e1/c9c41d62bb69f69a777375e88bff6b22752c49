@@ -1,0 +1,64 @@
+.claude/agents/python-backend-developer.md
+  8f3defb483e9fe62 9,11,13-19,21-35
+.claude/agents/python-pro.md
+  8f3defb483e9fe62 10-41
+.claude/agents/production-debugger.md
+  8f3defb483e9fe62 11-28
+.claude/agents/nextjs-deploy-ops.md
+  8f3defb483e9fe62 403-428
+.claude/agents/nia-oracle.md
+  8f3defb483e9fe62 39,41-47,49-52,54,91-97
+docs/references/nia-indexing-plan.md
+  73dce1a8051eda2f 2,7-56,59,61,63-64
+.claude/agents/enrichment-monitor.md
+  8f3defb483e9fe62 9-26
+.claude/agents/dx-optimizer.md
+  8f3defb483e9fe62 10-41
+.claude/agents/react-frontend-developer.md
+  8f3defb483e9fe62 9,11,13-19,21-35,593-597
+.claude/agents/nia.md
+  8f3defb483e9fe62 31-57
+.claude/agents/scraper-developer.md
+  8f3defb483e9fe62 13,15-39
+CLAUDE.md
+  8f3defb483e9fe62 374-376,464
+.claude/agents/aggregation-specialist.md
+  8f3defb483e9fe62 11-28
+.claude/agents/agent-organizer.md
+  8f3defb483e9fe62 67
+.claude/agents/database-optimizer.md
+  8f3defb483e9fe62 10-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "e1c9c41d62bb69f69a777375e88bff6b22752c49",
+  "prompts": {
+    "73dce1a8051eda2f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd1d457-b505-468c-96cf-24781ac43e15",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 55,
+      "overriden_lines": 0
+    },
+    "8f3defb483e9fe62": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1dea9db9-9e87-4293-90d0-70386647745c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 6,
+      "accepted_lines": 307,
+      "overriden_lines": 0
+    }
+  }
+}
