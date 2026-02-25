@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import MarketPage from "../app/market/page";
-import HiringPage from "../app/hiring/page";
-import SettingsPage from "../app/settings/page";
+import MarketPage from "../app/(app)/market/page";
+import HiringPage from "../app/(app)/hiring/page";
+import SettingsPage from "../app/(app)/settings/page";
 import type { DailyVelocity, CoverageGap, PostingListResponse } from "../lib/types";
 
 vi.mock("../lib/api-client", () => ({

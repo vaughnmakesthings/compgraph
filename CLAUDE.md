@@ -371,11 +371,9 @@ This is incremental (~2-4s for no changes, ~15s for many). Do it once at session
 **Exploration hierarchy (follow this order — do NOT skip steps):**
 1. **Claude-Mem** — search persistent memory for prior research and decisions: `search(query="<topic>", project="compgraph")` → `get_observations(ids=[...])` for details. If memory answers the question, stop here.
 2. **Nia** — library docs, API patterns, and indexed dependency context. Use for ANY question about external libraries or frameworks:
-   - `nia_package_search_hybrid` → "how do I do X with library Y" (semantic, AI-powered)
-   - `nia_package_search_grep` → exact method/class/pattern lookups
-   - `search` → cross-source semantic search across all indexed repos and docs
-   - `nia_research` / `nia_deep_research_agent` → multi-source architecture questions (Pro, costs credits)
-   - `context(action="search", query="...")` → check for prior Nia research on this topic
+   - **Free (always try first):** `search` → semantic search all indexed sources; `nia_package_search_hybrid` → search 3K+ pre-indexed packages; `nia_grep`/`nia_read` → exact lookups; `context(action="search")` → check prior findings
+   - **Paid (escalate only when free tools fail):** `nia_research(mode='quick')` ~1 credit; `nia_research(mode='deep')` ~5 credits; `nia_research(mode='oracle')` ~10 credits — LAST RESORT, prefer delegating to nia-oracle agent
+   - **Context sharing:** Save findings with memory types: `fact` (permanent), `procedural` (permanent how-to), `episodic` (7 days), `scratchpad` (1 hour)
 3. **CodeSight** — semantic search across CompGraph source code and project docs: `search_code(query="<topic>", project="compgraph")` → `get_chunk_code(chunk_ids)` for source. If CodeSight locates the relevant code, read only that file.
 4. **Targeted reads** — Glob/Grep/Read for specific files identified by steps 1-3. Do NOT speculatively read files hoping to find something — that's what steps 1-3 are for.
 
@@ -434,7 +432,9 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/merge-guardian` — enforce CI pass + review before merge (detects stacked PRs)
 - `/pr-feedback-cycle` — triage and resolve bot review comments (draft-aware)
 - `/sprint-plan` — analyze issues, build file-overlap matrix, generate merge-wave plan
-- `/research` — structured codebase/web research with scope boundaries
+- `/research` — structured codebase/web research with scope boundaries (Nia-integrated)
+- `/nia-research` — deep research using Nia Oracle/Deep Research for complex multi-source questions (5-10 credits)
+- `/nia-index` — manage Nia's indexed knowledge base (status/add/refresh/audit)
 - `/worktree` — isolated git worktree for issue work
 - `/parallel-pipeline` — decompose issue into parallel agent subtasks
 - `/cleanup` — clean up merged branches and worktrees
@@ -461,7 +461,7 @@ When scaffolding new modules, create fully-implemented files — never empty stu
 
 Before ending a non-trivial session, write a structured summary instead of running parallel observer agents:
 - Save key decisions and findings to claude-mem: `save_memory(text="...", project="compgraph")` — this is the primary persistence method
-- Save technical findings to Nia context for cross-agent access: `context(action="save", key="<category>:<topic>", content="<findings>")` — key categories: `research:`, `decision:`, `pattern:`, `debug:`, `migration:`
+- Save technical findings to Nia context for cross-agent access: `context(action="save", memory_type="fact|procedural", key="<category>:<topic>", content="<findings>")` — use `fact` for verified knowledge, `procedural` for how-to patterns. Key categories: `research:`, `decision:`, `pattern:`, `debug:`, `migration:`
 - Also append to `docs/changelog.md` for file-based continuity
 - Include: date, goal, files changed, key decisions, and open questions
 - Keep summaries concise — 5-10 lines maximum

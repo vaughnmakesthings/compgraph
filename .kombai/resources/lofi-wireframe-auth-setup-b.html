@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account Setup — Option B: Split with Context Panel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+
+  .split {
+    display: flex;
+    height: calc(100vh - 36px);
+  }
+
+  /* LEFT CONTEXT PANEL */
+  .left-panel {
+    width: 36%;
+    background: #ddd;
+    border-right: 2px solid #bbb;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 32px;
+    position: relative;
+  }
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: #555;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: bold;
+    border: 2px solid #333;
+  }
+  .logo-text { font-size: 18px; font-weight: bold; color: #222; }
+  .context-heading { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 10px; }
+  .context-desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 24px; }
+  .context-detail {
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    background: #fff;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: #777; }
+  .detail-value { font-weight: bold; color: #333; }
+  .role-pill {
+    display: inline-block;
+    background: #ccc;
+    border-radius: 3px;
+    padding: 1px 8px;
+    font-size: 11px;
+    color: #555;
+    font-weight: bold;
+  }
+
+  .steps-vertical { list-style: none; margin-top: 24px; }
+  .step-v {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-left: 2px solid #bbb;
+    margin-left: 10px;
+    padding-left: 16px;
+    position: relative;
+  }
+  .step-v::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 12px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #aaa;
+    border: 2px solid #888;
+  }
+  .step-v.done::before { background: #666; border-color: #444; }
+  .step-v.active::before { background: #444; border-color: #222; }
+  .step-v-label { font-size: 12px; color: #555; }
+  .step-v-label.active { color: #222; font-weight: bold; }
+
+  /* RIGHT FORM PANEL */
+  .right-panel {
+    flex: 1;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 48px;
+    overflow-y: auto;
+  }
+
+  .form-title { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 4px; }
+  .form-sub { font-size: 12px; color: #777; margin-bottom: 26px; }
+
+  .form-group { margin-bottom: 16px; width: 100%; }
+  .form-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: bold; }
+  .form-input {
+    width: 100%;
+    border: 2px solid #999;
+    border-radius: 4px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    color: #333;
+  }
+  .form-input::placeholder { color: #bbb; font-style: italic; }
+  .form-input.locked { background: #f0f0f0; color: #999; cursor: not-allowed; border-color: #ddd; }
+  .hint { font-size: 10px; color: #999; margin-top: 3px; }
+
+  .password-strength {
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+  }
+  .password-strength-bar {
+    height: 100%;
+    width: 55%;
+    background: #888;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .terms-note { font-size: 10px; color: #aaa; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; width: 100%; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 2 — Account Setup &nbsp;|&nbsp; <strong>Option B: Split with Context Panel</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<div class="split">
+
+  <!-- LEFT CONTEXT PANEL -->
+  <!-- NEW COMPONENT: AuthBrandPanel — src/components/auth/AuthBrandPanel.tsx -->
+  <div class="left-panel">
+    <span class="comp-badge new" style="top:8px;right:8px">[NEW] AuthBrandPanel</span>
+
+    <div class="logo-block">
+      <div class="logo-icon">CG</div>
+      <span class="logo-text">CompGraph</span>
+    </div>
+
+    <div class="context-heading">You've been invited</div>
+    <p class="context-desc">Complete your account setup below to access CompGraph — competitive intelligence for field marketing agencies.</p>
+
+    <div class="context-detail">
+      <div class="detail-row">
+        <span class="detail-label">Invited by</span>
+        <span class="detail-value" style="font-size:11px">alice@mosaicsales.com</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Your role</span>
+        <span class="role-pill">viewer</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Organization</span>
+        <span class="detail-value" style="font-size:11px">Mosaic Sales Solutions</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Invite expires</span>
+        <span class="detail-value" style="font-size:11px;color:#888">72 hours</span>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:#888;margin-bottom:8px">Steps</p>
+    <ul class="steps-vertical">
+      <li class="step-v done">
+        <div>
+          <div class="step-v-label">✓ Accepted invite via email</div>
+        </div>
+      </li>
+      <li class="step-v active">
+        <div>
+          <div class="step-v-label active">→ Set up your account</div>
+        </div>
+      </li>
+      <li class="step-v">
+        <div>
+          <div class="step-v-label">Access CompGraph dashboard</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- RIGHT FORM PANEL -->
+  <div class="right-panel">
+
+    <!-- NEW COMPONENT: AccountSetupForm — src/components/auth/AccountSetupForm.tsx -->
+    <div class="comp-wrap" style="max-width:380px">
+      <span class="comp-badge new" style="top:-12px;right:0">[NEW] AccountSetupForm</span>
+
+      <div class="form-title">Set up your account</div>
+      <div class="form-sub">Choose a name and password. You'll use these to sign in.</div>
+
+      <div class="form-group">
+        <label class="form-label">Full name <span style="color:#bbb">*</span></label>
+        <input class="form-input" placeholder="e.g. Jordan Smith" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email address &nbsp;<span style="font-size:10px;color:#aaa;font-style:italic">(cannot be changed)</span></label>
+        <input class="form-input locked" value="jordan@mosaicsales.com" readonly />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password <span style="color:#bbb">*</span></label>
+        <input class="form-input" type="password" placeholder="Minimum 8 characters" />
+        <div class="password-strength">
+          <div class="password-strength-bar"></div>
+        </div>
+        <div class="hint">Strength: Medium · Use letters, numbers &amp; symbols</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm password <span style="color:#bbb">*</span></label>
+        <input class="form-input" type="password" placeholder="Re-enter your password" />
+      </div>
+
+      <!-- REUSABLE: Button (primary) -->
+      <div class="comp-wrap">
+        <span class="comp-badge reuse">[REUSE] Button (primary)</span>
+        <button class="btn-primary">Complete Setup →</button>
+      </div>
+
+      <p class="terms-note">By completing setup, you agree to CompGraph's usage policy. This is a private, invite-only platform.</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

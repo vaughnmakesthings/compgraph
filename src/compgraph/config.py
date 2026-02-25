@@ -1,6 +1,6 @@
 from urllib.parse import quote, quote_plus, urlparse, urlunparse
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +11,12 @@ class Settings(BaseSettings):
     SUPABASE_PROJECT_REF: str = "tkvxyxwfosworwqxesnz"
     SUPABASE_REGION: str = "us-west-2"
     SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""
+    SUPABASE_KEY: str = ""  # anon key — safe for frontend, respects RLS
+
+    # Auth (SEC-01)
+    SUPABASE_JWT_SECRET: SecretStr = SecretStr("")  # HS256 secret for JWT verification
+    SUPABASE_SERVICE_ROLE_KEY: SecretStr = SecretStr("")  # bypasses RLS, background jobs only
+    AUTH_DISABLED: bool = False  # set True in tests to bypass auth middleware
 
     # Database password (stored separately to avoid URL-encoding issues with @, /, #)
     DATABASE_PASSWORD: str
@@ -62,6 +67,12 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     CORS_ORIGINS: str = "*"
+
+    @model_validator(mode="after")
+    def _auth_safety_check(self) -> "Settings":
+        if self.AUTH_DISABLED and self.ENVIRONMENT == "production":
+            raise ValueError("AUTH_DISABLED=true is forbidden when ENVIRONMENT=production")
+        return self
 
     @property
     def database_url(self) -> str:

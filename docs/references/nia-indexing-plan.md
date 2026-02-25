@@ -1,71 +1,64 @@
 # Nia Dependency Indexing Plan for CompGraph
-# Run these commands in a Claude Code session to index all key dependencies.
+
 # Nia's package search (nia_package_search_hybrid/grep) works on 3K+ pre-indexed
 # packages from PyPI/NPM without manual indexing. The commands below are for
 # DOCUMENTATION SITES and REPOS that need explicit indexing.
 
-## Step 1: Verify what's already indexed
-# Run this first to see current state:
-#   list_repositories()
+## Documentation Sites (index_documentation)
 
-## Step 2: Index documentation sites (index_documentation)
-# These are the highest-value targets — docs that agents hallucinate most.
+# Core backend
+index_documentation(url="https://fastapi.tiangolo.com/")                     # 311 pages
+index_documentation(url="https://docs.sqlalchemy.org/en/20/")                # 161 pages
+index_documentation(url="https://alembic.sqlalchemy.org/en/latest/")         # 23 pages
+index_documentation(url="https://apscheduler.readthedocs.io/en/master/")     # 10 pages
+index_documentation(url="https://docs.anthropic.com/en/docs")                # indexing (added 2026-02-24)
 
-# APScheduler v4 alpha — HIGHEST PRIORITY (poorly documented, heavily hallucinated)
-index_documentation(url="https://apscheduler.readthedocs.io/en/master/")
+# Supabase (auth, RLS, client)
+index_documentation(url="https://supabase.com/docs/guides")                  # 708 pages
 
-# Supabase docs (auth, RLS, client, edge functions)
-index_documentation(url="https://supabase.com/docs")
+# Frontend
+index_documentation(url="https://nextjs.org/docs")                           # 379 pages
+index_documentation(url="https://tailwindcss.com/docs")                      # 240 pages
+index_documentation(url="https://react.dev")                                 # 177 pages
+index_documentation(url="https://recharts.org/en-US/api")                    # indexing (re-indexed 2026-02-24)
+index_documentation(url="https://www.radix-ui.com/primitives/docs")          # 43 pages
+index_documentation(url="https://www.tremor.so/docs")                        # 51 pages
 
-# Next.js 16 docs (App Router, bleeding edge)
-index_documentation(url="https://nextjs.org/docs")
+# Roadmap (geo/map features)
+index_documentation(url="https://h3geo.org")                                 # 79 pages
+index_documentation(url="https://h3.dev")                                    # 32 pages
+index_documentation(url="https://docs.mapbox.com")                           # 2516 pages
+index_documentation(url="https://visgl.github.io")                           # 11 pages
 
-# FastAPI docs
-index_documentation(url="https://fastapi.tiangolo.com/")
+# Roadmap (LLM provider abstraction)
+index_documentation(url="https://openrouter.ai")                             # 142 pages
+index_documentation(url="https://vercel.com")                                # 939 pages
 
-# SQLAlchemy 2.0 docs (async patterns)
-index_documentation(url="https://docs.sqlalchemy.org/en/20/")
+# Other
+index_documentation(url="https://radix-ui.com")                              # 60 pages (themes)
+index_documentation(url="https://logo.dev")                                  # 26 pages
 
-# Alembic docs
-index_documentation(url="https://alembic.sqlalchemy.org/en/latest/")
+## GitHub Repos (index_repository)
 
-# Recharts 3 docs (frequently hallucinated chart API)
-index_documentation(url="https://recharts.org/en-US/api")
+index_repository(url="https://github.com/agronholm/apscheduler")             # v4 alpha source
+index_repository(url="https://github.com/recharts/recharts")                 # v3 source
+index_repository(url="https://github.com/supabase/supabase-js")              # JS client source
+index_repository(url="https://github.com/anthropics/anthropic-sdk-python")   # Python SDK source
+index_repository(url="https://github.com/anthropics/claude-code")            # Claude Code source
+index_repository(url="https://github.com/radix-ui/primitives")               # Radix primitives
+index_repository(url="https://github.com/radix-ui/themes")                   # Radix themes
+index_repository(url="https://github.com/uber/h3")                           # H3 geo library
+index_repository(url="https://github.com/mapbox/mapbox-gl-draw")             # Mapbox Draw
+index_repository(url="https://github.com/openrouterteam/ai-sdk-provider")    # OpenRouter SDK
+index_repository(url="https://github.com/vercel-labs/agent-skills")          # React best practices
+index_repository(url="https://github.com/vaughnmakesthings/compgraph")       # CompGraph itself
 
-# Tailwind CSS v4 docs
-index_documentation(url="https://tailwindcss.com/docs")
+## Notes
 
-# Anthropic SDK docs
-index_documentation(url="https://docs.anthropic.com/en/docs")
-
-# Radix UI docs
-index_documentation(url="https://www.radix-ui.com/primitives/docs")
-
-# Tremor docs
-index_documentation(url="https://www.tremor.so/docs")
-
-## Step 3: Index key GitHub repos (index_repository)
-# These give Nia access to actual source code, not just docs.
-
-# APScheduler v4 source — critical for understanding the alpha API
-index_repository(url="https://github.com/agronholm/apscheduler")
-
-# Recharts source — v3 has breaking changes from v2
-index_repository(url="https://github.com/recharts/recharts")
-
-# Supabase JS client
-index_repository(url="https://github.com/supabase/supabase-js")
-
-## Step 4: Verify indexing completion
-# Indexing is async — check status:
-#   check_repository_status(name="<source-name>")
-# Wait for all to complete before relying on them.
-
-## Notes:
 # - Pre-indexed PyPI/NPM packages (fastapi, httpx, beautifulsoup4, pydantic,
-#   asyncpg, rapidfuzz, playwright, react, next, recharts, etc.) are already
+#   asyncpg, rapidfuzz, react, next, recharts, etc.) are already
 #   searchable via nia_package_search_hybrid/grep WITHOUT manual indexing.
-# - The above index_documentation calls are for SUPPLEMENTARY context —
-#   getting full docs beyond what's in the package source.
-# - Budget: Pro tier allows 50 indexing jobs/month. This plan uses ~14.
+# - Budget: Pro tier allows 50 indexing jobs/month. This plan uses ~32.
 # - Re-index monthly or when major version updates drop.
+# - Last full audit: 2026-02-24 — all sources ✅ ready, 2 gaps fixed (Anthropic docs, Recharts full API)
+# - Duplicates cleaned: 4 doc dupes removed (logo.dev x1, mapbox x1, supabase x2)

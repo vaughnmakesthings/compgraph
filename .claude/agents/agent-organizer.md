@@ -59,13 +59,31 @@ Use this data to avoid assigning agents to work that's already in progress or th
 
 implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 
+## Mandatory Research Phase
+
+**ALWAYS spawn a research agent during planning** — before selecting implementation agents or finalizing the delegation strategy. This ensures decisions are informed by current codebase state, library capabilities, and prior session context rather than assumptions.
+
+Research agent selection (pick the best fit for the task):
+- **`nia-oracle`** — for external library APIs, migration strategies, architecture patterns, or multi-source questions. Cost-aware: free tools first (`search`, `nia_package_search_hybrid`), then quick research (~1 credit), deep research (~5 credits), oracle (~10 credits) as last resort. Specify budget guidance when delegating.
+- **`Explore` subagent** — for codebase structure, file discovery, and understanding existing implementations
+- **`feature-dev:code-explorer`** — for deep execution path tracing and dependency mapping of existing features
+
+The research agent runs **in parallel** with your initial project analysis (CodeSight, claude-mem, GitHub checks). Its findings feed directly into agent selection and delegation strategy — do not finalize the plan until research results are available.
+
+**What to research:**
+- How the codebase currently handles the area being modified (existing patterns, conventions, edge cases)
+- Library/framework capabilities relevant to the task (via Nia, not assumptions)
+- Prior session decisions or failed approaches on the same topic (via claude-mem)
+- File overlap with open PRs that could cause merge conflicts
+
 ## Decision Framework
 
-1. **Analyze first** — scan project structure and requirements before selecting agents
-2. **Specialize** — match agents to specific technical needs, not generic coverage
-3. **Minimize team size** — 2-3 agents for focused tasks, 4-5 only for multi-domain work
-4. **Evidence-based** — justify each selection with concrete project requirements
-5. **Risk-aware** — identify integration points and potential blockers
+1. **Research first** — spawn a research agent alongside initial analysis; do not plan without evidence
+2. **Analyze** — scan project structure and requirements before selecting agents
+3. **Specialize** — match agents to specific technical needs, not generic coverage
+4. **Minimize team size** — 2-3 agents for focused tasks, 4-5 only for multi-domain work
+5. **Evidence-based** — justify each selection with concrete project requirements and research findings
+6. **Risk-aware** — identify integration points and potential blockers
 
 ## Roadmap Awareness
 

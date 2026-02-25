@@ -97,11 +97,11 @@ vi.mock("@/lib/api-client", () => ({
 // ---------------------------------------------------------------------------
 // Import pages under test (after mocks are set up).
 // ---------------------------------------------------------------------------
-import EvalRunsPage from "@/app/eval/runs/page";
-import LeaderboardPage from "@/app/eval/leaderboard/page";
-import AccuracyPage from "@/app/eval/accuracy/page";
-import ReviewPage from "@/app/eval/review/page";
-import PromptDiffPage from "@/app/eval/prompt-diff/page";
+import EvalRunsPage from "@/app/(app)/eval/runs/page";
+import LeaderboardPage from "@/app/(app)/eval/leaderboard/page";
+import AccuracyPage from "@/app/(app)/eval/accuracy/page";
+import ReviewPage from "@/app/(app)/eval/review/page";
+import PromptDiffPage from "@/app/(app)/eval/prompt-diff/page";
 
 // ---------------------------------------------------------------------------
 // Eval Runs page

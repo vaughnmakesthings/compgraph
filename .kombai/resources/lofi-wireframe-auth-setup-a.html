@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account Setup — Option A: Stepped Single-Column</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+
+  .page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: #555;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: bold;
+    border: 2px solid #333;
+  }
+  .logo-text { font-size: 18px; font-weight: bold; color: #222; }
+
+  /* CARD */
+  .card {
+    background: #fff;
+    border: 2px solid #999;
+    border-radius: 8px;
+    padding: 32px 36px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 3px 3px 0 #ccc;
+    position: relative;
+  }
+
+  .card-title { font-size: 20px; font-weight: bold; color: #222; margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: #777; margin-bottom: 24px; }
+
+  .name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .form-group { margin-bottom: 16px; position: relative; }
+  .form-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: bold; }
+  .form-input {
+    width: 100%;
+    border: 2px solid #999;
+    border-radius: 4px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #f9f9f9;
+    color: #333;
+  }
+  .form-input.with-toggle { padding-right: 38px; }
+  .form-input::placeholder { color: #bbb; font-style: italic; }
+  .hint { font-size: 10px; color: #999; margin-top: 3px; }
+
+  /* Password row with inline toggle */
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888;
+    padding: 0;
+    font-family: inherit;
+  }
+
+  .password-strength {
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+  }
+  .password-strength-bar {
+    height: 100%;
+    width: 40%;
+    background: #aaa;
+    border-radius: 2px;
+  }
+  .strength-label { font-size: 10px; color: #888; margin-top: 3px; }
+
+  /* locked email */
+  .email-locked {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 11px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: #f5f5f5;
+    font-family: monospace;
+    font-size: 12px;
+    color: #888;
+  }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-primary {
+    flex: 1;
+    padding: 11px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 2 — Account Setup &nbsp;|&nbsp; <strong>Option A: Single-Column</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<!-- Triggered by: user clicks magic link in invite email → /auth/setup?token=... -->
+
+<div class="page">
+
+  <div class="logo-block">
+    <div class="logo-icon">CG</div>
+    <span class="logo-text">CompGraph</span>
+  </div>
+
+  <!-- FORM CARD -->
+  <!-- NEW COMPONENT: AccountSetupForm — src/components/auth/AccountSetupForm.tsx -->
+  <div class="comp-wrap" style="width:100%;max-width:440px">
+    <span class="comp-badge new" style="top:-12px;right:0">[NEW] AccountSetupForm</span>
+
+    <div class="card">
+      <div class="card-title">Set up your account</div>
+      <div class="card-sub">You'll use your email and password to sign in going forward.</div>
+
+      <!-- First / Last name — NEW: split from single Full name field -->
+      <div class="name-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">First name</label>
+          <input class="form-input" placeholder="e.g. Jordan" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Last name</label>
+          <input class="form-input" placeholder="e.g. Smith" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">Email address <span style="color:#aaa">(locked)</span></label>
+        <div class="email-locked">
+          jordan@mosaicsales.com &nbsp;🔒
+        </div>
+        <p class="hint">This is the email your invite was sent to — it cannot be changed here.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Create password</label>
+        <!-- REUSABLE: Input — src/components/ui/input.tsx -->
+        <div class="comp-wrap">
+          <span class="comp-badge reuse" style="top:-8px;right:0">[REUSE] Input (rightElement)</span>
+          <div class="pw-wrap">
+            <input class="form-input with-toggle" type="password" placeholder="Min 8 characters" />
+            <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+          </div>
+        </div>
+        <div class="password-strength">
+          <div class="password-strength-bar"></div>
+        </div>
+        <div class="strength-label">Strength: Medium</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm password</label>
+        <div class="pw-wrap">
+          <input class="form-input with-toggle" type="password" placeholder="Re-enter password" />
+          <button class="pw-toggle" type="button" title="Show/hide password">👁</button>
+        </div>
+      </div>
+
+      <!-- REUSABLE: Button (primary) -->
+      <div class="comp-wrap" style="margin-top:8px">
+        <span class="comp-badge reuse">[REUSE] Button (primary)</span>
+        <button class="btn-primary">Create Account</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

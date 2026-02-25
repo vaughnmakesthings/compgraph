@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import DashboardPage from "../app/page";
+import DashboardPage from "../app/(app)/page";
 import { api } from "@/lib/api-client";
 
 vi.mock("@/lib/api-client", () => ({
