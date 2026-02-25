@@ -15,7 +15,7 @@ Key settings applied:
 
 | Setting | Value | config.toml key |
 |---------|-------|-----------------|
-| Site URL | `https://compgraph.vercel.app` | `[auth] site_url` |
+| Site URL | `https://compgraph.app` | `[auth] site_url` |
 | Redirect URLs | `/setup` on Vercel + localhost | `[auth] additional_redirect_urls` |
 | Public sign-up | **disabled** (invite-only) | `[auth] enable_signup = false` |
 | Email confirmations | **enabled** | `[auth.email] enable_confirmations = true` |

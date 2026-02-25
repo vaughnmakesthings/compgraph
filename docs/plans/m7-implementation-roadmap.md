@@ -270,9 +270,9 @@ After Phase 1 is merged and verified:
 | Magic link provider | Enabled | Supabase Dashboard → Auth → Providers |
 | Email+password provider | Enabled | Supabase Dashboard → Auth → Providers |
 | Public signup | **Disabled** | Supabase Dashboard → Auth → Settings |
-| Redirect URLs | `https://compgraph.vercel.app/setup`, `http://localhost:3000/setup` | Supabase Dashboard → Auth → URL Configuration |
+| Redirect URLs | `https://compgraph.app/setup`, `http://localhost:3000/setup` | Supabase Dashboard → Auth → URL Configuration |
 | JWT secret | `SUPABASE_JWT_SECRET` | 1Password DEV vault → `.env` → `config.py` |
-| Site URL | `https://compgraph.vercel.app` | Supabase Dashboard → Auth → URL Configuration |
+| Site URL | `https://compgraph.app` | Supabase Dashboard → Auth → URL Configuration |
 
 ### 6.2 Backend Auth Middleware
 
@@ -657,7 +657,7 @@ M7 is complete when:
 - [ ] Backend tests pass at >50% coverage
 - [ ] Frontend tests pass at >50% coverage
 - [ ] All CI checks green
-- [ ] Deployed to dev.compgraph.io and compgraph.vercel.app
+- [ ] Deployed to dev.compgraph.io and compgraph.app
 
 ---
 

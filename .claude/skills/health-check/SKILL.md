@@ -37,7 +37,7 @@ Use Vercel MCP tools:
 
 Also check the production URL responds:
 ```bash
-curl -sf -o /dev/null -w "HTTP %{http_code} in %{time_total}s" https://compgraph.vercel.app/
+curl -sf -o /dev/null -w "HTTP %{http_code} in %{time_total}s" https://compgraph.app/
 ```
 
 ### 3. Database Connectivity (Supabase)

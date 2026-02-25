@@ -75,7 +75,7 @@
 ## Manual Steps (Do Before Starting SEC-01)
 
 - [ ] Enable magic link provider in Supabase Auth dashboard (project `tkvxyxwfosworwqxesnz`)
-- [ ] Configure redirect URLs: `https://compgraph.vercel.app/setup` and `http://localhost:3000/setup`
+- [ ] Configure redirect URLs: `https://compgraph.app/setup` and `http://localhost:3000/setup`
 - [ ] Disable public signup in Supabase Auth settings
 
 These are dashboard-only clicks — see issue #206 for details.

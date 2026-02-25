@@ -11,7 +11,7 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 **What happened:**
 - Diagnosed 6 consecutive ERROR deployments on Vercel — root cause: `rootDirectory` not set, GitHub integration clone path was building from repo root instead of `web/`
 - Fixed via Vercel REST API: `PATCH /v9/projects/{id}` with `{"rootDirectory": "web"}`
-- Triggered production redeploy — build succeeded, `compgraph.vercel.app` back online
+- Triggered production redeploy — build succeeded, `compgraph.app` back online
 - Set up `@sentry/nextjs` v10.40.0 via Sentry wizard — org `vaughnmakesthings-r9`, project `compgraph`
 - Cleaned up wizard artifacts: removed example page/API, `.cursor/`, `.mcp.json`
 - Tuned configs: 20% trace sampling in production (was 100%), removed `sendDefaultPii` and `enableLogs`
