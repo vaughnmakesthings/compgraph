@@ -452,20 +452,13 @@ describe("UserManagementSection", () => {
 // =========================================================================
 
 describe("UserTable", () => {
-  const defaultProps: {
-    users: AppUser[];
-    currentUserId: string;
-    existingEmails: string[];
-    onUserUpdated: ReturnType<typeof vi.fn>;
-    onUserRemoved: ReturnType<typeof vi.fn>;
-    onUserInvited: ReturnType<typeof vi.fn>;
-  } = {
+  const defaultProps = {
     users: mockUsers,
     currentUserId: "u-1",
     existingEmails: mockUsers.map((u) => u.email),
-    onUserUpdated: vi.fn(),
-    onUserRemoved: vi.fn(),
-    onUserInvited: vi.fn(),
+    onUserUpdated: vi.fn() as unknown as (user: AppUser) => void,
+    onUserRemoved: vi.fn() as unknown as (userId: string) => void,
+    onUserInvited: vi.fn() as unknown as (user: AppUser) => void,
   };
 
   beforeEach(() => {
