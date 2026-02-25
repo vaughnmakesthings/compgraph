@@ -462,7 +462,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # Logical reference to auth.users.id — NO ForeignKey (Alembic excludes auth schema)
     auth_uid: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, unique=True, index=True
+        UUID(as_uuid=True), nullable=True, unique=True
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
