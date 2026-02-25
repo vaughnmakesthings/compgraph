@@ -1,0 +1,51 @@
+web/playwright.config.ts
+  9a41e0ed76f01787 11
+docs/references/mcp-server-capabilities.md
+  9a41e0ed76f01787 100
+docs/plans/2026-02-25-auth-versioning-plan.md
+  9a41e0ed76f01787 1400
+.claude/agents/production-debugger.md
+  9a41e0ed76f01787 162
+scripts/playwright-smoke.sh
+  9a41e0ed76f01787 43
+web/tests/smoke.spec.ts
+  9a41e0ed76f01787 13
+docs/changelog.md
+  9a41e0ed76f01787 14
+docs/sprints/m7-sprint1-context.md
+  9a41e0ed76f01787 78
+.claude/skills/health-check/SKILL.md
+  9a41e0ed76f01787 40
+docs/plans/m7-implementation-roadmap.md
+  9a41e0ed76f01787 273,275,660
+docs/phases.md
+  9a41e0ed76f01787 132
+CLAUDE.md
+  9a41e0ed76f01787 254
+docs/runbooks/supabase-auth-setup.md
+  9a41e0ed76f01787 18
+.claude/agents/nextjs-deploy-ops.md
+  9a41e0ed76f01787 341
+supabase/config.toml
+  9a41e0ed76f01787 150,152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "8a9905d169ab7a2cf2fe46165d927f39be49c79e",
+  "prompts": {
+    "9a41e0ed76f01787": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58c0ba5f-fcb5-4f9e-ade0-694744e4389d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 18,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
