@@ -1,0 +1,36 @@
+src/compgraph/scheduler/jobs.py
+  efd83ad8a9c4bda7 6-7,78,90,120,164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "76fb38ab11c2cbee8463573d76e145a6b5500e92",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1704,
+      "overriden_lines": 0
+    },
+    "efd83ad8a9c4bda7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2a4f3363-85cf-4d6b-bf8c-62cafeb6cc9c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 2,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
