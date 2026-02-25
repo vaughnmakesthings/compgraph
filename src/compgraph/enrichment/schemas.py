@@ -171,6 +171,7 @@ class Pass1Result(BaseModel):
 # Make ValidationError available for import from this module
 __all__ = [
     "PAY_RANGE_BY_FREQUENCY",
+    "EmploymentType",
     "EntityMention",
     "EntityType",
     "Pass1Result",
@@ -178,9 +179,9 @@ __all__ = [
     "PayFrequency",
     "PayType",
     "RoleArchetype",
+    "RoleLevel",
     "ValidationError",
 ]
-
 # ---------------------------------------------------------------------------
 # Pass 2 schemas — Entity Extraction (Sonnet)
 # ---------------------------------------------------------------------------
