@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 describe('api.getPipelineStatus', () => {
-  it('fetches from /api/pipeline/status', async () => {
+  it('fetches from /api/v1/pipeline/status', async () => {
     const mockStatus: PipelineStatus = {
       status: 'idle',
       scrape: { current_run: null, last_completed_at: null, next_run_at: null },
@@ -25,7 +25,7 @@ describe('api.getPipelineStatus', () => {
     const result = await api.getPipelineStatus()
 
     const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toContain('/api/pipeline/status')
+    expect(url).toContain('/api/v1/pipeline/status')
     expect(result.status).toBe('idle')
   })
 })
@@ -71,7 +71,7 @@ describe('api.listPostings', () => {
     await api.listPostings()
 
     const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toMatch(/\/api\/postings$/)
+    expect(url).toMatch(/\/api\/v1\/postings$/)
   })
 })
 
@@ -134,7 +134,7 @@ describe('api.getVelocity', () => {
     await api.getVelocity()
 
     const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toMatch(/\/api\/aggregation\/velocity$/)
+    expect(url).toMatch(/\/api\/v1\/aggregation\/velocity$/)
   })
 })
 
@@ -152,7 +152,7 @@ describe('api.createEvalRun', () => {
     })
 
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/eval/runs')
+    expect(url).toContain('/api/v1/eval/runs')
     expect(init.method).toBe('POST')
     expect(JSON.parse(init.body as string)).toMatchObject({
       pass_number: 1,
@@ -165,7 +165,7 @@ describe('api.createEvalRun', () => {
 })
 
 describe('api.triggerAggregation', () => {
-  it('sends POST to /api/aggregation/trigger', async () => {
+  it('sends POST to /api/v1/aggregation/trigger', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ status: 'started' }),
@@ -174,14 +174,14 @@ describe('api.triggerAggregation', () => {
     const result = await api.triggerAggregation()
 
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/aggregation/trigger')
+    expect(url).toContain('/api/v1/aggregation/trigger')
     expect(init.method).toBe('POST')
     expect(result.status).toBe('started')
   })
 })
 
 describe('api.recordComparison', () => {
-  it('sends POST with body to /api/eval/comparisons', async () => {
+  it('sends POST with body to /api/v1/eval/comparisons', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ id: 'comp-123' }),
@@ -197,7 +197,7 @@ describe('api.recordComparison', () => {
     const result = await api.recordComparison(body)
 
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/eval/comparisons')
+    expect(url).toContain('/api/v1/eval/comparisons')
     expect(init.method).toBe('POST')
     expect(JSON.parse(init.body as string)).toMatchObject(body)
     expect(result.id).toBe('comp-123')
@@ -224,7 +224,7 @@ describe('api.recordComparison', () => {
 })
 
 describe('api.getEvalResults', () => {
-  it('fetches from /api/eval/runs/{runId}/results', async () => {
+  it('fetches from /api/v1/eval/runs/{runId}/results', async () => {
     const mockResults: EvalResult[] = [
       {
         id: 'result-1',
@@ -248,7 +248,7 @@ describe('api.getEvalResults', () => {
     const results = await api.getEvalResults('run-abc')
 
     const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toContain('/api/eval/runs/run-abc/results')
+    expect(url).toContain('/api/v1/eval/runs/run-abc/results')
     expect(results).toHaveLength(1)
     expect(results[0].id).toBe('result-1')
     expect(results[0].parse_success).toBe(true)
@@ -298,7 +298,7 @@ describe('api.getBrandTimeline', () => {
     await api.getBrandTimeline()
 
     const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toMatch(/\/api\/aggregation\/brand-timeline$/)
+    expect(url).toMatch(/\/api\/v1\/aggregation\/brand-timeline$/)
   })
 })
 
@@ -318,42 +318,42 @@ describe('api pipeline control endpoints', () => {
     } as Response)
   }
 
-  it('triggerScrape sends POST to /api/scrape/trigger', async () => {
+  it('triggerScrape sends POST to /api/v1/scrape/trigger', async () => {
     mockOk({ run_id: 'run-1', message: 'started' })
     const result = await api.triggerScrape()
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/scrape/trigger')
+    expect(url).toContain('/api/v1/scrape/trigger')
     expect(init.method).toBe('POST')
     expect(result.run_id).toBe('run-1')
   })
 
-  it('pauseScrape sends POST to /api/scrape/pause', async () => {
+  it('pauseScrape sends POST to /api/v1/scrape/pause', async () => {
     mockOk({ run_id: 'run-1', status: 'PAUSED', message: 'ok' })
     await api.pauseScrape()
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/scrape/pause')
+    expect(url).toContain('/api/v1/scrape/pause')
     expect(init.method).toBe('POST')
   })
 
-  it('resumeScrape sends POST to /api/scrape/resume', async () => {
+  it('resumeScrape sends POST to /api/v1/scrape/resume', async () => {
     mockOk({ run_id: 'run-1', status: 'RUNNING', message: 'ok' })
     await api.resumeScrape()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/resume')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scrape/resume')
   })
 
-  it('stopScrape sends POST to /api/scrape/stop', async () => {
+  it('stopScrape sends POST to /api/v1/scrape/stop', async () => {
     mockOk({ run_id: 'run-1', status: 'STOPPING', message: 'ok' })
     await api.stopScrape()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/stop')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scrape/stop')
   })
 
-  it('forceStopScrape sends POST to /api/scrape/force-stop', async () => {
+  it('forceStopScrape sends POST to /api/v1/scrape/force-stop', async () => {
     mockOk({ run_id: 'run-1', status: 'FAILED', message: 'ok' })
     await api.forceStopScrape()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/force-stop')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scrape/force-stop')
   })
 
-  it('getScrapeStatus fetches from /api/scrape/status and returns run_id + status', async () => {
+  it('getScrapeStatus fetches from /api/v1/scrape/status and returns run_id + status', async () => {
     const mockStatus = {
       run_id: 'run-1', status: 'RUNNING', started_at: null, finished_at: null,
       total_postings_found: 10, total_snapshots_created: 5, total_errors: 0,
@@ -361,21 +361,21 @@ describe('api pipeline control endpoints', () => {
     }
     mockOk(mockStatus)
     const result = await api.getScrapeStatus()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scrape/status')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scrape/status')
     expect(result.run_id).toBe('run-1')
     expect(result.status).toBe('RUNNING')
   })
 
-  it('triggerEnrichment sends POST to /api/enrich/trigger', async () => {
+  it('triggerEnrichment sends POST to /api/v1/enrich/trigger', async () => {
     mockOk({ run_id: 'enrich-1', message: 'started' })
     const result = await api.triggerEnrichment()
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/enrich/trigger')
+    expect(url).toContain('/api/v1/enrich/trigger')
     expect(init.method).toBe('POST')
     expect(result.run_id).toBe('enrich-1')
   })
 
-  it('getEnrichStatus fetches from /api/enrich/status', async () => {
+  it('getEnrichStatus fetches from /api/v1/enrich/status', async () => {
     const mockStatus = {
       run_id: 'enrich-1', status: 'running', started_at: null, finished_at: null,
       pass1_result: { succeeded: 50, failed: 0, skipped: 0 },
@@ -385,19 +385,19 @@ describe('api pipeline control endpoints', () => {
     }
     mockOk(mockStatus)
     const result = await api.getEnrichStatus()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/enrich/status')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/enrich/status')
     expect(result.run_id).toBe('enrich-1')
     expect(result.circuit_breaker_tripped).toBe(false)
   })
 
-  it('getSchedulerStatus fetches from /api/scheduler/status', async () => {
+  it('getSchedulerStatus fetches from /api/v1/scheduler/status', async () => {
     const mockStatus = {
       enabled: true, schedules: [], last_pipeline_finished_at: null,
       last_pipeline_success: null, missed_run: false,
     }
     mockOk(mockStatus)
     const result = await api.getSchedulerStatus()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/status')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scheduler/status')
     expect(result.enabled).toBe(true)
     expect(result.missed_run).toBe(false)
   })
@@ -406,7 +406,7 @@ describe('api pipeline control endpoints', () => {
     mockOk({ job_id: 'daily_pipeline', message: 'triggered' })
     const result = await api.triggerSchedulerJob('daily_pipeline')
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/scheduler/jobs/daily_pipeline/trigger')
+    expect(url).toContain('/api/v1/scheduler/jobs/daily_pipeline/trigger')
     expect(init.method).toBe('POST')
     expect(result.job_id).toBe('daily_pipeline')
   })
@@ -414,32 +414,32 @@ describe('api pipeline control endpoints', () => {
   it('pauseSchedulerJob sends POST and returns paused: true', async () => {
     mockOk({ schedule_id: 'daily_pipeline', paused: true, message: 'ok' })
     const result = await api.pauseSchedulerJob('daily_pipeline')
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/jobs/daily_pipeline/pause')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scheduler/jobs/daily_pipeline/pause')
     expect(result.paused).toBe(true)
   })
 
   it('resumeSchedulerJob sends POST and returns paused: false', async () => {
     mockOk({ schedule_id: 'daily_pipeline', paused: false, message: 'ok' })
     const result = await api.resumeSchedulerJob('daily_pipeline')
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/scheduler/jobs/daily_pipeline/resume')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/scheduler/jobs/daily_pipeline/resume')
     expect(result.paused).toBe(false)
   })
 })
 
 describe('api simple GET endpoints', () => {
-  it('api.getPayBenchmarks fetches /api/aggregation/pay-benchmarks', async () => {
+  it('api.getPayBenchmarks fetches /api/v1/aggregation/pay-benchmarks', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
     await api.getPayBenchmarks()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/aggregation/pay-benchmarks')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/aggregation/pay-benchmarks')
   })
 
-  it('api.getChurnSignals fetches /api/aggregation/churn-signals', async () => {
+  it('api.getChurnSignals fetches /api/v1/aggregation/churn-signals', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
     await api.getChurnSignals()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/aggregation/churn-signals')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/aggregation/churn-signals')
   })
 
-  it('api.getEvalModels fetches /api/eval/models', async () => {
+  it('api.getEvalModels fetches /api/v1/eval/models', async () => {
     const mockModels = [
       { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (fast, cheap)' },
     ]
@@ -448,31 +448,31 @@ describe('api simple GET endpoints', () => {
       json: async () => mockModels,
     } as Response)
     const result = await api.getEvalModels()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/models')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/eval/models')
     expect(result).toEqual(mockModels)
   })
 
-  it('api.listEvalRuns fetches /api/eval/runs', async () => {
+  it('api.listEvalRuns fetches /api/v1/eval/runs', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => [] } as Response)
     await api.listEvalRuns()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/runs')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/eval/runs')
   })
 
-  it('api.getEvalLeaderboard fetches /api/eval/leaderboard-data', async () => {
+  it('api.getEvalLeaderboard fetches /api/v1/eval/leaderboard-data', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ runs: [], elo: {}, comparisons: [], field_accuracy: {} }),
     } as Response)
     const result = await api.getEvalLeaderboard()
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/eval/leaderboard-data')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/api/v1/eval/leaderboard-data')
     expect(result.runs).toEqual([])
   })
 
-  it('api.upsertFieldReview sends POST to /api/eval/field-reviews', async () => {
+  it('api.upsertFieldReview sends POST to /api/v1/eval/field-reviews', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'fr-1' }) } as Response)
     const result = await api.upsertFieldReview({ result_id: 'r1', field_name: 'role_archetype', is_correct: 1 })
     const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/eval/field-reviews')
+    expect(url).toContain('/api/v1/eval/field-reviews')
     expect(init.method).toBe('POST')
     expect(result.id).toBe('fr-1')
   })
