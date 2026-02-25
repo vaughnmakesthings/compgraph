@@ -32,13 +32,31 @@ from compgraph.eval.router import router as eval_router
 if settings.SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.anthropic import AnthropicIntegration
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.httpx import HttpxIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         environment=settings.ENVIRONMENT,
+        release="compgraph@0.1.0",
+        server_name="compgraph-backend",
+        enable_tracing=True,
         traces_sample_rate=0.2 if settings.ENVIRONMENT == "production" else 1.0,
-        integrations=[AnthropicIntegration(include_prompts=True)],
+        profiles_sample_rate=0.1 if settings.ENVIRONMENT == "production" else 1.0,
         send_default_pii=False,
+        integrations=[
+            AnthropicIntegration(include_prompts=True),
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+            HttpxIntegration(),
+            LoggingIntegration(
+                level=logging.WARNING,
+                event_level=logging.ERROR,
+            ),
+        ],
+        _experiments={"continuous_profiling_auto_start": True},
     )
 
 logging.basicConfig(
