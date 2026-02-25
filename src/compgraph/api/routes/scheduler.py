@@ -134,7 +134,7 @@ async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
     return TriggerResponse(
         job_id=str(result_id),
         message=f"Pipeline job triggered manually (schedule: {job_id}). "
-        "Check /api/scrape/status and /api/enrich/status for progress.",
+        "Check /api/v1/scrape/status and /api/v1/enrich/status for progress.",
     )
 
 

@@ -163,7 +163,7 @@ async def trigger_pass1(background_tasks: BackgroundTasks) -> TriggerResponse:
     return _trigger_enrichment(
         background_tasks,
         "run_pass1",
-        "Pass 1 enrichment triggered. Check /api/enrich/status for progress.",
+        "Pass 1 enrichment triggered. Check /api/v1/enrich/status for progress.",
     )
 
 
@@ -173,7 +173,7 @@ async def trigger_pass2(background_tasks: BackgroundTasks) -> TriggerResponse:
     return _trigger_enrichment(
         background_tasks,
         "run_pass2",
-        "Pass 2 enrichment triggered. Check /api/enrich/status for progress.",
+        "Pass 2 enrichment triggered. Check /api/v1/enrich/status for progress.",
     )
 
 
@@ -183,7 +183,7 @@ async def trigger_full(background_tasks: BackgroundTasks) -> TriggerResponse:
     return _trigger_enrichment(
         background_tasks,
         "run_full",
-        "Full enrichment pipeline triggered. Check /api/enrich/status for progress.",
+        "Full enrichment pipeline triggered. Check /api/v1/enrich/status for progress.",
     )
 
 
