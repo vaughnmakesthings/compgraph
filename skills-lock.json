@@ -1,6 +1,26 @@
 {
   "version": 1,
   "skills": {
+    "sentry-create-alert": {
+      "source": "getsentry/sentry-agent-skills",
+      "sourceType": "github",
+      "computedHash": "7c92a9467e9f8878713fef8ec47a0adcec59151d15834cb16ab5a8895fb0f701"
+    },
+    "sentry-fix-issues": {
+      "source": "getsentry/sentry-agent-skills",
+      "sourceType": "github",
+      "computedHash": "5673b169d2a0eb6e4651a57eba4263d1c04dce10e2955c97902f1e9f80109a52"
+    },
+    "sentry-pr-code-review": {
+      "source": "getsentry/sentry-agent-skills",
+      "sourceType": "github",
+      "computedHash": "2df9d5798ce8b08641b4119c8ef8816bef293f87825adf09a5d67176212a4c7a"
+    },
+    "sentry-setup-ai-monitoring": {
+      "source": "getsentry/sentry-agent-skills",
+      "sourceType": "github",
+      "computedHash": "91959d0839b0399b395c2a6200c457b99571050481a44894559cb2a5f3d8c165"
+    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
