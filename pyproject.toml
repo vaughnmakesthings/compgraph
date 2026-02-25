@@ -17,6 +17,8 @@ dependencies = [
     "python-slugify>=8.0.0",
     "psycopg2-binary>=2.9.0",
     "apscheduler>=4.0.0a1",
+    "PyJWT>=2.8.0",
+    "email-validator>=2.1.0",
 ]
 
 [project.scripts]
@@ -65,7 +67,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "S106", "S108", "E501"]
+"tests/**/*.py" = ["S101", "S105", "S106", "S108", "E501"]
 "scripts/**/*.py" = ["T20", "E501"]
 "src/compgraph/enrichment/prompts.py" = ["E501"]
 "src/compgraph/preflight.py" = ["S603", "S607", "T20"]

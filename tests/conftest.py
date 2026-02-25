@@ -14,6 +14,7 @@ import os
 
 # Set placeholder before any compgraph imports trigger Settings() validation
 os.environ.setdefault("DATABASE_PASSWORD", "test-placeholder")
+os.environ.setdefault("AUTH_DISABLED", "true")
 
 from collections.abc import AsyncGenerator
 from unittest.mock import patch
@@ -69,7 +70,7 @@ def integration_engine():
     Supabase instance. Integration tests are isolated via transactions.
     """
     db_password = os.environ.get("DATABASE_PASSWORD")
-    if not db_password or db_password == "test-placeholder":  # noqa: S105
+    if not db_password or db_password == "test-placeholder":
         pytest.skip("DATABASE_PASSWORD not set — skipping integration tests")
 
     from compgraph.config import settings
