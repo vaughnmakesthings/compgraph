@@ -40,28 +40,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return;
 
+    let mounted = true;
+
     supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
       const s = data.session;
       setSession(s);
       setAuthToken(s?.access_token ?? null);
       prevTokenRef.current = s?.access_token ?? null;
       setLoading(false);
     }).catch(() => {
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       const newToken = newSession?.access_token ?? null;
-      if (newToken !== prevTokenRef.current) {
+      if (newToken !== prevTokenRef.current || _event === "USER_UPDATED") {
         prevTokenRef.current = newToken;
         setSession(newSession);
         setAuthToken(newToken);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const user = session?.user ?? null;

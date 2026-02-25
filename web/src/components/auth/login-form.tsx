@@ -19,6 +19,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [emailSentType, setEmailSentType] = useState<"magic-link" | "reset">("magic-link");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +46,7 @@ export function LoginForm() {
           setError(authError.message);
           return;
         }
+        setEmailSentType("magic-link");
         setMagicLinkSent(true);
       }
     } finally {
@@ -66,6 +68,7 @@ export function LoginForm() {
       return;
     }
     setError(null);
+    setEmailSentType("reset");
     setMagicLinkSent(true);
   }
 
@@ -100,8 +103,7 @@ export function LoginForm() {
             lineHeight: 1.6,
           }}
         >
-          We sent a link to <strong>{email.trim()}</strong>. Click it to sign
-          in.
+          We sent {emailSentType === "reset" ? "a password reset link" : "a sign-in link"} to <strong>{email.trim()}</strong>. Check your inbox.
         </p>
         <button
           type="button"

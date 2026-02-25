@@ -43,8 +43,12 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     if (res.status === 401) {
-      const { supabase } = await import('./supabase')
-      supabase?.auth.signOut()
+      try {
+        const { supabase } = await import('./supabase')
+        await supabase?.auth.signOut()
+      } catch {
+        /* sign-out best-effort — import or signOut may fail */
+      }
     }
     let detail: string | undefined
     try {
