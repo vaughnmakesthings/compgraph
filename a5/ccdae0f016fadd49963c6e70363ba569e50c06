@@ -1,0 +1,23 @@
+.claude/agents/agent-organizer.md
+  e8a6daf2f66e9089 62-78,81-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a5ccdae0f016fadd49963c6e70363ba569e50c06",
+  "prompts": {
+    "e8a6daf2f66e9089": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1455b11-76a6-468d-8f7a-8a3fe0245bd6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
