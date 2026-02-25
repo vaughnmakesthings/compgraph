@@ -15,7 +15,7 @@ def _mock_db() -> None:  # type: ignore[return]
     mock_session.execute = AsyncMock(return_value=MagicMock())
     app.dependency_overrides[get_db] = lambda: mock_session
     yield
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
 
 
 class TestLegacyApiRedirect:
@@ -28,6 +28,11 @@ class TestLegacyApiRedirect:
         resp = client.get("/api/postings?limit=10", follow_redirects=False)
         assert resp.status_code == 308
         assert resp.headers["location"] == "/api/v1/postings?limit=10"
+
+    def test_post_redirects_preserving_method(self, client: TestClient) -> None:
+        resp = client.post("/api/scrape/trigger", follow_redirects=False)
+        assert resp.status_code == 308
+        assert resp.headers["location"] == "/api/v1/scrape/trigger"
 
     def test_health_not_redirected(self, _mock_db: None) -> None:
         with TestClient(app) as tc:
