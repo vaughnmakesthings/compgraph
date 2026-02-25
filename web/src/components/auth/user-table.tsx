@@ -12,6 +12,7 @@ import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api-client";
 import type { AppUser, UserRole } from "./user-management-section";
 
 // ---------------------------------------------------------------------------
@@ -295,20 +296,25 @@ function AddUserDialog({ open, onClose, existingEmails, onInvited }: AddUserDial
   async function handleSubmit() {
     if (!validate()) return;
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
     const t = email.trim().toLowerCase();
-    onInvited({
-      id: `u-${Date.now()}`,
-      firstName: t.split("@")[0] ?? "New",
-      lastName: "User",
-      email: t,
-      role,
-      status: "invite_sent",
-      joinedAt: null,
-      lastLoginAt: null,
-    });
-    toast.success(`Invite sent to ${t}`);
-    handleClose();
+    try {
+      const response = await api.inviteUser({ email: t, role });
+      onInvited({
+        id: response.user_id,
+        firstName: t.split("@")[0] ?? "New",
+        lastName: "User",
+        email: response.email,
+        role: response.role as UserRole,
+        status: "invite_sent",
+        joinedAt: null,
+        lastLoginAt: null,
+      });
+      toast.success(`Invite sent to ${t}`);
+      handleClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send invite");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -459,6 +465,7 @@ function EditUserDrawer({
 
   async function handleSave() {
     if (!roleChanged) return;
+    // TODO: wire to backend API when user role update endpoint exists
     await new Promise((r) => setTimeout(r, 400));
     onUserUpdated({ ...user, role });
     toast.success(`${name}'s role updated to ${role}`);
@@ -466,6 +473,7 @@ function EditUserDrawer({
   }
 
   async function handleConfirmAction() {
+    // TODO: wire to backend API when user management endpoints exist (reset-password, disable, resend-invite, cancel-invite)
     await new Promise((r) => setTimeout(r, 600));
     if (confirmAction === "reset-password") {
       toast.success(`Password reset email sent to ${user.email}`);
