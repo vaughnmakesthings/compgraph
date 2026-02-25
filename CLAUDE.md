@@ -251,7 +251,7 @@ Dev server runs on a DO Droplet (`s-1vcpu-2gb`, sfo3, Ubuntu 24.04) at `165.232.
 ### Frontend (Vercel)
 Next.js 16 at `web/` is deployed to Vercel via GitHub integration.
 
-- **URL**: https://compgraph.vercel.app/
+- **URL**: https://compgraph.app
 - **Auto-deploy**: Push to `main` → Vercel builds + deploys automatically (no workflow file)
 - **API routing**: `web/vercel.json` rewrites `/api/*` → `https://dev.compgraph.io/api/*`
 - **Env var**: `NEXT_PUBLIC_API_URL=https://dev.compgraph.io` — set in Vercel dashboard

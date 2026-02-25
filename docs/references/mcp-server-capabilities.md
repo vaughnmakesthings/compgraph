@@ -97,7 +97,7 @@ They don't call each other. They give you simultaneous visibility so you can cor
 
 ### Project Context
 - Project ID: `prj_8IH6w1sFBAbXQhkmr1paJE3Nfrpr`
-- Production URL: https://compgraph.vercel.app/
+- Production URL: https://compgraph.app/
 - Auto-deploy on push to `main` (GitHub integration, no workflow file needed)
 - API proxy: `web/vercel.json` rewrites `/api/*` → `https://dev.compgraph.io/api/*`
 - `get_runtime_logs` is the primary tool for debugging production errors (the DO backend has its own logs via `journalctl`)

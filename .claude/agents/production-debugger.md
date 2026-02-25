@@ -159,7 +159,7 @@ claude-mem: save_memory(text="Production issue 2026-02-24: [summary of root caus
 ### Frontend (Vercel)
 - **Project ID**: `prj_8IH6w1sFBAbXQhkmr1paJE3Nfrpr`
 - **Team ID**: `team_rjCtHfOfITLEggddrnr4bhsI`
-- **Production URL**: https://compgraph.vercel.app/
+- **Production URL**: https://compgraph.app/
 - **API proxy**: `web/vercel.json` rewrites `/api/*` → `https://dev.compgraph.io/api/*`
 - Auto-deploys on push to `main`
 

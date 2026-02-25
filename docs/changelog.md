@@ -4,6 +4,128 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-25 (night) — Vercel Build Fix + Sentry Frontend Integration
+
+**Goal:** Fix failing Vercel production builds, set up Sentry error monitoring for the Next.js frontend.
+
+**What happened:**
+- Diagnosed 6 consecutive ERROR deployments on Vercel — root cause: `rootDirectory` not set, GitHub integration clone path was building from repo root instead of `web/`
+- Fixed via Vercel REST API: `PATCH /v9/projects/{id}` with `{"rootDirectory": "web"}`
+- Triggered production redeploy — build succeeded, `compgraph.app` back online
+- Set up `@sentry/nextjs` v10.40.0 via Sentry wizard — org `vaughnmakesthings-r9`, project `compgraph`
+- Cleaned up wizard artifacts: removed example page/API, `.cursor/`, `.mcp.json`
+- Tuned configs: 20% trace sampling in production (was 100%), removed `sendDefaultPii` and `enableLogs`
+- Retained: Session Replay (10% sessions, 100% on error), source map upload, `/monitoring` tunnel route
+
+**Key files changed:**
+- `web/next.config.ts` — wrapped with `withSentryConfig`
+- `web/sentry.server.config.ts`, `web/sentry.edge.config.ts` — server/edge Sentry init
+- `web/src/instrumentation.ts`, `web/src/instrumentation-client.ts` — Next.js instrumentation hooks
+- `web/src/app/global-error.tsx` — app-level error boundary reporting to Sentry
+- `web/package.json` — added `@sentry/nextjs` dependency
+
+---
+
+## 2026-02-25 (evening) — Issues #199 + #208 Implemented (API Versioning + Frontend Auth)
+
+**Goal:** Implement API versioning (#199) and frontend auth pages (#208) in parallel.
+
+**What happened:**
+- Designed both issues in `docs/plans/2026-02-25-auth-versioning-design.md` with 8 pitfall mitigations for #208
+- Dispatched parallel subagents in isolated worktrees — both completed successfully
+- #199: Central `v1_router` in main.py, 308 redirect for backward compat, all paths updated (793 tests, 82.94% cov)
+- #208: Supabase client singleton, AuthProvider context, token bridge, login/setup/invite wired, auth render gate (258 tests, 25 new)
+- Both passed spec compliance + code quality reviews with fixes applied
+- Draft PRs: #222 (#199) and #223 (#208). Merge order: #222 first, rebase #223, then merge #223
+- Created issue #221 for settings admin-only gate (partially addressed in #208)
+
+**Current state:**
+- `main` at `e11df0d` (unchanged — both PRs are draft)
+- Draft PRs: #222 (API versioning), #223 (frontend auth)
+- Auth chain: ~~#206~~ ~~#207~~ → **#208 (PR #223, draft)** → #209 (RLS) → #210 (auth tests)
+- Backend: 793 tests (in #199 branch), Frontend: 258 tests (in #208 branch)
+
+**Key files changed:**
+- #199: `main.py` (v1_router), 7 route files (prefix strip), 10 test files, `api-client.ts`, `api-client.test.ts`
+- #208: `supabase.ts`, `auth-token.ts`, `auth-context.tsx`, `providers.tsx`, `api-client.ts`, `login-form.tsx`, `account-setup-form.tsx`, `invite-user-form.tsx`, `user-table.tsx`, `(app)/layout.tsx`, `settings/page.tsx`
+
+**What's next:** Convert #222 to ready, run /pr-feedback-cycle, merge. Then rebase #223 on main, convert to ready, merge. Then #209 (RLS) and #210 (auth tests).
+
+---
+
+## 2026-02-25 (afternoon) — Issue #220 Fixed (Enrichment Status DB Fallback)
+
+**Goal:** Triage and fix enrichment pipeline failures reported in #220.
+
+**What happened:**
+- Diagnosed 3 compounding problems: APScheduler misfire after CD restart (A), `/api/enrich/status` reading only in-memory state (B), one-time migration failure (C)
+- Patch A: Manual pipeline trigger cleared enrichment backlog (no unenriched postings remained)
+- Patch B: Added DB fallback to `GET /api/enrich/status` — when in-memory `_runs` is empty post-restart, queries `get_latest_enrichment_run_from_db()`. Matches existing pattern in `/api/pipeline/status`
+- Added `test_status_db_fallback` test, updated `test_status_no_runs` to mock both stores
+- Committed `801b305`, pushed to main (CD auto-deploying)
+- Deferred items tracked: startup recovery hook → #156 comment (Sprint 1), missed-run alerting → #183 comment (Sprint 2)
+- Issue #220 closed as completed
+
+**Current state:**
+- `main` at `801b305`
+- Auth chain: ~~#206~~ ~~#207~~ → **#208 (frontend auth pages)** → #209 (RLS) → #210 (auth tests)
+- Backend: 789 tests, 82.91% coverage
+- 28 open issues across M7 sprint milestones (#220 closed)
+
+**Key files:** `src/compgraph/api/routes/enrich.py` (DB fallback + `_db_dict_to_response`), `tests/test_enrichment_pass1.py`
+
+**What's next:** #208 (frontend auth pages). Pipeline is healthy.
+
+---
+
+## 2026-02-25 (morning) — PR #219 Merged (#207 Backend Auth Middleware)
+
+**Goal:** Merge PR #219 (backend auth middleware, issue #207).
+
+**What happened:**
+- PR #219 squash-merged to main as `359e0de` — backend auth middleware complete (#207 closed)
+- All merge gates passed: CI green (lint, typecheck, test, security scan), 7/7 bot review threads resolved (Gemini 3, Cubic 3, Cursor 1), 788 tests at 82.86% coverage
+- Post-merge cleanup: worktree `compgraph-issue-207` removed, local branches deleted
+
+**Current state:**
+- `main` at `359e0de` (includes #218 auth config + #219 auth middleware)
+- Auth chain progress: ~~#206~~ ~~#207~~ → **#208 (frontend auth pages)** → #209 (RLS) → #210 (auth tests)
+- Backend: 788 tests, 82.86% coverage
+- DB at head: `c3d4e5f6a7b8` (auth_uid migration applied)
+- 29 open issues across M7 sprint milestones
+
+**Key files:** `src/compgraph/auth/dependencies.py`, `src/compgraph/api/routes/admin.py`, `src/compgraph/db/models.py` (auth_uid), `alembic/versions/c3d4e5f6a7b8_add_auth_uid_to_users.py`
+
+**What's next:** #208 (frontend auth pages — login, setup, auth context). Then #209 (RLS policies) and #210 (auth integration tests).
+
+---
+
+## 2026-02-24 (night) — PR #218 Merged, #207 In Progress, Agent Configs Updated
+
+**Goal:** Merge PR #218 (#206 auth config), advance #207 (backend auth middleware), update agent Nia configs.
+
+**What happened:**
+- PR #218 squash-merged to main as `00c32e6` — Supabase Auth project settings complete (#206 closed)
+- Code review cycle completed: 6 bot threads fixed (sanitized error messages, race condition protection, login form semantic HTML, password policy), 6 deferred as non-critical
+- PR #219 (draft, #207 backend auth middleware) retargeted from feat/issue-206 → main
+- Cherry-picked #207 auth middleware commit onto clean main in worktree `compgraph-issue-207`
+- All 788 tests passing (at time of cherry-pick) with 82.88% coverage
+- Updated Nia tool usage guidance across all agent configurations (committed as `0acf248`)
+- Agent configs updated: nia.md enhanced with decision tree/tool reference, other agents got standardized Nia sections
+
+**Current state:**
+- `main` at `0acf248` (includes merged #218 + Nia agent docs)
+- `feat/issue-206-supabase-auth-config` — ahead 4 / behind 18 from main (stale, PR merged — can delete)
+- `feat/issue-207-backend-auth-middleware` — worktree at `compgraph-issue-207`, draft PR #219 open
+- Backend: 748 tests collected, Frontend: 233 tests passing
+- 30 open issues across M7 sprint milestones
+
+**Key files:** `supabase/config.toml`, `.claude/agents/nia.md`, `src/compgraph/auth/`, `src/compgraph/api/routes/admin.py`
+
+**What's next:** Clean up stale `feat/issue-206-supabase-auth-config` branch. Continue #207 (backend auth middleware) — complete implementation, run tests, mark PR #219 ready. Then #208 (frontend auth pages).
+
+---
+
 ## 2026-02-24 (late evening) — PR #217 Merge + PR #218 Feedback Cycle
 
 **Goal:** Convert PR #217 (ConfirmDialog tests) from draft to ready, triage bot feedback, merge.

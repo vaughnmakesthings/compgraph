@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: process.env.SMOKE_FRONTEND_URL || 'https://compgraph.vercel.app',
+    baseURL: process.env.SMOKE_FRONTEND_URL || 'https://compgraph.app',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

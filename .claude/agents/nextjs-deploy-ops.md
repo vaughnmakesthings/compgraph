@@ -338,7 +338,7 @@ jobs:
 
 ### Vercel (Frontend)
 - Next.js 16 at `web/` deployed to Vercel via GitHub push-to-main integration
-- Production URL: `https://compgraph.vercel.app/`
+- Production URL: `https://compgraph.app/`
 - API proxy: `web/vercel.json` rewrites `/api/*` → `https://dev.compgraph.io/api/*`
 - Project ID: `prj_8IH6w1sFBAbXQhkmr1paJE3Nfrpr` | Team ID: `team_rjCtHfOfITLEggddrnr4bhsI`
 - No manual deploy needed — push to `main` auto-triggers Vercel build

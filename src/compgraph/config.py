@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     DASHBOARD_DB_POOL_TIMEOUT: int = 30
     DASHBOARD_DB_POOL_RECYCLE: int = 300
 
+    # Sentry
+    SENTRY_DSN: str = ""  # empty = disabled
+
     # App config
     ENVIRONMENT: str = "dev"
     HOST: str = "0.0.0.0"

@@ -129,7 +129,7 @@ Goal: Production-grade frontend, data quality, and operational reliability.
 | Task | Summary | Status |
 |------|---------|--------|
 | Next.js 16 frontend | 7 pages: Dashboard, Competitors (+ dossier), Market, Hiring, Settings, Eval (5 sub-pages) | Done (PR #161) |
-| Vercel deployment | compgraph.vercel.app, API proxy via vercel.json rewrite | Done |
+| Vercel deployment | compgraph.app, API proxy via vercel.json rewrite | Done |
 | Pipeline controls UI | Trigger/pause/resume/stop scrape, enrichment status, scheduler controls | Done (PR #167) |
 | Data quality fixes | Latest-enrichment CTE, brand dedup, coverage gaps alignment | Done |
 | Frontend tests | 174 tests, 52.3% coverage | Done |
