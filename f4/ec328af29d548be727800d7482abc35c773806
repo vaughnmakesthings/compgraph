@@ -1,0 +1,36 @@
+web/src/app/global-error.tsx
+  49e75c8c7686b37b 20-29,33-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "f4ec328af29d548be727800d7482abc35c773806",
+  "prompts": {
+    "49e75c8c7686b37b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54e96503-5d64-4489-a335-04d0f1ced41f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 4,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    },
+    "601a6aae497181f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b50375a-68e9-44f9-b490-fedca5939683",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 180,
+      "total_deletions": 255,
+      "accepted_lines": 179,
+      "overriden_lines": 0
+    }
+  }
+}
