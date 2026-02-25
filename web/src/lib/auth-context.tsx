@@ -34,14 +34,11 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!supabase);
   const prevTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    if (!supabase) return;
 
     supabase.auth.getSession().then(({ data }) => {
       const s = data.session;

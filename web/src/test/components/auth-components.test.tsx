@@ -47,7 +47,6 @@ vi.mock("sonner", () => ({
 vi.mock("@headlessui/react", () => ({
   Dialog: ({
     open,
-    onClose,
     children,
   }: {
     open: boolean;
@@ -89,7 +88,6 @@ vi.mock("@headlessui/react", () => ({
 vi.mock("@tremor/react", () => ({
   Dialog: ({
     open,
-    onClose,
     children,
   }: {
     open: boolean;
