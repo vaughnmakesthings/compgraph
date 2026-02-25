@@ -1,0 +1,29 @@
+web/src/components/auth/login-form.tsx
+  c7c69117b8584eb2 22,49,71,106
+web/src/lib/api-client.ts
+  c7c69117b8584eb2 46,48-51
+web/src/lib/auth-context.tsx
+  c7c69117b8584eb2 43-44,46,53,60,67-70
+web/.env.local.example
+  c7c69117b8584eb2 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a21a69d6604246f9063e9c06d7147f68a4cce708",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 8,
+      "accepted_lines": 19,
+      "overriden_lines": 0
+    }
+  }
+}
