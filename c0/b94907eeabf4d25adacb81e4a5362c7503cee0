@@ -1,0 +1,61 @@
+web/src/components/auth/user-table.tsx
+  c7c69117b8584eb2 15,300-301,303,306-307,313-317,468,476
+web/src/test/auth-context.test.tsx
+  c7c69117b8584eb2 1-163
+web/src/test/api-client.test.ts
+  c7c69117b8584eb2 2,5-9,12-13,18,489-545
+web/src/app/providers.tsx
+  c7c69117b8584eb2 1-7
+web/src/app/(app)/settings/page.tsx
+  c7c69117b8584eb2 7,569-570,960-961,965
+web/src/test/auth-token.test.ts
+  c7c69117b8584eb2 1-22
+web/src/components/auth/account-setup-form.tsx
+  c7c69117b8584eb2 4,8,87,114-115,117-123,255-271
+web/src/lib/auth-token.ts
+  c7c69117b8584eb2 1-9
+web/src/app/(app)/layout.tsx
+  c7c69117b8584eb2 1-3,5-6,13-36
+web/src/components/auth/invite-user-form.tsx
+  c7c69117b8584eb2 8,46-47,49,52-53,61-64
+web/src/app/layout.tsx
+  c7c69117b8584eb2 4,19
+web/src/components/auth/login-form.tsx
+  c7c69117b8584eb2 4,11,14,17-21,23-125,129,175-192,201-202,213-214,241,263,266,269-271
+web/src/lib/api-client.ts
+  c7c69117b8584eb2 2,29-34,39,45-48,214-220
+web/src/lib/auth-context.tsx
+  c7c69117b8584eb2 1-85
+web/src/test/pages.test.tsx
+  c7c69117b8584eb2 8-17
+web/src/test/app-layout-auth.test.tsx
+  c7c69117b8584eb2 1-102
+web/src/test/mocks/supabase.ts
+  c7c69117b8584eb2 1-70
+web/src/test/components/auth-components.test.tsx
+  c7c69117b8584eb2 10-12,18-39,158,221-283,294,392,402-423,426,443-447
+web/src/lib/supabase.ts
+  c7c69117b8584eb2 1-9
+web/src/test/supabase-client.test.ts
+  c7c69117b8584eb2 1-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "c0b94907eeabf4d25adacb81e4a5362c7503cee0",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1704,
+      "total_deletions": 0,
+      "accepted_lines": 942,
+      "overriden_lines": 0
+    }
+  }
+}
