@@ -55,9 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       const newToken = newSession?.access_token ?? null;
-      if (newToken !== prevTokenRef.current || _event === "USER_UPDATED") {
+      if (newToken !== prevTokenRef.current || event === "USER_UPDATED") {
         prevTokenRef.current = newToken;
         setSession(newSession);
         setAuthToken(newToken);
