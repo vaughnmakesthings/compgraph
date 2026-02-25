@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
+import sentry_sdk
+
 from compgraph.enrichment.orchestrator import (
     EnrichmentOrchestrator,
     EnrichmentRun,
@@ -73,6 +75,7 @@ async def pipeline_job() -> None:
                 logger.info("[PIPELINE] Cleaned up %d stale PENDING runs", cleaned)
     except Exception:
         logger.exception("[PIPELINE] Failed to clean up stale PENDING runs")
+        sentry_sdk.capture_exception()
 
     # --- Scrape phase ---
     logger.info("[SCRAPE] Starting scrape phase")
@@ -84,6 +87,7 @@ async def pipeline_job() -> None:
         await orchestrator.run(pipeline_run)
     except Exception:
         logger.exception("[SCRAPE] Scrape phase failed with unhandled exception")
+        sentry_sdk.capture_exception()
         pipeline_run.status = PipelineStatus.FAILED
         pipeline_run.finished_at = datetime.now(UTC)
 
@@ -113,6 +117,7 @@ async def pipeline_job() -> None:
             await enrich_orchestrator.run_full(enrichment_run)
         except Exception:
             logger.exception("[ENRICH] Enrichment phase failed with unhandled exception")
+            sentry_sdk.capture_exception()
             enrichment_run.status = EnrichmentStatus.FAILED
             enrichment_run.finished_at = datetime.now(UTC)
 
@@ -156,6 +161,7 @@ async def pipeline_job() -> None:
             )
         except Exception:
             logger.exception("[AGGREGATE] Aggregation phase failed")
+            sentry_sdk.capture_exception()
             agg_succeeded = False
     else:
         logger.warning("[AGGREGATE] Skipping aggregation — enrichment failed")
