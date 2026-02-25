@@ -4,6 +4,33 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-25 (late night) — Postmark SMTP + Vercel DNS Migration
+
+**Goal:** Configure production email delivery for Supabase Auth, migrate compgraph.app DNS to Vercel.
+
+**What happened:**
+- Configured Postmark SMTP in `supabase/config.toml` for auth emails (invites, password resets, magic links)
+- Sender: `noreply@compgraph.app`, display name "CompGraph", rate limit bumped to 30/hr
+- Pushed config to remote Supabase project via `supabase config push`
+- Added DKIM TXT + Return-Path CNAME DNS records (initially on Porkbun, then recreated on Vercel)
+- Migrated compgraph.app DNS from Porkbun (w/ Cloudflare) to Vercel nameservers
+- Added DMARC TXT record for Postmark weekly digest reporting
+- All three Postmark DNS records verified (DKIM, Return-Path, DMARC)
+- Sent test invite to `vlm@iamvaughn.com` — email delivered successfully via Postmark
+- Fixed pydantic Settings validation error caused by POSTMARK_TOKEN in .env (`extra="ignore"`)
+- First user created in Supabase Auth: `vlm@iamvaughn.com` (ID: 040603eb)
+
+**Key files changed:**
+- `supabase/config.toml` — Postmark SMTP config, email rate limit, Vercel preview redirect URLs
+- `src/compgraph/config.py` — `extra="ignore"` in SettingsConfigDict
+- `.env.example` — documented POSTMARK_TOKEN env var
+
+**1Password:** `POSTMARK_TOKEN` (server token), `POSTMARK_DMARC_API_KEY` (developer API key) in DEV vault
+
+**Open:** compgraph.io remains on Porkbun for dev infra DNS.
+
+---
+
 ## 2026-02-25 (night) — Vercel Build Fix + Sentry Frontend Integration
 
 **Goal:** Fix failing Vercel production builds, set up Sentry error monitoring for the Next.js frontend.
