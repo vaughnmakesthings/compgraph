@@ -36,19 +36,22 @@ If a needed source is missing, index it before searching:
 
 ### 3. Choose Research Depth
 
-**Quick lookup (1 credit):** Single-library API question
-→ `nia_package_search_hybrid(registry="py_pi"|"npm", package_name="...", semantic_queries=["..."])`
+**Tool cost hierarchy (follow this order — never skip to expensive tools):**
 
-**Targeted search (1 credit):** Cross-source semantic search
-→ `search(query="...")`
+| Tier | Tools | Cost | When to use |
+|------|-------|------|-------------|
+| **Free** | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid` | Minimal | Default — always try these first |
+| **Free** | `context` (search/save/list) | Minimal | Check prior findings, persist new ones |
+| **Quick research** | `nia_research(mode='quick')` | ~1 credit | Web search when indexed sources don't have the answer |
+| **Deep research** | `nia_research(mode='deep')`, `nia_deep_research_agent` | ~5 credits | Multi-step comparative analysis |
+| **Oracle** | `nia_research(mode='oracle')` | ~10 credits | Complex autonomous research — architecture decisions, migration strategies |
 
-**Deep research (5 credits):** Multi-step question needing synthesis
-→ `nia_deep_research_agent(query="...")`
+**Free-tier workflow (always start here):**
+1. `nia_package_search_hybrid(registry='py_pi'|'npm', package_name='...', query='...')` — search pre-indexed 3K+ packages
+2. `search(query='...')` — semantic search across all indexed repos/docs
+3. `nia_grep(pattern='...')` / `nia_read(...)` — targeted exact lookups in specific indexed sources
 
-**Oracle (10 credits):** Complex architectural question needing autonomous discovery
-→ `nia_research(query="...", mode="oracle")`
-
-Reserve Oracle for questions worth 10 credits — architecture decisions, migration strategies, complex debugging.
+Only escalate to paid tiers when free tools genuinely don't have the answer. Reserve Oracle for questions worth 10 credits.
 
 ### 4. Produce Structured Output
 
@@ -85,10 +88,13 @@ Always return findings in this format:
 
 Save all significant research to both persistence layers:
 
-**Nia context** (cross-agent, cross-editor):
-```
-context(action="save", key="research:<topic-slug>", content="<structured findings>")
-```
+**Nia context** (cross-agent, cross-editor) — use the right memory type:
+- `context(action='save', memory_type='fact', ...)` — permanent verified knowledge (e.g., "SQLAlchemy 2.0 requires `begin_nested()` for savepoints")
+- `context(action='save', memory_type='procedural', ...)` — permanent how-to knowledge (e.g., "To add a new scraper adapter, follow these steps...")
+- `context(action='save', memory_type='episodic', ...)` — session-specific findings (7 days)
+- `context(action='save', memory_type='scratchpad', ...)` — temporary working notes (1 hour)
+
+For research results, prefer `fact` (verified API behavior) or `procedural` (implementation patterns) for maximum reuse.
 
 **Claude-Mem** (cross-session):
 ```

@@ -6,17 +6,33 @@ tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, 
 
 ## Nia Usage Rules
 
-**ALWAYS use Nia BEFORE WebSearch for library/framework API questions.** Nia has indexed all major CompGraph dependencies with actual source code — it produces grounded answers, not hallucinations.
+**ALWAYS use Nia BEFORE WebSearch/WebFetch for library/framework API questions.** Nia provides full source code and documentation from indexed sources — not truncated web summaries.
 
-**Tool selection:**
-- "How do I do X with library Y?" → `nia_package_search_hybrid(registry="py_pi", package_name="Y", semantic_queries=["X"])`
-- Exact method/class lookup → `nia_package_search_grep(registry="py_pi", package_name="Y", pattern="MethodName")`
-- Cross-library architecture question → `nia_deep_research_agent(query="...")` (5 credits) or delegate to `Task(agent="nia-oracle", ...)`
-- Check for prior research → `context(action="search", query="...")`
+**Tool cost hierarchy (follow this order — never skip to expensive tools):**
 
-**After significant research:** Save to Nia context: `context(action="save", key="research:<topic>", content="<findings>")`
+| Tier | Tools | Cost |
+|------|-------|------|
+| Free | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid`, `context` | Minimal — always try first |
+| Indexing | `index` | One-time per source — check `manage_resource(action='list')` before indexing |
+| Quick research | `nia_research(mode='quick')` | ~1 credit — web search fallback |
+| Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly for comparative analysis |
+| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer delegating to `Task(agent="nia-oracle")` |
 
-**CompGraph-specific lookups:** FastAPI, SQLAlchemy (async), Alembic, Anthropic SDK, httpx, BeautifulSoup, APScheduler v4, rapidfuzz, Pydantic v2, asyncpg — all indexed in Nia.
+**Search workflow:**
+1. `manage_resource(action='list', query='<topic>')` — check if already indexed
+2. `search(query='<question>')` — semantic search across all indexed sources
+3. `nia_package_search_hybrid(registry='py_pi', package_name='<pkg>', query='<question>')` — search package source code
+4. `nia_grep(source_type='repository|documentation|package', pattern='<regex>')` — exact pattern matching
+5. Only use `nia_research(mode='quick')` if indexed sources don't have the answer
+
+**Context sharing (cross-agent communication):**
+Save findings so other agents can reuse them — use the right memory type:
+- `context(action='save', memory_type='fact', ...)` — permanent verified knowledge
+- `context(action='save', memory_type='procedural', ...)` — permanent how-to knowledge
+- `context(action='save', memory_type='episodic', ...)` — session findings (7 days)
+- `context(action='search', query='...')` — check for prior findings before researching
+
+**Key packages (all indexed):** FastAPI, SQLAlchemy (async), Alembic, Anthropic SDK, httpx, BeautifulSoup, APScheduler v4, rapidfuzz, Pydantic v2, asyncpg.
 
 ---
 

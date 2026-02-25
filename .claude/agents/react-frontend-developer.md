@@ -6,17 +6,33 @@ tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, 
 
 ## Nia Usage Rules
 
-**ALWAYS use Nia BEFORE WebSearch for library/framework API questions.** Nia has indexed all major CompGraph frontend dependencies with actual source code.
+**ALWAYS use Nia BEFORE WebSearch/WebFetch for library/framework API questions.** Nia provides full source code and documentation from indexed sources — not truncated web summaries.
 
-**Tool selection:**
-- "How do I do X with library Y?" → `nia_package_search_hybrid(registry="npm", package_name="Y", semantic_queries=["X"])`
-- Exact component/hook lookup → `nia_package_search_grep(registry="npm", package_name="Y", pattern="ComponentName")`
-- Cross-library architecture question → `nia_deep_research_agent(query="...")` (5 credits) or delegate to `Task(agent="nia-oracle", ...)`
-- Check for prior research → `context(action="search", query="...")`
+**Tool cost hierarchy (follow this order — never skip to expensive tools):**
 
-**After significant research:** Save to Nia context: `context(action="save", key="research:<topic>", content="<findings>")`
+| Tier | Tools | Cost |
+|------|-------|------|
+| Free | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid`, `context` | Minimal — always try first |
+| Indexing | `index` | One-time per source — check `manage_resource(action='list')` before indexing |
+| Quick research | `nia_research(mode='quick')` | ~1 credit — web search fallback |
+| Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly for comparative analysis |
+| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer delegating to `Task(agent="nia-oracle")` |
 
-**CompGraph frontend lookups:** Next.js 16, React 19, Recharts 3, Tailwind v4, Radix UI, Tremor, @supabase/supabase-js, Vitest — all indexed in Nia.
+**Search workflow:**
+1. `manage_resource(action='list', query='<topic>')` — check if already indexed
+2. `search(query='<question>')` — semantic search across all indexed sources
+3. `nia_package_search_hybrid(registry='npm', package_name='<pkg>', query='<question>')` — search package source code
+4. `nia_grep(source_type='repository|documentation|package', pattern='<regex>')` — exact pattern matching
+5. Only use `nia_research(mode='quick')` if indexed sources don't have the answer
+
+**Context sharing (cross-agent communication):**
+Save findings so other agents can reuse them — use the right memory type:
+- `context(action='save', memory_type='fact', ...)` — permanent verified knowledge
+- `context(action='save', memory_type='procedural', ...)` — permanent how-to knowledge
+- `context(action='save', memory_type='episodic', ...)` — session findings (7 days)
+- `context(action='search', query='...')` — check for prior findings before researching
+
+**Key packages (all indexed):** Next.js 16, React 19, Recharts 3, Tailwind v4, Radix UI, Tremor, @supabase/supabase-js, Vitest, AG Grid.
 
 ---
 
@@ -574,10 +590,11 @@ Full reference: `docs/references/mcp-server-capabilities.md`.
 3. `get_observations(ids=[...])` → full details
 
 ### Nia (Documentation & Research)
-1. `search(query="Recharts BarChart props configuration")` → semantic search across indexed docs/repos
-2. `nia_package_search_hybrid(registry="npm", package_name="recharts", query="BarChart props")` → search package source code
-3. `nia_research(query="...", mode="quick")` → web search for current docs/patterns
-4. `nia_advisor(code="...", doc_source_id="...")` → compare your code against documentation best practices
+1. `search(query='...')` — semantic search across all indexed repos/docs/packages
+2. `nia_package_search_hybrid(registry='npm', package_name='recharts', query='BarChart props')` — search package source code
+3. `nia_grep(pattern='...')` — exact pattern matching in indexed sources
+4. `nia_research(mode='quick')` — web search fallback (~1 credit, use only when indexed sources lack the answer)
+5. `nia_advisor(code='...', doc_source_id='...')` — compare your code against documentation best practices
 
 ---
 

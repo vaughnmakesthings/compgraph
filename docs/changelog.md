@@ -4,6 +4,41 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-24 (late evening) — PR #217 Merge + PR #218 Feedback Cycle
+
+**Goal:** Convert PR #217 (ConfirmDialog tests) from draft to ready, triage bot feedback, merge.
+
+**What happened:**
+- Converted PR #217 from draft → ready, added `gemini-review` label
+- Ran `/pr-feedback-cycle 217`: 4 bot threads (2 Gemini, 1 Cursor, 1 Cubic)
+  - **Accepted (2):** Cursor + Cubic both flagged duplicate test file — merged unique tests (Escape key, overlay click, async confirming) into canonical `src/test/components/confirm-dialog.test.tsx`, deleted colocated duplicate
+  - **Rejected (2):** Gemini suggestions (brittle hex assertions, combine async tests) — inline styles are the component API, separate tests provide clearer failure signals
+- Ran `/merge-guardian 217`: all gates green, rebased on main (picked up PR #216 merge), squash-merged as `c81bf7c`
+- Cleaned up worktrees (2 stale) and local branches, rebased `feat/issue-206-supabase-auth-config` on main
+
+**Key files:** `web/src/test/components/confirm-dialog.test.tsx` (consolidated from 7→12 tests)
+**Frontend tests:** 178 passing (up from 174)
+**Issues closed:** #184
+
+**What's next:** Mark PR #218 ready (#206), triage bot feedback, merge. Then #207 (backend JWT middleware).
+
+---
+
+## 2026-02-24 (evening) — Auth Config (#206) + Pay Constraints Merge (#198/#216)
+
+**Goal:** Implement issue #206 (Supabase Auth configuration) and triage/merge PR #216 (pay range constraints).
+
+**What happened:**
+- **#206**: Added `SUPABASE_JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_DISABLED` to Settings with production guard validator. Initialized `supabase/` directory with `config.toml` — pushed auth settings to remote via `supabase config push` (invite-only, site URL, redirects, email confirmations). Created `docs/runbooks/supabase-auth-setup.md`. JWT secret + service_role key stored in 1Password. Draft PR #218 open.
+- **#198/#216**: Ran `/pr-feedback-cycle` on PR #216. Fixed 2 bot comments (Gemini: simplified dict access; Cursor: added missing `__all__` exports). Deferred 1 (test match specificity). Squash-merged as `d40c5e2`. Worktree cleaned up.
+- Discovered `supabase config push` can manage auth settings as code — eliminates manual dashboard configuration.
+
+**Key files:** `src/compgraph/config.py`, `supabase/config.toml`, `docs/runbooks/supabase-auth-setup.md`, `.env.example`, `tests/test_auth_config.py`
+
+**What's next:** Mark PR #218 ready, triage bot feedback, merge #206. Then #207 (backend JWT middleware) and #208 (frontend auth pages).
+
+---
+
 ## 2026-02-24 — Project Hygiene: Docs Audit, Issue Triage, Milestone Cleanup
 
 **Goal:** Update stale documentation, create web/CLAUDE.md, run docs audit, triage all 50 open issues, set up M7 sprint infrastructure.

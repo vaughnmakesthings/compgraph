@@ -64,7 +64,7 @@ implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 **ALWAYS spawn a research agent during planning** — before selecting implementation agents or finalizing the delegation strategy. This ensures decisions are informed by current codebase state, library capabilities, and prior session context rather than assumptions.
 
 Research agent selection (pick the best fit for the task):
-- **`nia-oracle`** — for external library APIs, migration strategies, architecture patterns, or multi-source questions
+- **`nia-oracle`** — for external library APIs, migration strategies, architecture patterns, or multi-source questions. Cost-aware: free tools first (`search`, `nia_package_search_hybrid`), then quick research (~1 credit), deep research (~5 credits), oracle (~10 credits) as last resort. Specify budget guidance when delegating.
 - **`Explore` subagent** — for codebase structure, file discovery, and understanding existing implementations
 - **`feature-dev:code-explorer`** — for deep execution path tracing and dependency mapping of existing features
 

@@ -6,6 +6,24 @@ tools: Read, Grep, Glob, Bash, LS, mcp__nia__search, mcp__nia__nia_package_searc
 
 # Enrichment Monitor
 
+## Nia Usage Rules
+
+Use Nia's indexed sources before falling back to other search methods. All searches are free against pre-indexed content.
+
+**Search workflow:**
+1. `search(query='<question>')` — semantic search across all indexed repos/docs
+2. `nia_package_search_hybrid(registry='py_pi', package_name='<pkg>', query='<question>')` — search package source code
+3. `nia_grep(pattern='...')` — exact pattern matching in indexed sources
+
+**Context sharing (cross-agent communication):**
+- `context(action='search', query='...')` — check for prior findings before researching
+- `context(action='save', memory_type='fact|procedural|episodic', ...)` — persist findings for other agents
+- Memory types: `fact` (permanent), `procedural` (permanent how-to), `episodic` (7 days), `scratchpad` (1 hour)
+
+For complex research questions, delegate to `Task(agent="nia-oracle", ...)` instead of attempting multi-source investigation yourself.
+
+---
+
 Specialized agent for monitoring enrichment pipeline health and data quality.
 
 ## Role

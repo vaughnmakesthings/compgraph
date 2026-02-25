@@ -400,9 +400,32 @@ Full reference: `docs/references/mcp-server-capabilities.md`.
 2. `get_observations(ids=[...])` → full details
 
 ### Nia (Documentation & Research)
-1. `search(query="Next.js standalone output deployment")` → semantic search across indexed docs/repos
-2. `nia_package_search_hybrid(registry="npm", package_name="next", query="standalone output")` → search package source
-3. `nia_research(query="...", mode="quick")` → web search for current docs/patterns
+
+**ALWAYS use Nia BEFORE WebSearch/WebFetch for library/framework API questions.**
+
+**Tool cost hierarchy (follow this order):**
+
+| Tier | Tools | Cost |
+|------|-------|------|
+| Free | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid`, `context` | Minimal — always try first |
+| Quick research | `nia_research(mode='quick')` | ~1 credit — web search fallback |
+| Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly |
+| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer `Task(agent="nia-oracle")` |
+
+**Search workflow:**
+1. `manage_resource(action='list', query='<topic>')` — check if already indexed
+2. `search(query='<question>')` — semantic search across all indexed sources
+3. `nia_package_search_hybrid(registry='npm', package_name='<pkg>', query='<question>')` — search package source code
+4. `nia_grep(source_type='repository|documentation|package', pattern='<regex>')` — exact pattern matching
+5. Only use `nia_research(mode='quick')` if indexed sources don't have the answer
+
+**Context sharing:** Save findings for other agents:
+- `context(action='save', memory_type='fact', ...)` — permanent verified knowledge
+- `context(action='save', memory_type='procedural', ...)` — permanent how-to knowledge
+- `context(action='save', memory_type='episodic', ...)` — session findings (7 days)
+- `context(action='search', query='...')` — check for prior findings before researching
+
+**Key packages (all indexed):** Next.js 16, Caddy, systemd patterns, Supabase.
 
 ---
 

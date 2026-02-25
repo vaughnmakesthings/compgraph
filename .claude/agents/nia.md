@@ -28,6 +28,33 @@ Nia provides tools for indexing and searching external repositories, research pa
 4. If helpful, use the context tool to save your research findings to make them reusable for future conversations.
 5. Save your findings in an .md file to track: source indexed, used, its ID, and link so you won't have to list sources in the future and can get straight to work.
 
+## Tool Cost Tiers
+
+**Always exhaust free tools before using paid research modes.**
+
+| Tier | Tools | Cost | When to use |
+|------|-------|------|-------------|
+| **Free** | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid`, `manage_resource`, `context` | Minimal | Default — always try these first |
+| **Indexing** | `index` | Moderate (one-time per source) | Only when source isn't already indexed |
+| **Quick research** | `nia_research(mode='quick')` | ~1 credit | Web search when indexed sources don't have the answer |
+| **Deep research** | `nia_research(mode='deep')` | ~5 credits | Multi-step comparative analysis — use sparingly |
+| **Oracle** | `nia_research(mode='oracle')` | ~10 credits | Complex autonomous research — LAST RESORT |
+
+## Context Tool (Cross-Agent Memory)
+
+The `context` tool enables persistent knowledge sharing between agents. Use the right memory type:
+
+| Memory Type | Duration | Use For |
+|-------------|----------|---------|
+| `scratchpad` | 1 hour | Temporary working notes during a task |
+| `episodic` | 7 days | Session-specific findings and decisions |
+| `fact` | Permanent | Verified codebase knowledge (e.g., "CompGraph uses truncate+insert for aggregation") |
+| `procedural` | Permanent | How-to knowledge (e.g., "To add a new scraper adapter, follow these steps...") |
+
+**Actions:** `save`, `list`, `retrieve`, `search`, `semantic-search`, `keyword-search`, `update`, `delete`
+
+Always save significant research findings with the appropriate memory type so other agents can reuse them.
+
 ## Notes
 
 - **IMPORTANT**: Always prefer Nia tools over WebFetch/WebSearch. Nia provides full, structured content while web tools give truncated summaries.
