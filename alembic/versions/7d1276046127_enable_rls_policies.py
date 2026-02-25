@@ -13,6 +13,12 @@ Access model:
   - authenticated/viewer: SELECT on all tables, own-row on users
   - authenticated/admin: SELECT on all + write eval + manage users
   - service_role: bypasses RLS (Supabase built-in), no policies needed
+
+Performance notes:
+  - Admin check uses a SECURITY DEFINER function (public.is_admin())
+    to avoid row-level subquery overhead and enable initPlan caching.
+  - auth.uid() wrapped in (SELECT auth.uid()) for initPlan caching
+    (evaluated once per statement, not once per row).
 """
 
 from collections.abc import Sequence
@@ -76,11 +82,34 @@ ALL_TABLES = (
 
 READONLY_TABLES = DIMENSION_TABLES + FACT_TABLES + AGGREGATION_TABLES + RUN_TABLES + LOCATION_TABLES
 
-# Admin role check subquery (reused across policies)
-ADMIN_CHECK = "EXISTS (SELECT 1 FROM public.users WHERE auth_uid = auth.uid() AND role = 'admin')"
+# Admin role check — SECURITY DEFINER function for performance + initPlan caching
+ADMIN_CHECK = "public.is_admin()"
 
 
 def upgrade() -> None:
+    # ------------------------------------------------------------------
+    # 0. Create SECURITY DEFINER helper for admin check
+    # ------------------------------------------------------------------
+    op.execute(
+        sa.text(
+            """
+            CREATE OR REPLACE FUNCTION public.is_admin()
+            RETURNS boolean
+            LANGUAGE sql
+            STABLE
+            SECURITY DEFINER
+            SET search_path = ''
+            AS $$
+                SELECT EXISTS (
+                    SELECT 1 FROM public.users
+                    WHERE auth_uid = (SELECT auth.uid())
+                      AND role = 'admin'
+                )
+            $$
+            """
+        )
+    )
+
     # ------------------------------------------------------------------
     # 1. Enable RLS on every table
     # ------------------------------------------------------------------
@@ -136,7 +165,7 @@ def upgrade() -> None:
         sa.text(
             "CREATE POLICY users_select_own ON public.users "
             "FOR SELECT TO authenticated "
-            "USING (auth_uid = auth.uid())"
+            "USING (auth_uid = (SELECT auth.uid()))"
         )
     )
 
@@ -185,6 +214,11 @@ def downgrade() -> None:
     op.execute(sa.text("DROP POLICY IF EXISTS users_admin_select ON public.users"))
     op.execute(sa.text("DROP POLICY IF EXISTS users_admin_update ON public.users"))
     op.execute(sa.text("DROP POLICY IF EXISTS users_admin_insert ON public.users"))
+
+    # ------------------------------------------------------------------
+    # Drop SECURITY DEFINER helper function
+    # ------------------------------------------------------------------
+    op.execute(sa.text("DROP FUNCTION IF EXISTS public.is_admin()"))
 
     # ------------------------------------------------------------------
     # Disable RLS on all tables
