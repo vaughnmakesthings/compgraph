@@ -25,7 +25,7 @@ def clear_runs():
 
 class TestScrapeStatusEndpoint:
     def test_status_no_runs_returns_404(self, client):
-        resp = client.get("/api/scrape/status")
+        resp = client.get("/api/v1/scrape/status")
         assert resp.status_code == 404
 
     def test_status_returns_latest_run(self, client):
@@ -33,7 +33,7 @@ class TestScrapeStatusEndpoint:
         run.finished_at = datetime.now(UTC)
         _store_run(run)
 
-        resp = client.get("/api/scrape/status")
+        resp = client.get("/api/v1/scrape/status")
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
@@ -59,7 +59,7 @@ class TestScrapeStatusEndpoint:
         )
         _store_run(run)
 
-        resp = client.get("/api/scrape/status")
+        resp = client.get("/api/v1/scrape/status")
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "partial"
@@ -75,18 +75,18 @@ class TestScrapeStatusByIdEndpoint:
         run = PipelineRun(status=PipelineStatus.RUNNING)
         _store_run(run)
 
-        resp = client.get(f"/api/scrape/status/{run.run_id}")
+        resp = client.get(f"/api/v1/scrape/status/{run.run_id}")
         assert resp.status_code == 200
         assert resp.json()["status"] == "running"
 
     def test_status_by_id_not_found(self, client):
-        resp = client.get(f"/api/scrape/status/{uuid.uuid4()}")
+        resp = client.get(f"/api/v1/scrape/status/{uuid.uuid4()}")
         assert resp.status_code == 404
 
 
 class TestScrapeTriggerEndpoint:
     def test_trigger_returns_run_id(self, client):
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 200
         data = resp.json()
         assert "run_id" in data
@@ -95,10 +95,10 @@ class TestScrapeTriggerEndpoint:
         uuid.UUID(data["run_id"])
 
     def test_run_exists_after_trigger(self, client):
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         run_id = resp.json()["run_id"]
 
-        status_resp = client.get(f"/api/scrape/status/{run_id}")
+        status_resp = client.get(f"/api/v1/scrape/status/{run_id}")
         assert status_resp.status_code == 200
 
 
@@ -107,7 +107,7 @@ class TestScrapeTriggerConcurrencyGuard:
         run = PipelineRun(status=PipelineStatus.RUNNING)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
         assert "already running" in resp.json()["detail"]
 
@@ -115,7 +115,7 @@ class TestScrapeTriggerConcurrencyGuard:
         run = PipelineRun(status=PipelineStatus.PAUSED)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
         assert "already running" in resp.json()["detail"]
 
@@ -123,7 +123,7 @@ class TestScrapeTriggerConcurrencyGuard:
         run = PipelineRun(status=PipelineStatus.PENDING)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
 
     def test_trigger_allowed_after_completed_run(self, client):
@@ -131,7 +131,7 @@ class TestScrapeTriggerConcurrencyGuard:
         run.finished_at = datetime.now(UTC)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 200
 
     def test_trigger_allowed_after_failed_run(self, client):
@@ -139,7 +139,7 @@ class TestScrapeTriggerConcurrencyGuard:
         run.finished_at = datetime.now(UTC)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 200
 
     def test_trigger_allowed_after_cancelled_run(self, client):
@@ -147,5 +147,5 @@ class TestScrapeTriggerConcurrencyGuard:
         run.finished_at = datetime.now(UTC)
         _store_run(run)
 
-        resp = client.post("/api/scrape/trigger")
+        resp = client.post("/api/v1/scrape/trigger")
         assert resp.status_code == 200

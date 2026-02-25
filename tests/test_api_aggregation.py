@@ -23,39 +23,39 @@ def _mock_db() -> None:  # type: ignore[return]
 class TestAggregationEndpoints:
     def test_velocity_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/velocity")
+            r = client.get("/api/v1/aggregation/velocity")
         assert r.status_code == 200
 
     def test_brand_timeline_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/brand-timeline")
+            r = client.get("/api/v1/aggregation/brand-timeline")
         assert r.status_code == 200
 
     def test_pay_benchmarks_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/pay-benchmarks")
+            r = client.get("/api/v1/aggregation/pay-benchmarks")
         assert r.status_code == 200
 
     def test_lifecycle_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/lifecycle")
+            r = client.get("/api/v1/aggregation/lifecycle")
         assert r.status_code == 200
 
     def test_churn_signals_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/churn-signals")
+            r = client.get("/api/v1/aggregation/churn-signals")
         assert r.status_code == 200
 
     def test_coverage_gaps_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/coverage-gaps")
+            r = client.get("/api/v1/aggregation/coverage-gaps")
         assert r.status_code == 200
 
     def test_agency_overlap_endpoint_exists(self, _mock_db: None) -> None:
         with TestClient(app) as client:
-            r = client.get("/api/aggregation/agency-overlap")
+            r = client.get("/api/v1/aggregation/agency-overlap")
         assert r.status_code == 200
 
     def test_trigger_endpoint_exists(self, client) -> None:  # type: ignore[no-untyped-def]
-        r = client.post("/api/aggregation/trigger")
+        r = client.post("/api/v1/aggregation/trigger")
         assert r.status_code != 404

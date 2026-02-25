@@ -19,7 +19,7 @@ from compgraph.scrapers.orchestrator import (
     get_run,
 )
 
-router = APIRouter(prefix="/api/scrape", tags=["scrape"])
+router = APIRouter(prefix="/scrape", tags=["scrape"])
 
 
 # --- Response Models ---
@@ -133,7 +133,7 @@ _ACTIVE_STATUSES = frozenset(
 async def trigger_scrape(background_tasks: BackgroundTasks) -> TriggerResponse:
     """Trigger a manual scrape pipeline run.
 
-    The scrape runs in the background. Use GET /api/scrape/status to check progress.
+    The scrape runs in the background. Use GET /api/v1/scrape/status to check progress.
     """
     latest = get_latest_run()
     if latest is not None and latest.status in _ACTIVE_STATUSES:
@@ -158,7 +158,7 @@ async def trigger_scrape(background_tasks: BackgroundTasks) -> TriggerResponse:
 
     return TriggerResponse(
         run_id=pipeline_run.run_id,
-        message="Pipeline run triggered. Check /api/scrape/status for progress.",
+        message="Pipeline run triggered. Check /api/v1/scrape/status for progress.",
     )
 
 
@@ -190,7 +190,7 @@ async def pause_scrape() -> ControlResponse:
     return ControlResponse(
         run_id=run.run_id,
         status=run.status,
-        message="Pipeline paused. Use /api/scrape/resume to continue.",
+        message="Pipeline paused. Use /api/v1/scrape/resume to continue.",
     )
 
 

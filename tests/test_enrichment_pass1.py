@@ -731,7 +731,7 @@ class TestEnrichAPIRoutes:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            response = client.post("/api/enrich/pass1/trigger")
+            response = client.post("/api/v1/enrich/pass1/trigger")
         assert response.status_code == 200
         data = response.json()
         assert "run_id" in data
@@ -747,7 +747,7 @@ class TestEnrichAPIRoutes:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            response = client.get("/api/enrich/status")
+            response = client.get("/api/v1/enrich/status")
         assert response.status_code == 404
 
     def test_status_db_fallback(self, client):
@@ -781,7 +781,7 @@ class TestEnrichAPIRoutes:
             new_callable=AsyncMock,
             return_value=db_run,
         ):
-            response = client.get("/api/enrich/status")
+            response = client.get("/api/v1/enrich/status")
         assert response.status_code == 200
         data = response.json()
         assert data["run_id"] == str(fake_id)
@@ -795,9 +795,9 @@ class TestEnrichAPIRoutes:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            response = client.post("/api/enrich/pass1/trigger")
+            response = client.post("/api/v1/enrich/pass1/trigger")
         run_id = response.json()["run_id"]
-        status_response = client.get("/api/enrich/status")
+        status_response = client.get("/api/v1/enrich/status")
         assert status_response.status_code == 200
         assert status_response.json()["run_id"] == run_id
 
@@ -805,15 +805,15 @@ class TestEnrichAPIRoutes:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            response = client.post("/api/enrich/pass1/trigger")
+            response = client.post("/api/v1/enrich/pass1/trigger")
         run_id = response.json()["run_id"]
-        status_response = client.get(f"/api/enrich/status/{run_id}")
+        status_response = client.get(f"/api/v1/enrich/status/{run_id}")
         assert status_response.status_code == 200
         assert status_response.json()["run_id"] == run_id
 
     def test_status_by_id_not_found(self, client):
         fake_id = str(uuid.uuid4())
-        response = client.get(f"/api/enrich/status/{fake_id}")
+        response = client.get(f"/api/v1/enrich/status/{fake_id}")
         assert response.status_code == 404
 
 
@@ -1008,9 +1008,9 @@ class TestObservabilityFields:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            client.post("/api/enrich/pass1/trigger")
+            client.post("/api/v1/enrich/pass1/trigger")
 
-        response = client.get("/api/enrich/status")
+        response = client.get("/api/v1/enrich/status")
         assert response.status_code == 200
         data = response.json()
         assert "total_input_tokens" in data
@@ -1038,7 +1038,7 @@ class TestObservabilityFields:
         run.finish(result)
         _store_run(run)
 
-        response = client.get(f"/api/enrich/status/{run.run_id}")
+        response = client.get(f"/api/v1/enrich/status/{run.run_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["total_input_tokens"] == 1000
@@ -1060,7 +1060,7 @@ class TestObservabilityFields:
         run.finish(result)
         _store_run(run)
 
-        response = client.get(f"/api/enrich/status/{run.run_id}")
+        response = client.get(f"/api/v1/enrich/status/{run.run_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["circuit_breaker_tripped"] is True

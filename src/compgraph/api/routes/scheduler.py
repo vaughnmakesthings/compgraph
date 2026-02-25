@@ -14,7 +14,7 @@ from compgraph.scheduler.jobs import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/scheduler", tags=["scheduler"])
+router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
 MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri→Mon) + 8h grace
 
@@ -134,7 +134,7 @@ async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
     return TriggerResponse(
         job_id=str(result_id),
         message=f"Pipeline job triggered manually (schedule: {job_id}). "
-        "Check /api/scrape/status and /api/enrich/status for progress.",
+        "Check /api/v1/scrape/status and /api/v1/enrich/status for progress.",
     )
 
 

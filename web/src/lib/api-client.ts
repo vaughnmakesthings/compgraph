@@ -50,35 +50,35 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   health: () => apiFetch<{ status: string; version?: string; checks?: Record<string, string> }>('/health'),
 
-  getPipelineStatus: () => apiFetch<PipelineStatus>('/api/pipeline/status'),
+  getPipelineStatus: () => apiFetch<PipelineStatus>('/api/v1/pipeline/status'),
 
-  getPipelineRuns: () => apiFetch<PipelineRunsResponse>('/api/pipeline/runs'),
+  getPipelineRuns: () => apiFetch<PipelineRunsResponse>('/api/v1/pipeline/runs'),
 
   getVelocity: (params?: { company_id?: string; days?: number }) => {
     const q = new URLSearchParams()
     if (params?.company_id) q.set('company_id', params.company_id)
     if (params?.days) q.set('days', String(params.days))
-    return apiFetch<DailyVelocity[]>(`/api/aggregation/velocity${q.size ? `?${q}` : ''}`)
+    return apiFetch<DailyVelocity[]>(`/api/v1/aggregation/velocity${q.size ? `?${q}` : ''}`)
   },
 
   getBrandTimeline: (params?: { brand_id?: string }) => {
     const q = new URLSearchParams()
     if (params?.brand_id) q.set('brand_id', params.brand_id)
-    return apiFetch<BrandTimeline[]>(`/api/aggregation/brand-timeline${q.size ? `?${q}` : ''}`)
+    return apiFetch<BrandTimeline[]>(`/api/v1/aggregation/brand-timeline${q.size ? `?${q}` : ''}`)
   },
 
-  getPayBenchmarks: () => apiFetch<PayBenchmark[]>('/api/aggregation/pay-benchmarks'),
+  getPayBenchmarks: () => apiFetch<PayBenchmark[]>('/api/v1/aggregation/pay-benchmarks'),
 
-  getLifecycle: () => apiFetch<PostingLifecycle[]>('/api/aggregation/lifecycle'),
+  getLifecycle: () => apiFetch<PostingLifecycle[]>('/api/v1/aggregation/lifecycle'),
 
-  getChurnSignals: () => apiFetch<ChurnSignal[]>('/api/aggregation/churn-signals'),
+  getChurnSignals: () => apiFetch<ChurnSignal[]>('/api/v1/aggregation/churn-signals'),
 
-  getCoverageGaps: () => apiFetch<CoverageGap[]>('/api/aggregation/coverage-gaps'),
+  getCoverageGaps: () => apiFetch<CoverageGap[]>('/api/v1/aggregation/coverage-gaps'),
 
-  getAgencyOverlap: () => apiFetch<AgencyOverlap[]>('/api/aggregation/agency-overlap'),
+  getAgencyOverlap: () => apiFetch<AgencyOverlap[]>('/api/v1/aggregation/agency-overlap'),
 
   triggerAggregation: () =>
-    apiFetch<{ status: string }>('/api/aggregation/trigger', { method: 'POST' }),
+    apiFetch<{ status: string }>('/api/v1/aggregation/trigger', { method: 'POST' }),
 
   listPostings: (params?: {
     limit?: number
@@ -97,15 +97,15 @@ export const api = {
     if (params?.role_archetype) q.set('role_archetype', params.role_archetype)
     if (params?.sort_by) q.set('sort_by', params.sort_by)
     if (params?.search) q.set('search', params.search)
-    return apiFetch<PostingListResponse>(`/api/postings${q.size ? `?${q}` : ''}`)
+    return apiFetch<PostingListResponse>(`/api/v1/postings${q.size ? `?${q}` : ''}`)
   },
 
-  getPosting: (id: string) => apiFetch<PostingDetail>(`/api/postings/${id}`),
+  getPosting: (id: string) => apiFetch<PostingDetail>(`/api/v1/postings/${id}`),
 
-  listEvalRuns: () => apiFetch<EvalRun[]>('/api/eval/runs'),
+  listEvalRuns: () => apiFetch<EvalRun[]>('/api/v1/eval/runs'),
 
   getEvalModels: () =>
-    apiFetch<Array<{ id: string; label: string }>>('/api/eval/models'),
+    apiFetch<Array<{ id: string; label: string }>>('/api/v1/eval/models'),
 
   createEvalRun: (body: {
     pass_number: number
@@ -113,25 +113,25 @@ export const api = {
     prompt_version: string
     concurrency?: number
   }) =>
-    apiFetch<{ run_id: string; tracking_id: number }>('/api/eval/runs', {
+    apiFetch<{ run_id: string; tracking_id: number }>('/api/v1/eval/runs', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
-  getEvalRun: (id: string) => apiFetch<EvalRun>(`/api/eval/runs/${id}`),
+  getEvalRun: (id: string) => apiFetch<EvalRun>(`/api/v1/eval/runs/${id}`),
 
-  getEvalResults: (runId: string) => apiFetch<EvalResult[]>(`/api/eval/runs/${runId}/results`),
+  getEvalResults: (runId: string) => apiFetch<EvalResult[]>(`/api/v1/eval/runs/${runId}/results`),
 
   getEvalLeaderboard: () => apiFetch<{
     runs: EvalRun[];
     elo: Record<string, number>;
     comparisons: EvalComparison[];
     field_accuracy: Record<string, Record<string, number>>;
-  }>('/api/eval/leaderboard-data'),
+  }>('/api/v1/eval/leaderboard-data'),
 
-  getEloRatings: () => apiFetch<Record<string, number>>('/api/eval/elo'),
+  getEloRatings: () => apiFetch<Record<string, number>>('/api/v1/eval/elo'),
 
-  listComparisons: () => apiFetch<EvalComparison[]>('/api/eval/comparisons'),
+  listComparisons: () => apiFetch<EvalComparison[]>('/api/v1/eval/comparisons'),
 
   recordComparison: (body: {
     posting_id: string
@@ -140,7 +140,7 @@ export const api = {
     winner: 'a' | 'b' | 'tie' | 'both_bad'
     notes?: string
   }) =>
-    apiFetch<{ id: string }>('/api/eval/comparisons', {
+    apiFetch<{ id: string }>('/api/v1/eval/comparisons', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -151,53 +151,53 @@ export const api = {
     is_correct: number
     notes?: string
   }) =>
-    apiFetch<{ id: string }>('/api/eval/field-reviews', {
+    apiFetch<{ id: string }>('/api/v1/eval/field-reviews', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
   getEvalCorpus: () =>
-    apiFetch<Array<{ id: string; title: string; content: string }>>('/api/eval/corpus'),
+    apiFetch<Array<{ id: string; title: string; content: string }>>('/api/v1/eval/corpus'),
 
   getCompanies: () =>
-    apiFetch<Array<{ id: string; name: string; slug: string; ats_platform: string }>>('/api/companies'),
+    apiFetch<Array<{ id: string; name: string; slug: string; ats_platform: string }>>('/api/v1/companies'),
 
   // Scrape control
   triggerScrape: () =>
-    apiFetch<{ run_id: string; message: string }>('/api/scrape/trigger', { method: 'POST' }),
+    apiFetch<{ run_id: string; message: string }>('/api/v1/scrape/trigger', { method: 'POST' }),
 
   pauseScrape: () =>
-    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/pause', { method: 'POST' }),
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/v1/scrape/pause', { method: 'POST' }),
 
   resumeScrape: () =>
-    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/resume', { method: 'POST' }),
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/v1/scrape/resume', { method: 'POST' }),
 
   stopScrape: () =>
-    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/stop', { method: 'POST' }),
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/v1/scrape/stop', { method: 'POST' }),
 
   forceStopScrape: () =>
-    apiFetch<{ run_id: string; status: string; message: string }>('/api/scrape/force-stop', { method: 'POST' }),
+    apiFetch<{ run_id: string; status: string; message: string }>('/api/v1/scrape/force-stop', { method: 'POST' }),
 
   getScrapeStatus: () =>
-    apiFetch<ScrapeStatusResponse>('/api/scrape/status'),
+    apiFetch<ScrapeStatusResponse>('/api/v1/scrape/status'),
 
   // Enrichment control
   triggerEnrichment: () =>
-    apiFetch<{ run_id: string; message: string }>('/api/enrich/trigger', { method: 'POST' }),
+    apiFetch<{ run_id: string; message: string }>('/api/v1/enrich/trigger', { method: 'POST' }),
 
   getEnrichStatus: () =>
-    apiFetch<EnrichStatusResponse>('/api/enrich/status'),
+    apiFetch<EnrichStatusResponse>('/api/v1/enrich/status'),
 
   // Scheduler
   getSchedulerStatus: () =>
-    apiFetch<SchedulerStatusResponse>('/api/scheduler/status'),
+    apiFetch<SchedulerStatusResponse>('/api/v1/scheduler/status'),
 
   triggerSchedulerJob: (jobId: string) =>
-    apiFetch<{ job_id: string; message: string }>(`/api/scheduler/jobs/${jobId}/trigger`, { method: 'POST' }),
+    apiFetch<{ job_id: string; message: string }>(`/api/v1/scheduler/jobs/${jobId}/trigger`, { method: 'POST' }),
 
   pauseSchedulerJob: (jobId: string) =>
-    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/scheduler/jobs/${jobId}/pause`, { method: 'POST' }),
+    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/v1/scheduler/jobs/${jobId}/pause`, { method: 'POST' }),
 
   resumeSchedulerJob: (jobId: string) =>
-    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/scheduler/jobs/${jobId}/resume`, { method: 'POST' }),
+    apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/v1/scheduler/jobs/${jobId}/resume`, { method: 'POST' }),
 }

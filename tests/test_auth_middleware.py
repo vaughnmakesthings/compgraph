@@ -316,7 +316,7 @@ class TestAdminInviteEndpoint:
         with TestClient(app) as client:
             token = _make_token(role="viewer")
             resp = client.post(
-                "/api/v1/admin/invite",
+                "/admin/invite",
                 json={"email": "new@test.com", "role": "viewer"},
                 headers={"Authorization": f"Bearer {token}"},
             )
@@ -335,7 +335,7 @@ class TestAdminInviteEndpoint:
 
         with patch("compgraph.api.routes.admin.httpx.AsyncClient", return_value=mock_http_client):
             resp = admin_client.post(
-                "/api/v1/admin/invite",
+                "/admin/invite",
                 json={"email": "newuser@example.com", "role": "viewer"},
             )
             assert resp.status_code == 200
@@ -351,7 +351,7 @@ class TestAdminInviteEndpoint:
         mock_session.execute.return_value = mock_result
 
         resp = admin_client.post(
-            "/api/v1/admin/invite",
+            "/admin/invite",
             json={"email": "existing@test.com", "role": "viewer"},
         )
         assert resp.status_code == 409
@@ -359,14 +359,14 @@ class TestAdminInviteEndpoint:
 
     def test_invalid_email_returns_422(self, admin_client: TestClient):
         resp = admin_client.post(
-            "/api/v1/admin/invite",
+            "/admin/invite",
             json={"email": "not-an-email", "role": "viewer"},
         )
         assert resp.status_code == 422
 
     def test_invalid_role_returns_422(self, admin_client: TestClient):
         resp = admin_client.post(
-            "/api/v1/admin/invite",
+            "/admin/invite",
             json={"email": "valid@test.com", "role": "superadmin"},
         )
         assert resp.status_code == 422
@@ -383,7 +383,7 @@ class TestAdminInviteEndpoint:
 
         with patch("compgraph.api.routes.admin.httpx.AsyncClient", return_value=mock_http_client):
             resp = admin_client.post(
-                "/api/v1/admin/invite",
+                "/admin/invite",
                 json={"email": "newuser@example.com", "role": "viewer"},
             )
             assert resp.status_code == 502
