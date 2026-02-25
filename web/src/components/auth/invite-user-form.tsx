@@ -5,6 +5,7 @@ import { EnvelopeIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { api } from "@/lib/api-client";
 import type { AppUser, UserRole } from "./user-management-section";
 
 interface InviteUserFormProps {
@@ -41,22 +42,26 @@ export function InviteUserForm({ onInvited, existingEmails }: InviteUserFormProp
   }
 
   async function handleConfirm() {
-    await new Promise((r) => setTimeout(r, 700));
     const trimmed = email.trim().toLowerCase();
-    const newUser: AppUser = {
-      id: `u-${Date.now()}`,
-      firstName: trimmed.split("@")[0] ?? "New",
-      lastName: "User",
-      email: trimmed,
-      role,
-      status: "invite_sent",
-      joinedAt: null,
-      lastLoginAt: null,
-    };
-    onInvited(newUser);
-    toast.success(`Invite sent to ${trimmed}`);
-    setEmail("");
-    setRole("user");
+    try {
+      const response = await api.inviteUser({ email: trimmed, role });
+      const newUser: AppUser = {
+        id: response.user_id,
+        firstName: trimmed.split("@")[0] ?? "New",
+        lastName: "User",
+        email: response.email,
+        role: response.role as UserRole,
+        status: "invite_sent",
+        joinedAt: null,
+        lastLoginAt: null,
+      };
+      onInvited(newUser);
+      toast.success(`Invite sent to ${trimmed}`);
+      setEmail("");
+      setRole("user");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send invite");
+    }
   }
 
   return (

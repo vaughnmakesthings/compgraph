@@ -7,10 +7,36 @@ import { InviteUserForm } from "@/components/auth/invite-user-form";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import { UserTable } from "@/components/auth/user-table";
 import type { AppUser } from "@/components/auth/user-management-section";
+import {
+  createMockSupabaseAuth,
+} from "../mocks/supabase";
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+// Supabase client mock — mutable so individual tests can configure behavior
+let mockSupabase: ReturnType<typeof createMockSupabaseAuth> | null = null;
+
+vi.mock("@/lib/supabase", () => ({
+  get supabase() {
+    return mockSupabase;
+  },
+}));
+
+// next/navigation mock
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+// api-client mock
+const mockInviteUser = vi.fn();
+vi.mock("@/lib/api-client", () => ({
+  api: {
+    inviteUser: (...args: unknown[]) => mockInviteUser(...args),
+  },
+}));
 
 // Mock sonner toast
 vi.mock("sonner", () => ({
@@ -131,11 +157,11 @@ const mockUsers: AppUser[] = [
 describe("LoginForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSupabase = createMockSupabaseAuth();
   });
 
   it("renders password mode by default", () => {
     render(<LoginForm />);
-    // "Password" appears both as tab and label — check for both by count
     expect(screen.getAllByText("Password")).toHaveLength(2);
     expect(screen.getByText("Magic link")).toBeInTheDocument();
     expect(screen.getByText("Sign in")).toBeInTheDocument();
@@ -194,6 +220,70 @@ describe("LoginForm", () => {
       screen.getByText(/Invite-only access/),
     ).toBeInTheDocument();
   });
+
+  it("calls signInWithPassword with email and password on submit", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email address"), "user@test.com");
+    await user.type(screen.getByLabelText("Password"), "secret123");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(mockSupabase!.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: "user@test.com",
+        password: "secret123",
+      });
+    });
+  });
+
+  it("navigates to / on successful password login", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email address"), "user@test.com");
+    await user.type(screen.getByLabelText("Password"), "secret123");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("displays error from Supabase on failed login", async () => {
+    mockSupabase = createMockSupabaseAuth({
+      signInError: { message: "Invalid login credentials" },
+    });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email address"), "bad@test.com");
+    await user.type(screen.getByLabelText("Password"), "wrong");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Invalid login credentials",
+      );
+    });
+  });
+
+  it("calls signInWithOtp in magic-link mode", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.click(screen.getByText("Magic link"));
+    await user.type(screen.getByLabelText("Email address"), "user@test.com");
+    await user.click(screen.getByRole("button", { name: "Send magic link" }));
+
+    await waitFor(() => {
+      expect(mockSupabase!.auth.signInWithOtp).toHaveBeenCalledWith({
+        email: "user@test.com",
+      });
+    });
+
+    expect(screen.getByText("Check your email")).toBeInTheDocument();
+  });
 });
 
 // =========================================================================
@@ -203,6 +293,7 @@ describe("LoginForm", () => {
 describe("AccountSetupForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSupabase = createMockSupabaseAuth();
   });
 
   it("renders all form fields", () => {
@@ -300,7 +391,7 @@ describe("AccountSetupForm", () => {
     expect(createPw).toHaveAttribute("type", "text");
   });
 
-  it("submits successfully with valid input", async () => {
+  it("submits successfully and calls updateUser with correct args", async () => {
     const user = userEvent.setup();
     render(<AccountSetupForm email="test@example.com" />);
 
@@ -310,14 +401,31 @@ describe("AccountSetupForm", () => {
     await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
     await user.click(screen.getByRole("button", { name: "Create Account" }));
 
-    expect(
-      screen.getByRole("button", { name: "Creating account\u2026" }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockSupabase!.auth.updateUser).toHaveBeenCalledWith({
+        password: "StrongPw1!",
+        data: { first_name: "John", last_name: "Doe" },
+      });
+    });
+
+    expect(mockPush).toHaveBeenCalledWith("/");
+  });
+
+  it("displays Supabase error on updateUser failure", async () => {
+    mockSupabase = createMockSupabaseAuth({
+      updateUserError: { message: "Password too weak" },
+    });
+    const user = userEvent.setup();
+    render(<AccountSetupForm email="test@example.com" />);
+
+    await user.type(screen.getByLabelText("First name"), "John");
+    await user.type(screen.getByLabelText("Last name"), "Doe");
+    await user.type(screen.getByLabelText("Create password"), "StrongPw1!");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
+    await user.click(screen.getByRole("button", { name: "Create Account" }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Create Account" }),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Password too weak")).toBeInTheDocument();
     });
   });
 });
@@ -334,6 +442,11 @@ describe("InviteUserForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInviteUser.mockResolvedValue({
+      user_id: "u-new",
+      email: "new@example.com",
+      role: "user",
+    });
   });
 
   it("renders the invite form", () => {
