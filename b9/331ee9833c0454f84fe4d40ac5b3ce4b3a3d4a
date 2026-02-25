@@ -1,0 +1,29 @@
+tests/test_auth_config.py
+  f9c01ff9feb688dc 1-26
+src/compgraph/config.py
+  f9c01ff9feb688dc 3,14-19,71-76
+docs/runbooks/supabase-auth-setup.md
+  f9c01ff9feb688dc 1-90
+.env.example
+  f9c01ff9feb688dc 10-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "b9331ee9833c0454f84fe4d40ac5b3ce4b3a3d4a",
+  "prompts": {
+    "f9c01ff9feb688dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a2ed1da9-cb0e-4726-8155-8854cc1bb350",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 143,
+      "total_deletions": 6,
+      "accepted_lines": 139,
+      "overriden_lines": 0
+    }
+  }
+}
