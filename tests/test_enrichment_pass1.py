@@ -738,12 +738,57 @@ class TestEnrichAPIRoutes:
         assert "message" in data
 
     def test_status_no_runs(self, client):
-        """Status endpoint should 404 when no runs exist."""
+        """Status endpoint should 404 when no in-memory or DB runs exist."""
         from compgraph.enrichment.orchestrator import _runs
 
         _runs.clear()
-        response = client.get("/api/enrich/status")
+        with patch(
+            "compgraph.api.routes.enrich.get_latest_enrichment_run_from_db",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            response = client.get("/api/enrich/status")
         assert response.status_code == 404
+
+    def test_status_db_fallback(self, client):
+        """Status endpoint falls back to DB when in-memory store is empty."""
+        from datetime import UTC, datetime
+
+        from compgraph.enrichment.orchestrator import _runs
+
+        _runs.clear()
+        fake_id = uuid.uuid4()
+        db_run = {
+            "run_id": fake_id,
+            "status": "completed",
+            "started_at": datetime(2026, 2, 25, 10, 0, 0, tzinfo=UTC),
+            "finished_at": datetime(2026, 2, 25, 10, 5, 0, tzinfo=UTC),
+            "pass1_succeeded": 50,
+            "pass1_failed": 2,
+            "pass1_skipped": 0,
+            "pass2_succeeded": 48,
+            "pass2_failed": 0,
+            "pass2_skipped": 0,
+            "total_input_tokens": 10000,
+            "total_output_tokens": 5000,
+            "total_api_calls": 100,
+            "total_dedup_saved": 5,
+            "error_summary": None,
+            "circuit_breaker_tripped": False,
+        }
+        with patch(
+            "compgraph.api.routes.enrich.get_latest_enrichment_run_from_db",
+            new_callable=AsyncMock,
+            return_value=db_run,
+        ):
+            response = client.get("/api/enrich/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["run_id"] == str(fake_id)
+        assert data["status"] == "success"
+        assert data["total_input_tokens"] == 10000
+        assert data["pass1_result"]["succeeded"] == 50
+        assert data["pass2_result"]["succeeded"] == 48
 
     def test_status_with_run(self, client):
         """After triggering, status should return the run."""
