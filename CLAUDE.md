@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CompGraph — competitive intelligence platform for Mosaic Sales Solutions. Scrapes job postings from 4 competing field marketing agencies, enriches with LLM, and surfaces hiring velocity, brand relationships, pay benchmarks, and posting lifecycle metrics.
 
+- **GitHub repo**: `vaughnmakesthings/compgraph` (owner: `vaughnmakesthings`, repo: `compgraph`)
+- **GitHub username**: `vmud`
+- When using `gh` CLI or GitHub MCP tools, always use `vaughnmakesthings` as the repo owner — never guess or abbreviate.
+
 ## Commands
 
 ```bash
