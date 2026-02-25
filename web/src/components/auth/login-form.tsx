@@ -13,7 +13,11 @@ export function LoginForm() {
   const [mode, setMode] = useState<"password" | "magic-link">("password");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <form
+      onSubmit={(e) => e.preventDefault()}
+      noValidate
+      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+    >
 
       {/* Mode tabs */}
       <div
@@ -137,6 +141,6 @@ export function LoginForm() {
       >
         Invite-only access — contact your admin to request an account.
       </p>
-    </div>
+    </form>
   );
 }
