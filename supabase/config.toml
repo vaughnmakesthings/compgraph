@@ -149,7 +149,14 @@ enabled = true
 # in emails.
 site_url = "https://compgraph.app"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://compgraph.app/setup", "http://localhost:3000/setup"]
+additional_redirect_urls = [
+  "https://compgraph.app/setup",
+  "http://localhost:3000/setup",
+  "https://compgraph-vmud-7e8ea93d.vercel.app/",
+  "https://compgraph-vmud-7e8ea93d.vercel.app/**",
+  "https://compgraph-*-vmud-7e8ea93d.vercel.app",
+  "https://compgraph-*-vmud-7e8ea93d.vercel.app/**",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -175,7 +182,7 @@ password_requirements = "letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -212,15 +219,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Production SMTP via Postmark
+[auth.email.smtp]
+enabled = true
+host = "smtp.postmarkapp.com"
+port = 587
+user = "env(POSTMARK_TOKEN)"
+pass = "env(POSTMARK_TOKEN)"
+admin_email = "noreply@compgraph.app"
+sender_name = "CompGraph"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
