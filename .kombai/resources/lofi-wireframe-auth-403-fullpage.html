@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>403 Unauthorized — Full Page (Unauthenticated)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+
+  .page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+  }
+
+  /* Minimal header strip */
+  .minimal-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+  }
+  .logo-icon { width: 30px; height: 30px; background: #666; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: bold; border: 2px solid #444; }
+  .logo-text { font-size: 16px; font-weight: bold; color: #333; }
+
+  /* ERROR BLOCK */
+  /* NEW COMPONENT: ErrorBlock — src/components/auth/ErrorBlock.tsx (or src/app/(auth)/403/page.tsx) */
+  .error-block {
+    text-align: center;
+    max-width: 440px;
+    position: relative;
+  }
+
+  .error-code-box {
+    display: inline-block;
+    border: 3px solid #999;
+    border-radius: 8px;
+    padding: 14px 32px;
+    margin-bottom: 24px;
+    background: #fff;
+    box-shadow: 4px 4px 0 #ccc;
+  }
+  .error-code { font-size: 52px; font-weight: bold; color: #555; line-height: 1; font-family: monospace; }
+  .error-code-label { font-size: 13px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Lock icon approximation */
+  .lock-icon {
+    width: 56px; height: 56px;
+    border: 3px solid #999;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    background: #f0f0f0;
+    font-size: 24px;
+    color: #777;
+  }
+
+  .error-heading { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 10px; }
+  .error-desc { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 28px; }
+
+  .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    padding: 11px 24px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-ghost {
+    padding: 11px 24px;
+    background: #f0f0f0;
+    color: #666;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .context-note {
+    margin-top: 32px;
+    padding: 14px 20px;
+    border: 1px dashed #bbb;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 12px;
+    color: #777;
+    text-align: left;
+    line-height: 1.6;
+  }
+  .context-note strong { color: #555; }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 4 — 403 / Unauthorized &nbsp;|&nbsp; <strong>Option A: Full-Page (unauthenticated or no-access route)</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<!--
+  CONTEXT:
+  - User navigates to a protected URL without a valid session, OR
+  - Authenticated user tries to access a route that requires a higher role
+  - No sidebar — full standalone page
+-->
+
+<div class="page">
+
+  <!-- Minimal header (logo only, no nav) -->
+  <div class="minimal-header">
+    <div class="logo-icon">CG</div>
+    <span class="logo-text">CompGraph</span>
+  </div>
+
+  <!-- ERROR BLOCK -->
+  <!-- NEW COMPONENT: UnauthorizedPage — src/app/(auth)/403/page.tsx -->
+  <div class="comp-wrap">
+    <span class="comp-badge new" style="top:-12px;right:0">[NEW] UnauthorizedPage / ErrorBlock</span>
+
+    <div class="error-block" style="margin-top:60px">
+
+      <div class="lock-icon">🔒</div>
+
+      <div class="error-code-box">
+        <div class="error-code">403</div>
+        <div class="error-code-label">Access Restricted</div>
+      </div>
+
+      <div class="error-heading">You don't have permission to view this page</div>
+      <div class="error-desc">
+        This is a private, invite-only platform.<br/>
+        If you need access, contact your organization's CompGraph admin.
+      </div>
+
+      <div class="btn-row">
+        <!-- REUSABLE: Button (primary) -->
+        <div class="comp-wrap">
+          <span class="comp-badge reuse" style="top:-10px;right:0">[REUSE] Button (primary)</span>
+          <button class="btn-primary">← Back to Login</button>
+        </div>
+
+        <!-- REUSABLE: Button (ghost) -->
+        <div class="comp-wrap">
+          <span class="comp-badge reuse" style="top:-10px;right:0">[REUSE] Button (ghost)</span>
+          <button class="btn-ghost">Contact Admin</button>
+        </div>
+      </div>
+
+      <!-- Context box — shown when user IS authenticated but lacks role -->
+      <div class="context-note">
+        <strong>Variant: Authenticated user, wrong role</strong><br/>
+        If the user is signed in but lacks the required role, show additional context:<br/>
+        &nbsp;• Your role: <strong>viewer</strong><br/>
+        &nbsp;• This resource requires: <strong>admin</strong><br/>
+        &nbsp;• Contact your admin to request elevated access.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

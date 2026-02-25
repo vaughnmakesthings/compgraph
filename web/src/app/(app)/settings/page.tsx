@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { UserManagementSection } from "@/components/auth/user-management-section";
 import { api } from "@/lib/api-client";
 import type {
   ScrapeRunSummary,
@@ -952,6 +953,11 @@ export default function SettingsPage() {
         {/* Live enrichment status panel */}
         {enrichStatus && <LiveEnrichPanel status={enrichStatus} />}
       </SectionCard>
+
+      {/* User Management */}
+      <div className="mt-4">
+        <UserManagementSection />
+      </div>
 
       {/* Scheduler */}
       <SectionCard title="Scheduler" className="mt-4">

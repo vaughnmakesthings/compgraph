@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — Option A: Split-Screen</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f5f5f5;
+    color: #333;
+    min-height: 100vh;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+  .badge-reuse {
+    display: inline-block;
+    background: #4CAF50;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    margin-left: 4px;
+  }
+  .badge-new {
+    display: inline-block;
+    background: #FF9800;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    margin-left: 4px;
+  }
+
+  /* SPLIT LAYOUT */
+  .split {
+    display: flex;
+    height: calc(100vh - 36px);
+  }
+  .left-panel {
+    width: 42%;
+    background: #ccc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 40px;
+    border-right: 2px solid #999;
+    position: relative;
+  }
+  .right-panel {
+    flex: 1;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 56px;
+    position: relative;
+  }
+
+  /* Left branding */
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: #666;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 16px; font-weight: bold;
+    border: 2px solid #333;
+  }
+  .logo-text { font-size: 22px; font-weight: bold; color: #222; }
+  .tagline { font-size: 14px; color: #555; margin-bottom: 28px; line-height: 1.5; }
+  .brand-callouts { list-style: none; }
+  .brand-callouts li {
+    font-size: 13px;
+    color: #444;
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .brand-callouts li::before { content: "✓"; color: #333; font-weight: bold; }
+  .invite-note {
+    margin-top: 28px;
+    padding: 10px 14px;
+    border: 2px solid #999;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #555;
+    background: rgba(255,255,255,0.35);
+  }
+
+  /* Right form */
+  .form-container { width: 100%; max-width: 360px; }
+  .form-title { font-size: 24px; font-weight: bold; color: #222; margin-bottom: 6px; }
+  .form-subtitle { font-size: 13px; color: #666; margin-bottom: 28px; }
+  .form-group { margin-bottom: 16px; position: relative; }
+  .form-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: bold; }
+  .form-input {
+    width: 100%;
+    border: 2px solid #999;
+    border-radius: 5px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #f9f9f9;
+    color: #333;
+  }
+  .form-input::placeholder { color: #aaa; font-style: italic; }
+  .forgot-link { display: block; text-align: right; font-size: 11px; color: #666; margin-top: 4px; text-decoration: underline; }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: #999;
+    font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid #ccc;
+  }
+  .btn-ghost {
+    width: 100%;
+    padding: 11px;
+    background: #f0f0f0;
+    color: #555;
+    border: 2px dashed #999;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .help-text {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 1 — Login &nbsp;|&nbsp; <strong>Option A: Split-Screen</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<!-- REUSABLE: AuthShell (fullscreen, no sidebar) — NEW component -->
+<!-- NEW COMPONENT: AuthCard — src/components/auth/AuthCard.tsx -->
+
+<div class="split">
+
+  <!-- LEFT BRAND PANEL -->
+  <!-- NEW COMPONENT: AuthBrandPanel — src/components/auth/AuthBrandPanel.tsx -->
+  <div class="left-panel">
+    <span class="comp-badge new" style="top:8px;right:8px">[NEW] AuthBrandPanel</span>
+
+    <div class="logo-block">
+      <div class="logo-icon">CG</div>
+      <span class="logo-text">CompGraph</span>
+    </div>
+
+    <p class="tagline">Competitive intelligence for field marketing agencies. Hiring velocity, brand relationships, and pay benchmarks — in one platform.</p>
+
+    <ul class="brand-callouts">
+      <li>5 competitor ATS platforms monitored daily</li>
+      <li>LLM-enriched job posting data</li>
+      <li>Brand & retailer relationship tracking</li>
+      <li>Pay benchmarks by role &amp; market</li>
+    </ul>
+
+    <div class="invite-note">
+      🔒 &nbsp;Invite-only access — contact your admin to request an account.
+    </div>
+  </div>
+
+  <!-- RIGHT FORM PANEL -->
+  <div class="right-panel">
+
+    <!-- NEW COMPONENT: LoginForm — src/components/auth/LoginForm.tsx -->
+    <div class="comp-wrap" style="width:100%;max-width:360px">
+      <span class="comp-badge new" style="top:-12px;right:0">[NEW] LoginForm</span>
+
+      <div class="form-container">
+        <div class="form-title">Sign in</div>
+        <div class="form-subtitle">Sign in to your CompGraph account</div>
+
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" placeholder="you@mosaicsales.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" placeholder="••••••••" />
+          <a class="forgot-link" href="#">Forgot password?</a>
+        </div>
+
+        <!-- REUSABLE: Button (variant="primary") — src/components/ui/button.tsx -->
+        <div class="comp-wrap" style="margin-top:8px">
+          <span class="comp-badge reuse">[REUSE] Button (primary)</span>
+          <button class="btn-primary">Sign In →</button>
+        </div>
+
+        <div class="divider">or</div>
+
+        <!-- REUSABLE: Button (variant="ghost") for magic link -->
+        <div class="comp-wrap">
+          <span class="comp-badge reuse">[REUSE] Button (ghost)</span>
+          <button class="btn-ghost">✉ Send magic link instead</button>
+        </div>
+
+        <p class="help-text">
+          Enter your email above and we'll send a one-time sign-in link.<br/>
+          No account? Ask your admin to invite you.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

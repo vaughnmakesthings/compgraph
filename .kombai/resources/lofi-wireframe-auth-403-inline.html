@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>403 Unauthorized — Inline Component (Authenticated User)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+
+  /* APP SHELL — full layout with sidebar */
+  .app-shell {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 36px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    background: #444;
+    flex-shrink: 0;
+    padding: 16px 0;
+    position: relative;
+  }
+  .sidebar-logo { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 12px; }
+  .logo-icon { width: 28px; height: 28px; background: #888; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: bold; }
+  .logo-text { font-size: 15px; font-weight: bold; color: #eee; }
+  .nav-section-label { font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px 3px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 16px; font-size: 12px; color: rgba(255,255,255,0.6); border-radius: 3px; margin: 1px 6px; }
+  .nav-item.active { background: rgba(255,255,255,0.07); color: #eee; }
+  .nav-icon { width: 14px; height: 14px; background: rgba(255,255,255,0.3); border-radius: 2px; flex-shrink: 0; }
+
+  /* MAIN CONTENT */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .header { background: #fff; border-bottom: 1px solid #ddd; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .header-title { font-size: 13px; font-weight: bold; color: #555; }
+  .header-user { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #777; }
+  .avatar { width: 24px; height: 24px; background: #999; border-radius: 50%; border: 1px solid #ccc; }
+
+  .page-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* INLINE 403 BLOCK */
+  .inline-403 {
+    max-width: 500px;
+    width: 100%;
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 36px 40px;
+    box-shadow: 2px 2px 0 #ddd;
+    text-align: center;
+    position: relative;
+  }
+
+  /* Shield icon */
+  .shield-icon {
+    width: 52px; height: 52px;
+    border: 3px solid #bbb;
+    border-radius: 8px;
+    background: #f5f5f5;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #888;
+  }
+
+  .error-badge {
+    display: inline-block;
+    background: #ebebeb;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #777;
+    margin-bottom: 14px;
+    font-family: monospace;
+  }
+
+  .error-heading { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .error-desc { font-size: 13px; color: #777; line-height: 1.6; margin-bottom: 20px; }
+
+  /* Role context box */
+  .role-context {
+    background: #f7f7f7;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    padding: 12px 16px;
+    margin-bottom: 22px;
+    text-align: left;
+    font-size: 12px;
+  }
+  .role-context-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #efefef; }
+  .role-context-row:last-child { border-bottom: none; }
+  .role-label { color: #888; }
+  .role-value { font-weight: bold; color: #555; }
+  .role-pill {
+    display: inline-block;
+    background: #e0e0e0;
+    border-radius: 3px;
+    padding: 1px 7px;
+    font-size: 10px;
+    color: #555;
+    font-weight: bold;
+  }
+  .role-pill.required { background: #ddd; color: #444; border: 1px solid #bbb; }
+
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    padding: 9px 20px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-ghost {
+    padding: 9px 20px;
+    background: #f0f0f0;
+    color: #666;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Breadcrumb context (above the block) */
+  .breadcrumb {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 20px;
+    align-self: flex-start;
+    width: 100%;
+    max-width: 500px;
+  }
+  .breadcrumb a { color: #888; text-decoration: underline; }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 4 — 403 / Unauthorized &nbsp;|&nbsp; <strong>Option B: Inline (authenticated user, within app shell)</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<!--
+  CONTEXT:
+  - User IS authenticated (valid session), but their role (viewer) doesn't have
+    access to this specific resource or route (e.g. /settings or admin-only API)
+  - Full app shell is visible — sidebar, header, user context
+-->
+
+<div class="app-shell">
+
+  <!-- REUSABLE: Sidebar -->
+  <div class="comp-wrap" style="width:220px;flex-shrink:0">
+    <span class="comp-badge reuse" style="top:4px;right:4px">[REUSE] Sidebar</span>
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">CG</div>
+        <span class="logo-text">CompGraph</span>
+      </div>
+      <div class="nav-section-label">Intelligence</div>
+      <div class="nav-item"><div class="nav-icon"></div> Dashboard</div>
+      <div class="nav-item"><div class="nav-icon"></div> Competitors</div>
+      <div class="nav-item"><div class="nav-icon"></div> Market</div>
+      <div class="nav-item"><div class="nav-icon"></div> Job Feed</div>
+      <div class="nav-section-label">System</div>
+      <div class="nav-item"><div class="nav-icon"></div> Eval Tool</div>
+      <div class="nav-item active"><div class="nav-icon"></div> ⚙ Settings</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- REUSABLE: Header -->
+    <div class="comp-wrap">
+      <span class="comp-badge reuse" style="top:4px;right:4px">[REUSE] Header</span>
+      <div class="header">
+        <div class="header-title">Settings</div>
+        <div class="header-user">
+          <div class="avatar"></div>
+          bob@mosaicsales.com &nbsp;·&nbsp; <strong>viewer</strong>
+          <!-- Note: viewer role is shown — relevant to 403 context -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE BODY — centered 403 inline component -->
+    <div class="page-body">
+
+      <!-- Breadcrumb (optional — shows where user tried to go) -->
+      <div class="breadcrumb">
+        <a href="#">Dashboard</a> &nbsp;›&nbsp; <a href="#">Settings</a> &nbsp;›&nbsp;
+        <span style="color:#bb7777">Access Denied</span>
+      </div>
+
+      <!-- INLINE 403 COMPONENT -->
+      <!-- NEW COMPONENT: InlineUnauthorized — src/components/auth/InlineUnauthorized.tsx -->
+      <div class="comp-wrap" style="width:100%;max-width:500px">
+        <span class="comp-badge new" style="top:-12px;right:0">[NEW] InlineUnauthorized</span>
+
+        <div class="inline-403">
+
+          <div class="shield-icon">🛡</div>
+          <div class="error-badge">403 · Access Restricted</div>
+
+          <div class="error-heading">You don't have permission to view this</div>
+          <div class="error-desc">
+            This section requires admin access. Your current role doesn't include the required permissions.
+          </div>
+
+          <!-- Role context — helps user understand what they need -->
+          <div class="role-context">
+            <div class="role-context-row">
+              <span class="role-label">Your role</span>
+              <span class="role-pill">viewer</span>
+            </div>
+            <div class="role-context-row">
+              <span class="role-label">Required</span>
+              <span class="role-pill required">admin</span>
+            </div>
+            <div class="role-context-row">
+              <span class="role-label">Signed in as</span>
+              <span class="role-value" style="font-size:11px;font-family:monospace">bob@mosaicsales.com</span>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <!-- REUSABLE: Button (ghost) -->
+            <div class="comp-wrap">
+              <span class="comp-badge reuse" style="top:-10px;right:0">[REUSE] Button (ghost)</span>
+              <button class="btn-ghost">← Go Back</button>
+            </div>
+
+            <!-- REUSABLE: Button (primary) -->
+            <div class="comp-wrap">
+              <span class="comp-badge reuse" style="top:-10px;right:0">[REUSE] Button (primary)</span>
+              <button class="btn-primary">Request Access from Admin</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Design note -->
+      <div style="margin-top:20px;max-width:500px;width:100%;border:1px dashed #ddd;border-radius:5px;padding:10px;font-size:11px;color:#aaa;font-style:italic;line-height:1.6">
+        <strong style="color:#888">Implementation note:</strong> This component can be used as a route-level guard output (replace page content) or dropped inline within any protected section. The role &amp; user data come from the session/JWT claims — no extra API call needed.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

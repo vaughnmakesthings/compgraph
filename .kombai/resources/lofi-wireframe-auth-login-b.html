@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — Option B: Centered Card</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+    background: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .label-bar {
+    background: #333;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .label-bar span { opacity: 0.6; font-size: 11px; }
+
+  /* CENTER LAYOUT */
+  .page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* Logo */
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: #555;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 15px; font-weight: bold;
+    border: 2px solid #333;
+  }
+  .logo-text { font-size: 20px; font-weight: bold; color: #222; }
+
+  /* TABS: Password / Magic Link */
+  .tabs {
+    display: flex;
+    width: 100%;
+    max-width: 400px;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    border: 2px solid #ccc;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    background: #e8e8e8;
+    color: #777;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: #fff;
+    color: #222;
+    font-weight: bold;
+    border-color: #999;
+    border-bottom: 2px solid #fff;
+    margin-bottom: -2px;
+    z-index: 1;
+  }
+
+  /* CARD */
+  .card {
+    background: #fff;
+    border: 2px solid #999;
+    border-radius: 0 0 8px 8px;
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 3px 3px 0 #ccc;
+    position: relative;
+  }
+  .card-title { font-size: 18px; font-weight: bold; color: #222; margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: #777; margin-bottom: 22px; }
+
+  .form-group { margin-bottom: 16px; position: relative; }
+  .form-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: bold; }
+  .form-input {
+    width: 100%;
+    border: 2px solid #999;
+    border-radius: 4px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #f9f9f9;
+    color: #333;
+  }
+  .form-input::placeholder { color: #bbb; font-style: italic; }
+  .forgot-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .forgot-link { font-size: 11px; color: #666; text-decoration: underline; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 11px;
+    background: #555;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+
+  /* Magic link tab content */
+  .magic-panel { display: none; }
+  .magic-desc { font-size: 13px; color: #666; margin-bottom: 18px; line-height: 1.5; }
+
+  /* Help */
+  .footer-note {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 11px;
+    color: #999;
+  }
+  .footer-note a { color: #666; text-decoration: underline; }
+
+  /* Invite only badge */
+  .invite-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px dashed #999;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 20px;
+  }
+
+  /* Component wrapper */
+  .comp-wrap { position: relative; display: block; }
+  .comp-badge {
+    position: absolute;
+    top: -10px;
+    right: -2px;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .comp-badge.reuse { background: #4CAF50; }
+  .comp-badge.new   { background: #FF9800; }
+</style>
+</head>
+<body>
+
+<div class="label-bar">
+  Screen 1 — Login &nbsp;|&nbsp; <strong>Option B: Centered Card with Tabs</strong>
+  <span style="margin-left:auto">M7 Auth · CompGraph Wireframe</span>
+</div>
+
+<!-- NEW COMPONENT: AuthLayout (no sidebar) — src/app/(auth)/layout.tsx -->
+
+<div class="page">
+
+  <!-- Logo -->
+  <div class="logo-block">
+    <div class="logo-icon">CG</div>
+    <span class="logo-text">CompGraph</span>
+  </div>
+
+  <!-- Invite-only badge -->
+  <div class="invite-pill">🔒 Invite-only access</div>
+
+  <!-- TABS -->
+  <!-- NEW COMPONENT: LoginForm — src/components/auth/LoginForm.tsx -->
+  <div class="comp-wrap" style="width:100%;max-width:400px">
+    <span class="comp-badge new" style="top:-12px;right:0">[NEW] LoginForm</span>
+
+    <div class="tabs">
+      <div class="tab active">Password</div>
+      <div class="tab">Magic Link</div>
+    </div>
+
+    <!-- PASSWORD TAB -->
+    <div class="card">
+
+      <div class="card-title">Welcome back</div>
+      <div class="card-sub">Sign in with your email and password</div>
+
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" placeholder="you@mosaicsales.com" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" />
+        <div class="forgot-row">
+          <a class="forgot-link" href="#">Forgot password?</a>
+        </div>
+      </div>
+
+      <!-- REUSABLE: Button (primary) -->
+      <div class="comp-wrap" style="margin-top:6px">
+        <span class="comp-badge reuse">[REUSE] Button (primary)</span>
+        <button class="btn-primary">Sign In →</button>
+      </div>
+
+      <div class="footer-note">
+        No account? <a href="#">Request access from your admin</a>
+      </div>
+    </div>
+
+    <!-- MAGIC LINK TAB (shown dashed to indicate inactive/alt state) -->
+    <div style="width:100%;max-width:400px;margin-top:16px;padding:20px 32px;border:2px dashed #ccc;border-radius:8px;background:#fafafa">
+      <p style="font-size:12px;color:#999;font-style:italic;margin-bottom:12px">↑ Magic Link tab (alternate panel — same form, no password field)</p>
+      <div class="magic-desc">Enter your email and we'll send you a one-click sign-in link. No password required.</div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" placeholder="you@mosaicsales.com" />
+      </div>
+      <!-- REUSABLE: Button (ghost) -->
+      <div class="comp-wrap" style="margin-top:6px">
+        <span class="comp-badge reuse">[REUSE] Button (ghost)</span>
+        <button style="width:100%;padding:11px;background:#f0f0f0;border:2px dashed #999;border-radius:5px;font-size:14px;font-family:inherit;color:#555;cursor:pointer">
+          ✉ Send Magic Link
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
