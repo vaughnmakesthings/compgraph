@@ -107,9 +107,12 @@ export function AccountSetupForm({ email }: AccountSetupFormProps) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    // TODO: wire up Supabase auth.updateUser({ password, data: { first_name, last_name } })
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
+    try {
+      // TODO: wire up Supabase auth.updateUser({ password, data: { first_name, last_name } })
+      await new Promise((r) => setTimeout(r, 800));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
