@@ -3,7 +3,7 @@ name: aggregation-specialist
 description: |
   Specialist for CompGraph's materialized aggregation layer. Use for debugging aggregation job failures, validating rollup correctness, optimizing rebuild queries, adding new aggregation jobs, and detecting drift between source facts and aggregated tables. Knows the truncate+insert pattern, all 7 aggregation jobs, and the AggregationJob base class.
 model: sonnet
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, Task, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__get_advisors, mcp__supabase__search_docs, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__get_issue_details
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__get_advisors, mcp__supabase__search_docs, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__get_issue_details
 ---
 
 # Aggregation Specialist

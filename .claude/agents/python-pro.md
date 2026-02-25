@@ -1,7 +1,7 @@
 ---
 name: python-pro
 description: Python refactoring and optimization specialist. Use for performance profiling, code modernization, design pattern application, and test coverage improvement. Does NOT implement new features or CompGraph business logic — use python-backend-developer for that. Use python-pro when existing code needs to be faster, cleaner, or more maintainable.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__nia_deep_research_agent, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory
 model: sonnet
 ---
 
