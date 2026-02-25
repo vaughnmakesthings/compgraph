@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from compgraph.api.deps import get_db
+from compgraph.db.models import ScrapeRun
 from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
     PipelineRun,
@@ -18,6 +23,8 @@ from compgraph.scrapers.orchestrator import (
     get_orchestrator,
     get_run,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/scrape", tags=["scrape"])
 
@@ -128,18 +135,47 @@ _ACTIVE_STATUSES = frozenset(
     }
 )
 
+_DB_ACTIVE_STATUSES = ["pending", "running", "paused", "stopping"]
+
+
+async def _check_active_scrape_run(db: AsyncSession) -> ScrapeRun | None:
+    stmt = (
+        select(ScrapeRun)
+        .where(ScrapeRun.status.in_(_DB_ACTIVE_STATUSES))
+        .order_by(ScrapeRun.started_at.desc())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
 
 @router.post("/trigger", response_model=TriggerResponse)
-async def trigger_scrape(background_tasks: BackgroundTasks) -> TriggerResponse:
-    """Trigger a manual scrape pipeline run.
+async def trigger_scrape(
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> TriggerResponse:
+    active_run = await _check_active_scrape_run(db)
+    if active_run is not None:
+        logger.info(
+            "Trigger blocked by DB concurrency guard: active scrape_run %s (status=%s)",
+            active_run.id,
+            active_run.status,
+        )
+        msg = "A pipeline is already running. Wait for completion or force-stop first."
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": msg,
+                "active_run_id": str(active_run.id),
+                "active_status": active_run.status,
+            },
+        )
 
-    The scrape runs in the background. Use GET /api/v1/scrape/status to check progress.
-    """
     latest = get_latest_run()
     if latest is not None and latest.status in _ACTIVE_STATUSES:
         raise HTTPException(
             status_code=409,
-            detail="A pipeline is already running. Wait for completion or force-stop first.",
+            detail=("A pipeline is already running. Wait for completion or force-stop first."),
         )
 
     pipeline_run = PipelineRun()
