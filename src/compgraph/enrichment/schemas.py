@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Literal, get_args
+from typing import Literal, Self, get_args
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,18 @@ PayType = Literal["hourly", "salary", "commission"]
 PayFrequency = Literal["hour", "week", "month", "year"]
 EntityType = Literal["client_brand", "retailer", "ambiguous"]
 
+# Pay range bounds per frequency period.
+# Guards against LLM extracting non-salary figures (e.g. "$1M budget").
+PAY_RANGE_BY_FREQUENCY: dict[str | None, tuple[float, float]] = {
+    "hour": (10.0, 150.0),
+    "week": (400.0, 6_000.0),
+    "month": (1_667.0, 25_000.0),
+    "year": (20_000.0, 300_000.0),
+    None: (10.0, 300_000.0),
+}
+
 
 def _coerce_literal(value: str | None, allowed: set[str], field_name: str) -> str | None:
-    """Coerce a value to None if not in the allowed set, logging a warning."""
     if value is not None and value not in allowed:
         logger.warning(
             "Unexpected %s value from LLM: %r (allowed: %s) — coercing to None",
@@ -103,6 +112,27 @@ class Pass1Result(BaseModel):
     def _check_pay_frequency(cls, v: str | None) -> str | None:
         return _coerce_literal(v, set(get_args(PayFrequency)), "pay_frequency")
 
+    @model_validator(mode="after")
+    def _validate_pay_range(self) -> Self:
+        floor, ceiling = PAY_RANGE_BY_FREQUENCY[self.pay_frequency]
+
+        if self.pay_min is not None and not (floor <= self.pay_min <= ceiling):
+            raise ValueError(
+                f"pay_min {self.pay_min} outside allowed range "
+                f"[{floor}, {ceiling}] for frequency={self.pay_frequency!r}"
+            )
+
+        if self.pay_max is not None and not (floor <= self.pay_max <= ceiling):
+            raise ValueError(
+                f"pay_max {self.pay_max} outside allowed range "
+                f"[{floor}, {ceiling}] for frequency={self.pay_frequency!r}"
+            )
+
+        if self.pay_min is not None and self.pay_max is not None and self.pay_min > self.pay_max:
+            raise ValueError(f"pay_min ({self.pay_min}) must not exceed pay_max ({self.pay_max})")
+
+        return self
+
     has_commission: bool | None = Field(None, description="Whether commission/bonus is mentioned")
     has_benefits: bool | None = Field(None, description="Whether benefits are mentioned")
 
@@ -136,6 +166,20 @@ class Pass1Result(BaseModel):
     store_count: int | None = Field(None, description="Number of stores or locations mentioned")
 
 
+# Make ValidationError available for import from this module
+__all__ = [
+    "PAY_RANGE_BY_FREQUENCY",
+    "EmploymentType",
+    "EntityMention",
+    "EntityType",
+    "Pass1Result",
+    "Pass2Result",
+    "PayFrequency",
+    "PayType",
+    "RoleArchetype",
+    "RoleLevel",
+    "ValidationError",
+]
 # ---------------------------------------------------------------------------
 # Pass 2 schemas — Entity Extraction (Sonnet)
 # ---------------------------------------------------------------------------
