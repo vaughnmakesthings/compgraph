@@ -1,0 +1,60 @@
+web/src/test/pages.test.tsx
+  61e7082a51894b90 3-5
+docs/runbooks/supabase-auth-setup.md
+  f9c01ff9feb688dc 1-60,62-81
+web/src/test/page.test.tsx
+  61e7082a51894b90 2
+web/src/test/eval-pages.test.tsx
+  61e7082a51894b90 100-104
+web/src/test/dashboard.test.tsx
+  61e7082a51894b90 2
+.env.example
+  f9c01ff9feb688dc 10-19
+tests/test_auth_config.py
+  f9c01ff9feb688dc 1-23,25-26
+  61e7082a51894b90 24
+web/src/test/competitors.test.tsx
+  61e7082a51894b90 96-97
+web/src/components/ui/input.tsx
+  61e7082a51894b90 20
+src/compgraph/config.py
+  f9c01ff9feb688dc 3,14-16,18-19,71-76
+  61e7082a51894b90 17
+supabase/config.toml
+  f9c01ff9feb688dc 150,152,164-165,205
+web/src/test/components/confirm-dialog.test.tsx
+  61e7082a51894b90 107-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a562c505e25c043f1125288894fbb38aedde38d6",
+  "prompts": {
+    "61e7082a51894b90": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97da7c70-596d-4b41-8e16-8fb31cf75ade",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 17,
+      "total_deletions": 16,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    },
+    "f9c01ff9feb688dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a2ed1da9-cb0e-4726-8155-8854cc1bb350",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 0,
+      "accepted_lines": 132,
+      "overriden_lines": 0
+    }
+  }
+}
