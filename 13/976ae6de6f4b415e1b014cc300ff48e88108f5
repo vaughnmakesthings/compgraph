@@ -1,0 +1,25 @@
+supabase/config.toml
+  f9c01ff9feb688dc 150,152,164-165,205
+docs/runbooks/supabase-auth-setup.md
+  f9c01ff9feb688dc 6,8,10-12,14,16-21,23,25,27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "13976ae6de6f4b415e1b014cc300ff48e88108f5",
+  "prompts": {
+    "f9c01ff9feb688dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a2ed1da9-cb0e-4726-8155-8854cc1bb350",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 28,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
