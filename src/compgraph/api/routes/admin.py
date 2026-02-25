@@ -62,7 +62,11 @@ async def invite_user(
         invite_url = f"https://{current_settings.SUPABASE_PROJECT_REF}.supabase.co/auth/v1/invite"
         resp = await client.post(
             invite_url,
-            json={"email": body.email, "data": {"role": body.role}},
+            json={
+                "email": body.email,
+                "data": {"role": body.role},
+                "app_metadata": {"role": body.role},
+            },
             headers={
                 "Authorization": f"Bearer {service_role_key}",
                 "apikey": service_role_key,
@@ -72,9 +76,8 @@ async def invite_user(
 
     if resp.status_code >= 400:
         logger.error(
-            "Supabase invite failed: status=%d body=%s",
+            "Supabase invite failed: status=%d",
             resp.status_code,
-            resp.text,
         )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -84,7 +87,12 @@ async def invite_user(
     # Extract auth_uid from Supabase response to link local user to auth.users
     supabase_user = resp.json()
     auth_uid_str = supabase_user.get("id")
-    auth_uid = uuid.UUID(auth_uid_str) if auth_uid_str else None
+    auth_uid: uuid.UUID | None = None
+    if auth_uid_str:
+        try:
+            auth_uid = uuid.UUID(auth_uid_str)
+        except (ValueError, AttributeError):
+            logger.warning("Supabase invite returned invalid id: %s", auth_uid_str)
 
     user = User(email=str(body.email), role=body.role, auth_uid=auth_uid)
     try:
@@ -98,12 +106,7 @@ async def invite_user(
             detail="A user with this email already exists",
         ) from None
 
-    logger.info(
-        "User invited: email=%s role=%s invited_by=%s",
-        body.email,
-        body.role,
-        admin.email,
-    )
+    logger.info("User invited: role=%s invited_by=%s", body.role, admin.id)
 
     return InviteResponse(email=str(body.email), role=body.role, invited=True)
 
