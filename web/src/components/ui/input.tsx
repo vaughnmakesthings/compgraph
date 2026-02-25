@@ -20,6 +20,8 @@ export function Input({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   className: _className,
   style,
+  onFocus,
+  onBlur,
   ...props
 }: InputProps) {
   const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
@@ -56,19 +58,19 @@ export function Input({
             transition: "border-color 150ms",
             ...style,
           }}
+          {...props}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = error
               ? "var(--color-error, #8C2C23)"
               : "var(--color-foreground, #2D3142)";
-            props.onFocus?.(e);
+            onFocus?.(e);
           }}
           onBlur={(e) => {
             e.currentTarget.style.borderColor = error
               ? "var(--color-error, #8C2C23)"
               : "var(--color-border, #BFC0C0)";
-            props.onBlur?.(e);
+            onBlur?.(e);
           }}
-          {...props}
         />
         {rightElement && (
           <div
