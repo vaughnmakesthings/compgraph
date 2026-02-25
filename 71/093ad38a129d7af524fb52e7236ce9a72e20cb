@@ -1,0 +1,27 @@
+web/src/test/mocks/supabase.ts
+  c7c69117b8584eb2 1-70
+web/src/lib/auth-context.tsx
+  c7c69117b8584eb2 1-86
+web/src/test/auth-context.test.tsx
+  c7c69117b8584eb2 1-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "71093ad38a129d7af524fb52e7236ce9a72e20cb",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 319,
+      "total_deletions": 0,
+      "accepted_lines": 319,
+      "overriden_lines": 0
+    }
+  }
+}
