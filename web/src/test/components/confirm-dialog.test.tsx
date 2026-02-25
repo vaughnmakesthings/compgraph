@@ -103,7 +103,8 @@ describe("ConfirmDialog", () => {
       />
     );
     const confirmBtn = screen.getByRole("button", { name: "Confirm" });
-    expect(confirmBtn).toHaveStyle({ backgroundColor: "#8C2C23" });
+    // Danger variant uses Tailwind bg-red-600 class (not inline style)
+    expect(confirmBtn.className).toContain("bg-red-600");
   });
 
   it("default variant applies coral styling to confirm button", () => {

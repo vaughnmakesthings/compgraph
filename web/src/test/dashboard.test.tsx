@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import DashboardPage from "../app/page";
+import DashboardPage from "../app/(app)/page";
 import { api } from "@/lib/api-client";
 import type { PipelineStatus, DailyVelocity } from "@/lib/types";
 

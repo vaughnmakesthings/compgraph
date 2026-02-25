@@ -17,6 +17,7 @@ export function Input({
   hint,
   rightElement,
   id,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   className: _className,
   style,
   ...props

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = ""  # anon key — safe for frontend, respects RLS
 
     # Auth (SEC-01)
-    SUPABASE_JWT_SECRET: SecretStr = SecretStr("")  # HS256 signing secret for verifying access tokens
+    SUPABASE_JWT_SECRET: SecretStr = SecretStr("")  # HS256 secret for JWT verification
     SUPABASE_SERVICE_ROLE_KEY: SecretStr = SecretStr("")  # bypasses RLS, background jobs only
     AUTH_DISABLED: bool = False  # set True in tests to bypass auth middleware
 

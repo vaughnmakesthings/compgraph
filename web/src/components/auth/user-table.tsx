@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import {
   Dialog,
-  DialogBackdrop,
   DialogPanel,
   DialogTitle,
 } from "@headlessui/react";

@@ -93,8 +93,8 @@ vi.mock("@/lib/api-client", () => ({
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 
-import CompetitorsPage from "@/app/competitors/page";
-import CompetitorDossierPage from "@/app/competitors/[slug]/page";
+import CompetitorsPage from "@/app/(app)/competitors/page";
+import CompetitorDossierPage from "@/app/(app)/competitors/[slug]/page";
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

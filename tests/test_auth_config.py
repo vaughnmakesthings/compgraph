@@ -21,6 +21,6 @@ def test_auth_disabled_allowed_in_dev():
 def test_auth_fields_default_empty():
     """New auth fields default to safe values so existing tests aren't broken."""
     s = Settings(DATABASE_PASSWORD="x")
-    assert s.SUPABASE_JWT_SECRET == ""
+    assert s.SUPABASE_JWT_SECRET.get_secret_value() == ""
     assert s.SUPABASE_SERVICE_ROLE_KEY.get_secret_value() == ""
     assert s.AUTH_DISABLED is False
