@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from compgraph.api.routes.admin import router as admin_router
 from compgraph.api.routes.aggregation import router as aggregation_router
 from compgraph.api.routes.companies import (
     router as companies_router,
@@ -15,6 +16,14 @@ from compgraph.api.routes.pipeline import router as pipeline_router
 from compgraph.api.routes.postings import router as postings_router
 from compgraph.api.routes.scheduler import router as scheduler_router
 from compgraph.api.routes.scrape import router as scrape_router
+from compgraph.auth.dependencies import (
+    get_current_user,
+    get_current_user_disabled,
+    get_current_user_optional,
+    require_admin,
+    require_admin_disabled,
+    require_viewer,
+)
 from compgraph.config import settings
 from compgraph.db.session import engine
 from compgraph.eval.router import router as eval_router
@@ -24,6 +33,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     stream=sys.stderr,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -57,6 +68,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+if settings.AUTH_DISABLED:
+    logger.warning("AUTH_DISABLED=true — all endpoints bypass authentication")
+    app.dependency_overrides[get_current_user] = get_current_user_disabled
+    app.dependency_overrides[require_admin] = require_admin_disabled
+    app.dependency_overrides[require_viewer] = require_admin_disabled
+    app.dependency_overrides[get_current_user_optional] = get_current_user_disabled
+
 app.include_router(health_router)
 app.include_router(scrape_router)
 app.include_router(enrich_router)
@@ -66,3 +84,4 @@ app.include_router(aggregation_router)
 app.include_router(companies_router)
 app.include_router(postings_router, prefix="/api/postings", tags=["postings"])
 app.include_router(eval_router, prefix="/api/eval", tags=["eval"])
+app.include_router(admin_router)

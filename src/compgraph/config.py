@@ -74,6 +74,18 @@ class Settings(BaseSettings):
             raise ValueError("AUTH_DISABLED=true is forbidden when ENVIRONMENT=production")
         return self
 
+    @model_validator(mode="after")
+    def _jwt_secret_required(self) -> "Settings":
+        if not self.AUTH_DISABLED:
+            secret = self.SUPABASE_JWT_SECRET.get_secret_value()
+            if len(secret) < 32:
+                raise ValueError(
+                    "SUPABASE_JWT_SECRET must be at least 32 bytes when auth is "
+                    "enabled (AUTH_DISABLED=False). Get it from Supabase Dashboard "
+                    "> Project Settings > API."
+                )
+        return self
+
     @property
     def database_url(self) -> str:
         """Session mode pooler URL for app traffic (IPv4 compatible)."""
