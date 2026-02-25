@@ -1,0 +1,23 @@
+web/src/components/ui/confirm-dialog.test.tsx
+  c4b74fafc6e3749e 1-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "4d91a5cd6d1bee60ba39ba59662a3f286749de3c",
+  "prompts": {
+    "c4b74fafc6e3749e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "591ecd17-1ee4-4511-81fd-085c3ba0d963",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 227,
+      "total_deletions": 3,
+      "accepted_lines": 224,
+      "overriden_lines": 0
+    }
+  }
+}
