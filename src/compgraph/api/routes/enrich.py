@@ -28,7 +28,7 @@ _STATUS_MAP: dict[str, EnrichmentStatus] = {
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/enrich", tags=["enrich"])
+router = APIRouter(prefix="/enrich", tags=["enrich"])
 
 
 # --- Response Models ---

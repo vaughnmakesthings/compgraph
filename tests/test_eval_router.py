@@ -51,7 +51,7 @@ def mock_empty_db():
 class TestEvalCorpusEndpoint:
     def test_get_corpus_returns_empty_list(self, mock_empty_db) -> None:
         with TestClient(app) as client:
-            resp = client.get("/api/eval/corpus")
+            resp = client.get("/api/v1/eval/corpus")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -72,7 +72,7 @@ class TestEvalCorpusEndpoint:
         app.dependency_overrides[get_db] = _override
         try:
             with TestClient(app) as client:
-                resp = client.get("/api/eval/corpus")
+                resp = client.get("/api/v1/eval/corpus")
             assert resp.status_code == 200
             data = resp.json()
             assert len(data) == 1
@@ -85,7 +85,7 @@ class TestEvalCorpusEndpoint:
 class TestEvalModelsEndpoint:
     def test_get_models_returns_supported_list(self) -> None:
         with TestClient(app) as client:
-            resp = client.get("/api/eval/models")
+            resp = client.get("/api/v1/eval/models")
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -101,14 +101,14 @@ class TestEvalModelsEndpoint:
 class TestEvalRunsEndpoint:
     def test_get_runs_returns_empty_list(self, mock_empty_db) -> None:
         with TestClient(app) as client:
-            resp = client.get("/api/eval/runs")
+            resp = client.get("/api/v1/eval/runs")
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_get_run_not_found(self, mock_empty_db) -> None:
         run_id = uuid.uuid4()
         with TestClient(app) as client:
-            resp = client.get(f"/api/eval/runs/{run_id}")
+            resp = client.get(f"/api/v1/eval/runs/{run_id}")
         assert resp.status_code == 404
         assert resp.json()["detail"] == "Run not found"
 
@@ -133,7 +133,7 @@ class TestEvalRunsEndpoint:
         app.dependency_overrides[get_db] = _override
         try:
             with TestClient(app) as client:
-                resp = client.get(f"/api/eval/runs/{run_id}")
+                resp = client.get(f"/api/v1/eval/runs/{run_id}")
             assert resp.status_code == 200
             data = resp.json()
             assert data["id"] == str(run_id)
@@ -152,7 +152,7 @@ class TestEvalLeaderboardEndpoint:
             ),
             TestClient(app) as client,
         ):
-            resp = client.get("/api/eval/leaderboard-data")
+            resp = client.get("/api/v1/eval/leaderboard-data")
         assert resp.status_code == 200
         data = resp.json()
         assert "runs" in data
@@ -166,13 +166,13 @@ class TestEvalLeaderboardEndpoint:
 
     def test_get_elo_empty(self, mock_empty_db) -> None:
         with TestClient(app) as client:
-            resp = client.get("/api/eval/elo")
+            resp = client.get("/api/v1/eval/elo")
         assert resp.status_code == 200
         assert resp.json() == {}
 
     def test_get_comparisons_empty(self, mock_empty_db) -> None:
         with TestClient(app) as client:
-            resp = client.get("/api/eval/comparisons")
+            resp = client.get("/api/v1/eval/comparisons")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -185,7 +185,7 @@ class TestEvalRunsPostEndpoint:
         ):
             mock_path.exists.return_value = False
             resp = client.post(
-                "/api/eval/runs",
+                "/api/v1/eval/runs",
                 json={
                     "pass_number": 1,
                     "model": "claude-haiku-4-5-20251001",
@@ -204,7 +204,7 @@ class TestEvalRunsPostEndpoint:
             mock_path.exists.return_value = True
             mock_path.read_text.return_value = "[]"
             resp = client.post(
-                "/api/eval/runs",
+                "/api/v1/eval/runs",
                 json={
                     "pass_number": 1,
                     "model": "gpt-4",

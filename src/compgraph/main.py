@@ -2,7 +2,7 @@ import logging
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from compgraph.api.routes.admin import router as admin_router
@@ -75,13 +75,16 @@ if settings.AUTH_DISABLED:
     app.dependency_overrides[require_viewer] = require_admin_disabled
     app.dependency_overrides[get_current_user_optional] = get_current_user_disabled
 
+v1_router = APIRouter(prefix="/api/v1")
+v1_router.include_router(scrape_router)
+v1_router.include_router(enrich_router)
+v1_router.include_router(scheduler_router)
+v1_router.include_router(pipeline_router)
+v1_router.include_router(aggregation_router)
+v1_router.include_router(companies_router)
+v1_router.include_router(postings_router, prefix="/postings", tags=["postings"])
+v1_router.include_router(eval_router, prefix="/eval", tags=["eval"])
+v1_router.include_router(admin_router)
+
 app.include_router(health_router)
-app.include_router(scrape_router)
-app.include_router(enrich_router)
-app.include_router(scheduler_router)
-app.include_router(pipeline_router)
-app.include_router(aggregation_router)
-app.include_router(companies_router)
-app.include_router(postings_router, prefix="/api/postings", tags=["postings"])
-app.include_router(eval_router, prefix="/api/eval", tags=["eval"])
-app.include_router(admin_router)
+app.include_router(v1_router)

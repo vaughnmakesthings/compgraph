@@ -44,7 +44,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["system_state"] == "idle"
@@ -57,7 +57,7 @@ class TestPipelineStatusEndpoint:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["system_state"] == "scraping"
@@ -79,7 +79,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["system_state"] == "enriching"
@@ -93,7 +93,7 @@ class TestPipelineStatusEndpoint:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["system_state"] == "error"
@@ -111,7 +111,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert "system_state" in data
             assert "scrape" in data
@@ -126,7 +126,7 @@ class TestPipelineStatusEndpoint:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert data["scrape"]["status"] == "running"
             assert data["scrape"]["current_run"] is not None
@@ -141,7 +141,7 @@ class TestPipelineStatusEndpoint:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert data["scrape"]["status"] == "success"
             assert data["scrape"]["current_run"] is None
@@ -159,7 +159,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert data["scheduler"]["enabled"] is False
             assert data["scheduler"]["next_run_at"] is None
@@ -185,7 +185,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert data["scrape"]["status"] == "completed"
             assert data["system_state"] == "idle"
@@ -212,7 +212,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             data = resp.json()
             assert data["scrape"]["status"] == "running"
             assert data["system_state"] == "scraping"
@@ -236,7 +236,7 @@ class TestPipelineStatusEndpoint:
                 return_value=None,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["system_state"] == "scraping"
@@ -270,7 +270,7 @@ class TestPipelineStatusEndpoint:
                 return_value=db_enrich,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             current = data["enrich"]["current_run"]
@@ -295,7 +295,7 @@ class TestPipelineStatusEndpoint:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             current = data["enrich"]["current_run"]
@@ -331,7 +331,7 @@ class TestPipelineStatusEndpoint:
                 return_value=db_enrich,
             ),
         ):
-            resp = client.get("/api/pipeline/status")
+            resp = client.get("/api/v1/pipeline/status")
             assert resp.status_code == 200
             data = resp.json()
             assert data["enrich"]["status"] == "completed"

@@ -321,7 +321,7 @@ class TestPass2APIRoutes:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            response = client.post("/api/enrich/pass2/trigger")
+            response = client.post("/api/v1/enrich/pass2/trigger")
         assert response.status_code == 200
         data = response.json()
         assert "run_id" in data
@@ -331,7 +331,7 @@ class TestPass2APIRoutes:
         with patch("compgraph.api.routes.enrich.EnrichmentOrchestrator") as mock_orch_cls:
             mock_orch = AsyncMock()
             mock_orch_cls.return_value = mock_orch
-            response = client.post("/api/enrich/trigger")
+            response = client.post("/api/v1/enrich/trigger")
         assert response.status_code == 200
         data = response.json()
         assert "run_id" in data

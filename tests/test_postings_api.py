@@ -118,7 +118,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings")
+                r = client.get("/api/v1/postings")
         finally:
             app.dependency_overrides.clear()
 
@@ -135,7 +135,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings")
+                r = client.get("/api/v1/postings")
         finally:
             app.dependency_overrides.clear()
 
@@ -167,7 +167,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings")
+                r = client.get("/api/v1/postings")
         finally:
             app.dependency_overrides.clear()
 
@@ -186,7 +186,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get(f"/api/postings?company_id={company_id}")
+                r = client.get(f"/api/v1/postings?company_id={company_id}")
         finally:
             app.dependency_overrides.clear()
 
@@ -202,7 +202,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings?is_active=false")
+                r = client.get("/api/v1/postings?is_active=false")
         finally:
             app.dependency_overrides.clear()
 
@@ -215,7 +215,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings?limit=10&offset=20")
+                r = client.get("/api/v1/postings?limit=10&offset=20")
         finally:
             app.dependency_overrides.clear()
 
@@ -232,7 +232,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings")
+                r = client.get("/api/v1/postings")
         finally:
             app.dependency_overrides.clear()
 
@@ -247,7 +247,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings?role_archetype=field_sales")
+                r = client.get("/api/v1/postings?role_archetype=field_sales")
         finally:
             app.dependency_overrides.clear()
 
@@ -265,7 +265,7 @@ class TestPostingsListEndpoint:
             app.dependency_overrides[get_db] = lambda ms=mock_session: ms
             try:
                 with TestClient(app) as client:
-                    r = client.get(f"/api/postings?sort_by={sort_val}")
+                    r = client.get(f"/api/v1/postings?sort_by={sort_val}")
             finally:
                 app.dependency_overrides.clear()
             assert r.status_code == 200, f"sort_by={sort_val}"
@@ -276,7 +276,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings?sort_by=invalid_sort")
+                r = client.get("/api/v1/postings?sort_by=invalid_sort")
         finally:
             app.dependency_overrides.clear()
 
@@ -291,7 +291,7 @@ class TestPostingsListEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings?search=Field")
+                r = client.get("/api/v1/postings?search=Field")
         finally:
             app.dependency_overrides.clear()
 
@@ -341,7 +341,7 @@ class TestPostingsDetailEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get(f"/api/postings/{uuid.uuid4()}")
+                r = client.get(f"/api/v1/postings/{uuid.uuid4()}")
         finally:
             app.dependency_overrides.clear()
 
@@ -354,7 +354,7 @@ class TestPostingsDetailEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get("/api/postings/not-a-uuid")
+                r = client.get("/api/v1/postings/not-a-uuid")
         finally:
             app.dependency_overrides.clear()
 
@@ -378,7 +378,7 @@ class TestPostingsDetailEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get(f"/api/postings/{posting_id}")
+                r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
             app.dependency_overrides.clear()
 
@@ -420,7 +420,7 @@ class TestPostingsDetailEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get(f"/api/postings/{posting_id}")
+                r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
             app.dependency_overrides.clear()
 
@@ -446,7 +446,7 @@ class TestPostingsDetailEndpoint:
 
         try:
             with TestClient(app) as client:
-                r = client.get(f"/api/postings/{posting_id}")
+                r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
             app.dependency_overrides.clear()
 

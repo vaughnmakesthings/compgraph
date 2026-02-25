@@ -14,7 +14,7 @@ from compgraph.scheduler.jobs import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/scheduler", tags=["scheduler"])
+router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
 MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri→Mon) + 8h grace
 

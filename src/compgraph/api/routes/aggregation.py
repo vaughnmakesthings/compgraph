@@ -18,7 +18,7 @@ from compgraph.db.models import (
     Company,
 )
 
-router = APIRouter(prefix="/api/aggregation", tags=["aggregation"])
+router = APIRouter(prefix="/aggregation", tags=["aggregation"])
 
 
 class TriggerResponse(BaseModel):

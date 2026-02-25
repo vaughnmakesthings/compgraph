@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.api.deps import get_db
 from compgraph.db.models import Company
 
-router = APIRouter(prefix="/api/companies", tags=["companies"])
+router = APIRouter(prefix="/companies", tags=["companies"])
 
 
 @router.get("")

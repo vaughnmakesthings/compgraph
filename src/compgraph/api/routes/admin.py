@@ -17,7 +17,7 @@ from compgraph.auth.dependencies import AuthUser, require_admin
 from compgraph.config import Settings
 from compgraph.db.models import User
 
-router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 logger = logging.getLogger(__name__)
 

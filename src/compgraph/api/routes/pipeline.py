@@ -21,7 +21,7 @@ from compgraph.scrapers.orchestrator import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
+router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
 
 class ScrapeCurrentRun(BaseModel):

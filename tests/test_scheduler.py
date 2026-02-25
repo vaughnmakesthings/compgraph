@@ -374,7 +374,7 @@ class TestSchedulerStatusAPI:
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.get("/api/scheduler/status")
+            resp = await client.get("/api/v1/scheduler/status")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -393,7 +393,7 @@ class TestSchedulerStatusAPI:
             transport=ASGITransport(app=app),
             base_url="http://test",
         ) as client:
-            resp = await client.get("/api/scheduler/status")
+            resp = await client.get("/api/v1/scheduler/status")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -407,7 +407,7 @@ class TestSchedulerTriggerAPI:
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.post("/api/scheduler/jobs/daily_pipeline/trigger")
+            resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/trigger")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -424,7 +424,7 @@ class TestSchedulerTriggerAPI:
             transport=ASGITransport(app=app),
             base_url="http://test",
         ) as client:
-            resp = await client.post("/api/scheduler/jobs/daily_pipeline/trigger")
+            resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/trigger")
 
         assert resp.status_code == 503
 
@@ -436,7 +436,7 @@ class TestSchedulerInvalidScheduleID:
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.post(f"/api/scheduler/jobs/nonexistent/{action}")
+            resp = await client.post(f"/api/v1/scheduler/jobs/nonexistent/{action}")
 
         assert resp.status_code == 404
 
@@ -447,7 +447,7 @@ class TestSchedulerPauseResumeAPI:
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.post("/api/scheduler/jobs/daily_pipeline/pause")
+            resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/pause")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -458,7 +458,7 @@ class TestSchedulerPauseResumeAPI:
             transport=ASGITransport(app=app_with_scheduler),
             base_url="http://test",
         ) as client:
-            resp = await client.post("/api/scheduler/jobs/daily_pipeline/resume")
+            resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/resume")
 
         assert resp.status_code == 200
         data = resp.json()

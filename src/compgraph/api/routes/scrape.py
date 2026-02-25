@@ -19,7 +19,7 @@ from compgraph.scrapers.orchestrator import (
     get_run,
 )
 
-router = APIRouter(prefix="/api/scrape", tags=["scrape"])
+router = APIRouter(prefix="/scrape", tags=["scrape"])
 
 
 # --- Response Models ---
