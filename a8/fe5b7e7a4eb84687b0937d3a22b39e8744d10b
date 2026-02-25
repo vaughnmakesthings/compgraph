@@ -1,0 +1,29 @@
+web/src/components/auth/login-form.tsx
+  c7c69117b8584eb2 4,11,14,17-21,23-125,129,175-192,201-202,213-214,241,263,266,269-271
+web/src/components/auth/invite-user-form.tsx
+  c7c69117b8584eb2 8,46-47,49,52-53,61-64
+web/src/components/auth/account-setup-form.tsx
+  c7c69117b8584eb2 4,8,87,114-115,117-123,255-270
+web/src/test/components/auth-components.test.tsx
+  c7c69117b8584eb2 10-12,18-39,160,223-285,296,394,404-425,428,445-449
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "a8fe5b7e7a4eb84687b0937d3a22b39e8744d10b",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 318,
+      "total_deletions": 28,
+      "accepted_lines": 300,
+      "overriden_lines": 0
+    }
+  }
+}
