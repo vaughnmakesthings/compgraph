@@ -1,4 +1,5 @@
 import { API_BASE } from './constants'
+import { getAuthToken } from './auth-token'
 import type {
   PipelineStatus,
   PipelineRunsResponse,
@@ -25,16 +26,26 @@ function sanitizeErrorDetail(s: string): string {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getAuthToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+
   let res: Response
   try {
     res = await fetch(`${API_BASE}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers: { ...headers, ...(options?.headers as Record<string, string>) },
     })
   } catch (cause) {
     throw new Error(`Network error: ${path}`, { cause })
   }
   if (!res.ok) {
+    if (res.status === 401) {
+      const { setAuthToken: clearToken } = await import('./auth-token')
+      clearToken(null)
+    }
     let detail: string | undefined
     try {
       const body = (await res.json()) as { detail?: string }
@@ -200,4 +211,11 @@ export const api = {
 
   resumeSchedulerJob: (jobId: string) =>
     apiFetch<{ schedule_id: string; paused: boolean; message: string }>(`/api/v1/scheduler/jobs/${jobId}/resume`, { method: 'POST' }),
+
+  // Admin
+  inviteUser: (body: { email: string; role: string }) =>
+    apiFetch<{ user_id: string; email: string; role: string }>(
+      '/api/v1/admin/invite',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
 }

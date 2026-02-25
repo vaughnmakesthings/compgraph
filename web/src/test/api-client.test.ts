@@ -1,12 +1,15 @@
 import { api } from '../lib/api-client'
+import { setAuthToken, getAuthToken } from '../lib/auth-token'
 import type { PipelineStatus, EvalResult } from '../lib/types'
 
 beforeEach(() => {
   global.fetch = vi.fn()
+  setAuthToken(null)
 })
 
 afterEach(() => {
   vi.restoreAllMocks()
+  setAuthToken(null)
 })
 
 describe('api.getPipelineStatus', () => {
@@ -475,5 +478,62 @@ describe('api simple GET endpoints', () => {
     expect(url).toContain('/api/v1/eval/field-reviews')
     expect(init.method).toBe('POST')
     expect(result.id).toBe('fr-1')
+  })
+})
+
+describe('auth token injection', () => {
+  it('includes Authorization header when token is set', async () => {
+    setAuthToken('test-jwt-token')
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'ok' }),
+    } as Response)
+
+    await api.health()
+
+    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer test-jwt-token')
+  })
+
+  it('omits Authorization header when no token is set', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'ok' }),
+    } as Response)
+
+    await api.health()
+
+    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    expect(headers.Authorization).toBeUndefined()
+  })
+
+  it('clears token on 401 response', async () => {
+    setAuthToken('expired-token')
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+    } as Response)
+
+    await expect(api.health()).rejects.toThrow('API error 401')
+    expect(getAuthToken()).toBeNull()
+  })
+})
+
+describe('api.inviteUser', () => {
+  it('sends POST to /api/v1/admin/invite', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ user_id: 'u-123', email: 'new@co.com', role: 'user' }),
+    } as Response)
+
+    const result = await api.inviteUser({ email: 'new@co.com', role: 'user' })
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/admin/invite')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ email: 'new@co.com', role: 'user' })
+    expect(result.user_id).toBe('u-123')
   })
 })
