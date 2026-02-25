@@ -1,0 +1,36 @@
+web/src/test/components/auth-components.test.tsx
+  61e7082a51894b90 455,459-461
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "54ce030ad29e0da162478ea0b4c56efec4f9b89e",
+  "prompts": {
+    "61e7082a51894b90": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97da7c70-596d-4b41-8e16-8fb31cf75ade",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "e8a6daf2f66e9089": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1455b11-76a6-468d-8f7a-8a3fe0245bd6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
