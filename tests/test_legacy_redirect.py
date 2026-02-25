@@ -34,6 +34,10 @@ class TestLegacyApiRedirect:
         assert resp.status_code == 308
         assert resp.headers["location"] == "/api/v1/scrape/trigger"
 
+    def test_nonexistent_v1_path_returns_404(self, client: TestClient) -> None:
+        resp = client.get("/api/v1/this-path-does-not-exist", follow_redirects=False)
+        assert resp.status_code == 404
+
     def test_health_not_redirected(self, _mock_db: None) -> None:
         with TestClient(app) as tc:
             resp = tc.get("/health", follow_redirects=False)

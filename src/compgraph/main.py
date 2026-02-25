@@ -2,7 +2,7 @@ import logging
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
@@ -93,5 +93,7 @@ app.include_router(v1_router)
 
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def legacy_api_redirect(request: Request, path: str) -> RedirectResponse:
+    if path.startswith("v1/") or path == "v1":
+        raise HTTPException(status_code=404, detail="Not Found")
     query = f"?{request.query_params}" if request.query_params else ""
     return RedirectResponse(url=f"/api/v1/{path}{query}", status_code=308)
