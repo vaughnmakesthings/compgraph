@@ -78,7 +78,8 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         ) from None
 
-    app_metadata = payload.get("app_metadata", {})
+    raw_app_metadata = payload.get("app_metadata", {})
+    app_metadata = raw_app_metadata if isinstance(raw_app_metadata, dict) else {}
     role = app_metadata.get("role")
     if role is None:
         logger.warning("JWT missing app_metadata.role for sub=%s, defaulting to viewer", sub)
