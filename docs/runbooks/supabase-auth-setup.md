@@ -3,36 +3,28 @@
 Supabase project: `tkvxyxwfosworwqxesnz` (us-west-2)
 Dashboard: https://supabase.com/dashboard/project/tkvxyxwfosworwqxesnz
 
-## Dashboard Configuration
+## Auth Configuration (via CLI)
 
-### 1. Email Provider
+Auth settings are managed as code in `supabase/config.toml` and pushed via:
 
-**Auth > Providers > Email**
+```bash
+supabase config push --project-ref tkvxyxwfosworwqxesnz
+```
 
-- Email + password sign-in: **enabled**
-- Magic link sign-in: **enabled**
-- Confirm email: **enabled** (users must verify email before access)
+Key settings applied:
 
-### 2. URL Configuration
+| Setting | Value | config.toml key |
+|---------|-------|-----------------|
+| Site URL | `https://compgraph.vercel.app` | `[auth] site_url` |
+| Redirect URLs | `/setup` on Vercel + localhost | `[auth] additional_redirect_urls` |
+| Public sign-up | **disabled** (invite-only) | `[auth] enable_signup = false` |
+| Email confirmations | **enabled** | `[auth.email] enable_confirmations = true` |
 
-**Auth > URL Configuration**
+When adding new environments, add their `/setup` callback to `additional_redirect_urls` in `config.toml` and re-push.
 
-| Setting | Value |
-|---------|-------|
-| Site URL | `https://compgraph.vercel.app` |
-| Redirect URLs | `https://compgraph.vercel.app/setup`, `http://localhost:3000/setup` |
+### Collect Secrets (manual)
 
-When adding new environments, add their `/setup` callback to the redirect allow-list.
-
-### 3. Disable Public Sign-Up
-
-**Auth > Settings**
-
-- "Allow new users to sign up": **disabled**
-
-This enforces invite-only access. New users are created via `POST /api/v1/admin/invite` which calls the Supabase Admin API with the service role key.
-
-### 4. Collect Secrets
+These are read-only project secrets — not configurable via CLI:
 
 **Project Settings > API**
 
