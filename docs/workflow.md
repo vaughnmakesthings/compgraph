@@ -85,6 +85,8 @@ Write a plan covering: files to create/modify, approach, trade-offs. Present to 
 
 Write tests first, then implementation. PostToolUse hooks auto-run ruff format and pytest on every Python file edit.
 
+**Frontend implementation:** For UI work, the user may provide design reference blocks in `web/references/` — code copied from Tailwind Plus, Tremor, or other component libraries. Read the referenced files and the user's spec describing which parts to use, then adapt to CompGraph design tokens and conventions. Never copy reference code verbatim.
+
 ---
 
 ### Step 4: Lint / Type / Test

@@ -54,6 +54,8 @@ src/
     setup.ts              # jest-dom matchers import
     *.test.tsx             # Test files colocated by page/feature
     components/            # Component-specific test files
+references/               # Design reference blocks (gitignored)
+  *.tsx                   # Pasted code from Tailwind Plus, Tremor, etc.
 ```
 
 ## Architecture Patterns
@@ -178,6 +180,21 @@ global.ResizeObserver = class ResizeObserver {
 - Use `waitFor` for async state updates after API resolution
 - Never-resolving promises for loading state tests: `mockFn.mockReturnValue(new Promise(() => {}))`
 - `beforeEach(() => vi.clearAllMocks())` in every test file
+
+## Design References
+
+The `web/references/` directory is a gitignored scratch space for UI code blocks copied from external sources (Tailwind Plus, Tremor examples, component libraries, etc.). These are **not committed** — they serve as implementation inputs when building pages.
+
+**Workflow:**
+1. User saves code blocks from external sites into `web/references/` (e.g., `login-form.tsx`, `nav-bar.tsx`)
+2. User provides a brief spec describing what to take from each reference and how to combine them
+3. Agent reads the reference files and implements the final component using CompGraph design tokens and conventions
+
+**Rules:**
+- Reference code is raw material — never copy verbatim. Always adapt to the project's design tokens, font stack, and component patterns.
+- When a reference uses colors/fonts outside the CompGraph palette, map them to the nearest design token.
+- Multiple references can be composed: "chart from `chart-ref.tsx`, filtering from `filter-ref.tsx`, layout from `nav-ref.tsx`".
+- Line ranges are valid selectors: "use lines 34-52 from `filter-ref.tsx` for the dropdown".
 
 ## Design Antipatterns
 
