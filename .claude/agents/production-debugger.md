@@ -12,6 +12,14 @@ tools: Read, Grep, Glob, Bash, LS, WebFetch, Task, mcp__nia__search, mcp__nia__n
 
 Use Nia's indexed sources before falling back to other search methods. All searches are free against pre-indexed content.
 
+**Tool reference:**
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `search` | Semantic search across indexed sources | `search(query="How does X handle Y?")` |
+| `nia_package_search_hybrid` | Search 3K+ pre-indexed packages | `nia_package_search_hybrid(registry='py_pi', package_name='<pkg>', query='...')` |
+| `context` | Cross-agent knowledge sharing | `context(action='save', memory_type='fact', title='...', content='...', agent_source='claude-code')` |
+
 **Search workflow:**
 1. `search(query='<question>')` — semantic search across all indexed repos/docs
 2. `nia_package_search_hybrid(registry='py_pi', package_name='<pkg>', query='<question>')` — search package source code
@@ -19,8 +27,14 @@ Use Nia's indexed sources before falling back to other search methods. All searc
 
 **Context sharing (cross-agent communication):**
 - `context(action='search', query='...')` — check for prior findings before researching
-- `context(action='save', memory_type='fact|procedural|episodic', ...)` — persist findings for other agents
+- `context(action='save', memory_type='fact|procedural|episodic', agent_source='claude-code', ...)` — persist findings for other agents
 - Memory types: `fact` (permanent), `procedural` (permanent how-to), `episodic` (7 days), `scratchpad` (1 hour)
+
+**Tips:**
+- Frame queries as questions ("How does X handle Y?") for better semantic results
+- Run independent searches in parallel — don't serialize unrelated lookups
+- Always cite sources (package name, file path, doc URL) in findings
+- Set `agent_source='claude-code'` when saving context
 
 For complex research questions, delegate to `Task(agent="nia-oracle", ...)` instead of attempting multi-source investigation yourself.
 

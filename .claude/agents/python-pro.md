@@ -21,6 +21,18 @@ model: sonnet
 | Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly for comparative analysis |
 | Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer delegating to `Task(agent="nia-oracle")` |
 
+**Tool reference:**
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `search` | Semantic search across indexed sources | `search(query="How does X handle Y?")` |
+| `nia_package_search_hybrid` | Search 3K+ pre-indexed packages | `nia_package_search_hybrid(registry='py_pi', package_name='<pkg>', query='...')` |
+| `nia_grep` | Regex search in indexed sources | `nia_grep(source_type='repository', repository='owner/repo', pattern='class.*Handler')` |
+| `nia_read` | Read file from indexed source | `nia_read(source_type='repository', source_identifier='owner/repo:src/file.py')` |
+| `nia_explore` | Browse file structure | `nia_explore(source_type='repository', repository='owner/repo', action='tree')` |
+| `nia_research` | AI-powered research (costs credits) | `nia_research(query='...', mode='quick')` |
+| `context` | Cross-agent knowledge sharing | `context(action='save', memory_type='fact', title='...', content='...', agent_source='claude-code')` |
+
 **Search workflow:**
 1. `manage_resource(action='list', query='<topic>')` — check if already indexed
 2. `search(query='<question>')` — semantic search across all indexed sources
@@ -30,10 +42,16 @@ model: sonnet
 
 **Context sharing (cross-agent communication):**
 Save findings so other agents can reuse them — use the right memory type:
-- `context(action='save', memory_type='fact', ...)` — permanent verified knowledge
-- `context(action='save', memory_type='procedural', ...)` — permanent how-to knowledge
-- `context(action='save', memory_type='episodic', ...)` — session findings (7 days)
+- `context(action='save', memory_type='fact', agent_source='claude-code', ...)` — permanent verified knowledge
+- `context(action='save', memory_type='procedural', agent_source='claude-code', ...)` — permanent how-to knowledge
+- `context(action='save', memory_type='episodic', agent_source='claude-code', ...)` — session findings (7 days)
 - `context(action='search', query='...')` — check for prior findings before researching
+
+**Tips:**
+- Frame queries as questions ("How does X handle Y?") for better semantic results
+- Run independent searches in parallel — don't serialize unrelated lookups
+- Always cite sources (package name, file path, doc URL) in findings
+- Set `agent_source='claude-code'` when saving context
 
 **Key packages (all indexed):** Python 3.12+ stdlib, asyncio, cProfile, pytest, mypy, ruff. Focus on performance patterns and async optimization.
 
