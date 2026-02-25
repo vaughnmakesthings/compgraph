@@ -58,8 +58,7 @@ SUPABASE_KEY=<anon key>
 
 1. Generate new JWT secret in Supabase Dashboard (Project Settings > API > JWT Settings)
 2. Update 1Password item "Supabase Auth Keys"
-3. Update `.env` on dev server: `ssh compgraph-do` then edit `/opt/compgraph/.env`
-4. Restart service: `systemctl restart compgraph`
+3. Push updated secrets and restart the service using the deployment script: `bash infra/deploy.sh --env-update`
 5. **All active sessions are invalidated** — users will need to re-authenticate
 
 ## Verification Checklist
