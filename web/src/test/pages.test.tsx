@@ -5,6 +5,16 @@ import HiringPage from "../app/(app)/hiring/page";
 import SettingsPage from "../app/(app)/settings/page";
 import type { DailyVelocity, CoverageGap, PostingListResponse } from "../lib/types";
 
+vi.mock("../lib/auth-context", () => ({
+  useAuth: vi.fn().mockReturnValue({
+    session: null,
+    user: null,
+    role: "admin",
+    loading: false,
+    signOut: vi.fn(),
+  }),
+}));
+
 vi.mock("../lib/api-client", () => ({
   api: {
     getVelocity: vi.fn(),

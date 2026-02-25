@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
 
 interface AccountSetupFormProps {
   email: string;
@@ -82,6 +84,7 @@ function PasswordInput({
 }
 
 export function AccountSetupForm({ email }: AccountSetupFormProps) {
+  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName,  setLastName]  = useState("");
   const [password,  setPassword]  = useState("");
@@ -108,8 +111,16 @@ export function AccountSetupForm({ email }: AccountSetupFormProps) {
     setErrors({});
     setLoading(true);
     try {
-      // TODO: wire up Supabase auth.updateUser({ password, data: { first_name, last_name } })
-      await new Promise((r) => setTimeout(r, 800));
+      if (!supabase) return;
+      const { error } = await supabase.auth.updateUser({
+        password,
+        data: { first_name: firstName.trim(), last_name: lastName.trim() },
+      });
+      if (error) {
+        setErrors({ submit: error.message });
+        return;
+      }
+      router.push("/");
     } finally {
       setLoading(false);
     }
@@ -240,6 +251,23 @@ export function AccountSetupForm({ email }: AccountSetupFormProps) {
           onChange={setConfirm}
           error={errors.confirm}
         />
+
+        {errors.submit && (
+          <p
+            role="alert"
+            style={{
+              fontSize: "13px",
+              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+              color: "var(--color-error, #8C2C23)",
+              margin: 0,
+              padding: "8px 12px",
+              backgroundColor: "rgba(140, 44, 35, 0.06)",
+              borderRadius: "var(--radius-sm, 4px)",
+            }}
+          >
+            {errors.submit}
+          </p>
+        )}
 
         <Button
           type="submit"
