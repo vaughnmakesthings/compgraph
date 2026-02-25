@@ -1,0 +1,55 @@
+src/compgraph/api/routes/companies.py
+  c7c69117b8584eb2 10
+tests/test_pipeline_status.py
+  c7c69117b8584eb2 47,60,82,96,114,129,144,162,188,215,239,273,298,334
+src/compgraph/api/routes/scheduler.py
+  c7c69117b8584eb2 17
+tests/test_scrape_routes.py
+  c7c69117b8584eb2 28,36,62,78,83,89,98,101,110,118,126,134,142,150
+src/compgraph/api/routes/aggregation.py
+  c7c69117b8584eb2 21
+tests/test_enrichment_pass1.py
+  c7c69117b8584eb2 734,750,784,798,800,808,810,816,1011,1013,1041,1063
+src/compgraph/main.py
+  c7c69117b8584eb2 5,78-88,90
+tests/test_api_aggregation.py
+  c7c69117b8584eb2 26,31,36,41,46,51,56,60
+tests/test_eval_router.py
+  c7c69117b8584eb2 54,75,88,104,111,136,155,169,175,188,207
+src/compgraph/api/routes/admin.py
+  c7c69117b8584eb2 20
+tests/test_enrichment_pass2.py
+  c7c69117b8584eb2 324,334
+src/compgraph/api/routes/enrich.py
+  c7c69117b8584eb2 31
+tests/test_auth_middleware.py
+  c7c69117b8584eb2 319,338,354,362,369,386
+tests/test_scheduler.py
+  c7c69117b8584eb2 377,396,410,427,439,450,461
+src/compgraph/api/routes/pipeline.py
+  c7c69117b8584eb2 24
+src/compgraph/api/routes/scrape.py
+  c7c69117b8584eb2 22
+tests/test_postings_api.py
+  c7c69117b8584eb2 121,138,170,189,205,218,235,250,268,279,294,344,357,381,423,449
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "672b3477844f84816f2e0a26336356490c1ca971",
+  "prompts": {
+    "c7c69117b8584eb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8ed17570-da7c-4279-be70-ce274482eb33",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 110,
+      "total_deletions": 107,
+      "accepted_lines": 110,
+      "overriden_lines": 0
+    }
+  }
+}
