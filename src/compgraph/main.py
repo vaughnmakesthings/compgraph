@@ -2,8 +2,9 @@ import logging
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from compgraph.api.routes.admin import router as admin_router
 from compgraph.api.routes.aggregation import router as aggregation_router
@@ -88,3 +89,9 @@ v1_router.include_router(admin_router)
 
 app.include_router(health_router)
 app.include_router(v1_router)
+
+
+@app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def legacy_api_redirect(request: Request, path: str) -> RedirectResponse:
+    query = f"?{request.query_params}" if request.query_params else ""
+    return RedirectResponse(url=f"/api/v1/{path}{query}", status_code=308)
