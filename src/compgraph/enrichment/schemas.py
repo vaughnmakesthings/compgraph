@@ -114,9 +114,7 @@ class Pass1Result(BaseModel):
 
     @model_validator(mode="after")
     def _validate_pay_range(self) -> Self:
-        floor, ceiling = PAY_RANGE_BY_FREQUENCY.get(
-            self.pay_frequency, PAY_RANGE_BY_FREQUENCY[None]
-        )
+        floor, ceiling = PAY_RANGE_BY_FREQUENCY[self.pay_frequency]
 
         if self.pay_min is not None and not (floor <= self.pay_min <= ceiling):
             raise ValueError(
