@@ -46,6 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthToken(s?.access_token ?? null);
       prevTokenRef.current = s?.access_token ?? null;
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
 
     const {

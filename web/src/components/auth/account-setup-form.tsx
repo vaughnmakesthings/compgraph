@@ -254,6 +254,7 @@ export function AccountSetupForm({ email }: AccountSetupFormProps) {
 
         {errors.submit && (
           <p
+            role="alert"
             style={{
               fontSize: "13px",
               fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",

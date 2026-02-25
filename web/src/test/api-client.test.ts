@@ -1,10 +1,16 @@
 import { api } from '../lib/api-client'
-import { setAuthToken, getAuthToken } from '../lib/auth-token'
+import { setAuthToken } from '../lib/auth-token'
 import type { PipelineStatus, EvalResult } from '../lib/types'
+
+const mockSignOut = vi.fn().mockResolvedValue({ error: null })
+vi.mock('../lib/supabase', () => ({
+  supabase: { auth: { signOut: mockSignOut } },
+}))
 
 beforeEach(() => {
   global.fetch = vi.fn()
   setAuthToken(null)
+  mockSignOut.mockClear()
 })
 
 afterEach(() => {
@@ -509,7 +515,7 @@ describe('auth token injection', () => {
     expect(headers.Authorization).toBeUndefined()
   })
 
-  it('clears token on 401 response', async () => {
+  it('calls supabase.auth.signOut on 401 response', async () => {
     setAuthToken('expired-token')
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
@@ -517,7 +523,7 @@ describe('auth token injection', () => {
     } as Response)
 
     await expect(api.health()).rejects.toThrow('API error 401')
-    expect(getAuthToken()).toBeNull()
+    expect(mockSignOut).toHaveBeenCalled()
   })
 })
 

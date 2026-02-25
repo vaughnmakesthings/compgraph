@@ -43,8 +43,8 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     if (res.status === 401) {
-      const { setAuthToken: clearToken } = await import('./auth-token')
-      clearToken(null)
+      const { supabase } = await import('./supabase')
+      supabase?.auth.signOut()
     }
     let detail: string | undefined
     try {
