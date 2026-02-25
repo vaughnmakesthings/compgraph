@@ -213,7 +213,11 @@ class TestScrapeTriggerConcurrencyGuard:
 
         resp = c.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
-        assert "already running" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        assert isinstance(detail, dict)
+        assert "already running" in detail["message"]
+        assert "active_run_id" in detail
+        assert "active_status" in detail
 
     @pytest.mark.parametrize(
         "active_status",
@@ -293,7 +297,9 @@ class TestScrapeTriggerConcurrencyGuard:
 
         resp = c.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
-        assert "already running" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        assert isinstance(detail, dict)
+        assert "already running" in detail["message"]
 
     def test_in_memory_stopping_run_blocks_trigger(self, client_with_db):
         c = client_with_db(scrape_run_row=None)
@@ -301,7 +307,9 @@ class TestScrapeTriggerConcurrencyGuard:
 
         resp = c.post("/api/v1/scrape/trigger")
         assert resp.status_code == 409
-        assert "already running" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        assert isinstance(detail, dict)
+        assert "already running" in detail["message"]
 
     def test_409_detail_message_wording(self, client_with_db):
         active = self._make_active_scrape_run("pending")

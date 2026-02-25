@@ -135,7 +135,7 @@ _ACTIVE_STATUSES = frozenset(
     }
 )
 
-_DB_ACTIVE_STATUSES = ["pending", "running", "paused", "stopping"]
+_DB_ACTIVE_STATUSES = [s.value for s in _ACTIVE_STATUSES]
 
 
 async def _check_active_scrape_run(db: AsyncSession) -> ScrapeRun | None:
@@ -154,6 +154,8 @@ async def trigger_scrape(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> TriggerResponse:
+    msg = "A pipeline is already running. Wait for completion or force-stop first."
+
     active_run = await _check_active_scrape_run(db)
     if active_run is not None:
         logger.info(
@@ -161,7 +163,6 @@ async def trigger_scrape(
             active_run.id,
             active_run.status,
         )
-        msg = "A pipeline is already running. Wait for completion or force-stop first."
         raise HTTPException(
             status_code=409,
             detail={
@@ -175,7 +176,11 @@ async def trigger_scrape(
     if latest is not None and latest.status in _ACTIVE_STATUSES:
         raise HTTPException(
             status_code=409,
-            detail=("A pipeline is already running. Wait for completion or force-stop first."),
+            detail={
+                "message": msg,
+                "active_run_id": str(latest.run_id),
+                "active_status": latest.status.value,
+            },
         )
 
     pipeline_run = PipelineRun()
