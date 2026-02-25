@@ -1,0 +1,38 @@
+src/compgraph/main.py
+  3e991c611869840e 35-38,43-45,47,49-59
+src/compgraph/scheduler/jobs.py
+  3e991c611869840e 5,26-28,31-38,72-75,95-99,102,104,106-107,109-112,114-122,126-131,133-184,194,198,203-211,213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "9274df7770d0d8a0961cffc4307cb0c0426b7e1b",
+  "prompts": {
+    "3e991c611869840e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db43a755-f473-4c47-8344-6c963e1485ec",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 185,
+      "total_deletions": 86,
+      "accepted_lines": 155,
+      "overriden_lines": 0
+    },
+    "49e75c8c7686b37b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54e96503-5d64-4489-a335-04d0f1ced41f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 0,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    }
+  }
+}
