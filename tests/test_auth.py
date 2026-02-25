@@ -5,7 +5,6 @@ from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 
 from compgraph.api.deps import get_db
@@ -15,7 +14,6 @@ from compgraph.auth.dependencies import (
     get_current_user,
     get_current_user_disabled,
     require_admin,
-    require_viewer,
 )
 
 VIEWER_USER = AuthUser(
@@ -57,37 +55,12 @@ def _mock_db_session() -> AsyncMock:
     return mock_session
 
 
-def _override_require_admin_for(user: AuthUser):
-    def _dep() -> AuthUser:
-        if user.role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin role required",
-            )
-        return user
-
-    return _dep
-
-
-def _override_require_viewer_for(user: AuthUser):
-    def _dep() -> AuthUser:
-        if user.role not in ("admin", "viewer"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Viewer or admin role required",
-            )
-        return user
-
-    return _dep
-
-
 def _apply_overrides(user: AuthUser) -> dict:
     from compgraph.main import app
 
     original = dict(app.dependency_overrides)
+    app.dependency_overrides.clear()
     app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[require_admin] = _override_require_admin_for(user)
-    app.dependency_overrides[require_viewer] = _override_require_viewer_for(user)
     app.dependency_overrides[get_db] = lambda: _mock_db_session()
     return original
 
@@ -125,6 +98,7 @@ def bypass_client() -> Generator[TestClient, None, None]:
         get_current_user_disabled,
         get_current_user_optional,
         require_admin_disabled,
+        require_viewer,
     )
     from compgraph.main import app
 
@@ -241,8 +215,8 @@ class TestViewerRoutesAcceptAdmin:
 class TestRoleEscalationPrevention:
     def test_viewer_can_read_scrape_status(self, viewer_client: TestClient):
         resp = viewer_client.get("/api/v1/scrape/status")
-        assert resp.status_code != 401
+        assert resp.status_code not in (401, 403)
 
     def test_viewer_can_trigger_scrape(self, viewer_client: TestClient):
         resp = viewer_client.post("/api/v1/scrape/trigger")
-        assert resp.status_code != 401
+        assert resp.status_code not in (401, 403)
