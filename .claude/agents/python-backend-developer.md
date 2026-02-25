@@ -145,10 +145,10 @@ uv run ruff check --fix && uv run ruff format    # Lint and format
 ### Milestone Context
 
 Before starting work, read `docs/phases.md` Roadmap Summary for current milestone awareness. Key constraints:
-- **Auth** is M4 — do not implement login/invite/JWT until then
-- **APScheduler stays** — arq migration is deferred to M6
-- **Anthropic SDK stays** — LiteLLM provider abstraction is deferred to M6
-- **Streamlit stays** — frontend framework selection is deferred to M7
+- **M7 active** — auth chain in progress (backend middleware merged #219, frontend pages next #208)
+- **APScheduler stays** — arq migration deferred to M8 (needs Redis)
+- **Anthropic SDK stays** — LiteLLM provider abstraction deferred to M7 Phase B (needs Eval Tool #128 first)
+- **Pre-commitments**: Supabase Auth only (no custom JWT), frontend = pure API consumer, append-only snapshots
 
 ---
 
