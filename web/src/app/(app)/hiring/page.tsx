@@ -31,6 +31,35 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "title_asc", label: "Title A–Z" },
 ];
 
+const CHEVRON_SVG =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
+
+const controlStyle: React.CSSProperties = {
+  border: "1px solid var(--color-border, #BFC0C0)",
+  borderRadius: "var(--radius-sm, 4px)",
+  padding: "6px 12px",
+  fontSize: "13px",
+  backgroundColor: "var(--color-surface, #FFFFFF)",
+  color: "var(--color-foreground, #2D3142)",
+  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+};
+
+const selectStyle: React.CSSProperties = {
+  ...controlStyle,
+  minWidth: "10rem",
+  appearance: "none",
+  backgroundImage: CHEVRON_SVG,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  paddingRight: "32px",
+};
+
+const chipStyle: React.CSSProperties = {
+  backgroundColor: "var(--color-muted, #E8E8E4)",
+  color: "var(--color-foreground, #2D3142)",
+  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+};
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
@@ -174,27 +203,6 @@ export default function HiringPage() {
   const start = total === 0 ? 0 : offset + 1;
   const end = Math.min(offset + PAGE_SIZE, total);
 
-  const controlStyle: React.CSSProperties = {
-    border: "1px solid var(--color-border, #BFC0C0)",
-    borderRadius: "var(--radius-sm, 4px)",
-    padding: "6px 12px",
-    fontSize: "13px",
-    backgroundColor: "var(--color-surface, #FFFFFF)",
-    color: "var(--color-foreground, #2D3142)",
-    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-  };
-
-  const selectStyle: React.CSSProperties = {
-    ...controlStyle,
-    minWidth: "10rem",
-    appearance: "none",
-    backgroundImage:
-      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "right 10px center",
-    paddingRight: "32px",
-  };
-
   return (
     <div>
       <div className="mb-6">
@@ -296,11 +304,7 @@ export default function HiringPage() {
           {companyFilter && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-muted, #E8E8E4)",
-                color: "var(--color-foreground, #2D3142)",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Company: {allCompanies.find((c) => c.id === companyFilter)?.name ?? companyFilter}
               <button
@@ -316,11 +320,7 @@ export default function HiringPage() {
           {statusFilter !== "all" && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-muted, #E8E8E4)",
-                color: "var(--color-foreground, #2D3142)",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Status: {statusFilter === "active" ? "Active" : "Closed"}
               <button
@@ -336,11 +336,7 @@ export default function HiringPage() {
           {roleFilter && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-muted, #E8E8E4)",
-                color: "var(--color-foreground, #2D3142)",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Role: {formatRoleArchetype(roleFilter)}
               <button
@@ -356,11 +352,7 @@ export default function HiringPage() {
           {searchDebounced && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-muted, #E8E8E4)",
-                color: "var(--color-foreground, #2D3142)",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Search: &quot;{searchDebounced}&quot;
               <button
@@ -376,11 +368,7 @@ export default function HiringPage() {
           {sortBy !== "first_seen_desc" && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-muted, #E8E8E4)",
-                color: "var(--color-foreground, #2D3142)",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? sortBy}
               <button
