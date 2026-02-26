@@ -56,6 +56,8 @@ import { Line as ChartJSLine } from "react-chartjs-2";
 import { Doughnut as ChartJSDoughnut } from "react-chartjs-2";
 import { ComparisonPanel } from "./comparison-panel";
 import type { Variant } from "./comparison-panel";
+import { tableVariants } from "./table-variants";
+import { selectVariants } from "./select-variants";
 
 // ---------------------------------------------------------------------------
 // Chart.js registration (required once)
@@ -1011,6 +1013,20 @@ export default function LabPage() {
         title="Donut Chart"
         description="Donut (ring) chart with 5 segments and percentage labels. Tests: inner radius control, label positioning, slice coloring, center label."
         variants={donutVariants}
+      />
+
+      {/* Data table comparisons */}
+      <ComparisonPanel
+        title="Data Table"
+        description="Sortable data table with 10 rows, 6 columns (text, currency, status badge, date). Tests: column sorting, row hover, header styling, custom cell renderers, global search."
+        variants={tableVariants}
+      />
+
+      {/* Select/Dropdown comparisons */}
+      <ComparisonPanel
+        title="Select / Dropdown"
+        description="Single-select dropdown with 5 options and status filter. Tests: keyboard navigation, ARIA roles, custom styling, portal rendering, checkmark indicators."
+        variants={selectVariants}
       />
 
       {/* How to add a variant */}
