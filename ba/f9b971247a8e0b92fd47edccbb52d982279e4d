@@ -1,0 +1,31 @@
+web/src/app/styleguide/lab/page.tsx
+  004094860ad353ac 61-64,1036-1063
+web/src/app/styleguide/lab/toast-variants.tsx
+  004094860ad353ac 1-176
+web/src/app/styleguide/lab/dialog-variants.tsx
+  004094860ad353ac 1-237
+web/src/app/styleguide/lab/input-variants.tsx
+  004094860ad353ac 1-297
+web/src/app/styleguide/lab/tooltip-variants.tsx
+  004094860ad353ac 1-226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "baf9b971247a8e0b92fd47edccbb52d982279e4d",
+  "prompts": {
+    "004094860ad353ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0b99641-81f1-48cc-93cc-038d88d19f1c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 970,
+      "total_deletions": 3,
+      "accepted_lines": 968,
+      "overriden_lines": 0
+    }
+  }
+}
