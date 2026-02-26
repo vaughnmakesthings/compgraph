@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import {
   Cog6ToothIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "@/lib/auth-context";
 
 interface NavChild {
   id: string;
@@ -444,9 +445,18 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { role } = useAuth();
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>(
     buildDefaultExpanded
   );
+
+  const filteredSections = useMemo(() => {
+    if (role === "admin") return NAV_SECTIONS;
+    return NAV_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.id !== "settings"),
+    }));
+  }, [role]);
 
   // Apply persisted state after mount
   useEffect(() => {
@@ -519,7 +529,7 @@ export function Sidebar() {
 
       {/* Nav sections */}
       <div className="flex-1 px-2 pb-4">
-        {NAV_SECTIONS.map((section) => (
+        {filteredSections.map((section) => (
           <div key={section.id}>
             <SectionLabel>{section.label}</SectionLabel>
             <div className="space-y-0.5">
