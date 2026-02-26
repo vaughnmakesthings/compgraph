@@ -58,6 +58,10 @@ import { ComparisonPanel } from "./comparison-panel";
 import type { Variant } from "./comparison-panel";
 import { tableVariants } from "./table-variants";
 import { selectVariants } from "./select-variants";
+import { dialogVariants } from "./dialog-variants";
+import { tooltipVariants } from "./tooltip-variants";
+import { toastVariants } from "./toast-variants";
+import { inputVariants } from "./input-variants";
 
 // ---------------------------------------------------------------------------
 // Chart.js registration (required once)
@@ -1027,6 +1031,34 @@ export default function LabPage() {
         title="Select / Dropdown"
         description="Single-select dropdown with 5 options and status filter. Tests: keyboard navigation, ARIA roles, custom styling, portal rendering, checkmark indicators."
         variants={selectVariants}
+      />
+
+      {/* Dialog comparisons */}
+      <ComparisonPanel
+        title="Dialog / Modal"
+        description="Confirmation dialog with title, body, Cancel and Confirm buttons. Tests: focus trapping, scroll lock, backdrop click-to-close, ARIA roles, portal rendering."
+        variants={dialogVariants}
+      />
+
+      {/* Tooltip comparisons */}
+      <ComparisonPanel
+        title="Tooltip"
+        description="Hover-triggered tooltip with multi-line content. Tests: positioning, portal rendering, keyboard trigger, delay, arrow indicator."
+        variants={tooltipVariants}
+      />
+
+      {/* Toast comparisons */}
+      <ComparisonPanel
+        title="Toast / Notification"
+        description="Transient success/error/info notifications. Tests: auto-dismiss, stacking, position control, ARIA live region, swipe-to-dismiss."
+        variants={toastVariants}
+      />
+
+      {/* Input comparisons */}
+      <ComparisonPanel
+        title="Checkbox / Toggle / Radio"
+        description="Form input controls with labels and hint text. Tests: indeterminate state, switch ARIA role, radio group keyboard navigation, custom styling."
+        variants={inputVariants}
       />
 
       {/* How to add a variant */}

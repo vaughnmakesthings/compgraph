@@ -2,7 +2,6 @@
 
 import { useState, Fragment } from "react";
 import * as RadixSelect from "@radix-ui/react-select";
-import * as RadixDropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import { ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 import type { Variant } from "./comparison-panel";
