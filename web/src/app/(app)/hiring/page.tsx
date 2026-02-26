@@ -299,7 +299,7 @@ export default function HiringPage() {
         </select>
       </div>
 
-      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
+      {hasActiveFilters && (
         <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
           {companyFilter && (
             <span
