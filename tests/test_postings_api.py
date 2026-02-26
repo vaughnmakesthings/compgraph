@@ -120,7 +120,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -137,7 +137,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -169,7 +169,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         item = r.json()["items"][0]
@@ -188,7 +188,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get(f"/api/v1/postings?company_id={company_id}")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         assert r.json()["total"] == 1
@@ -204,7 +204,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings?is_active=false")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         assert r.json()["items"][0]["is_active"] is False
@@ -217,7 +217,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings?limit=10&offset=20")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -234,7 +234,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -249,7 +249,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings?role_archetype=field_sales")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         data = r.json()
@@ -267,7 +267,7 @@ class TestPostingsListEndpoint:
                 with TestClient(app) as client:
                     r = client.get(f"/api/v1/postings?sort_by={sort_val}")
             finally:
-                app.dependency_overrides.clear()
+                app.dependency_overrides.pop(get_db, None)
             assert r.status_code == 200, f"sort_by={sort_val}"
 
     def test_list_rejects_unknown_sort_by_with_422(self) -> None:
@@ -278,7 +278,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings?sort_by=invalid_sort")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 422
         assert "sort_by" in r.json().get("detail", "").lower()
@@ -293,7 +293,7 @@ class TestPostingsListEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings?search=Field")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         data = r.json()
@@ -343,7 +343,7 @@ class TestPostingsDetailEndpoint:
             with TestClient(app) as client:
                 r = client.get(f"/api/v1/postings/{uuid.uuid4()}")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 404
         assert r.json()["detail"] == "Posting not found"
@@ -356,7 +356,7 @@ class TestPostingsDetailEndpoint:
             with TestClient(app) as client:
                 r = client.get("/api/v1/postings/not-a-uuid")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 404
 
@@ -380,7 +380,7 @@ class TestPostingsDetailEndpoint:
             with TestClient(app) as client:
                 r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -422,7 +422,7 @@ class TestPostingsDetailEndpoint:
             with TestClient(app) as client:
                 r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()
@@ -448,7 +448,7 @@ class TestPostingsDetailEndpoint:
             with TestClient(app) as client:
                 r = client.get(f"/api/v1/postings/{posting_id}")
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
         assert r.status_code == 200
         body = r.json()

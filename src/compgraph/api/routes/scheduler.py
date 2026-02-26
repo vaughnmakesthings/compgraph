@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.scheduler.app import SCHEDULE_ID
 from compgraph.scheduler.jobs import (
     get_last_pipeline_finished_at,
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
-MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri→Mon) + 8h grace
+MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri->Mon) + 8h grace
 
 
 class ScheduleInfo(BaseModel):
@@ -67,7 +68,10 @@ def _validate_schedule_id(job_id: str) -> None:
 
 
 @router.get("/status", response_model=SchedulerStatusResponse)
-async def scheduler_status(request: Request) -> SchedulerStatusResponse:
+async def scheduler_status(
+    request: Request,
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> SchedulerStatusResponse:
     scheduler = getattr(request.app.state, "scheduler", None)
     enabled = scheduler is not None
 
@@ -119,7 +123,11 @@ async def scheduler_status(request: Request) -> SchedulerStatusResponse:
 
 
 @router.post("/jobs/{job_id}/trigger", response_model=TriggerResponse)
-async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
+async def trigger_job(
+    request: Request,
+    job_id: str,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> TriggerResponse:
     _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 
@@ -139,7 +147,11 @@ async def trigger_job(request: Request, job_id: str) -> TriggerResponse:
 
 
 @router.post("/jobs/{job_id}/pause", response_model=ControlResponse)
-async def pause_job(request: Request, job_id: str) -> ControlResponse:
+async def pause_job(
+    request: Request,
+    job_id: str,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 
@@ -157,7 +169,11 @@ async def pause_job(request: Request, job_id: str) -> ControlResponse:
 
 
 @router.post("/jobs/{job_id}/resume", response_model=ControlResponse)
-async def resume_job(request: Request, job_id: str) -> ControlResponse:
+async def resume_job(
+    request: Request,
+    job_id: str,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     _validate_schedule_id(job_id)
     scheduler = _get_scheduler(request)
 

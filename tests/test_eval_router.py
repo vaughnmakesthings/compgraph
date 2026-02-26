@@ -45,7 +45,7 @@ def mock_empty_db():
 
     app.dependency_overrides[get_db] = _override
     yield
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
 
 
 class TestEvalCorpusEndpoint:
@@ -79,7 +79,7 @@ class TestEvalCorpusEndpoint:
             assert data[0]["id"] == "posting_abc"
             assert data[0]["company_slug"] == "marketsource"
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
 
 class TestEvalModelsEndpoint:
@@ -140,7 +140,7 @@ class TestEvalRunsEndpoint:
             assert data["model"] == "claude-haiku-4-5-20251001"
             assert data["pass_number"] == 1
         finally:
-            app.dependency_overrides.clear()
+            app.dependency_overrides.pop(get_db, None)
 
 
 class TestEvalLeaderboardEndpoint:

@@ -35,6 +35,18 @@ ADMIN_USER = AuthUser(
 ADMIN_ROUTES: list[tuple[str, str]] = [
     ("POST", "/api/v1/admin/invite"),
     ("GET", "/api/v1/admin/users"),
+    ("POST", "/api/v1/scrape/trigger"),
+    ("POST", "/api/v1/scrape/pause"),
+    ("POST", "/api/v1/scrape/resume"),
+    ("POST", "/api/v1/scrape/stop"),
+    ("POST", "/api/v1/scrape/force-stop"),
+    ("POST", "/api/v1/enrich/trigger"),
+    ("POST", "/api/v1/enrich/pass1/trigger"),
+    ("POST", "/api/v1/enrich/pass2/trigger"),
+    ("POST", "/api/v1/aggregation/trigger"),
+    ("POST", "/api/v1/scheduler/jobs/daily_pipeline/trigger"),
+    ("POST", "/api/v1/scheduler/jobs/daily_pipeline/pause"),
+    ("POST", "/api/v1/scheduler/jobs/daily_pipeline/resume"),
 ]
 
 VIEWER_ROUTES: list[tuple[str, str]] = [
@@ -42,7 +54,13 @@ VIEWER_ROUTES: list[tuple[str, str]] = [
     ("GET", "/api/v1/aggregation/brand-timeline"),
     ("GET", "/api/v1/aggregation/pay-benchmarks"),
     ("GET", "/api/v1/aggregation/lifecycle"),
+    ("GET", "/api/v1/aggregation/churn-signals"),
+    ("GET", "/api/v1/aggregation/coverage-gaps"),
+    ("GET", "/api/v1/aggregation/agency-overlap"),
     ("GET", "/api/v1/companies"),
+    ("GET", "/api/v1/scrape/status"),
+    ("GET", "/api/v1/enrich/status"),
+    ("GET", "/api/v1/scheduler/status"),
 ]
 
 
@@ -151,6 +169,18 @@ class TestAuthDisabledBypass:
         resp = bypass_client.get("/api/v1/admin/users")
         assert resp.status_code != 401
 
+    def test_scrape_trigger_no_auth_header(self, bypass_client: TestClient):
+        resp = bypass_client.post("/api/v1/scrape/trigger")
+        assert resp.status_code != 401
+
+    def test_enrich_trigger_no_auth_header(self, bypass_client: TestClient):
+        resp = bypass_client.post("/api/v1/enrich/trigger")
+        assert resp.status_code != 401
+
+    def test_aggregation_trigger_no_auth_header(self, bypass_client: TestClient):
+        resp = bypass_client.post("/api/v1/aggregation/trigger")
+        assert resp.status_code != 401
+
 
 class TestAdminRoutesRejectViewer:
     def test_admin_invite_returns_403_for_viewer(self, viewer_client: TestClient):
@@ -178,7 +208,7 @@ class TestAdminRoutesRejectViewer:
         if method == "POST" and "invite" in path:
             kwargs["json"] = {"email": "test@example.com", "role": "viewer"}
         resp = viewer_client.request(method, path, **kwargs)
-        assert resp.status_code == 403
+        assert resp.status_code == 403, f"{method} {path} should reject viewer"
 
 
 class TestAdminRoutesAcceptAdmin:
@@ -212,11 +242,59 @@ class TestViewerRoutesAcceptAdmin:
         assert resp.status_code != 403
 
 
-class TestRoleEscalationPrevention:
+class TestPipelineAuthEnforcement:
+    def test_viewer_cannot_trigger_scrape(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/scrape/trigger")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_pause_scrape(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/scrape/pause")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_stop_scrape(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/scrape/stop")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_force_stop_scrape(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/scrape/force-stop")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_trigger_enrichment(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/enrich/trigger")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_trigger_pass1(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/enrich/pass1/trigger")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_trigger_pass2(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/enrich/pass2/trigger")
+        assert resp.status_code == 403
+
+    def test_viewer_cannot_trigger_aggregation(self, viewer_client: TestClient):
+        resp = viewer_client.post("/api/v1/aggregation/trigger")
+        assert resp.status_code == 403
+
     def test_viewer_can_read_scrape_status(self, viewer_client: TestClient):
         resp = viewer_client.get("/api/v1/scrape/status")
         assert resp.status_code not in (401, 403)
 
-    def test_viewer_can_trigger_scrape(self, viewer_client: TestClient):
-        resp = viewer_client.post("/api/v1/scrape/trigger")
+    def test_viewer_can_read_enrich_status(self, viewer_client: TestClient):
+        resp = viewer_client.get("/api/v1/enrich/status")
+        assert resp.status_code not in (401, 403)
+
+    def test_viewer_can_read_scheduler_status(self, viewer_client: TestClient):
+        resp = viewer_client.get("/api/v1/scheduler/status")
+        assert resp.status_code not in (401, 403)
+
+    def test_admin_can_trigger_scrape(self, admin_client: TestClient):
+        resp = admin_client.post("/api/v1/scrape/trigger")
+        assert resp.status_code not in (401, 403)
+
+    def test_admin_can_trigger_enrichment(self, admin_client: TestClient):
+        resp = admin_client.post("/api/v1/enrich/trigger")
+        assert resp.status_code not in (401, 403)
+
+    def test_admin_can_trigger_aggregation(self, admin_client: TestClient):
+        resp = admin_client.post("/api/v1/aggregation/trigger")
         assert resp.status_code not in (401, 403)

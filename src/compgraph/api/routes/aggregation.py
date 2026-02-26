@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
+from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.db.models import (
     AggBrandAgencyOverlap,
     AggBrandChurnSignals,
@@ -26,7 +27,10 @@ class TriggerResponse(BaseModel):
 
 
 @router.get("/velocity")
-async def get_velocity(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_velocity(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     stmt = (
         select(
             AggDailyVelocity,
@@ -53,7 +57,10 @@ async def get_velocity(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noq
 
 
 @router.get("/brand-timeline")
-async def get_brand_timeline(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_brand_timeline(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     stmt = (
         select(
             AggBrandTimeline,
@@ -82,21 +89,30 @@ async def get_brand_timeline(db: AsyncSession = Depends(get_db)) -> list[dict]: 
 
 
 @router.get("/pay-benchmarks")
-async def get_pay_benchmarks(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_pay_benchmarks(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     result = await db.execute(select(AggPayBenchmarks).limit(500))
     rows = result.scalars().all()
     return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
 
 
 @router.get("/lifecycle")
-async def get_lifecycle(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_lifecycle(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     result = await db.execute(select(AggPostingLifecycle).limit(500))
     rows = result.scalars().all()
     return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
 
 
 @router.get("/churn-signals")
-async def get_churn_signals(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_churn_signals(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     result = await db.execute(
         select(AggBrandChurnSignals)
         .order_by(AggBrandChurnSignals.churn_signal_score.desc())
@@ -107,14 +123,20 @@ async def get_churn_signals(db: AsyncSession = Depends(get_db)) -> list[dict]:  
 
 
 @router.get("/coverage-gaps")
-async def get_coverage_gaps(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_coverage_gaps(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     result = await db.execute(select(AggMarketCoverageGaps).limit(500))
     rows = result.scalars().all()
     return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
 
 
 @router.get("/agency-overlap")
-async def get_agency_overlap(db: AsyncSession = Depends(get_db)) -> list[dict]:  # noqa: B008
+async def get_agency_overlap(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[dict]:
     result = await db.execute(
         select(AggBrandAgencyOverlap).order_by(AggBrandAgencyOverlap.agency_count.desc()).limit(100)
     )
@@ -130,6 +152,9 @@ async def _run_aggregation() -> None:
 
 
 @router.post("/trigger")
-async def trigger_aggregation(background_tasks: BackgroundTasks) -> TriggerResponse:
+async def trigger_aggregation(
+    background_tasks: BackgroundTasks,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> TriggerResponse:
     background_tasks.add_task(_run_aggregation)
     return TriggerResponse(message="Aggregation rebuild started")

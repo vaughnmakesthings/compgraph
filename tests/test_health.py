@@ -24,7 +24,7 @@ def _make_db_fixture(execute_behavior):
             mock_session.execute = AsyncMock(return_value=execute_behavior)
         app.dependency_overrides[get_db] = lambda: mock_session
         yield
-        app.dependency_overrides.clear()
+        app.dependency_overrides.pop(get_db, None)
 
     return _fixture
 
