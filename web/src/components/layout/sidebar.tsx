@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -450,13 +450,12 @@ export function Sidebar() {
     buildDefaultExpanded
   );
 
-  const filteredSections = useMemo(() => {
-    if (role === "admin") return NAV_SECTIONS;
-    return NAV_SECTIONS.map((section) => ({
-      ...section,
-      items: section.items.filter((item) => item.id !== "settings"),
-    }));
-  }, [role]);
+  const filteredSections = role === "admin"
+    ? NAV_SECTIONS
+    : NAV_SECTIONS.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => item.id !== "settings"),
+      }));
 
   // Apply persisted state after mount
   useEffect(() => {
