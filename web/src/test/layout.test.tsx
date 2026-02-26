@@ -5,6 +5,7 @@ import { Header } from "../components/layout/header";
 import Shell from "../components/layout/shell";
 
 const mockUsePathname = vi.fn(() => "/");
+const mockRole = vi.fn(() => "admin");
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
@@ -24,6 +25,16 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+
+vi.mock("@/lib/auth-context", () => ({
+  useAuth: () => ({
+    session: { access_token: "t" },
+    user: { email: "test@example.com" },
+    role: mockRole(),
+    loading: false,
+    signOut: vi.fn(),
+  }),
 }));
 
 // Stub localStorage — jsdom's localstorage may not be available depending on
@@ -52,6 +63,7 @@ Object.defineProperty(globalThis, "localStorage", {
 beforeEach(() => {
   localStorageMock.clear();
   mockUsePathname.mockReturnValue("/");
+  mockRole.mockReturnValue("admin");
   // Header fetches /health — mock it so API status becomes "ok"
   vi.stubGlobal(
     "fetch",
@@ -154,6 +166,24 @@ describe("Sidebar", () => {
       name: /competitors/i,
     });
     expect(competitorsButton).toHaveAttribute("aria-controls", "nav-sub-competitors");
+  });
+
+  it("hides Settings link for non-admin users", () => {
+    mockRole.mockReturnValue("viewer");
+    render(<Sidebar />);
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+  });
+
+  it("shows Settings link for admin users", () => {
+    mockRole.mockReturnValue("admin");
+    render(<Sidebar />);
+    expect(screen.getByText("Settings")).toBeInTheDocument();
+  });
+
+  it("hides Settings link for user role", () => {
+    mockRole.mockReturnValue("user");
+    render(<Sidebar />);
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
   });
 });
 

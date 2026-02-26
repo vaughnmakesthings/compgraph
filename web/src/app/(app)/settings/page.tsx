@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import { api } from "@/lib/api-client";
@@ -566,8 +567,20 @@ function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
 // --- Main page ---
 
 export default function SettingsPage() {
-  const { role } = useAuth();
+  const { role, loading } = useAuth();
 
+  if (loading) {
+    return null;
+  }
+
+  if (role !== "admin") {
+    redirect("/403");
+  }
+
+  return <SettingsPageContent />;
+}
+
+function SettingsPageContent() {
   // Health check
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("idle");
   const [apiVersion, setApiVersion] = useState<string | null>(null);
@@ -957,12 +970,10 @@ export default function SettingsPage() {
         {enrichStatus && <LiveEnrichPanel status={enrichStatus} />}
       </SectionCard>
 
-      {/* User Management — admin only */}
-      {role === "admin" && (
-        <div className="mt-4">
-          <UserManagementSection />
-        </div>
-      )}
+      {/* User Management — admin only (guard enforced by wrapper) */}
+      <div className="mt-4">
+        <UserManagementSection />
+      </div>
 
       {/* Scheduler */}
       <SectionCard title="Scheduler" className="mt-4">
