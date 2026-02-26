@@ -22,7 +22,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 // Canonical table data — identical for all variants
 // ---------------------------------------------------------------------------
 
-interface Posting {
+export interface Posting {
   id: number;
   company: string;
   title: string;
@@ -33,7 +33,7 @@ interface Posting {
   postedDate: string;
 }
 
-const TABLE_DATA: Posting[] = [
+export const TABLE_DATA: Posting[] = [
   { id: 1, company: "T-ROC", title: "Brand Ambassador", location: "Miami, FL", payMin: 16, payMax: 22, status: "active", postedDate: "2026-02-20" },
   { id: 2, company: "BDS", title: "Retail Merchandiser", location: "Dallas, TX", payMin: 14, payMax: 18, status: "active", postedDate: "2026-02-18" },
   { id: 3, company: "MarketSource", title: "Sales Specialist", location: "Chicago, IL", payMin: 18, payMax: 25, status: "stale", postedDate: "2026-02-10" },
@@ -46,7 +46,7 @@ const TABLE_DATA: Posting[] = [
   { id: 10, company: "OSL", title: "Store Lead", location: "Vancouver, BC", payMin: 19, payMax: 26, status: "active", postedDate: "2026-02-19" },
 ];
 
-const STATUS_COLORS: Record<Posting["status"], { bg: string; text: string }> = {
+export const STATUS_COLORS: Record<Posting["status"], { bg: string; text: string }> = {
   active: { bg: "#E6F5F3", text: "#1B998B" },
   stale: { bg: "#FFF3E0", text: "#DCB256" },
   closed: { bg: "#FDECEA", text: "#8C2C23" },

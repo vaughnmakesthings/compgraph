@@ -62,6 +62,14 @@ import { dialogVariants } from "./dialog-variants";
 import { tooltipVariants } from "./tooltip-variants";
 import { toastVariants } from "./toast-variants";
 import { inputVariants } from "./input-variants";
+import {
+  catalystDialogVariant,
+  catalystSelectVariant,
+  catalystTableVariant,
+  catalystTooltipVariant,
+  catalystToastVariant,
+  catalystInputVariant,
+} from "./catalyst-variants";
 
 // ---------------------------------------------------------------------------
 // Chart.js registration (required once)
@@ -1023,42 +1031,42 @@ export default function LabPage() {
       <ComparisonPanel
         title="Data Table"
         description="Sortable data table with 10 rows, 6 columns (text, currency, status badge, date). Tests: column sorting, row hover, header styling, custom cell renderers, global search."
-        variants={tableVariants}
+        variants={[...tableVariants, catalystTableVariant]}
       />
 
       {/* Select/Dropdown comparisons */}
       <ComparisonPanel
         title="Select / Dropdown"
         description="Single-select dropdown with 5 options and status filter. Tests: keyboard navigation, ARIA roles, custom styling, portal rendering, checkmark indicators."
-        variants={selectVariants}
+        variants={[...selectVariants, catalystSelectVariant]}
       />
 
       {/* Dialog comparisons */}
       <ComparisonPanel
         title="Dialog / Modal"
         description="Confirmation dialog with title, body, Cancel and Confirm buttons. Tests: focus trapping, scroll lock, backdrop click-to-close, ARIA roles, portal rendering."
-        variants={dialogVariants}
+        variants={[...dialogVariants, catalystDialogVariant]}
       />
 
       {/* Tooltip comparisons */}
       <ComparisonPanel
         title="Tooltip"
         description="Hover-triggered tooltip with multi-line content. Tests: positioning, portal rendering, keyboard trigger, delay, arrow indicator."
-        variants={tooltipVariants}
+        variants={[...tooltipVariants, catalystTooltipVariant]}
       />
 
       {/* Toast comparisons */}
       <ComparisonPanel
         title="Toast / Notification"
         description="Transient success/error/info notifications. Tests: auto-dismiss, stacking, position control, ARIA live region, swipe-to-dismiss."
-        variants={toastVariants}
+        variants={[...toastVariants, catalystToastVariant]}
       />
 
       {/* Input comparisons */}
       <ComparisonPanel
         title="Checkbox / Toggle / Radio"
         description="Form input controls with labels and hint text. Tests: indeterminate state, switch ARIA role, radio group keyboard navigation, custom styling."
-        variants={inputVariants}
+        variants={[...inputVariants, catalystInputVariant]}
       />
 
       {/* How to add a variant */}
