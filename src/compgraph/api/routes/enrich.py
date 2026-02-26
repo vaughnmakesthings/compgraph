@@ -6,9 +6,10 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
+from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.enrichment.orchestrator import (
     EnrichmentOrchestrator,
     EnrichmentRun,
@@ -115,7 +116,6 @@ def _trigger_enrichment(
     method_name: str,
     message: str,
 ) -> TriggerResponse:
-    """Shared setup for all enrichment trigger endpoints."""
     if method_name not in _TRIGGER_METHODS:
         raise ValueError(f"Unknown enrichment method: {method_name}")
 
@@ -133,7 +133,6 @@ def _trigger_enrichment(
             if enrichment_run.status == EnrichmentStatus.RUNNING:
                 enrichment_run.status = EnrichmentStatus.FAILED
                 enrichment_run.finished_at = datetime.now(tz=UTC)
-                # Best-effort DB update — only if run was still RUNNING
                 try:
                     from compgraph.db.models import EnrichmentRunStatus as DBStatus
                     from compgraph.enrichment.orchestrator import (
@@ -158,7 +157,10 @@ def _trigger_enrichment(
 
 
 @router.post("/pass1/trigger", response_model=TriggerResponse)
-async def trigger_pass1(background_tasks: BackgroundTasks) -> TriggerResponse:
+async def trigger_pass1(
+    background_tasks: BackgroundTasks,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> TriggerResponse:
     """Trigger Pass 1 enrichment (Haiku classification)."""
     return _trigger_enrichment(
         background_tasks,
@@ -168,7 +170,10 @@ async def trigger_pass1(background_tasks: BackgroundTasks) -> TriggerResponse:
 
 
 @router.post("/pass2/trigger", response_model=TriggerResponse)
-async def trigger_pass2(background_tasks: BackgroundTasks) -> TriggerResponse:
+async def trigger_pass2(
+    background_tasks: BackgroundTasks,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> TriggerResponse:
     """Trigger Pass 2 enrichment (Sonnet entity extraction)."""
     return _trigger_enrichment(
         background_tasks,
@@ -178,8 +183,11 @@ async def trigger_pass2(background_tasks: BackgroundTasks) -> TriggerResponse:
 
 
 @router.post("/trigger", response_model=TriggerResponse)
-async def trigger_full(background_tasks: BackgroundTasks) -> TriggerResponse:
-    """Trigger full enrichment pipeline (Pass 1 + Pass 2)."""
+async def trigger_full(
+    background_tasks: BackgroundTasks,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> TriggerResponse:
+    """Trigger full 2-pass enrichment pipeline."""
     return _trigger_enrichment(
         background_tasks,
         "run_full",
@@ -188,7 +196,6 @@ async def trigger_full(background_tasks: BackgroundTasks) -> TriggerResponse:
 
 
 def _db_dict_to_response(d: dict) -> EnrichmentRunResponse:
-    """Convert a DB-backed enrichment run dict to a response model."""
     pass1 = None
     if d.get("pass1_succeeded") is not None or d.get("pass1_failed") is not None:
         pass1 = EnrichResultResponse(
@@ -220,11 +227,10 @@ def _db_dict_to_response(d: dict) -> EnrichmentRunResponse:
 
 
 @router.get("/status", response_model=EnrichmentRunResponse)
-async def enrich_status() -> EnrichmentRunResponse:
-    """Get the status of the most recent enrichment run.
-
-    Falls back to DB when in-memory store is empty (e.g. after server restart).
-    """
+async def enrich_status(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> EnrichmentRunResponse:
+    """Get the status of the most recent enrichment run."""
     run = get_latest_enrichment_run()
     if run is not None:
         return _run_to_response(run)
@@ -237,7 +243,10 @@ async def enrich_status() -> EnrichmentRunResponse:
 
 
 @router.get("/status/{run_id}", response_model=EnrichmentRunResponse)
-async def enrich_status_by_id(run_id: uuid.UUID) -> EnrichmentRunResponse:
+async def enrich_status_by_id(
+    run_id: uuid.UUID,
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> EnrichmentRunResponse:
     """Get the status of a specific enrichment run."""
     run = get_enrichment_run(run_id)
     if run is None:

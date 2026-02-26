@@ -17,7 +17,7 @@ def _mock_db() -> None:  # type: ignore[return]
     mock_session.execute = AsyncMock(return_value=mock_result)
     app.dependency_overrides[get_db] = lambda: mock_session
     yield
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
 
 
 class TestAggregationEndpoints:

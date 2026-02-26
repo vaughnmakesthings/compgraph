@@ -4,9 +4,10 @@ import logging
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
+from compgraph.auth.dependencies import AuthUser, require_viewer
 from compgraph.enrichment.orchestrator import (
     EnrichmentRun,
     EnrichmentStatus,
@@ -225,7 +226,9 @@ class PipelineRunsResponse(BaseModel):
 
 
 @router.get("/runs", response_model=PipelineRunsResponse)
-async def pipeline_runs() -> PipelineRunsResponse:
+async def pipeline_runs(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> PipelineRunsResponse:
     from sqlalchemy import select
 
     from compgraph.db.models import Company, EnrichmentRunDB, ScrapeRun
@@ -279,16 +282,19 @@ async def pipeline_runs() -> PipelineRunsResponse:
 
 
 @router.get("/status", response_model=PipelineStatusResponse)
-async def pipeline_status(request: Request) -> PipelineStatusResponse:
+async def pipeline_status(
+    request: Request,
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> PipelineStatusResponse:
     scrape_run = get_latest_run()
     scrape_stage = _scrape_stage_status(scrape_run)
 
     if scrape_run is None:
         db_scrape = await get_latest_scrape_run_from_db()
         if db_scrape is not None:
+            db_status = db_scrape["status"]
             # DB uses "pending" for in-progress runs; normalize to "running"
             # so _derive_system_state correctly detects active scrapes
-            db_status = db_scrape["status"]
             if db_status == "pending":
                 db_status = "running"
             scrape_stage = StageStatus(

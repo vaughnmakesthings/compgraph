@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
+from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.db.models import ScrapeRun
 from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
@@ -152,6 +153,7 @@ async def _check_active_scrape_run(db: AsyncSession) -> ScrapeRun | None:
 @router.post("/trigger", response_model=TriggerResponse)
 async def trigger_scrape(
     background_tasks: BackgroundTasks,
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> TriggerResponse:
     msg = "A pipeline is already running. Wait for completion or force-stop first."
@@ -204,7 +206,9 @@ async def trigger_scrape(
 
 
 @router.get("/status", response_model=PipelineRunResponse)
-async def scrape_status() -> PipelineRunResponse:
+async def scrape_status(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> PipelineRunResponse:
     """Get the status of the most recent pipeline run."""
     run = get_latest_run()
     if run is None:
@@ -213,7 +217,10 @@ async def scrape_status() -> PipelineRunResponse:
 
 
 @router.get("/status/{run_id}", response_model=PipelineRunResponse)
-async def scrape_status_by_id(run_id: uuid.UUID) -> PipelineRunResponse:
+async def scrape_status_by_id(
+    run_id: uuid.UUID,
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> PipelineRunResponse:
     """Get the status of a specific pipeline run."""
     run = get_run(run_id)
     if run is None:
@@ -222,7 +229,9 @@ async def scrape_status_by_id(run_id: uuid.UUID) -> PipelineRunResponse:
 
 
 @router.post("/pause", response_model=ControlResponse)
-async def pause_scrape() -> ControlResponse:
+async def pause_scrape(
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     """Pause the running scrape pipeline. Companies mid-scrape will finish their current page."""
     run, orch = _get_active_run_and_orchestrator()
     if run.status != PipelineStatus.RUNNING:
@@ -236,7 +245,9 @@ async def pause_scrape() -> ControlResponse:
 
 
 @router.post("/resume", response_model=ControlResponse)
-async def resume_scrape() -> ControlResponse:
+async def resume_scrape(
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     """Resume a paused scrape pipeline."""
     run, orch = _get_active_run_and_orchestrator()
     if run.status != PipelineStatus.PAUSED:
@@ -250,7 +261,9 @@ async def resume_scrape() -> ControlResponse:
 
 
 @router.post("/stop", response_model=ControlResponse)
-async def stop_scrape() -> ControlResponse:
+async def stop_scrape(
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     """Gracefully stop the scrape pipeline. Running companies finish, pending are skipped."""
     run, orch = _get_active_run_and_orchestrator()
     orch.stop(run)
@@ -262,7 +275,9 @@ async def stop_scrape() -> ControlResponse:
 
 
 @router.post("/force-stop", response_model=ControlResponse)
-async def force_stop_scrape() -> ControlResponse:
+async def force_stop_scrape(
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+) -> ControlResponse:
     """Force stop the scrape pipeline. All tasks are cancelled immediately."""
     run, orch = _get_active_run_and_orchestrator(
         allowed_statuses=(
