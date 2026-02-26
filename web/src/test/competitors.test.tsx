@@ -67,20 +67,11 @@ vi.mock("next/navigation", () => ({
 
 // ── Mock Tremor charts (jsdom has no layout engine) ────────────────────────────
 
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-};
+import "./mocks/resize-observer";
 
-vi.mock("@tremor/react", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@tremor/react")>();
-  return {
-    ...mod,
-    BarChart: () => <div data-testid="bar-chart" />,
-    AreaChart: () => <div data-testid="area-chart" />,
-    DonutChart: () => <div data-testid="donut-chart" />,
-  };
+vi.mock("@tremor/react", async () => {
+  const { tremorMockSimple } = await import("./mocks/tremor");
+  return tremorMockSimple();
 });
 
 // ── Mock api-client (used by CompetitorsPage list) ────────────────────────────

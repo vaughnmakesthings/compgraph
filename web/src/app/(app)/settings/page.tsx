@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { SectionCard } from "@/components/ui/section-card";
 import type {
   ScrapeRunSummary,
   EnrichmentRunSummary,
@@ -21,29 +22,6 @@ const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 type HealthStatus = "idle" | "ok" | "error";
 
 // --- Shared primitives ---
-
-interface SectionCardProps {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-function SectionCard({ title, children, className = "" }: SectionCardProps) {
-  return (
-    <div
-      className={`bg-[#FFFFFF] border border-[#BFC0C0] rounded-lg p-5 ${className}`}
-      style={{ boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))" }}
-    >
-      <h2
-        className="text-base font-semibold mb-4"
-        style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", color: "#2D3142" }}
-      >
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
 interface OutlineButtonProps {
   onClick?: () => void;

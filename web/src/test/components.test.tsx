@@ -6,51 +6,11 @@ import { BarChart } from "@/components/charts/bar-chart";
 import { AreaChart } from "@/components/charts/area-chart";
 import { DonutChart } from "@/components/charts/donut-chart";
 
-// Tremor charts use Recharts internally; jsdom has no layout engine.
-// Mock Tremor chart components to render testable HTML.
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-};
+import "./mocks/resize-observer";
 
-vi.mock("@tremor/react", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@tremor/react")>();
-  return {
-    ...mod,
-    BarChart: ({ data, categories }: { data: Record<string, unknown>[]; categories: string[] }) => (
-      <div data-testid="bar-chart">
-        <div data-testid="chart-data" style={{ display: "none" }}>
-          {JSON.stringify(data)}
-        </div>
-        {categories.map((c) => (
-          <div key={c} data-testid={`bar-${c}`}>
-            {c}
-          </div>
-        ))}
-      </div>
-    ),
-    AreaChart: ({ data, categories }: { data: Record<string, unknown>[]; categories: string[] }) => (
-      <div data-testid="area-chart">
-        <div data-testid="chart-data" style={{ display: "none" }}>
-          {JSON.stringify(data)}
-        </div>
-        {categories.map((c) => (
-          <div key={c} data-testid={`area-${c}`}>
-            {c}
-          </div>
-        ))}
-      </div>
-    ),
-    DonutChart: ({ data }: { data: { name: string; value: number }[] }) => (
-      <div data-testid="pie-chart">
-        <div data-testid="chart-data" style={{ display: "none" }}>
-          {JSON.stringify(data)}
-        </div>
-        <div data-testid="pie" />
-      </div>
-    ),
-  };
+vi.mock("@tremor/react", async () => {
+  const { tremorMockWithCategories } = await import("./mocks/tremor");
+  return tremorMockWithCategories();
 });
 
 // ────────────────────────────────────────────────────────────────────────────

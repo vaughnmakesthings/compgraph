@@ -8,6 +8,7 @@ import { Badge } from "@/components/data/badge";
 import { Callout } from "@/components/content/callout";
 import { BarChart } from "@/components/charts/bar-chart";
 import { COMPANIES } from "@/lib/constants";
+import { SectionCard } from "@/components/ui/section-card";
 import { formatRoleArchetype } from "@/lib/utils";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
 import type { GlassdoorReview } from "@/lib/mock/dossiers";
@@ -377,35 +378,6 @@ function BarList({
   );
 }
 
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="rounded-lg border p-4 mb-6"
-      style={{
-        backgroundColor: "#FFFFFF",
-        borderColor: "#BFC0C0",
-        boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
-      }}
-    >
-      <h2
-        className="text-sm font-medium mb-4"
-        style={{
-          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-          color: "#2D3142",
-        }}
-      >
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
 export default function CompetitorDossierPage() {
   const params = useParams();
