@@ -161,6 +161,7 @@ async def trigger_pass1(
     background_tasks: BackgroundTasks,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> TriggerResponse:
+    """Trigger Pass 1 enrichment (Haiku classification)."""
     return _trigger_enrichment(
         background_tasks,
         "run_pass1",
@@ -173,6 +174,7 @@ async def trigger_pass2(
     background_tasks: BackgroundTasks,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> TriggerResponse:
+    """Trigger Pass 2 enrichment (Sonnet entity extraction)."""
     return _trigger_enrichment(
         background_tasks,
         "run_pass2",
@@ -185,6 +187,7 @@ async def trigger_full(
     background_tasks: BackgroundTasks,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> TriggerResponse:
+    """Trigger full 2-pass enrichment pipeline."""
     return _trigger_enrichment(
         background_tasks,
         "run_full",
@@ -227,6 +230,7 @@ def _db_dict_to_response(d: dict) -> EnrichmentRunResponse:
 async def enrich_status(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
 ) -> EnrichmentRunResponse:
+    """Get the status of the most recent enrichment run."""
     run = get_latest_enrichment_run()
     if run is not None:
         return _run_to_response(run)
@@ -243,6 +247,7 @@ async def enrich_status_by_id(
     run_id: uuid.UUID,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
 ) -> EnrichmentRunResponse:
+    """Get the status of a specific enrichment run."""
     run = get_enrichment_run(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail=f"Enrichment run {run_id} not found")
