@@ -16,11 +16,63 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { BarChart as TremorBarChart } from "@tremor/react";
-import { AreaChart as TremorAreaChart } from "@tremor/react";
-import { DonutChart as TremorDonutChart } from "@tremor/react";
+import { scaleBand, scaleLinear, scaleOrdinal } from "@visx/scale";
+import { Bar as VisxBar, AreaClosed, Pie as VisxPie } from "@visx/shape";
+import { Group } from "@visx/group";
+import { AxisBottom, AxisLeft } from "@visx/axis";
+import { GridRows } from "@visx/grid";
+import { ParentSize } from "@visx/responsive";
+import { LinearGradient } from "@visx/gradient";
+import { curveMonotoneX } from "@visx/curve";
+import { ResponsiveBar } from "@nivo/bar";
+import { ResponsiveLine } from "@nivo/line";
+import { ResponsivePie } from "@nivo/pie";
+import {
+  VictoryBar as VBar,
+  VictoryChart,
+  VictoryAxis,
+  VictoryGroup,
+  VictoryArea,
+  VictoryPie,
+  VictoryTooltip,
+  VictoryLegend,
+  VictoryStack,
+} from "victory";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Filler,
+  Title as ChartTitle,
+  Tooltip as ChartTooltip,
+  Legend as ChartLegend,
+} from "chart.js";
+import { Bar as ChartJSBar } from "react-chartjs-2";
+import { Line as ChartJSLine } from "react-chartjs-2";
+import { Doughnut as ChartJSDoughnut } from "react-chartjs-2";
 import { ComparisonPanel } from "./comparison-panel";
 import type { Variant } from "./comparison-panel";
+
+// ---------------------------------------------------------------------------
+// Chart.js registration (required once)
+// ---------------------------------------------------------------------------
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Filler,
+  ChartTitle,
+  ChartTooltip,
+  ChartLegend,
+);
 
 // ---------------------------------------------------------------------------
 // Canonical chart data — identical for all variants
@@ -68,27 +120,57 @@ const AXIS_TICK = { fontSize: 12, fill: "#4F5D75" };
 // Bar chart variants
 // ---------------------------------------------------------------------------
 
-function TremorBar() {
-  const data = BAR_DATA.map((row) => ({
-    month: row.month,
-    "T-ROC": row["T-ROC"],
-    BDS: row.BDS,
-    MarketSource: row.MarketSource,
-  }));
+const BAR_KEYS = ["T-ROC", "BDS", "MarketSource"] as const;
+
+function VisxBarChart({ width, height }: { width: number; height: number }) {
+  const margin = { top: 8, right: 16, bottom: 40, left: 48 };
+  const xMax = width - margin.left - margin.right;
+  const yMax = height - margin.top - margin.bottom;
+
+  const x0Scale = scaleBand({ domain: BAR_DATA.map((d) => d.month), range: [0, xMax], padding: 0.2 });
+  const x1Scale = scaleBand({ domain: [...BAR_KEYS], range: [0, x0Scale.bandwidth()], padding: 0.05 });
+  const yScale = scaleLinear({ domain: [0, 180], range: [yMax, 0] });
+  const colorScale = scaleOrdinal({ domain: [...BAR_KEYS], range: CHART_COLORS.slice(0, 3) });
 
   return (
+    <svg width={width} height={height} style={{ fontFamily: "var(--font-body)" }}>
+      <Group left={margin.left} top={margin.top}>
+        <GridRows scale={yScale} width={xMax} stroke="#E8E8E4" strokeDasharray="3,3" numTicks={5} />
+        {BAR_DATA.map((d) => (
+          <Group key={d.month} left={x0Scale(d.month) ?? 0}>
+            {BAR_KEYS.map((key) => (
+              <VisxBar
+                key={key}
+                x={x1Scale(key) ?? 0}
+                y={yScale(d[key])}
+                width={x1Scale.bandwidth()}
+                height={yMax - yScale(d[key])}
+                fill={colorScale(key)}
+                rx={3}
+              />
+            ))}
+          </Group>
+        ))}
+        <AxisBottom top={yMax} scale={x0Scale} tickLabelProps={{ fontSize: 12, fill: "#4F5D75", fontFamily: "var(--font-body)", textAnchor: "middle" }} hideTicks hideAxisLine />
+        <AxisLeft scale={yScale} numTicks={5} tickLabelProps={{ fontSize: 12, fill: "#4F5D75", fontFamily: "var(--font-body)", textAnchor: "end", dx: -4 }} hideTicks hideAxisLine />
+      </Group>
+      {/* Legend */}
+      <Group top={height - 8}>
+        {BAR_KEYS.map((key, i) => (
+          <Group key={key} left={margin.left + i * 100}>
+            <rect width={10} height={10} fill={colorScale(key)} rx={2} y={-10} />
+            <text x={14} fontSize={11} fill="#4F5D75" fontFamily="var(--font-body)" dominantBaseline="hanging" y={-10}>{key}</text>
+          </Group>
+        ))}
+      </Group>
+    </svg>
+  );
+}
+
+function VisxBarWrapper() {
+  return (
     <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
-      <TremorBarChart
-        data={data}
-        index="month"
-        categories={["T-ROC", "BDS", "MarketSource"]}
-        colors={CHART_COLORS.slice(0, 3)}
-        showLegend
-        showGridLines
-        showXAxis
-        showYAxis
-        valueFormatter={(v) => String(v)}
-      />
+      <ParentSize>{({ width }) => <VisxBarChart width={width} height={260} />}</ParentSize>
     </div>
   );
 }
@@ -112,19 +194,118 @@ function RechartsBar() {
   );
 }
 
+function NivoBar() {
+  const data = BAR_DATA.map((row) => ({
+    month: row.month,
+    "T-ROC": row["T-ROC"],
+    BDS: row.BDS,
+    MarketSource: row.MarketSource,
+  }));
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ResponsiveBar
+        data={data}
+        keys={["T-ROC", "BDS", "MarketSource"]}
+        indexBy="month"
+        groupMode="grouped"
+        margin={{ top: 8, right: 16, bottom: 40, left: 48 }}
+        padding={0.2}
+        colors={CHART_COLORS.slice(0, 3)}
+        borderRadius={3}
+        axisBottom={{ tickSize: 0, tickPadding: 8 }}
+        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+        gridYValues={5}
+        enableLabel={false}
+        legends={[
+          {
+            dataFrom: "keys",
+            anchor: "bottom",
+            direction: "row",
+            translateY: 36,
+            itemWidth: 100,
+            itemHeight: 16,
+            itemTextColor: "#4F5D75",
+            symbolSize: 10,
+            symbolShape: "square",
+          },
+        ]}
+        theme={{
+          text: { fontFamily: "var(--font-body)", fontSize: 12 },
+          grid: { line: { stroke: "#E8E8E4", strokeDasharray: "3 3" } },
+          tooltip: { container: { fontFamily: "var(--font-body)", fontSize: 13, borderRadius: 6, border: "1px solid #BFC0C0" } },
+        }}
+      />
+    </div>
+  );
+}
+
+function VictoryBar() {
+  const series = ["T-ROC", "BDS", "MarketSource"] as const;
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <VictoryChart domainPadding={{ x: 30 }} height={260} padding={{ top: 8, right: 16, bottom: 50, left: 48 }}>
+        <VictoryAxis tickFormat={(t: string) => t} style={{ tickLabels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" }, grid: { stroke: "none" } }} />
+        <VictoryAxis dependentAxis style={{ tickLabels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" }, grid: { stroke: "#E8E8E4", strokeDasharray: "3,3" } }} />
+        <VictoryGroup offset={16} colorScale={CHART_COLORS.slice(0, 3)}>
+          {series.map((key) => (
+            <VBar key={key} data={BAR_DATA.map((d) => ({ x: d.month, y: d[key] }))} cornerRadius={{ top: 3 }} labelComponent={<VictoryTooltip />} />
+          ))}
+        </VictoryGroup>
+        <VictoryLegend
+          x={60}
+          y={230}
+          orientation="horizontal"
+          gutter={20}
+          data={series.map((s, i) => ({ name: s, symbol: { fill: CHART_COLORS[i] } }))}
+          style={{ labels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" } }}
+        />
+      </VictoryChart>
+    </div>
+  );
+}
+
+function ChartJSBarChart() {
+  const data = {
+    labels: BAR_DATA.map((d) => d.month),
+    datasets: [
+      { label: "T-ROC", data: BAR_DATA.map((d) => d["T-ROC"]), backgroundColor: "#EF8354", borderRadius: 3 },
+      { label: "BDS", data: BAR_DATA.map((d) => d.BDS), backgroundColor: "#1B998B", borderRadius: 3 },
+      { label: "MarketSource", data: BAR_DATA.map((d) => d.MarketSource), backgroundColor: "#4F5D75", borderRadius: 3 },
+    ],
+  };
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ChartJSBar
+        data={data}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom", labels: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75", usePointStyle: true, pointStyle: "rect" } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75" } },
+            y: { grid: { color: "#E8E8E4" }, ticks: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75" }, border: { dash: [3, 3] } },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 const barVariants: Variant[] = [
   {
-    id: "tremor-bar",
-    name: "Tremor Wrapper",
-    library: "@tremor/react BarChart",
-    render: () => <TremorBar />,
+    id: "visx-bar",
+    name: "visx",
+    library: "@visx/shape + @visx/scale",
+    render: () => <VisxBarWrapper />,
     scorecard: {
-      bundleKb: "~180",
-      tokenCompliance: "none",
+      bundleKb: "~45",
+      tokenCompliance: "full",
       a11y: "manual",
-      propsNeeded: 8,
+      propsNeeded: 18,
       notes:
-        "Tremor's colors prop expects named tokens (\"blue\", \"red\"), not hex values. Passing hex strings like \"#EF8354\" silently fails — bars render with no fill. Requires Tremor's own color system or CSS class workarounds to use custom palettes.",
+        "Low-level D3 primitives by Airbnb. Maximum control over every SVG element. Smallest bundle of any SVG library. Requires manual assembly of scales, axes, and layout — no pre-built chart components.",
     },
   },
   {
@@ -141,33 +322,110 @@ const barVariants: Variant[] = [
         "Accepts hex colors directly on each <Bar> element. Full control over grid, axes, tooltips, and border radius. More verbose API but no color abstraction layer to fight.",
     },
   },
+  {
+    id: "nivo-bar",
+    name: "Nivo",
+    library: "@nivo/bar",
+    render: () => <NivoBar />,
+    scorecard: {
+      bundleKb: "~120",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 10,
+      notes:
+        "Declarative API built on D3. Accepts hex color arrays directly. Built-in ARIA attributes and keyboard navigation. Rich theming system with sensible defaults.",
+    },
+  },
+  {
+    id: "victory-bar",
+    name: "Victory",
+    library: "victory",
+    render: () => <VictoryBar />,
+    scorecard: {
+      bundleKb: "~100",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 14,
+      notes:
+        "Composable component model — each axis, series, and legend is a separate component. Hex colors via colorScale prop. Built-in animation support. Verbose but highly customizable.",
+    },
+  },
+  {
+    id: "chartjs-bar",
+    name: "Chart.js",
+    library: "react-chartjs-2",
+    render: () => <ChartJSBarChart />,
+    scorecard: {
+      bundleKb: "~60",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 6,
+      notes:
+        "Canvas-based (not SVG). Smallest bundle. Config-object API instead of JSX components. Hex colors in dataset objects. Built-in accessibility via canvas fallback content.",
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
 // Area chart variants
 // ---------------------------------------------------------------------------
 
-function TremorArea() {
-  const data = AREA_DATA.map((row) => ({
-    week: row.week,
-    "Active Postings": row.active,
-    "New This Week": row.new,
-  }));
+function VisxAreaChart({ width, height }: { width: number; height: number }) {
+  const margin = { top: 8, right: 16, bottom: 40, left: 48 };
+  const xMax = width - margin.left - margin.right;
+  const yMax = height - margin.top - margin.bottom;
+
+  const xScale = scaleBand({ domain: AREA_DATA.map((d) => d.week), range: [0, xMax], padding: 0.1 });
+  const yScale = scaleLinear({ domain: [0, 600], range: [yMax, 0] });
+
+  const getX = (d: (typeof AREA_DATA)[0]) => (xScale(d.week) ?? 0) + xScale.bandwidth() / 2;
 
   return (
+    <svg width={width} height={height} style={{ fontFamily: "var(--font-body)" }}>
+      <LinearGradient id="visx-grad-active" from="#EF8354" fromOpacity={0.3} to="#EF8354" toOpacity={0} />
+      <LinearGradient id="visx-grad-new" from="#1B998B" fromOpacity={0.3} to="#1B998B" toOpacity={0} />
+      <Group left={margin.left} top={margin.top}>
+        <GridRows scale={yScale} width={xMax} stroke="#E8E8E4" strokeDasharray="3,3" numTicks={5} />
+        <AreaClosed
+          data={AREA_DATA}
+          x={getX}
+          y={(d) => yScale(d.active)}
+          yScale={yScale}
+          curve={curveMonotoneX}
+          fill="url(#visx-grad-active)"
+          stroke="#EF8354"
+          strokeWidth={2}
+        />
+        <AreaClosed
+          data={AREA_DATA}
+          x={getX}
+          y={(d) => yScale(d.new)}
+          yScale={yScale}
+          curve={curveMonotoneX}
+          fill="url(#visx-grad-new)"
+          stroke="#1B998B"
+          strokeWidth={2}
+        />
+        <AxisBottom top={yMax} scale={xScale} tickLabelProps={{ fontSize: 12, fill: "#4F5D75", fontFamily: "var(--font-body)", textAnchor: "middle" }} hideTicks hideAxisLine />
+        <AxisLeft scale={yScale} numTicks={5} tickLabelProps={{ fontSize: 12, fill: "#4F5D75", fontFamily: "var(--font-body)", textAnchor: "end", dx: -4 }} hideTicks hideAxisLine />
+      </Group>
+      {/* Legend */}
+      <Group top={height - 8}>
+        {["Active Postings", "New This Week"].map((label, i) => (
+          <Group key={label} left={margin.left + i * 130}>
+            <circle r={5} fill={CHART_COLORS[i]} cy={-5} />
+            <text x={10} fontSize={11} fill="#4F5D75" fontFamily="var(--font-body)" dominantBaseline="hanging" y={-10}>{label}</text>
+          </Group>
+        ))}
+      </Group>
+    </svg>
+  );
+}
+
+function VisxAreaWrapper() {
+  return (
     <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
-      <TremorAreaChart
-        data={data}
-        index="week"
-        categories={["Active Postings", "New This Week"]}
-        colors={CHART_COLORS.slice(0, 2)}
-        showLegend
-        showGridLines
-        showXAxis
-        showYAxis
-        showGradient
-        valueFormatter={(v) => String(v)}
-      />
+      <ParentSize>{({ width }) => <VisxAreaChart width={width} height={260} />}</ParentSize>
     </div>
   );
 }
@@ -200,19 +458,156 @@ function RechartsArea() {
   );
 }
 
+function NivoArea() {
+  const data = [
+    {
+      id: "Active Postings",
+      color: "#EF8354",
+      data: AREA_DATA.map((d) => ({ x: d.week, y: d.active })),
+    },
+    {
+      id: "New This Week",
+      color: "#1B998B",
+      data: AREA_DATA.map((d) => ({ x: d.week, y: d.new })),
+    },
+  ];
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ResponsiveLine
+        data={data}
+        margin={{ top: 8, right: 16, bottom: 40, left: 48 }}
+        xScale={{ type: "point" }}
+        yScale={{ type: "linear", min: 0, max: "auto" }}
+        curve="monotoneX"
+        enableArea
+        areaOpacity={0.15}
+        colors={["#EF8354", "#1B998B"]}
+        lineWidth={2}
+        pointSize={6}
+        pointColor={{ from: "color" }}
+        pointBorderWidth={2}
+        pointBorderColor="#FFFFFF"
+        enableGridX={false}
+        gridYValues={5}
+        axisBottom={{ tickSize: 0, tickPadding: 8 }}
+        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+        legends={[
+          {
+            anchor: "bottom",
+            direction: "row",
+            translateY: 36,
+            itemWidth: 120,
+            itemHeight: 16,
+            itemTextColor: "#4F5D75",
+            symbolSize: 10,
+            symbolShape: "circle",
+          },
+        ]}
+        theme={{
+          text: { fontFamily: "var(--font-body)", fontSize: 12 },
+          grid: { line: { stroke: "#E8E8E4", strokeDasharray: "3 3" } },
+          tooltip: { container: { fontFamily: "var(--font-body)", fontSize: 13, borderRadius: 6, border: "1px solid #BFC0C0" } },
+        }}
+      />
+    </div>
+  );
+}
+
+function VictoryAreaChart() {
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <VictoryChart height={260} padding={{ top: 8, right: 16, bottom: 50, left: 48 }}>
+        <VictoryAxis tickFormat={(t: string) => t} style={{ tickLabels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" }, grid: { stroke: "none" } }} />
+        <VictoryAxis dependentAxis style={{ tickLabels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" }, grid: { stroke: "#E8E8E4", strokeDasharray: "3,3" } }} />
+        <VictoryStack>
+          <VictoryArea
+            data={AREA_DATA.map((d) => ({ x: d.week, y: d.active }))}
+            style={{ data: { fill: "#EF8354", fillOpacity: 0.2, stroke: "#EF8354", strokeWidth: 2 } }}
+            interpolation="monotoneX"
+          />
+          <VictoryArea
+            data={AREA_DATA.map((d) => ({ x: d.week, y: d.new }))}
+            style={{ data: { fill: "#1B998B", fillOpacity: 0.2, stroke: "#1B998B", strokeWidth: 2 } }}
+            interpolation="monotoneX"
+          />
+        </VictoryStack>
+        <VictoryLegend
+          x={60}
+          y={230}
+          orientation="horizontal"
+          gutter={20}
+          data={[
+            { name: "Active Postings", symbol: { fill: "#EF8354" } },
+            { name: "New This Week", symbol: { fill: "#1B998B" } },
+          ]}
+          style={{ labels: { fontSize: 11, fill: "#4F5D75", fontFamily: "var(--font-body)" } }}
+        />
+      </VictoryChart>
+    </div>
+  );
+}
+
+function ChartJSAreaChart() {
+  const data = {
+    labels: AREA_DATA.map((d) => d.week),
+    datasets: [
+      {
+        label: "Active Postings",
+        data: AREA_DATA.map((d) => d.active),
+        borderColor: "#EF8354",
+        backgroundColor: "rgba(239, 131, 84, 0.15)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#EF8354",
+        borderWidth: 2,
+      },
+      {
+        label: "New This Week",
+        data: AREA_DATA.map((d) => d.new),
+        borderColor: "#1B998B",
+        backgroundColor: "rgba(27, 153, 139, 0.15)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#1B998B",
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ChartJSLine
+        data={data}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom", labels: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75", usePointStyle: true } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75" } },
+            y: { grid: { color: "#E8E8E4" }, ticks: { font: { family: "var(--font-body)", size: 12 }, color: "#4F5D75" }, border: { dash: [3, 3] } },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 const areaVariants: Variant[] = [
   {
-    id: "tremor-area",
-    name: "Tremor Wrapper",
-    library: "@tremor/react AreaChart",
-    render: () => <TremorArea />,
+    id: "visx-area",
+    name: "visx",
+    library: "@visx/shape + @visx/gradient",
+    render: () => <VisxAreaWrapper />,
     scorecard: {
-      bundleKb: "~180",
-      tokenCompliance: "none",
+      bundleKb: "~45",
+      tokenCompliance: "full",
       a11y: "manual",
-      propsNeeded: 9,
+      propsNeeded: 16,
       notes:
-        "Same hex color issue as BarChart. Gradient fills fail silently when colors don't resolve to Tremor tokens.",
+        "AreaClosed with LinearGradient and curveMonotoneX. Direct SVG gradient control. Each area is an independent shape — no stacking abstraction, full layout freedom.",
     },
   },
   {
@@ -229,25 +624,108 @@ const areaVariants: Variant[] = [
         "Gradient fills defined via SVG <defs> with direct hex references. Full control over gradient opacity and direction.",
     },
   },
+  {
+    id: "nivo-area",
+    name: "Nivo",
+    library: "@nivo/line",
+    render: () => <NivoArea />,
+    scorecard: {
+      bundleKb: "~130",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 12,
+      notes:
+        "Uses ResponsiveLine with enableArea. Built-in gradient support and smooth curve interpolation. Color array maps directly to series. Rich tooltip theming.",
+    },
+  },
+  {
+    id: "victory-area",
+    name: "Victory",
+    library: "victory",
+    render: () => <VictoryAreaChart />,
+    scorecard: {
+      bundleKb: "~100",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 16,
+      notes:
+        "VictoryStack + VictoryArea composition. Hex colors in style objects. Monotone interpolation available. Most verbose API of the group but maximum layout control.",
+    },
+  },
+  {
+    id: "chartjs-area",
+    name: "Chart.js",
+    library: "react-chartjs-2",
+    render: () => <ChartJSAreaChart />,
+    scorecard: {
+      bundleKb: "~60",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 6,
+      notes:
+        "Canvas-based Line chart with fill:true. RGBA colors for gradient-like transparency. Tension property for curve smoothing. Compact config object.",
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
 // Donut chart variants
 // ---------------------------------------------------------------------------
 
-function TremorDonut() {
+function VisxDonutChart({ width, height }: { width: number; height: number }) {
+  const radius = Math.min(width, height) / 2 - 30;
+  const innerRadius = radius * 0.55;
+  const colorScale = scaleOrdinal({ domain: DONUT_DATA.map((d) => d.name), range: CHART_COLORS });
+  const total = DONUT_DATA.reduce((sum, d) => sum + d.value, 0);
+
+  return (
+    <svg width={width} height={height} style={{ fontFamily: "var(--font-body)" }}>
+      <Group top={height / 2} left={width / 2}>
+        <VisxPie
+          data={DONUT_DATA}
+          pieValue={(d) => d.value}
+          outerRadius={radius}
+          innerRadius={innerRadius}
+          padAngle={0.02}
+          cornerRadius={2}
+        >
+          {(pie) =>
+            pie.arcs.map((arc) => {
+              const [cx, cy] = pie.path.centroid(arc);
+              const pct = Math.round((arc.data.value / total) * 100);
+              return (
+                <g key={arc.data.name}>
+                  <path d={pie.path(arc) || ""} fill={colorScale(arc.data.name)} />
+                  {pct >= 10 && (
+                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={10} fill="#FFFFFF" fontWeight={600}>
+                      {pct}%
+                    </text>
+                  )}
+                </g>
+              );
+            })
+          }
+        </VisxPie>
+      </Group>
+      {/* Legend */}
+      <Group top={height - 16} left={width / 2 - (DONUT_DATA.length * 80) / 2}>
+        {DONUT_DATA.map((d, i) => (
+          <Group key={d.name} left={i * 80}>
+            <circle r={4} fill={colorScale(d.name)} cy={-4} />
+            <text x={8} fontSize={10} fill="#4F5D75" fontFamily="var(--font-body)" dominantBaseline="hanging" y={-8}>
+              {d.name.length > 8 ? d.name.slice(0, 8) + "…" : d.name}
+            </text>
+          </Group>
+        ))}
+      </Group>
+    </svg>
+  );
+}
+
+function VisxDonutWrapper() {
   return (
     <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
-      <TremorDonutChart
-        data={DONUT_DATA}
-        category="value"
-        index="name"
-        colors={CHART_COLORS}
-        variant="donut"
-        showLabel
-        label="893"
-        valueFormatter={(v) => v.toLocaleString()}
-      />
+      <ParentSize>{({ width }) => <VisxDonutChart width={width} height={260} />}</ParentSize>
     </div>
   );
 }
@@ -281,19 +759,105 @@ function RechartsDonut() {
   );
 }
 
+function NivoDonut() {
+  const data = DONUT_DATA.map((d, i) => ({
+    id: d.name,
+    label: d.name,
+    value: d.value,
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  }));
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ResponsivePie
+        data={data}
+        margin={{ top: 20, right: 80, bottom: 20, left: 80 }}
+        innerRadius={0.55}
+        padAngle={1.5}
+        cornerRadius={2}
+        colors={CHART_COLORS}
+        borderWidth={0}
+        arcLinkLabelsSkipAngle={10}
+        arcLinkLabelsTextColor="#4F5D75"
+        arcLinkLabelsThickness={1}
+        arcLinkLabelsColor={{ from: "color" }}
+        arcLabelsSkipAngle={10}
+        arcLabelsTextColor="#FFFFFF"
+        enableArcLabels={false}
+        theme={{
+          text: { fontFamily: "var(--font-body)", fontSize: 11 },
+          tooltip: { container: { fontFamily: "var(--font-body)", fontSize: 13, borderRadius: 6, border: "1px solid #BFC0C0" } },
+        }}
+      />
+    </div>
+  );
+}
+
+function VictoryDonut() {
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)", display: "flex", justifyContent: "center" }}>
+      <VictoryPie
+        data={DONUT_DATA.map((d) => ({ x: d.name, y: d.value }))}
+        colorScale={CHART_COLORS}
+        innerRadius={55}
+        padAngle={2}
+        height={260}
+        width={400}
+        labels={({ datum }) => `${datum.x} ${Math.round((datum.y / 893) * 100)}%`}
+        labelRadius={110}
+        style={{ labels: { fontSize: 10, fill: "#4F5D75", fontFamily: "var(--font-body)" } }}
+      />
+    </div>
+  );
+}
+
+function ChartJSDonut() {
+  const data = {
+    labels: DONUT_DATA.map((d) => d.name),
+    datasets: [
+      {
+        data: DONUT_DATA.map((d) => d.value),
+        backgroundColor: CHART_COLORS,
+        borderWidth: 0,
+        spacing: 2,
+        borderRadius: 2,
+      },
+    ],
+  };
+
+  return (
+    <div style={{ height: 260, fontFamily: "var(--font-body)" }}>
+      <ChartJSDoughnut
+        data={data}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "55%",
+          plugins: {
+            legend: {
+              position: "right",
+              labels: { font: { family: "var(--font-body)", size: 11 }, color: "#4F5D75", usePointStyle: true, pointStyle: "circle", padding: 12 },
+            },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 const donutVariants: Variant[] = [
   {
-    id: "tremor-donut",
-    name: "Tremor Wrapper",
-    library: "@tremor/react DonutChart",
-    render: () => <TremorDonut />,
+    id: "visx-donut",
+    name: "visx",
+    library: "@visx/shape Pie",
+    render: () => <VisxDonutWrapper />,
     scorecard: {
-      bundleKb: "~180",
-      tokenCompliance: "none",
+      bundleKb: "~45",
+      tokenCompliance: "full",
       a11y: "manual",
-      propsNeeded: 8,
+      propsNeeded: 12,
       notes:
-        "Tremor DonutChart has a simpler API with built-in center label support. Same color token limitation applies.",
+        "Pie component with innerRadius for donut. Render-prop pattern exposes arc paths for full SVG control. Percentage labels positioned via centroid math. Smallest donut implementation by bundle.",
     },
   },
   {
@@ -308,6 +872,48 @@ const donutVariants: Variant[] = [
       propsNeeded: 11,
       notes:
         "Uses PieChart with innerRadius for donut variant. Each Cell receives a direct hex fill. Label positioning requires manual configuration.",
+    },
+  },
+  {
+    id: "nivo-donut",
+    name: "Nivo",
+    library: "@nivo/pie",
+    render: () => <NivoDonut />,
+    scorecard: {
+      bundleKb: "~110",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 10,
+      notes:
+        "ResponsivePie with innerRadius for donut. Built-in arc link labels, pad angle, corner radius. Hex colors via array. ARIA roles included by default.",
+    },
+  },
+  {
+    id: "victory-donut",
+    name: "Victory",
+    library: "victory",
+    render: () => <VictoryDonut />,
+    scorecard: {
+      bundleKb: "~100",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 9,
+      notes:
+        "VictoryPie with innerRadius. Hex colors via colorScale array. Label positioning via labelRadius. Simplest pie/donut API of the composable libraries.",
+    },
+  },
+  {
+    id: "chartjs-donut",
+    name: "Chart.js",
+    library: "react-chartjs-2",
+    render: () => <ChartJSDonut />,
+    scorecard: {
+      bundleKb: "~60",
+      tokenCompliance: "full",
+      a11y: "built-in",
+      propsNeeded: 5,
+      notes:
+        "Canvas Doughnut with cutout percentage. Hex colors in backgroundColor array. Built-in legend positioning. Fewest props needed across all libraries.",
     },
   },
 ];
