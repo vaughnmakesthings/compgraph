@@ -1,0 +1,25 @@
+web/src/app/styleguide/lab/page.tsx
+  004094860ad353ac 73-80,1042,1049,1056,1063,1070,1077
+web/src/app/styleguide/lab/tailwindplus-variants.tsx
+  004094860ad353ac 1-772
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "83cc9643ac4b8be7a9071dd3ac36e3e5b0c2e7fe",
+  "prompts": {
+    "004094860ad353ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0b99641-81f1-48cc-93cc-038d88d19f1c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 787,
+      "total_deletions": 7,
+      "accepted_lines": 786,
+      "overriden_lines": 0
+    }
+  }
+}
