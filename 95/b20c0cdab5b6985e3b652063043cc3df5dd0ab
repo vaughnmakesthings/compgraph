@@ -1,0 +1,27 @@
+web/src/app/styleguide/lab/page.tsx
+  004094860ad353ac 65-72,1041,1048,1055,1062,1069
+web/src/app/styleguide/lab/table-variants.tsx
+  004094860ad353ac 25,36,49
+web/src/app/styleguide/lab/catalyst-variants.tsx
+  004094860ad353ac 1-682
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "95b20c0cdab5b6985e3b652063043cc3df5dd0ab",
+  "prompts": {
+    "004094860ad353ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0b99641-81f1-48cc-93cc-038d88d19f1c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 698,
+      "overriden_lines": 0
+    }
+  }
+}
