@@ -47,80 +47,87 @@ jobs:
   lint:
     name: Lint & Format
     needs: changes
-    if: ${{ always() && needs.changes.result == 'success' }}
+    if: ${{ always() && needs.changes.result != 'cancelled' }}
     runs-on: ubuntu-latest
+    # When changes job fails (runner allocation), fall back to running all checks
+    env:
+      RUN_BACKEND: ${{ needs.changes.outputs.backend == 'true' || needs.changes.result == 'failure' }}
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - uses: astral-sh/setup-uv@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - run: uv run ruff check src/ tests/
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - run: uv run ruff format --check src/ tests/
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - name: Skip (no backend changes)
-        if: needs.changes.outputs.backend != 'true'
+        if: env.RUN_BACKEND != 'true'
         run: echo "No backend changes detected — skipping lint"
 
   typecheck:
     name: Type Check
     needs: changes
-    if: ${{ always() && needs.changes.result == 'success' }}
+    if: ${{ always() && needs.changes.result != 'cancelled' }}
     runs-on: ubuntu-latest
+    env:
+      RUN_BACKEND: ${{ needs.changes.outputs.backend == 'true' || needs.changes.result == 'failure' }}
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - uses: astral-sh/setup-uv@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - run: uv run mypy src/compgraph/
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - name: Skip (no backend changes)
-        if: needs.changes.outputs.backend != 'true'
+        if: env.RUN_BACKEND != 'true'
         run: echo "No backend changes detected — skipping typecheck"
 
   test:
     name: Test
     needs: changes
-    if: ${{ always() && needs.changes.result == 'success' }}
+    if: ${{ always() && needs.changes.result != 'cancelled' }}
     runs-on: ubuntu-latest
+    env:
+      RUN_BACKEND: ${{ needs.changes.outputs.backend == 'true' || needs.changes.result == 'failure' }}
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - uses: astral-sh/setup-uv@v4
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           version: "latest"
       - uses: actions/setup-python@v5
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
       - name: Run tests with coverage
-        if: needs.changes.outputs.backend == 'true'
+        if: env.RUN_BACKEND == 'true'
         run: |
           uv run pytest -x -q -m "not integration" \
             --cov=compgraph --cov-report=xml --cov-report=term-missing
         env:
           DATABASE_PASSWORD: "ci-placeholder"
       - name: Upload coverage to Codecov
-        if: ${{ always() && needs.changes.outputs.backend == 'true' }}
+        if: ${{ always() && env.RUN_BACKEND == 'true' }}
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -128,7 +135,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Skip (no backend changes)
-        if: needs.changes.outputs.backend != 'true'
+        if: env.RUN_BACKEND != 'true'
         run: echo "No backend changes detected — skipping tests"
 
   security:
