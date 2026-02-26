@@ -1,0 +1,29 @@
+web/src/test/layout.test.tsx
+  6ea86088aa3eb532 8,30-37,66,170-187
+web/src/app/(app)/settings/page.tsx
+  6ea86088aa3eb532 4,570-574
+web/src/components/layout/sidebar.tsx
+  6ea86088aa3eb532 3,16,448,453-459,532
+web/src/test/settings-admin-guard.test.tsx
+  6ea86088aa3eb532 1-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "896e1ee8d27ea70a6d4040e8127416dc27192ba5",
+  "prompts": {
+    "6ea86088aa3eb532": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9e6349d5-a344-4e44-a45e-820583e70da1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 243,
+      "total_deletions": 74,
+      "accepted_lines": 172,
+      "overriden_lines": 0
+    }
+  }
+}
