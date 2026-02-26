@@ -12,6 +12,12 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
+const mockRouter = { replace: vi.fn(), push: vi.fn() };
+vi.mock("next/navigation", () => ({
+  useRouter: () => mockRouter,
+  usePathname: () => "/",
+}));
+
 function AuthDisplay() {
   const { session, user, role, loading, signOut } = useAuth();
   if (loading) return <div>Loading...</div>;

@@ -4,6 +4,34 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-02-25 (late night) — M7 Sprint 1 Wave 1 Complete
+
+**Goal:** Implement, review, and merge 3 parallel issues: #210 (Auth Tests), #209 (RLS Policies), #156 (DB Concurrency Guard).
+
+**What happened:**
+- Dispatched 3 parallel agents in isolated worktrees for all 3 issues
+- **PR #225 (#210 Auth Tests)**: 25 role-based access control tests, refactored to fix mock-on-mock antipattern, merged as `5d53847`
+- **PR #227 (#156 DB Concurrency)**: Dual DB+in-memory guard on `/api/v1/scrape/trigger`, unified 409 response format, derived DB statuses from single source, merged as `ea1f24e`
+- **PR #226 (#209 RLS Policies)**: RLS on all 23 public tables, SECURITY DEFINER `is_admin()` function to prevent recursion, initPlan caching for `auth.uid()`, 3-tier access (anon/viewer/admin), merged as `caea8db`
+- All PRs feedback-cycled through 5 review bots (CodeRabbit, Gemini, Cursor, Cubic, Copilot/Vercel)
+- Auth chain now complete: #206 → #207 → #199 → #208 → #209 → #210 all merged
+- Enhanced Sentry observability: session replay, browser profiling, user feedback widget, HTTP error tracking, release tracking
+- Fixed Sentry deprecation in scheduler (description → name parameter)
+
+**Key files changed:**
+- `tests/test_auth.py` — 25 new auth tests with production dependency override chain
+- `src/compgraph/api/routes/scrape.py` — DB-backed concurrency guard + unified 409 responses
+- `tests/test_scrape_routes.py` — 31 tests including structured response validation
+- `alembic/versions/7d1276046127_enable_rls_policies.py` — RLS migration with SECURITY DEFINER
+- `web/src/instrumentation-client.ts` — comprehensive Sentry client monitoring
+- `src/compgraph/scheduler/jobs.py` — Sentry span name fix
+
+**DB at head:** `7d1276046127` (RLS policies), 837 tests passing, 83% coverage.
+
+**Next:** Wave 2 — #59 (pipeline auth), #221 (settings admin-only), #27 (production dashboard).
+
+---
+
 ## 2026-02-25 (late night) — Postmark SMTP + Vercel DNS Migration
 
 **Goal:** Configure production email delivery for Supabase Auth, migrate compgraph.app DNS to Vercel.

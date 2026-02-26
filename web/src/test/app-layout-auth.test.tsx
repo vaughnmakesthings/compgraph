@@ -12,10 +12,12 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 const mockRedirect = vi.fn();
+const mockRouter = { replace: vi.fn(), push: vi.fn() };
 vi.mock("next/navigation", () => ({
   redirect: (...args: unknown[]) => {
     mockRedirect(...args);
   },
+  useRouter: () => mockRouter,
   usePathname: () => "/",
 }));
 
