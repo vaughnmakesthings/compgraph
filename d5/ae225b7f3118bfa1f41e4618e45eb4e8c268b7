@@ -1,0 +1,41 @@
+tests/test_auth.py
+  6ea86088aa3eb532 38-49,57-59,61-63,172-183,211,245-272,274-276,282-299
+src/compgraph/api/routes/enrich.py
+  6ea86088aa3eb532 9,12,161-163,173-175,185-187,228-229,243-245
+src/compgraph/api/routes/pipeline.py
+  6ea86088aa3eb532 7,10,230,286-287
+tests/test_postings_api.py
+  6ea86088aa3eb532 123,140,172,191,207,220,237,252,270,281,296,346,359,383,425,451
+src/compgraph/api/routes/scheduler.py
+  6ea86088aa3eb532 6,9,20,72-73,128-129,152-153,174-175
+src/compgraph/api/routes/aggregation.py
+  6ea86088aa3eb532 9,31-33,61-63,93-95,103-105,113-115,127-129,137-139,156-157
+tests/test_api_aggregation.py
+  6ea86088aa3eb532 20
+tests/test_eval_router.py
+  6ea86088aa3eb532 48,82,143
+tests/test_health.py
+  6ea86088aa3eb532 27
+src/compgraph/api/routes/scrape.py
+  6ea86088aa3eb532 15,156,210-211,220-222,231-232,246-247,261-262,274-275
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "d5ae225b7f3118bfa1f41e4618e45eb4e8c268b7",
+  "prompts": {
+    "6ea86088aa3eb532": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9e6349d5-a344-4e44-a45e-820583e70da1",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 209,
+      "total_deletions": 73,
+      "accepted_lines": 174,
+      "overriden_lines": 0
+    }
+  }
+}
