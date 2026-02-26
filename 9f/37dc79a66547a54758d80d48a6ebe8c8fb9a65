@@ -1,0 +1,25 @@
+web/src/app/styleguide/lab/comparison-panel.tsx
+  004094860ad353ac 1-303
+web/src/app/styleguide/lab/page.tsx
+  004094860ad353ac 1-447
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "9f37dc79a66547a54758d80d48a6ebe8c8fb9a65",
+  "prompts": {
+    "004094860ad353ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0b99641-81f1-48cc-93cc-038d88d19f1c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 750,
+      "total_deletions": 0,
+      "accepted_lines": 750,
+      "overriden_lines": 0
+    }
+  }
+}
