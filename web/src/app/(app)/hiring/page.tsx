@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Select, SelectItem } from "@tremor/react";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
 import { api } from "@/lib/api-client";
@@ -31,6 +30,35 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "pay_asc", label: "Pay Low–High" },
   { value: "title_asc", label: "Title A–Z" },
 ];
+
+const CHEVRON_SVG =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
+
+const controlStyle: React.CSSProperties = {
+  border: "1px solid var(--color-border, #BFC0C0)",
+  borderRadius: "var(--radius-sm, 4px)",
+  padding: "6px 12px",
+  fontSize: "13px",
+  backgroundColor: "var(--color-surface, #FFFFFF)",
+  color: "var(--color-foreground, #2D3142)",
+  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+};
+
+const selectStyle: React.CSSProperties = {
+  ...controlStyle,
+  minWidth: "10rem",
+  appearance: "none",
+  backgroundImage: CHEVRON_SVG,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  paddingRight: "32px",
+};
+
+const chipStyle: React.CSSProperties = {
+  backgroundColor: "var(--color-muted, #E8E8E4)",
+  color: "var(--color-foreground, #2D3142)",
+  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -73,9 +101,6 @@ function SkeletonRow() {
     </tr>
   );
 }
-
-const filterSelectClass =
-  "min-w-[10rem] [&_[data-headlessui-state]]:border-[#BFC0C0] [&_[data-headlessui-state]]:bg-white [&_[data-headlessui-state]]:text-[#2D3142] [&_[data-headlessui-state]]:focus:ring-[#EF8354] [&_[data-headlessui-state]]:focus:border-[#EF8354]";
 
 export default function HiringPage() {
   const [items, setItems] = useState<PostingListItem[]>([]);
@@ -178,29 +203,18 @@ export default function HiringPage() {
   const start = total === 0 ? 0 : offset + 1;
   const end = Math.min(offset + PAGE_SIZE, total);
 
-  const inputStyle: React.CSSProperties = {
-    border: "1px solid #BFC0C0",
-    borderRadius: "var(--radius-md, 6px)",
-    padding: "6px 12px",
-    fontSize: "13px",
-    backgroundColor: "#FFFFFF",
-    color: "#2D3142",
-    fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-    outline: "none",
-  };
-
   return (
     <div>
       <div className="mb-6">
         <h1
           className="text-2xl font-semibold tracking-tight"
-          style={{ fontFamily: "var(--font-display, 'Sora Variable', sans-serif)", color: "#2D3142" }}
+          style={{ fontFamily: "var(--font-display, 'Sora Variable', sans-serif)", color: "var(--color-foreground, #2D3142)" }}
         >
           Job Feed
         </h1>
         <p
           className="mt-1 text-sm"
-          style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", color: "#4F5D75" }}
+          style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", color: "var(--color-muted-foreground, #4F5D75)" }}
         >
           All tracked postings across competitors
         </p>
@@ -208,11 +222,12 @@ export default function HiringPage() {
 
       {error && (
         <div
-          className="mb-4 rounded-lg border px-4 py-3 text-sm"
+          className="mb-4 border px-4 py-3 text-sm"
           style={{
-            backgroundColor: "#8C2C231A",
+            backgroundColor: "var(--color-error-muted, #8C2C231A)",
             borderColor: "#8C2C2333",
-            color: "#8C2C23",
+            borderRadius: "var(--radius-lg, 8px)",
+            color: "var(--color-error, #8C2C23)",
             fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
           }}
           role="alert"
@@ -221,39 +236,34 @@ export default function HiringPage() {
         </div>
       )}
 
-      <div className="flex flex-row gap-3 mb-2 flex-wrap">
+      <div className="flex flex-row gap-2 mb-2 flex-wrap items-center">
         <input
           type="search"
           placeholder="Search postings..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={inputStyle}
+          style={controlStyle}
           aria-label="Search postings"
         />
 
-        <label htmlFor="filter-company" className="sr-only">
-          Filter by company
-        </label>
-        <Select
-          id="filter-company"
-          value={companyFilter || " "}
-          onValueChange={(v) => setCompanyFilter(v === " " ? "" : v)}
-          placeholder="All Companies"
-          enableClear={false}
-          className={filterSelectClass}
+        <select
+          value={companyFilter}
+          onChange={(e) => setCompanyFilter(e.target.value)}
+          style={selectStyle}
+          aria-label="Filter by company"
         >
-          <SelectItem value=" ">All Companies</SelectItem>
+          <option value="">All Companies</option>
           {allCompanies.map(({ id, name }) => (
-            <SelectItem key={id} value={id}>
+            <option key={id} value={id}>
               {name}
-            </SelectItem>
+            </option>
           ))}
-        </Select>
+        </select>
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-          style={inputStyle}
+          style={selectStyle}
           aria-label="Filter by status"
         >
           <option value="all">All Statuses</option>
@@ -261,49 +271,40 @@ export default function HiringPage() {
           <option value="inactive">Closed</option>
         </select>
 
-        <label htmlFor="filter-role" className="sr-only">
-          Filter by role
-        </label>
-        <Select
-          id="filter-role"
-          value={roleFilter || " "}
-          onValueChange={(v) => setRoleFilter(v === " " ? "" : v)}
-          placeholder="All Roles"
-          enableClear={false}
-          className={filterSelectClass}
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          style={selectStyle}
+          aria-label="Filter by role"
         >
-          <SelectItem value=" ">All Roles</SelectItem>
+          <option value="">All Roles</option>
           {ROLE_ARCHETYPES.map((role) => (
-            <SelectItem key={role} value={role}>
+            <option key={role} value={role}>
               {formatRoleArchetype(role)}
-            </SelectItem>
+            </option>
           ))}
-        </Select>
+        </select>
 
-        <Select
+        <select
           value={sortBy}
-          onValueChange={(v) => setSortBy(v || "first_seen_desc")}
-          placeholder="Sort By"
-          className={filterSelectClass}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={selectStyle}
+          aria-label="Sort by"
         >
           {SORT_OPTIONS.map(({ value, label }) => (
-            <SelectItem key={value} value={value}>
+            <option key={value} value={value}>
               {label}
-            </SelectItem>
+            </option>
           ))}
-        </Select>
+        </select>
       </div>
 
-      {(companyFilter || statusFilter !== "all" || roleFilter || sortBy !== "first_seen_desc" || searchDebounced) && (
+      {hasActiveFilters && (
         <div className="flex flex-row gap-2 mb-4 flex-wrap items-center">
           {companyFilter && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "#E8E8E4",
-                color: "#2D3142",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Company: {allCompanies.find((c) => c.id === companyFilter)?.name ?? companyFilter}
               <button
@@ -319,11 +320,7 @@ export default function HiringPage() {
           {statusFilter !== "all" && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "#E8E8E4",
-                color: "#2D3142",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Status: {statusFilter === "active" ? "Active" : "Closed"}
               <button
@@ -339,11 +336,7 @@ export default function HiringPage() {
           {roleFilter && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "#E8E8E4",
-                color: "#2D3142",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Role: {formatRoleArchetype(roleFilter)}
               <button
@@ -359,11 +352,7 @@ export default function HiringPage() {
           {searchDebounced && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "#E8E8E4",
-                color: "#2D3142",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Search: &quot;{searchDebounced}&quot;
               <button
@@ -379,11 +368,7 @@ export default function HiringPage() {
           {sortBy !== "first_seen_desc" && (
             <span
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
-              style={{
-                backgroundColor: "#E8E8E4",
-                color: "#2D3142",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              }}
+              style={chipStyle}
             >
               Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? sortBy}
               <button

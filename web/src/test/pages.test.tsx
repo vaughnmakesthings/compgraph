@@ -267,6 +267,13 @@ describe("Job Feed page", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the sort select", () => {
+    render(<HiringPage />);
+    expect(
+      screen.getByRole("combobox", { name: /sort by/i })
+    ).toBeInTheDocument();
+  });
+
   it("renders table column headers", () => {
     render(<HiringPage />);
     expect(screen.getByText("Title")).toBeInTheDocument();
