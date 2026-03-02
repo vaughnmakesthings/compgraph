@@ -5,6 +5,7 @@ interface SectionCardProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  headingClassName?: string;
   action?: React.ReactNode;
 }
 
@@ -12,6 +13,7 @@ export function SectionCard({
   title,
   children,
   className = "",
+  headingClassName = "text-sm",
   action,
 }: SectionCardProps) {
   return (
@@ -21,7 +23,7 @@ export function SectionCard({
     >
       <div className="flex items-center justify-between mb-4">
         <h2
-          className="text-sm font-semibold"
+          className={`${headingClassName} font-semibold`}
           style={{ ...fontBody, color: "#2D3142" }}
         >
           {title}
