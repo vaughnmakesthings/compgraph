@@ -1,0 +1,25 @@
+web/src/test/mocks/tremor.tsx
+  1edda5be579ad2ee 110
+web/src/test/components.test.tsx
+  1edda5be579ad2ee 258,268,273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "5cfe82b499b74597fe15ba2daf883ed654b75132",
+  "prompts": {
+    "1edda5be579ad2ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0cfbb58e-55a7-4031-a6c8-6338d19e543c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
