@@ -4,47 +4,18 @@ import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "rea
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api-client";
 import type { EvalRun, EvalResult } from "@/lib/types";
-
-const REVIEWABLE_FIELDS = [
-  "role_archetype",
-  "role_level",
-  "employment_type",
-  "pay_type",
-  "pay_frequency",
-  "pay_min",
-  "pay_max",
-  "has_commission",
-  "has_benefits",
-  "travel_required",
-  "store_count",
-  "tools_mentioned",
-  "kpis_mentioned",
-] as const;
+import {
+  EVAL_FIELDS as REVIEWABLE_FIELDS,
+  formatFieldValue,
+  formatRunLabel,
+  getParsedResult,
+} from "@/lib/eval-utils";
 
 type ReviewOutcome = "correct" | "incorrect" | "cant_assess" | "pending";
 
 interface FieldReviewState {
   outcome: ReviewOutcome;
   note?: string;
-}
-
-function formatFieldValue(value: unknown): string {
-  if (value === null || value === undefined) return "\u2014";
-  if (Array.isArray(value))
-    return value.length === 0 ? "\u2014" : value.join(", ");
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-
-function getParsedResult(result: EvalResult): Record<string, unknown> {
-  if (!result.parsed_result) return {};
-  if (typeof result.parsed_result === "object")
-    return result.parsed_result as Record<string, unknown>;
-  try {
-    return JSON.parse(String(result.parsed_result)) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
 }
 
 function accuracyColor(pct: number): string {
@@ -65,10 +36,6 @@ function outcomeLabel(outcome: ReviewOutcome): string {
   if (outcome === "incorrect") return "Incorrect";
   if (outcome === "cant_assess") return "Can't Assess";
   return "Pending";
-}
-
-function formatRunLabel(run: EvalRun): string {
-  return `${run.model} / ${run.prompt_version} \u00B7 Pass ${run.pass_number}`;
 }
 
 interface FieldAccuracyRow {

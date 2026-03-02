@@ -5,22 +5,12 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import type { EvalRun, EvalResult } from "@/lib/types";
-
-const PASS1_FIELDS = [
-  "role_archetype",
-  "role_level",
-  "employment_type",
-  "pay_type",
-  "pay_frequency",
-  "pay_min",
-  "pay_max",
-  "has_commission",
-  "has_benefits",
-  "travel_required",
-  "store_count",
-  "tools_mentioned",
-  "kpis_mentioned",
-] as const;
+import {
+  EVAL_FIELDS as PASS1_FIELDS,
+  formatFieldValue,
+  formatRunLabel,
+  getParsedResult,
+} from "@/lib/eval-utils";
 
 type VoteWinner = "a" | "b" | "tie" | "both_bad";
 
@@ -37,32 +27,6 @@ const VOTE_KEY_MAP: Record<string, VoteWinner> = {
   t: "tie",
   x: "both_bad",
 };
-
-function formatFieldValue(value: unknown): string {
-  if (value === null || value === undefined) return "\u2014";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (Array.isArray(value)) {
-    if (value.length === 0) return "\u2014";
-    return value.join(", ");
-  }
-  return String(value);
-}
-
-function parsedFields(result: EvalResult): Record<string, unknown> {
-  if (!result.parsed_result) return {};
-  if (typeof result.parsed_result === "object") {
-    return result.parsed_result as Record<string, unknown>;
-  }
-  try {
-    return JSON.parse(String(result.parsed_result)) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-function formatRunLabel(run: EvalRun): string {
-  return `${run.model} / ${run.prompt_version} \u00B7 Pass ${run.pass_number}`;
-}
 
 function FieldComparisonPanel({
   label,
@@ -337,11 +301,11 @@ function ReviewPageContent() {
   const displayBLabel = displayedPair?.actualAIsRunA ? runBLabel : runALabel;
 
   const fieldsA = useMemo(
-    () => (displayedPair ? parsedFields(displayedPair.displayA) : {}),
+    () => (displayedPair ? getParsedResult(displayedPair.displayA) : {}),
     [displayedPair],
   );
   const fieldsB = useMemo(
-    () => (displayedPair ? parsedFields(displayedPair.displayB) : {}),
+    () => (displayedPair ? getParsedResult(displayedPair.displayB) : {}),
     [displayedPair],
   );
 

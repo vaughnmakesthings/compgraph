@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { SectionCard } from "@/components/ui/section-card";
 import type {
   ScrapeRunSummary,
   EnrichmentRunSummary,
@@ -21,29 +22,6 @@ const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 type HealthStatus = "idle" | "ok" | "error";
 
 // --- Shared primitives ---
-
-interface SectionCardProps {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-function SectionCard({ title, children, className = "" }: SectionCardProps) {
-  return (
-    <div
-      className={`bg-[#FFFFFF] border border-[#BFC0C0] rounded-lg p-5 ${className}`}
-      style={{ boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))" }}
-    >
-      <h2
-        className="text-base font-semibold mb-4"
-        style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", color: "#2D3142" }}
-      >
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
 interface OutlineButtonProps {
   onClick?: () => void;
@@ -829,7 +807,7 @@ function SettingsPageContent() {
       </div>
 
       {/* API Health */}
-      <SectionCard title="API Health">
+      <SectionCard title="API Health" className="p-5" headingClassName="text-base">
         <div className="flex items-center gap-4 mb-3">
           <span
             style={{
@@ -873,7 +851,7 @@ function SettingsPageContent() {
       </SectionCard>
 
       {/* Pipeline Controls */}
-      <SectionCard title="Pipeline Controls" className="mt-4">
+      <SectionCard title="Pipeline Controls" className="mt-4 p-5" headingClassName="text-base">
         <div className="flex flex-row flex-wrap gap-3">
           <OutlineButton
             onClick={() => setConfirmAggOpen(true)}
@@ -976,7 +954,7 @@ function SettingsPageContent() {
       </div>
 
       {/* Scheduler */}
-      <SectionCard title="Scheduler" className="mt-4">
+      <SectionCard title="Scheduler" className="mt-4 p-5" headingClassName="text-base">
         {schedulerLoading ? (
           <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>
             Loading…
@@ -1162,7 +1140,7 @@ function SettingsPageContent() {
       </SectionCard>
 
       {/* System Info */}
-      <SectionCard title="System Info" className="mt-4">
+      <SectionCard title="System Info" className="mt-4 p-5" headingClassName="text-base">
         <div>
           <KvRow label="API Version" value={apiVersion ?? "—"} />
           <KvRow label="Database" value="Supabase Postgres 17" />
@@ -1171,7 +1149,7 @@ function SettingsPageContent() {
       </SectionCard>
 
       {/* Scrape Run History */}
-      <SectionCard title="Scrape Run History" className="mt-4">
+      <SectionCard title="Scrape Run History" className="mt-4 p-5" headingClassName="text-base">
         {runsLoading ? (
           <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>
         ) : scrapeRuns.length === 0 ? (
@@ -1215,7 +1193,7 @@ function SettingsPageContent() {
       </SectionCard>
 
       {/* Enrichment Run History */}
-      <SectionCard title="Enrichment Run History" className="mt-4">
+      <SectionCard title="Enrichment Run History" className="mt-4 p-5" headingClassName="text-base">
         {runsLoading ? (
           <p style={{ fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)", fontSize: "13px", color: "#4F5D75" }}>Loading…</p>
         ) : enrichRuns.length === 0 ? (

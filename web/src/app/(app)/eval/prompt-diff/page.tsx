@@ -4,22 +4,11 @@ import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api-client";
 import type { EvalRun, EvalResult } from "@/lib/types";
-
-const COMPARE_FIELDS = [
-  "role_archetype",
-  "role_level",
-  "employment_type",
-  "pay_type",
-  "pay_frequency",
-  "pay_min",
-  "pay_max",
-  "has_commission",
-  "has_benefits",
-  "travel_required",
-  "store_count",
-  "tools_mentioned",
-  "kpis_mentioned",
-];
+import {
+  EVAL_FIELDS as COMPARE_FIELDS,
+  formatRunLabel,
+  getParsedResult,
+} from "@/lib/eval-utils";
 
 interface FieldDiffStats {
   field: string;
@@ -37,25 +26,11 @@ function normalizeValue(value: unknown): string | null {
   return String(value);
 }
 
-function getParsed(result: EvalResult): Record<string, unknown> {
-  if (!result.parsed_result) return {};
-  if (typeof result.parsed_result === "object")
-    return result.parsed_result as Record<string, unknown>;
-  try {
-    return JSON.parse(String(result.parsed_result)) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
 
 function matchPctColor(pct: number): string {
   if (pct >= 90) return "#1B998B";
   if (pct >= 70) return "#A07D28";
   return "#8C2C23";
-}
-
-function formatRunLabel(run: EvalRun): string {
-  return `${run.model} / ${run.prompt_version} \u00B7 Pass ${run.pass_number}`;
 }
 
 function PromptDiffContent() {
@@ -160,8 +135,8 @@ function PromptDiffContent() {
       for (const postingId of commonIds) {
         const baseResult = baselineMap[postingId];
         const candResult = candidateMap[postingId];
-        const baseParsed = getParsed(baseResult);
-        const candParsed = getParsed(candResult);
+        const baseParsed = getParsedResult(baseResult);
+        const candParsed = getParsedResult(candResult);
 
         for (const field of COMPARE_FIELDS) {
           const baseVal = normalizeValue(baseParsed[field]);
