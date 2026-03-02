@@ -107,7 +107,7 @@ export function tremorMockWithCategories() {
       </div>
     ),
     DonutChart: ({ data }: { data: { name: string; value: number }[] }) => (
-      <div data-testid="pie-chart">
+      <div data-testid="donut-chart">
         <div data-testid="chart-data" style={{ display: "none" }}>
           {JSON.stringify(data)}
         </div>

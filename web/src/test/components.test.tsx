@@ -255,7 +255,7 @@ describe("DonutChart", () => {
 
   it("renders without crashing", () => {
     render(<DonutChart data={slices} />);
-    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("donut-chart")).toBeInTheDocument();
   });
 
   it("renders a Pie element for the data", () => {
@@ -265,11 +265,11 @@ describe("DonutChart", () => {
 
   it("renders with centerLabel prop without crashing", () => {
     render(<DonutChart data={slices} centerLabel="Total Postings" />);
-    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("donut-chart")).toBeInTheDocument();
   });
 
   it("accepts custom height without crashing", () => {
     render(<DonutChart data={slices} height={400} />);
-    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("donut-chart")).toBeInTheDocument();
   });
 });
