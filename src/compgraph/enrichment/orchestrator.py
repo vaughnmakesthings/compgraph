@@ -318,6 +318,15 @@ class EnrichmentOrchestrator:
         *,
         finalize: bool = True,
     ) -> EnrichResult:
+        """Run Pass 1 enrichment on all unenriched postings.
+
+        Processes in batches, with a semaphore limiting concurrent API calls.
+        Each posting is isolated — one failure doesn't stop the batch.
+        Uses content-based deduplication to avoid redundant LLM calls for
+        postings with identical title+body (e.g., same job in multiple cities).
+        Includes a circuit breaker that aborts when consecutive API failures
+        indicate systemic issues (e.g., quota exhaustion).
+        """
         run.status = EnrichmentStatus.RUNNING
         await create_enrichment_run_record(run.run_id)
         state = _BatchState(
@@ -448,6 +457,10 @@ class EnrichmentOrchestrator:
         content_hash: str,
         group: Pass1Group,
     ) -> None:
+        """Process a dedup group for Pass 1.
+
+        Call LLM once, apply result to all postings in the group.
+        """
         if state.breaker.tripped:
             return
 
@@ -585,6 +598,10 @@ class EnrichmentOrchestrator:
         content_hash: str,
         group: Pass1Group,
     ) -> None:
+        """Fallback for Pass 1.
+
+        Process each posting individually after group call fails.
+        """
         cached_on_fallback = False
         for posting_id, snapshot_id, title, location, full_text in group:
             if state.breaker.tripped:
@@ -707,6 +724,14 @@ class EnrichmentOrchestrator:
         run: EnrichmentRun,
         company_id: uuid.UUID | None = None,
     ) -> EnrichResult:
+        """Run Pass 2 entity extraction on all postings with Pass 1 but no Pass 2.
+
+        For each posting: extract entities via Sonnet, resolve against Brand/Retailer
+        tables, and create PostingBrandMention records.
+        Uses content-based deduplication to avoid redundant LLM calls.
+        Includes a circuit breaker that aborts when consecutive API failures
+        indicate systemic issues.
+        """
         run.status = EnrichmentStatus.RUNNING
         from sqlalchemy import select as sa_select
 
@@ -856,6 +881,10 @@ class EnrichmentOrchestrator:
         content_hash: str,
         group: Pass2Group,
     ) -> None:
+        """Process a dedup group for Pass 2.
+
+        Call LLM once, resolve entities and save mentions for all postings.
+        """
         if state.breaker.tripped:
             return
 
@@ -997,6 +1026,7 @@ class EnrichmentOrchestrator:
         content_hash: str,
         group: Pass2Group,
     ) -> None:
+        """Fallback for Pass 2: process each posting individually after group call fails."""
         cached_on_fallback = False
         for posting_id, enrichment_id, title, location, crs, full_text in group:
             if state.breaker.tripped:
