@@ -474,24 +474,21 @@ export default function HiringPage() {
                       {formatPayRange(item.pay_min, item.pay_max, item.pay_currency)}
                     </span>
                   </td>
-                  {/* Status + date merged in one column (#182) */}
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-1">
                       <Badge variant={item.is_active ? "success" : "error"}>
-                        {item.is_active ? "Active" : "Closed"}
+                        {item.is_active ? "Active" : "Inactive"}
                       </Badge>
                       <span
                         style={{
                           fontSize: "11px",
-                          color: "#8A8F98",
+                          color: "#4F5D75",
                           fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                         }}
                       >
                         {item.is_active
-                          ? `Since: ${formatDate(item.first_seen_at)}`
-                          : item.last_seen_at
-                            ? `Closed: ${formatDate(item.last_seen_at)}`
-                            : `Seen: ${formatDate(item.first_seen_at)}`}
+                          ? `Start: ${formatDate(item.first_seen_at)}`
+                          : `Closed: ${formatDate(item.last_seen_at ?? item.first_seen_at)}`}
                       </span>
                     </div>
                   </td>
