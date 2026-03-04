@@ -268,7 +268,7 @@ export default function HiringPage() {
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
-          <option value="inactive">Closed</option>
+          <option value="inactive">Inactive</option>
         </select>
 
         <select
@@ -322,7 +322,7 @@ export default function HiringPage() {
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
               style={chipStyle}
             >
-              Status: {statusFilter === "active" ? "Active" : "Closed"}
+              Status: {statusFilter === "active" ? "Active" : "Inactive"}
               <button
                 type="button"
                 onClick={removeStatusChip}
@@ -488,7 +488,9 @@ export default function HiringPage() {
                       >
                         {item.is_active
                           ? `Start: ${formatDate(item.first_seen_at)}`
-                          : `Closed: ${formatDate(item.last_seen_at ?? item.first_seen_at)}`}
+                          : item.last_seen_at
+                            ? `Closed: ${formatDate(item.last_seen_at)}`
+                            : `Seen: ${formatDate(item.first_seen_at)}`}
                       </span>
                     </div>
                   </td>
