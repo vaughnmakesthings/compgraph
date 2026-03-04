@@ -482,7 +482,7 @@ export default function HiringPage() {
                       <span
                         style={{
                           fontSize: "11px",
-                          color: "#4F5D75",
+                          color: "var(--color-blue-slate, #4F5D75)",
                           fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                         }}
                       >
