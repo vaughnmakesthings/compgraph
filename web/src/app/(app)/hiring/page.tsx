@@ -268,7 +268,7 @@ export default function HiringPage() {
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
-          <option value="inactive">Closed</option>
+          <option value="inactive">Inactive</option>
         </select>
 
         <select
@@ -322,7 +322,7 @@ export default function HiringPage() {
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
               style={chipStyle}
             >
-              Status: {statusFilter === "active" ? "Active" : "Closed"}
+              Status: {statusFilter === "active" ? "Active" : "Inactive"}
               <button
                 type="button"
                 onClick={removeStatusChip}
@@ -474,21 +474,20 @@ export default function HiringPage() {
                       {formatPayRange(item.pay_min, item.pay_max, item.pay_currency)}
                     </span>
                   </td>
-                  {/* Status + date merged in one column (#182) */}
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-1">
                       <Badge variant={item.is_active ? "success" : "error"}>
-                        {item.is_active ? "Active" : "Closed"}
+                        {item.is_active ? "Active" : "Inactive"}
                       </Badge>
                       <span
                         style={{
                           fontSize: "11px",
-                          color: "#8A8F98",
+                          color: "var(--color-blue-slate, #4F5D75)",
                           fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
                         }}
                       >
                         {item.is_active
-                          ? `Since: ${formatDate(item.first_seen_at)}`
+                          ? `Start: ${formatDate(item.first_seen_at)}`
                           : item.last_seen_at
                             ? `Closed: ${formatDate(item.last_seen_at)}`
                             : `Seen: ${formatDate(item.first_seen_at)}`}
