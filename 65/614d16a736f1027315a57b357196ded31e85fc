@@ -1,0 +1,63 @@
+src/compgraph/api/routes/aggregation.py
+  573ca29b9f57b962 9,23,31,39,47,55,63,71
+tests/test_services.py
+  573ca29b9f57b962 1-353
+src/compgraph/services/company_service.py
+  573ca29b9f57b962 1-25
+src/compgraph/api/routes/companies.py
+  573ca29b9f57b962 7,14
+src/compgraph/services/posting_service.py
+  573ca29b9f57b962 1-228
+src/compgraph/services/aggregation_service.py
+  573ca29b9f57b962 1-106
+src/compgraph/services/__init__.py
+  573ca29b9f57b962 1-5
+src/compgraph/api/routes/postings.py
+  573ca29b9f57b962 11,96-104,108-109,123-124,128-129,131,134-143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "65614d16a736f1027315a57b357196ded31e85fc",
+  "prompts": {
+    "1edda5be579ad2ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0cfbb58e-55a7-4031-a6c8-6338d19e543c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 194,
+      "overriden_lines": 0
+    },
+    "4910f6b0eca233f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cff75eba-6717-45c0-b251-229d5366b945",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 137,
+      "overriden_lines": 0
+    },
+    "573ca29b9f57b962": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3083c101-7678-47d8-9eba-3a18e2bd184e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 759,
+      "total_deletions": 279,
+      "accepted_lines": 755,
+      "overriden_lines": 0
+    }
+  }
+}
