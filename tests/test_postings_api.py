@@ -8,8 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from compgraph.api.deps import get_db
-from compgraph.api.routes.postings import _escape_like
 from compgraph.main import app
+from compgraph.services.posting_service import _escape_like
 
 
 def _make_posting(
