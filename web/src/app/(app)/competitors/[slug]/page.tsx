@@ -741,7 +741,7 @@ export default function CompetitorDossierPage() {
                           variant={posting.is_active ? "success" : "neutral"}
                           size="sm"
                         >
-                          {posting.is_active ? "Active" : "Closed"}
+                          {posting.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </td>
                       <td
@@ -954,7 +954,7 @@ export default function CompetitorDossierPage() {
                             }
                             size="sm"
                           >
-                            {posting.is_active ? "Active" : "Closed"}
+                            {posting.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </td>
                         <td
