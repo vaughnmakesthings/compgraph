@@ -1,0 +1,39 @@
+scripts/dump_openapi.py
+  08f05b160b7c05bf 1-23
+.gitignore
+  08f05b160b7c05bf 6
+src/compgraph/api/routes/aggregation.py
+  08f05b160b7c05bf 8-16,27,35,43,51,59,67,75,90
+src/compgraph/api/schemas/aggregation.py
+  08f05b160b7c05bf 1-99
+src/compgraph/api/schemas/__init__.py
+  08f05b160b7c05bf 1-23
+src/compgraph/api/schemas/eval.py
+  08f05b160b7c05bf 1-94
+src/compgraph/api/routes/companies.py
+  08f05b160b7c05bf 7,13
+src/compgraph/api/schemas/companies.py
+  08f05b160b7c05bf 1-10
+src/compgraph/eval/router.py
+  08f05b160b7c05bf 15-26,36,188-191,195-196,200,208,215,223,231,237,254,270,326,339,380,417,453,477,525
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "819efe6e55c7d680e23cf6f7283b648e59df8a22",
+  "prompts": {
+    "08f05b160b7c05bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e238d78c-4b34-42a9-9637-27151009d48d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 303,
+      "overriden_lines": 0
+    }
+  }
+}
