@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import DashboardPage from "../app/(app)/page";
-import { api } from "@/lib/api-client";
+import { renderWithQueryClient } from "./test-utils";
 
 vi.mock("@/lib/api-client", () => ({
   api: {
@@ -9,6 +9,11 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
+
 import "./mocks/resize-observer";
 
 vi.mock("@tremor/react", async () => {
@@ -16,23 +21,20 @@ vi.mock("@tremor/react", async () => {
   return tremorMockSimple();
 });
 
-const mockedApi = vi.mocked(api);
-
 beforeEach(() => {
-  mockedApi.getPipelineStatus.mockReturnValue(new Promise(() => {}));
-  mockedApi.getVelocity.mockReturnValue(new Promise(() => {}));
+  vi.clearAllMocks();
 });
 
 describe("Home page", () => {
   it("renders the Pipeline Health heading", () => {
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
     expect(
       screen.getByRole("heading", { name: /pipeline health/i })
     ).toBeInTheDocument();
   });
 
   it("renders the page subtitle", () => {
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
     expect(
       screen.getByText(/hiring activity across tracked competitors/i)
     ).toBeInTheDocument();

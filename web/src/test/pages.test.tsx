@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MarketPage from "../app/(app)/market/page";
 import HiringPage from "../app/(app)/hiring/page";
 import SettingsPage from "../app/(app)/settings/page";
 import type { DailyVelocity, CoverageGap, PostingListResponse } from "../lib/types";
+import { renderWithQueryClient } from "./test-utils";
 
 vi.mock("../lib/auth-context", () => ({
   useAuth: vi.fn().mockReturnValue({
@@ -16,27 +17,46 @@ vi.mock("../lib/auth-context", () => ({
 }));
 
 vi.mock("../lib/api-client", () => ({
-  api: {
-    getVelocity: vi.fn(),
-    getCoverageGaps: vi.fn(),
-    listPostings: vi.fn(),
-    getCompanies: vi.fn(),
-    health: vi.fn(),
-    triggerAggregation: vi.fn(),
-    getPipelineRuns: vi.fn(),
-    getSchedulerStatus: vi.fn(),
-    triggerScrape: vi.fn(),
-    pauseScrape: vi.fn(),
-    resumeScrape: vi.fn(),
-    stopScrape: vi.fn(),
-    forceStopScrape: vi.fn(),
-    getScrapeStatus: vi.fn(),
-    triggerEnrichment: vi.fn(),
-    getEnrichStatus: vi.fn(),
-    triggerSchedulerJob: vi.fn(),
-    pauseSchedulerJob: vi.fn(),
-    resumeSchedulerJob: vi.fn(),
-  },
+  api: {},
+}));
+
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
+
+vi.mock("@/api-client/sdk.gen", () => ({
+  pauseScrapeApiV1ScrapePausePost: vi.fn(),
+  resumeScrapeApiV1ScrapeResumePost: vi.fn(),
+  stopScrapeApiV1ScrapeStopPost: vi.fn(),
+  forceStopScrapeApiV1ScrapeForceStopPost: vi.fn(),
+  triggerJobApiV1SchedulerJobsJobIdTriggerPost: vi.fn(),
+  pauseJobApiV1SchedulerJobsJobIdPausePost: vi.fn(),
+  resumeJobApiV1SchedulerJobsJobIdResumePost: vi.fn(),
+}));
+
+vi.mock("@/components/ui/confirm-dialog", () => ({
+  ConfirmDialog: ({ open, onConfirm, confirmLabel = "Confirm" }: {
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    title: string;
+    description: string;
+    confirmLabel?: string;
+    onConfirm: () => void | Promise<void>;
+  }) => open ? (
+    <div role="dialog">
+      <button onClick={() => {
+        const result = onConfirm();
+        if (result && typeof (result as Promise<void>).catch === "function") {
+          (result as Promise<void>).catch(() => {});
+        }
+      }}>{confirmLabel}</button>
+    </div>
+  ) : null,
+}));
+
+vi.mock("@/components/auth/user-management-section", () => ({
+  UserManagementSection: () => <div data-testid="user-mgmt" />,
 }));
 
 import "./mocks/resize-observer";
@@ -45,7 +65,19 @@ vi.mock("@tremor/react", async () => {
   return tremorMockSimple();
 });
 
-import { api } from "../lib/api-client";
+import {
+  getVelocityApiV1AggregationVelocityGetOptions,
+  getCoverageGapsApiV1AggregationCoverageGapsGetOptions,
+  listPostingsApiV1PostingsGetOptions,
+  listCompaniesApiV1CompaniesGetOptions,
+  healthCheckHealthGetOptions,
+  pipelineRunsApiV1PipelineRunsGetOptions,
+  schedulerStatusApiV1SchedulerStatusGetOptions,
+  scrapeStatusApiV1ScrapeStatusGetOptions,
+  enrichStatusApiV1EnrichStatusGetOptions,
+  triggerScrapeApiV1ScrapeTriggerPostMutation,
+  triggerFullApiV1EnrichTriggerPostMutation,
+} from "@/api-client/@tanstack/react-query.gen";
 
 const mockVelocity: DailyVelocity[] = [
   {
@@ -97,29 +129,51 @@ const mockPostingsResponse: PostingListResponse = {
   total: 1,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function overrideQuery(optionsFn: any, key: string, data: unknown) {
+  vi.mocked(optionsFn).mockReturnValue({
+    queryKey: [key],
+    queryFn: vi.fn().mockResolvedValue(data),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function overrideQueryReject(optionsFn: any, key: string, err: Error) {
+  vi.mocked(optionsFn).mockReturnValue({
+    queryKey: [key],
+    queryFn: vi.fn().mockRejectedValue(err),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+}
+
 beforeEach(() => {
-  vi.mocked(api.getVelocity).mockResolvedValue(mockVelocity);
-  vi.mocked(api.getCoverageGaps).mockResolvedValue(mockGaps);
-  vi.mocked(api.listPostings).mockImplementation(async (params) => {
-    // Mock posting is active; when filtering for inactive, return empty (server-side filter)
-    if (params?.is_active === false) {
-      return { items: [], total: 0 };
-    }
-    return mockPostingsResponse;
+  overrideQuery(getVelocityApiV1AggregationVelocityGetOptions, "velocity", mockVelocity);
+  overrideQuery(getCoverageGapsApiV1AggregationCoverageGapsGetOptions, "coverageGaps", mockGaps);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vi.mocked(listPostingsApiV1PostingsGetOptions).mockImplementation((params?: any) => {
+    const isActive = params?.query?.is_active;
+    const key = JSON.stringify(params?.query ?? {});
+    const data = (isActive === false)
+      ? { items: [], total: 0 }
+      : mockPostingsResponse;
+    return {
+      queryKey: ["postings", key],
+      queryFn: vi.fn().mockResolvedValue(data),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
   });
-  vi.mocked(api.getCompanies).mockResolvedValue([]);
-  vi.mocked(api.health).mockResolvedValue({ status: "ok", version: "0.1.0" });
-  vi.mocked(api.triggerAggregation).mockResolvedValue({ status: "started" });
-  vi.mocked(api.getPipelineRuns).mockResolvedValue({ scrape_runs: [], enrichment_runs: [] });
-  vi.mocked(api.getSchedulerStatus).mockResolvedValue({
+  overrideQuery(listCompaniesApiV1CompaniesGetOptions, "companies", []);
+  overrideQuery(healthCheckHealthGetOptions, "health", { status: "ok", version: "0.1.0" });
+  overrideQuery(pipelineRunsApiV1PipelineRunsGetOptions, "pipelineRuns", { scrape_runs: [], enrichment_runs: [] });
+  overrideQuery(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", {
     enabled: true,
     schedules: [],
     last_pipeline_finished_at: null,
     last_pipeline_success: null,
     missed_run: false,
   });
-  // Return terminal status on mount so resumeIfActive does not start polling
-  vi.mocked(api.getScrapeStatus).mockResolvedValue({
+  overrideQuery(scrapeStatusApiV1ScrapeStatusGetOptions, "scrapeStatus", {
     run_id: "",
     status: "success",
     started_at: null,
@@ -132,7 +186,7 @@ beforeEach(() => {
     company_states: {},
     company_results: {},
   });
-  vi.mocked(api.getEnrichStatus).mockResolvedValue({
+  overrideQuery(enrichStatusApiV1EnrichStatusGetOptions, "enrichStatus", {
     run_id: "",
     status: "success",
     started_at: null,
@@ -157,35 +211,35 @@ afterEach(() => {
 
 describe("Market Overview page", () => {
   it("renders the Market Overview heading", () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     expect(
       screen.getByRole("heading", { name: /market overview/i })
     ).toBeInTheDocument();
   });
 
   it("renders the subtitle", () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     expect(
       screen.getByText(/hiring velocity and competitive positioning/i)
     ).toBeInTheDocument();
   });
 
   it("renders the Posting Velocity section heading", () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     expect(
       screen.getByRole("heading", { name: /posting velocity/i })
     ).toBeInTheDocument();
   });
 
   it("renders the Coverage Gaps section heading", () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     expect(
       screen.getByRole("heading", { name: /coverage gaps/i })
     ).toBeInTheDocument();
   });
 
   it("renders KPI cards after data loads", async () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     await waitFor(() =>
       expect(screen.getByText("Total Active Postings")).toBeInTheDocument()
     );
@@ -195,7 +249,7 @@ describe("Market Overview page", () => {
   });
 
   it("renders total active postings value from mock data", async () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     // totalActive = 80 + 40 = 120
     await waitFor(() =>
       expect(screen.getByText("120")).toBeInTheDocument()
@@ -203,7 +257,7 @@ describe("Market Overview page", () => {
   });
 
   it("renders the coverage gap market row after data loads", async () => {
-    render(<MarketPage />);
+    renderWithQueryClient(<MarketPage />);
     await waitFor(() =>
       expect(screen.getByText("Miami, FL")).toBeInTheDocument()
     );
@@ -216,56 +270,56 @@ describe("Market Overview page", () => {
 
 describe("Job Feed page", () => {
   it("renders the Job Feed heading", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("heading", { name: /job feed/i })
     ).toBeInTheDocument();
   });
 
   it("renders the subtitle", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByText(/all tracked postings across competitors/i)
     ).toBeInTheDocument();
   });
 
   it("renders the search input in the filter bar", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("searchbox", { name: /search postings/i })
     ).toBeInTheDocument();
   });
 
   it("renders the company filter select", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("combobox", { name: /filter by company/i })
     ).toBeInTheDocument();
   });
 
   it("renders the status filter select", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("combobox", { name: /filter by status/i })
     ).toBeInTheDocument();
   });
 
   it("renders the role filter select", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("combobox", { name: /filter by role/i })
     ).toBeInTheDocument();
   });
 
   it("renders the sort select", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(
       screen.getByRole("combobox", { name: /sort by/i })
     ).toBeInTheDocument();
   });
 
   it("renders table column headers", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(screen.getByText("Title")).toBeInTheDocument();
     expect(screen.getByText("Company")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();
@@ -274,19 +328,19 @@ describe("Job Feed page", () => {
   });
 
   it("renders Prev and Next pagination buttons", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(screen.getByRole("button", { name: /prev/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
   });
 
   it("disables Prev button on first page", () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     expect(screen.getByRole("button", { name: /prev/i })).toBeDisabled();
   });
 
   it("disables Next button when total fits on one page", async () => {
     // mockPostingsResponse has total: 1, which is < PAGE_SIZE (50)
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     await waitFor(() =>
       expect(screen.getByText(/Showing/)).toBeInTheDocument()
     );
@@ -294,7 +348,7 @@ describe("Job Feed page", () => {
   });
 
   it("renders posting row after data loads", async () => {
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
     await waitFor(() =>
       expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
     );
@@ -305,7 +359,7 @@ describe("Job Feed page", () => {
 
   it("filters job feed by status", async () => {
     const user = userEvent.setup();
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
 
     await waitFor(() =>
       expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
@@ -323,10 +377,10 @@ describe("Job Feed page", () => {
 
   it("shows Clear all when filters are active and resets on click", async () => {
     const user = userEvent.setup();
-    vi.mocked(api.getCompanies).mockResolvedValue([
+    overrideQuery(listCompaniesApiV1CompaniesGetOptions, "companies", [
       { id: "troc-uuid", name: "T-ROC", slug: "troc", ats_platform: "icims" },
     ]);
-    render(<HiringPage />);
+    renderWithQueryClient(<HiringPage />);
 
     await waitFor(() =>
       expect(screen.getByText("Field Marketing Rep")).toBeInTheDocument()
@@ -355,42 +409,42 @@ describe("Job Feed page", () => {
 
 describe("Settings page", () => {
   it("renders the Settings heading", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("heading", { name: /^settings$/i })
     ).toBeInTheDocument();
   });
 
   it("renders the API Health section", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("heading", { name: /api health/i })
     ).toBeInTheDocument();
   });
 
   it("renders the Check Health button", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("button", { name: /check health/i })
     ).toBeInTheDocument();
   });
 
   it("renders the Pipeline Controls section", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("heading", { name: /pipeline controls/i })
     ).toBeInTheDocument();
   });
 
   it("renders the Trigger Aggregation button", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("button", { name: /trigger aggregation/i })
     ).toBeInTheDocument();
   });
 
   it("renders enabled Scrape and Enrichment trigger buttons", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     const scrapeBtn = screen.getByRole("button", { name: /trigger scrape/i });
     const enrichBtn = screen.getByRole("button", { name: /trigger enrichment/i });
     expect(scrapeBtn).not.toBeDisabled();
@@ -398,14 +452,14 @@ describe("Settings page", () => {
   });
 
   it("renders the System Info section", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(
       screen.getByRole("heading", { name: /system info/i })
     ).toBeInTheDocument();
   });
 
   it("renders system info key-value rows", () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(screen.getByText("Database")).toBeInTheDocument();
     expect(screen.getByText("Supabase Postgres 17")).toBeInTheDocument();
     expect(screen.getByText("Platform")).toBeInTheDocument();
@@ -414,7 +468,7 @@ describe("Settings page", () => {
 
   it("shows OK status after health check succeeds", async () => {
     const user = userEvent.setup();
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
 
     await user.click(screen.getByRole("button", { name: /check health/i }));
 
@@ -430,17 +484,17 @@ describe("Settings page", () => {
 
 describe("Settings page — scheduler section", () => {
   it("renders the Scheduler heading", async () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(screen.getByRole("heading", { name: /scheduler/i })).toBeInTheDocument();
   });
 
   it("shows Enabled badge when scheduler is enabled", async () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() => expect(screen.getByText("Enabled")).toBeInTheDocument());
   });
 
   it("shows schedule row and action buttons for active schedule", async () => {
-    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+    overrideQuery(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", {
       enabled: true,
       schedules: [
         {
@@ -454,14 +508,14 @@ describe("Settings page — scheduler section", () => {
       last_pipeline_success: true,
       missed_run: false,
     });
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() => expect(screen.getByText("daily_pipeline")).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /^trigger$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^pause$/i })).toBeInTheDocument();
   });
 
   it("shows Resume button for a paused schedule", async () => {
-    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+    overrideQuery(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", {
       enabled: true,
       schedules: [
         {
@@ -475,20 +529,20 @@ describe("Settings page — scheduler section", () => {
       last_pipeline_success: null,
       missed_run: false,
     });
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() => expect(screen.getByText("daily_pipeline")).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /^resume$/i })).toBeInTheDocument();
   });
 
   it("shows missed run warning when missed_run is true", async () => {
-    vi.mocked(api.getSchedulerStatus).mockResolvedValueOnce({
+    overrideQuery(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", {
       enabled: true,
       schedules: [],
       last_pipeline_finished_at: "2026-02-20T10:00:00Z",
       last_pipeline_success: false,
       missed_run: true,
     });
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() =>
       expect(
         screen.getByText(/no pipeline completed in the last 80 hours/i)
@@ -497,11 +551,11 @@ describe("Settings page — scheduler section", () => {
   });
 
   it("shows 'Could not load scheduler status' when API fails", async () => {
-    vi.mocked(api.getSchedulerStatus).mockRejectedValueOnce(new Error("network"));
-    render(<SettingsPage />);
+    overrideQueryReject(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", new Error("network"));
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() =>
-      expect(screen.getByText(/could not load scheduler status/i)).toBeInTheDocument()
-    );
+      expect(screen.getByText(/error loading scheduler/i)).toBeInTheDocument()
+    , { timeout: 3000 });
   });
 });
 
@@ -511,31 +565,47 @@ describe("Settings page — scheduler section", () => {
 
 describe("Settings page — trigger errors", () => {
   it("shows error banner when Trigger Scrape fails", async () => {
-    vi.mocked(api.triggerScrape).mockRejectedValueOnce(new Error("Backend unreachable"));
+    const rejectFn = vi.fn().mockRejectedValue(new Error("Backend unreachable"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(triggerScrapeApiV1ScrapeTriggerPostMutation).mockReturnValue({ mutationFn: rejectFn } as any);
     const user = userEvent.setup();
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
 
     await user.click(screen.getByRole("button", { name: /trigger scrape/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("dialog")).toBeInTheDocument()
+    );
     await user.click(screen.getByRole("button", { name: /^confirm$/i }));
 
+    await waitFor(() => {
+      expect(rejectFn).toHaveBeenCalled();
+    });
+
     await waitFor(() =>
-      expect(screen.getByRole("alert")).toBeInTheDocument()
-    );
-    expect(screen.getByText(/scrape error/i)).toBeInTheDocument();
+      expect(screen.getByText(/scrape error/i)).toBeInTheDocument()
+    , { timeout: 3000 });
   });
 
   it("shows error banner when Trigger Enrichment fails", async () => {
-    vi.mocked(api.triggerEnrichment).mockRejectedValueOnce(new Error("Backend unreachable"));
+    const rejectFn = vi.fn().mockRejectedValue(new Error("Backend unreachable"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(triggerFullApiV1EnrichTriggerPostMutation).mockReturnValue({ mutationFn: rejectFn } as any);
     const user = userEvent.setup();
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
 
     await user.click(screen.getByRole("button", { name: /trigger enrichment/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("dialog")).toBeInTheDocument()
+    );
     await user.click(screen.getByRole("button", { name: /^confirm$/i }));
 
+    await waitFor(() => {
+      expect(rejectFn).toHaveBeenCalled();
+    });
+
     await waitFor(() =>
-      expect(screen.getByRole("alert")).toBeInTheDocument()
-    );
-    expect(screen.getByText(/enrichment error/i)).toBeInTheDocument();
+      expect(screen.getByText(/enrichment error/i)).toBeInTheDocument()
+    , { timeout: 3000 });
   });
 });
 
@@ -545,7 +615,7 @@ describe("Settings page — trigger errors", () => {
 
 describe("Settings page — run history with data", () => {
   beforeEach(() => {
-    vi.mocked(api.getPipelineRuns).mockResolvedValue({
+    overrideQuery(pipelineRunsApiV1PipelineRunsGetOptions, "pipelineRuns", {
       scrape_runs: [
         {
           id: "run-1",
@@ -575,12 +645,12 @@ describe("Settings page — run history with data", () => {
   });
 
   it("renders company name in scrape run history", async () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() => expect(screen.getByText("T-ROC")).toBeInTheDocument());
   });
 
   it("renders pass1 succeeded count in enrichment run history", async () => {
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     await waitFor(() => {
       const cells = screen.getAllByText("95");
       expect(cells.length).toBeGreaterThan(0);
