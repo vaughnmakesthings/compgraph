@@ -1,0 +1,34 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "b9089b304d0ddc0f30076d7a720f5dc0b978224b",
+  "prompts": {
+    "08f05b160b7c05bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e238d78c-4b34-42a9-9637-27151009d48d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    },
+    "998b21e21ce56bfb": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "32af388b-b39a-4ab4-adac-44ee6bb59200",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 42,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
