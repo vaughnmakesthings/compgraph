@@ -1,0 +1,46 @@
+scripts/dump_openapi.py
+  85a59f4b590f3419 6-7
+web/src/app/(app)/eval/leaderboard/page.tsx
+  85a59f4b590f3419 129-133,135-137
+web/src/app/(app)/eval/review/page.tsx
+  85a59f4b590f3419 189-190,422
+web/src/app/(app)/eval/prompt-diff/page.tsx
+  85a59f4b590f3419 316
+web/src/app/(app)/hiring/page.tsx
+  85a59f4b590f3419 114,116,118-119,292,305
+web/src/app/(app)/eval/accuracy/page.tsx
+  85a59f4b590f3419 72-75,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "da91e18cc1421eae2edaabf6ce0923c5d0d231b6",
+  "prompts": {
+    "08f05b160b7c05bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e238d78c-4b34-42a9-9637-27151009d48d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 120,
+      "total_deletions": 30,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    },
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 24,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
