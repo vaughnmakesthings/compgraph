@@ -1,0 +1,27 @@
+src/compgraph/aggregation/brand_churn.py
+  08f05b160b7c05bf 103
+src/compgraph/aggregation/coverage_gaps.py
+  08f05b160b7c05bf 85
+src/compgraph/aggregation/agency_overlap.py
+  08f05b160b7c05bf 80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "cba6614b9cf8dcd4a5a40c450082a194ad127fd6",
+  "prompts": {
+    "08f05b160b7c05bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e238d78c-4b34-42a9-9637-27151009d48d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
