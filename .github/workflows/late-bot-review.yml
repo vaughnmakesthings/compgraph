@@ -1,0 +1,152 @@
+# Catches review comments from slow bots (Cursor, Copilot) that arrive
+# after a PR has been merged. Creates GitHub issues for unresolved threads
+# so feedback is never lost despite the tiered bot wait strategy.
+#
+# Trigger: pull_request_review event (fires when any bot posts a review).
+# Filter: only runs on merged PRs with comments from Tier 2 bots.
+
+name: Late Bot Review Catcher
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  catch-late-reviews:
+    # Only run if the PR is already merged AND the reviewer is a Tier 2 bot
+    if: >-
+      github.event.pull_request.merged == true &&
+      (
+        github.event.review.user.login == 'cursor[bot]' ||
+        github.event.review.user.login == 'copilot-pull-request-review[bot]'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch unresolved threads from late bot
+        id: threads
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const reviewer = context.payload.review.user.login;
+
+            // Fetch review threads via GraphQL
+            const result = await github.graphql(`
+              query($owner: String!, $repo: String!, $pr: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $pr) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        isResolved
+                        isOutdated
+                        comments(first: 3) {
+                          nodes {
+                            author { login }
+                            body
+                            path
+                            line
+                            url
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pr: pr.number
+            });
+
+            const threads = result.repository.pullRequest.reviewThreads.nodes
+              .filter(t => !t.isResolved && !t.isOutdated)
+              .filter(t => t.comments.nodes[0]?.author?.login === reviewer.replace('[bot]', ''));
+
+            if (threads.length === 0) {
+              console.log(`No unresolved threads from ${reviewer} — nothing to do.`);
+              return;
+            }
+
+            console.log(`Found ${threads.length} unresolved thread(s) from ${reviewer}`);
+
+            // Classify severity from comment body
+            function getSeverity(body, bot) {
+              const lower = body.toLowerCase();
+              if (bot.includes('cursor')) {
+                if (lower.includes('**critical severity**') || lower.includes('**high severity**')) return 'high';
+                if (lower.includes('**low severity**')) return 'low';
+                return 'medium';
+              }
+              // copilot
+              if (lower.includes('critical') || lower.includes('bug')) return 'high';
+              if (lower.includes('suggestion') || lower.includes('nitpick') || lower.includes('nit')) return 'low';
+              return 'medium';
+            }
+
+            // Only create issues for medium+ severity
+            for (const thread of threads) {
+              const comment = thread.comments.nodes[0];
+              const severity = getSeverity(comment.body, reviewer);
+
+              if (severity === 'low') {
+                console.log(`Skipping low-severity thread at ${comment.path}:${comment.line}`);
+                // Resolve low-severity threads automatically
+                try {
+                  await github.graphql(`
+                    mutation($tid: ID!) {
+                      resolveReviewThread(input: {threadId: $tid}) {
+                        thread { isResolved }
+                      }
+                    }
+                  `, { tid: thread.id });
+                } catch (e) {
+                  console.log(`Could not resolve thread: ${e.message}`);
+                }
+                continue;
+              }
+
+              const title = `Late bot review: ${comment.path}:${comment.line} (${reviewer})`;
+              const bodyText = [
+                `**Source:** ${reviewer} on PR #${pr.number} (merged)`,
+                `**Severity:** ${severity}`,
+                `**File:** \`${comment.path}:${comment.line}\``,
+                `**Comment:** ${comment.url}`,
+                '',
+                '---',
+                '',
+                comment.body.substring(0, 2000),
+                '',
+                '---',
+                `*Auto-created by late-bot-review workflow. This review arrived after PR #${pr.number} was merged.*`
+              ].join('\n');
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: bodyText,
+                labels: ['bot-review', 'late-feedback']
+              });
+
+              console.log(`Created issue for ${comment.path}:${comment.line}`);
+
+              // Resolve the thread since we've captured it
+              try {
+                await github.graphql(`
+                  mutation($tid: ID!) {
+                    resolveReviewThread(input: {threadId: $tid}) {
+                      thread { isResolved }
+                    }
+                  }
+                `, { tid: thread.id });
+              } catch (e) {
+                console.log(`Could not resolve thread: ${e.message}`);
+              }
+            }
