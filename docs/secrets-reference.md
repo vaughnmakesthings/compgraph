@@ -11,6 +11,7 @@ All secrets managed via 1Password. Never hardcode.
 | `SUPABASE_URL` | `op://DEV/COMPGRAPH_SUPABASE/url` | Supabase client (if used directly) |
 | `SUPABASE_KEY` | `op://DEV/COMPGRAPH_SUPABASE/anon-key` | Supabase client (if used directly) |
 | `SUPABASE_ACCESS_TOKEN` | 1Password: `SUPABASE_ACCESS_TOKEN` | Supabase MCP server (`.mcp.json`), Management API |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` (default, no auth) | Redis cache (optional, `None` if not configured) |
 
 > **Note:** `SUPABASE_ACCESS_TOKEN` is configured in 1Password. Update remaining references above with actual vault paths once connection strings are generated. Project ID: `tkvxyxwfosworwqxesnz`, DB host: `db.tkvxyxwfosworwqxesnz.supabase.co`.
 

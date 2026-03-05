@@ -4,6 +4,36 @@ Reverse-chronological log of what happened, what failed, and what's next. Read t
 
 ---
 
+## 2026-03-05 — M7 Sprint 1 Wave 2 Merged + Docs Audit
+
+**Goal:** Merge Wave 2 PRs, clean up branches/worktrees, audit documentation.
+
+**What happened:**
+- **PR #235** (refactor: Phase 1 code simplification) merged Mar 1
+- **PR #238** (refactor: service layer extraction from route handlers) merged Mar 4
+- **PR #239** (fix: Job Feed Status column alignment) merged Mar 4
+- **PR #240** (feat: entity_count for extraction tracking) merged Mar 4
+- **PR #242** (feat: Job Feed filter bar with dropdowns, chips, sort-by) merged Mar 5 — closes #176
+- **PR #243** (feat: Redis provisioning script + REDIS_URL config) merged Mar 5 — closes #201
+- **PR #244** (feat: eval schemas and config extraction) merged Mar 5 — closes #211
+- Bot feedback cycles completed on all 3 Wave 2 PRs (21+ threads triaged across 5 bots)
+- Branch/worktree cleanup: removed 5 worktrees, deleted 10 local + 11 remote merged branches
+- CrowdSec intrusion prevention installed on dev server (Mar 4)
+- Docs audit: YELLOW health — 4 content mismatches fixed (test counts, milestone state, secrets)
+
+**Key files changed:**
+- `web/src/app/(app)/hiring/page.tsx` — filter bar redesign with FilterChip component
+- `src/compgraph/eval/schemas.py` — 10 Pydantic v2 response/request models with Literal types
+- `src/compgraph/eval/config.py` — MODELS dict, SUPPORTED_MODELS extracted from router
+- `infra/redis-setup.sh` — idempotent Redis provisioning script
+- `src/compgraph/config.py` — REDIS_URL setting added
+- `docs/secrets-reference.md` — REDIS_URL documented
+- `docs/phases.md` — Current State updated to Mar 5
+
+**9 frontend tests failing:** Market Overview (7) + Eval Runs (2) — likely stale mocks after recent merges. Needs investigation.
+
+---
+
 ## 2026-02-25 (late night) — M7 Sprint 1 Wave 1 Complete
 
 **Goal:** Implement, review, and merge 3 parallel issues: #210 (Auth Tests), #209 (RLS Policies), #156 (DB Concurrency Guard).

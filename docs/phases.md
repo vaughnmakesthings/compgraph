@@ -40,9 +40,9 @@ These decisions are already made. Do not revisit without explicit user approval:
 
 ---
 
-## Current State (2026-02-24)
+## Current State (2026-03-05)
 
-**M6 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy. Backend: 703 tests, 82% coverage. Frontend: 174 tests, 52% coverage.
+**M6 COMPLETE. M7 Sprint 1 COMPLETE.** Full pipeline operational: scrape (5 companies) → enrich (2-pass LLM) → aggregate (7 materialized tables) → API (read-only). Next.js 16 frontend deployed to Vercel with 7 dashboard pages + 5 eval pages. Streamlit decommissioned. Dev server on DO Droplet with CD auto-deploy + CrowdSec intrusion prevention. Backend: 946 tests, ~84% coverage. Frontend: 266 tests (257 passing, 9 failing). Auth chain complete (Supabase Auth + RLS on all 23 tables). Redis provisioned. Eval schemas/config extracted. Service layer refactored.
 
 **M7 roadmap approved.** See `docs/plans/m7-implementation-roadmap.md` for the authoritative implementation plan with 5 phases, dependency graph, and sprint sequencing.
 
