@@ -1,0 +1,23 @@
+web/src/app/(app)/hiring/page.tsx
+  babc1c7982d5b180 91,105,263,389,438
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "383218da78cfaa3c03b08dc4754748030bfaad8a",
+  "prompts": {
+    "babc1c7982d5b180": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e5a3e863-c198-4c33-adb5-31d02f44050f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 9,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
