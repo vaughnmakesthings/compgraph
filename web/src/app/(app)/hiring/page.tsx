@@ -251,7 +251,7 @@ export default function HiringPage() {
               Company: {allCompanies.find((c) => c.id === companyFilter)?.name ?? companyFilter}
               <button
                 type="button"
-                onClick={() => setCompanyFilter("")}
+                onClick={() => { setCompanyFilter(""); setOffset(0); }}
                 aria-label="Remove company filter"
                 className="ml-1 hover:opacity-70"
               >
@@ -264,7 +264,7 @@ export default function HiringPage() {
               Status: {statusFilter === "active" ? "Active" : "Inactive"}
               <button
                 type="button"
-                onClick={() => setStatusFilter("all")}
+                onClick={() => { setStatusFilter("all"); setOffset(0); }}
                 aria-label="Remove status filter"
                 className="ml-1 hover:opacity-70"
               >
@@ -277,7 +277,7 @@ export default function HiringPage() {
               Role: {formatRoleArchetype(roleFilter)}
               <button
                 type="button"
-                onClick={() => setRoleFilter("")}
+                onClick={() => { setRoleFilter(""); setOffset(0); }}
                 aria-label="Remove role filter"
                 className="ml-1 hover:opacity-70"
               >

@@ -470,7 +470,7 @@ function SettingsPageContent() {
               </span>
               {schedulerStatus.last_pipeline_finished_at && (
                 <span className="font-body text-xs text-[#4F5D75]">
-                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success ? 'text-[#1B998B]' : 'text-[#8C2C23]'}`}>{schedulerStatus.last_pipeline_success ? 'Success' : 'Failed'}</span> {formatTs(schedulerStatus.last_pipeline_finished_at)}
+                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success === true ? 'text-[#1B998B]' : schedulerStatus.last_pipeline_success === false ? 'text-[#8C2C23]' : 'text-[#4F5D75]'}`}>{schedulerStatus.last_pipeline_success === true ? 'Success' : schedulerStatus.last_pipeline_success === false ? 'Failed' : '\u2014'}</span> {formatTs(schedulerStatus.last_pipeline_finished_at)}
                 </span>
               )}
             </div>

@@ -89,6 +89,7 @@ import { renderWithQueryClient } from "./test-utils";
 import { getVelocityApiV1AggregationVelocityGetOptions } from "@/api-client/@tanstack/react-query.gen";
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(getVelocityApiV1AggregationVelocityGetOptions).mockReturnValue({
     queryKey: ["velocity"],
     queryFn: vi.fn().mockResolvedValue(mockVelocity),

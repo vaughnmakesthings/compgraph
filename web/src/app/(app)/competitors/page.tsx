@@ -37,7 +37,7 @@ function CompanyCard({
         </div>
         <div className="flex items-baseline gap-1">
           <span className={`font-mono text-2xl font-semibold leading-none ${loading ? 'text-[#BFC0C0]' : 'text-[#2D3142]'}`}>
-            {loading ? "\u2014" : (activePostings ?? 0).toLocaleString()}
+            {loading ? "\u2014" : activePostings !== null ? activePostings.toLocaleString() : "\u2014"}
           </span>
           <span className="font-body text-xs text-[#4F5D75]">
             active postings

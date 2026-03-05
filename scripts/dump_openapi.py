@@ -6,7 +6,7 @@ from pathlib import Path
 os.environ.setdefault("AUTH_DISABLED", "true")
 os.environ.setdefault("DATABASE_PASSWORD", "openapi-gen-placeholder")
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from compgraph.main import app
 

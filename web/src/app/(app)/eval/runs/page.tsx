@@ -212,7 +212,12 @@ function NewRunForm({ onCancel }: { onCancel: () => void }) {
             min={1}
             max={20}
             value={concurrency}
-            onChange={(e) => setConcurrency(parseInt(e.target.value))}
+            onChange={(e) => {
+              const parsed = parseInt(e.target.value);
+              if (!Number.isNaN(parsed)) {
+                setConcurrency(Math.max(1, Math.min(20, parsed)));
+              }
+            }}
             className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354]"
           />
         </div>
@@ -252,7 +257,7 @@ export default function EvalRunsPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [runToDelete, setRunToDelete] = useState<string | null>(null);
 
-  const { data: runs = [], isLoading } = useQuery({
+  const { data: runs = [], isLoading, isError, error: runsError } = useQuery({
     ...getRunsApiV1EvalRunsGetOptions(),
     refetchInterval: (query) => {
       const data = query.state.data as EvalRun[] | undefined;
@@ -316,6 +321,12 @@ export default function EvalRunsPage() {
                   </td>
                 </tr>
               ))
+            ) : isError ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-sm font-body text-[#8C2C23]">
+                  {runsError instanceof Error ? runsError.message : "Failed to load evaluation runs"}
+                </td>
+              </tr>
             ) : runs.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-sm font-body text-[#4F5D75]">

@@ -75,8 +75,8 @@ function AccuracyContent() {
     select: (data) => data as unknown as EvalRun[],
   });
 
-  const { data: results = [] } = useQuery({
-    ...getRunResultsApiV1EvalRunsRunIdResultsGetOptions({ 
+  const { data: results = [], isLoading: resultsLoading } = useQuery({
+    ...getRunResultsApiV1EvalRunsRunIdResultsGetOptions({
       path: { run_id: selectedRunId! },
     }),
     enabled: !!selectedRunId,
@@ -164,6 +164,12 @@ function AccuracyContent() {
   };
 
   useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!selectedRunId || results.length === 0) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -238,9 +244,15 @@ function AccuracyContent() {
         </select>
       </div>
 
-      {selectedRunId && results.length === 0 && (
+      {selectedRunId && resultsLoading && (
         <div className="mt-6 flex items-center justify-center py-16 font-body text-[13px] text-[#4F5D75]">
           Loading results\u2026
+        </div>
+      )}
+
+      {selectedRunId && !resultsLoading && results.length === 0 && (
+        <div className="mt-6 flex items-center justify-center py-16 font-body text-[13px] text-[#4F5D75]">
+          No results found for this run.
         </div>
       )}
 

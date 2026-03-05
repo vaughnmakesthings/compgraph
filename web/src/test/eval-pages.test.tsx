@@ -65,6 +65,7 @@ import PromptDiffPage from "@/app/(app)/eval/prompt-diff/page";
 
 describe("Eval Runs page", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(getRunsApiV1EvalRunsGetOptions).mockReturnValue({
       queryKey: ["evalRuns"],
       queryFn: vi.fn().mockResolvedValue([

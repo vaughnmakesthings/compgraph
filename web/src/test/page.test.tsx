@@ -21,6 +21,10 @@ vi.mock("@tremor/react", async () => {
   return tremorMockSimple();
 });
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("Home page", () => {
   it("renders the Pipeline Health heading", () => {
     renderWithQueryClient(<DashboardPage />);

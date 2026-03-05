@@ -47,13 +47,17 @@ export default function MarketPage() {
     if (!velocity || !gaps) return null;
 
     const latestActiveByCompany: Record<string, number> = {};
+    const latestDateByCompany: Record<string, string> = {};
     const newLast7ByCompany: Record<string, number> = {};
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
 
     for (const row of velocity) {
-      if (!row.company_id) continue;
-      latestActiveByCompany[row.company_id] = row.active_postings ?? 0;
+      if (!row.company_id || !row.date) continue;
+      if (!(row.company_id in latestDateByCompany) || row.date > latestDateByCompany[row.company_id]) {
+        latestDateByCompany[row.company_id] = row.date;
+        latestActiveByCompany[row.company_id] = row.active_postings ?? 0;
+      }
       if (row.date && new Date(row.date) >= cutoff) {
         newLast7ByCompany[row.company_id] =
           (newLast7ByCompany[row.company_id] ?? 0) + (row.new_postings ?? 0);

@@ -90,6 +90,11 @@ function ReviewPageContent() {
   const [voteError, setVoteError] = useState<string | null>(null);
   const [lastSavedPostingId, setLastSavedPostingId] = useState<string | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentIndexRef = useRef(currentIndex);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   const { data: runs = [], isLoading: runsLoading } = useQuery({
     ...getRunsApiV1EvalRunsGetOptions(),
@@ -239,13 +244,14 @@ function ReviewPageContent() {
 
   const voteMutation = useMutation({
     ...createComparisonApiV1EvalComparisonsPostMutation(),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: getComparisonsApiV1EvalComparisonsGetQueryKey() });
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      setLastSavedPostingId(currentItem.postingId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setLastSavedPostingId((variables as any).body.posting_id);
       savedTimerRef.current = setTimeout(() => setLastSavedPostingId(null), 800);
       setNotes("");
-      if (currentIndex < totalComparisons - 1) {
+      if (currentIndexRef.current < totalComparisons - 1) {
         setCurrentIndex((i) => i + 1);
       }
     },
