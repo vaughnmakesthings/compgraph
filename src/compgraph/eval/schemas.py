@@ -60,7 +60,7 @@ class EvalComparisonResponse(BaseModel):
     posting_id: str
     result_a_id: uuid.UUID
     result_b_id: uuid.UUID
-    winner: str
+    winner: Literal["a", "b", "tie", "both_bad"]
     notes: str | None = None
     created_at: datetime
 
@@ -72,7 +72,7 @@ class EvalFieldReviewResponse(BaseModel):
     result_id: uuid.UUID
     field_name: str
     model_value: str | None = None
-    is_correct: int
+    is_correct: Literal[-1, 0, 1]
     correct_value: str | None = None
     created_at: datetime
 
