@@ -10,6 +10,18 @@ from compgraph.api.schemas.aggregation import (
     VelocityItem,
 )
 from compgraph.api.schemas.companies import CompanyItem
+from compgraph.api.schemas.eval import (
+    EvalComparisonItem,
+    EvalCorpusItem,
+    EvalFieldReviewItem,
+    EvalLeaderboardResponse,
+    EvalModelItem,
+    EvalResultItem,
+    EvalRunCreateResponse,
+    EvalRunItem,
+    IdResponse,
+    StatusResponse,
+)
 
 __all__ = [
     "AgencyOverlapItem",
@@ -17,7 +29,17 @@ __all__ = [
     "ChurnSignalItem",
     "CompanyItem",
     "CoverageGapItem",
+    "EvalComparisonItem",
+    "EvalCorpusItem",
+    "EvalFieldReviewItem",
+    "EvalLeaderboardResponse",
+    "EvalModelItem",
+    "EvalResultItem",
+    "EvalRunCreateResponse",
+    "EvalRunItem",
+    "IdResponse",
     "LifecycleItem",
     "PayBenchmarkItem",
+    "StatusResponse",
     "VelocityItem",
 ]

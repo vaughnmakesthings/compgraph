@@ -29,7 +29,7 @@ class EvalRunItem(BaseModel):
     status: str
     total_items: int
     completed_items: int
-    completed_at: None = None
+    completed_at: str | None = None
 
 
 class EvalResultItem(BaseModel):
