@@ -100,7 +100,7 @@ class BrandChurnSignalsJob(AggregationJob):
                     "id": str(uuid.uuid4()),
                     "company_id": str(row["company_id"]),
                     "brand_id": str(row["brand_id"]),
-                    "period": today.isoformat(),
+                    "period": today,
                     "active_posting_count": row["active_posting_count"],
                     "prior_period_count": row["prior_period_count"],
                     "velocity_delta": row["velocity_delta"],

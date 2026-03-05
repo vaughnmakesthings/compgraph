@@ -77,7 +77,7 @@ class BrandAgencyOverlapJob(AggregationJob):
                 {
                     "id": str(uuid.uuid4()),
                     "brand_id": str(row["brand_id"]),
-                    "period": today.isoformat(),
+                    "period": today,
                     "agency_count": row["agency_count"],
                     "agency_names": agency_names,
                     "primary_company_id": str(row["primary_company_id"])

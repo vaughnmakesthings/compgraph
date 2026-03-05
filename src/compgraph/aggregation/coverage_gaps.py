@@ -82,7 +82,7 @@ class MarketCoverageGapsJob(AggregationJob):
                     "id": str(uuid.uuid4()),
                     "company_id": str(row["company_id"]),
                     "market_id": str(row["market_id"]),
-                    "period": today.isoformat(),
+                    "period": today,
                     "total_active_postings": row["total_active_postings"],
                     "brand_count": row["brand_count"],
                     "brand_names": brand_names,
