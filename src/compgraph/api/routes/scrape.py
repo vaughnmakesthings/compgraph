@@ -20,6 +20,7 @@ from compgraph.scrapers.orchestrator import (
     PipelineStatus,
     _pipeline_orchestrators,
     _store_run,
+    get_all_runs,
     get_latest_run,
     get_orchestrator,
     get_run,
@@ -333,7 +334,6 @@ async def list_scrape_runs(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
 ) -> PipelineRunListResponse:
     """List all in-memory pipeline runs, most recent first."""
-    from compgraph.scrapers.orchestrator import get_all_runs
 
     runs = get_all_runs()
     return PipelineRunListResponse(
