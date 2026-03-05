@@ -282,6 +282,7 @@ class PostingEnrichment(Base):
     store_count_mentioned: Mapped[int | None] = mapped_column(Integer, nullable=True)
     travel_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     employment_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    entity_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Enrichment tracking
     enrichment_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -300,6 +301,10 @@ class PostingEnrichment(Base):
         CheckConstraint(
             "pay_min IS NULL OR pay_max IS NULL OR pay_min <= pay_max",
             name="check_pay_range",
+        ),
+        CheckConstraint(
+            "entity_count IS NULL OR entity_count >= 0",
+            name="check_entity_count_non_negative",
         ),
     )
 
