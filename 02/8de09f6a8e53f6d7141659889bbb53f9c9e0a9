@@ -1,0 +1,36 @@
+pyproject.toml
+  85a59f4b590f3419 93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "028de09f6a8e53f6d7141659889bbb53f9c9e0a9",
+  "prompts": {
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "c6b154e1ab2a4bb5": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "3fc79c87-fbae-44dc-ade2-1f90bca73f2e",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 84,
+      "total_deletions": 0,
+      "accepted_lines": 84,
+      "overriden_lines": 0
+    }
+  }
+}
