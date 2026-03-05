@@ -5,7 +5,7 @@ from pathlib import Path
 
 os.environ["AUTH_DISABLED"] = "true"
 os.environ["ENVIRONMENT"] = "development"
-os.environ.setdefault("DATABASE_PASSWORD", "openapi-gen-placeholder")
+os.environ["DATABASE_PASSWORD"] = "openapi-gen-placeholder"  # noqa: S105
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
