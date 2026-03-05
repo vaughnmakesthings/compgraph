@@ -139,7 +139,7 @@ export default function HiringPage() {
   useEffect(() => {
     api.getCompanies()
       .then((cos) => setAllCompanies(cos.map((c) => ({ id: c.id, name: c.name })).sort((a, b) => a.name.localeCompare(b.name))))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load companies for filter:", err));
   }, []);
 
   useEffect(() => {
