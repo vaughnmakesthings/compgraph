@@ -1,0 +1,45 @@
+web/src/app/(app)/eval/accuracy/page.tsx
+  85a59f4b590f3419 78,167-171,247,253-255
+web/src/app/(app)/eval/review/page.tsx
+  85a59f4b590f3419 93-97,247,250-251,254
+web/src/test/competitors.test.tsx
+  85a59f4b590f3419 92
+web/src/app/(app)/competitors/page.tsx
+  85a59f4b590f3419 40
+web/src/lib/utils.ts
+  85a59f4b590f3419 20-22
+scripts/dump_openapi.py
+  85a59f4b590f3419 9
+web/src/test/page.test.tsx
+  85a59f4b590f3419 24-27
+web/src/test/eval-pages.test.tsx
+  85a59f4b590f3419 68
+web/src/app/(app)/eval/runs/page.tsx
+  85a59f4b590f3419 215-220,260,324-329
+web/src/app/(app)/settings/page.tsx
+  85a59f4b590f3419 473
+web/src/app/(app)/hiring/page.tsx
+  85a59f4b590f3419 254,267,280
+web/src/app/(app)/market/page.tsx
+  85a59f4b590f3419 50,56-58,60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "2b32ee5b76e8223cdcf3fcd597efc2cc2db42e0b",
+  "prompts": {
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 59,
+      "total_deletions": 18,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
