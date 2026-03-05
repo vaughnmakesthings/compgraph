@@ -1,0 +1,37 @@
+web/src/test/page.test.tsx
+  85a59f4b590f3419 3,12-16,26,33
+web/src/test/test-utils.tsx
+  85a59f4b590f3419 1-15
+web/src/test/dashboard.test.tsx
+  85a59f4b590f3419 3-4,6-9,21,26,28-36,40,86-121,129-130,132,140-141,143,151-152,154,163-164,166,178-179,181,191-192,194,202-203,205,213-214,216,219,223,228-229,231,239-240,242
+web/src/test/competitors.test.tsx
+  85a59f4b590f3419 77,79-82,88-97,103,110,117,126,135,148,153,158,166,178,183,191,197,203,209,216,222,231,237,243,250,257,265,271,278,286,293
+web/src/test/pages.test.tsx
+  85a59f4b590f3419 7,23-59,69-80,132-149,151-169,176,189,214,221,228,235,242,252,260,273,280,287,294,301,308,315,322,331,337,343,351,362,380,383,412,419,426,433,440,447,455,462,471,487,492,497,511,518,532,538,545,554-555,557-558,568-570,572,575-577,580-582,585-586,590-592,594,597-599,602-605,607-608,618,648,653
+web/src/test/mocks/api-client-rq.ts
+  85a59f4b590f3419 1-99
+web/src/test/eval-pages.test.tsx
+  85a59f4b590f3419 3,42,44-47,52-55,67-93,95,97,102,115,122,139,148,158,168
+web/src/test/settings-admin-guard.test.tsx
+  85a59f4b590f3419 1,59-81,125,131,138,144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "f74676ed8f6c27d210634c85b41d5c95f1e70303",
+  "prompts": {
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 658,
+      "total_deletions": 421,
+      "accepted_lines": 489,
+      "overriden_lines": 0
+    }
+  }
+}
