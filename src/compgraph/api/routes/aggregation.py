@@ -2,22 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
 from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
-from compgraph.db.models import (
-    AggBrandAgencyOverlap,
-    AggBrandChurnSignals,
-    AggBrandTimeline,
-    AggDailyVelocity,
-    AggMarketCoverageGaps,
-    AggPayBenchmarks,
-    AggPostingLifecycle,
-    Brand,
-    Company,
-)
+from compgraph.services.aggregation_service import AggregationService
 
 router = APIRouter(prefix="/aggregation", tags=["aggregation"])
 
@@ -31,29 +20,7 @@ async def get_velocity(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    stmt = (
-        select(
-            AggDailyVelocity,
-            Company.name.label("company_name"),
-            Company.slug.label("company_slug"),
-        )
-        .join(Company, AggDailyVelocity.company_id == Company.id)
-        .order_by(AggDailyVelocity.date.desc())
-        .limit(500)
-    )
-    result = await db.execute(stmt)
-    rows = result.all()
-    return [
-        {
-            **{
-                c.key: getattr(row.AggDailyVelocity, c.key)
-                for c in AggDailyVelocity.__table__.columns
-            },
-            "company_name": row.company_name,
-            "company_slug": row.company_slug,
-        }
-        for row in rows
-    ]
+    return await AggregationService.get_velocity(db)
 
 
 @router.get("/brand-timeline")
@@ -61,31 +28,7 @@ async def get_brand_timeline(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    stmt = (
-        select(
-            AggBrandTimeline,
-            Brand.name.label("brand_name"),
-            Company.name.label("company_name"),
-            Company.slug.label("company_slug"),
-        )
-        .join(Brand, AggBrandTimeline.brand_id == Brand.id)
-        .join(Company, AggBrandTimeline.company_id == Company.id)
-        .limit(500)
-    )
-    result = await db.execute(stmt)
-    rows = result.all()
-    return [
-        {
-            **{
-                c.key: getattr(row.AggBrandTimeline, c.key)
-                for c in AggBrandTimeline.__table__.columns
-            },
-            "brand_name": row.brand_name,
-            "company_name": row.company_name,
-            "company_slug": row.company_slug,
-        }
-        for row in rows
-    ]
+    return await AggregationService.get_brand_timeline(db)
 
 
 @router.get("/pay-benchmarks")
@@ -93,9 +36,7 @@ async def get_pay_benchmarks(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    result = await db.execute(select(AggPayBenchmarks).limit(500))
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    return await AggregationService.get_pay_benchmarks(db)
 
 
 @router.get("/lifecycle")
@@ -103,9 +44,7 @@ async def get_lifecycle(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    result = await db.execute(select(AggPostingLifecycle).limit(500))
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    return await AggregationService.get_lifecycle(db)
 
 
 @router.get("/churn-signals")
@@ -113,13 +52,7 @@ async def get_churn_signals(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    result = await db.execute(
-        select(AggBrandChurnSignals)
-        .order_by(AggBrandChurnSignals.churn_signal_score.desc())
-        .limit(100)
-    )
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    return await AggregationService.get_churn_signals(db)
 
 
 @router.get("/coverage-gaps")
@@ -127,9 +60,7 @@ async def get_coverage_gaps(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    result = await db.execute(select(AggMarketCoverageGaps).limit(500))
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    return await AggregationService.get_coverage_gaps(db)
 
 
 @router.get("/agency-overlap")
@@ -137,11 +68,7 @@ async def get_agency_overlap(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    result = await db.execute(
-        select(AggBrandAgencyOverlap).order_by(AggBrandAgencyOverlap.agency_count.desc()).limit(100)
-    )
-    rows = result.scalars().all()
-    return [{c.key: getattr(r, c.key) for c in r.__table__.columns} for r in rows]
+    return await AggregationService.get_agency_overlap(db)
 
 
 async def _run_aggregation() -> None:
