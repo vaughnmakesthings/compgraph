@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getRunsApiV1EvalRunsGetOptions, 
+import {
+  getRunsApiV1EvalRunsGetOptions,
   getRunResultsApiV1EvalRunsRunIdResultsGetOptions,
+  getRunResultsApiV1EvalRunsRunIdResultsGetQueryKey,
   createFieldReviewApiV1EvalFieldReviewsPostMutation
 } from "@/api-client/@tanstack/react-query.gen";
 import type { EvalRun, EvalResult } from "@/lib/types";
@@ -87,7 +87,9 @@ function AccuracyContent() {
     const map: Record<string, Record<string, FieldReviewState>> = {};
     for (const res of results) {
       map[res.id] = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((res as any).field_reviews) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const fr of (res as any).field_reviews) {
           const outcome: ReviewOutcome = fr.is_correct === 1 ? "correct" : fr.is_correct === -1 ? "cant_assess" : "incorrect";
           map[res.id][fr.field_name] = { outcome };
@@ -104,8 +106,9 @@ function AccuracyContent() {
   const reviewMutation = useMutation({
     ...createFieldReviewApiV1EvalFieldReviewsPostMutation(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["eval", "results", selectedRunId] });
+      queryClient.invalidateQueries({ queryKey: getRunResultsApiV1EvalRunsRunIdResultsGetQueryKey({ path: { run_id: selectedRunId! } }) });
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSavedField((variables as any).body.field_name);
       savedTimerRef.current = setTimeout(() => setSavedField(null), 600);
     },
@@ -283,6 +286,7 @@ function AccuracyContent() {
 
             {reviewMutation.isError && (
               <div className="mx-3 mt-2 rounded border border-[#8C2C2330] px-3 py-1.5 bg-[#8C2C231A] text-[#8C2C23] font-body text-xs">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(reviewMutation.error as any).message || "Failed to save review"}
               </div>
             )}
@@ -293,6 +297,7 @@ function AccuracyContent() {
                 const review = currentReviews[field];
                 const outcome: ReviewOutcome = review?.outcome ?? "pending";
                 const isFocused = focusedFieldIdx === idx;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const isBusy = reviewMutation.isPending && (reviewMutation.variables as any)?.body?.field_name === field;
 
                 return (

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Suspense, useMemo, useCallback } from "react";
@@ -68,9 +67,9 @@ function PromptDiffContent() {
 
   const { fieldStats, commonCount, overallMatchRate, overallDivergenceRate } =
     useMemo(() => {
-      const baselineMap: Record<string, any> = {};
+      const baselineMap: Record<string, EvalResult> = {};
       for (const r of baselineResults) baselineMap[r.posting_id] = r;
-      const candidateMap: Record<string, any> = {};
+      const candidateMap: Record<string, EvalResult> = {};
       for (const r of candidateResults) candidateMap[r.posting_id] = r;
 
       const commonIds = Object.keys(baselineMap).filter(

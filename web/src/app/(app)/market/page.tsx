@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { KpiCard } from "@/components/data/kpi-card";
 import { AreaChart } from "@/components/charts/area-chart";
 import { SkeletonBox } from "@/components/ui/skeleton";
-import { 
-  getVelocityApiV1AggregationVelocityGetOptions, 
-  getCoverageGapsApiV1AggregationCoverageGapsGetOptions 
+import {
+  getVelocityApiV1AggregationVelocityGetOptions,
+  getCoverageGapsApiV1AggregationCoverageGapsGetOptions
 } from "@/api-client/@tanstack/react-query.gen";
 import type { DailyVelocity, CoverageGap } from "@/lib/types";
 
@@ -20,21 +20,21 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 export default function MarketPage() {
-  const { 
-    data: velocity, 
+  const {
+    data: velocity,
     isLoading: velocityLoading,
-    error: velocityError 
+    error: velocityError
   } = useQuery({
-    ...getVelocityApiV1AggregationVelocityGetOptions({ 
-      query: { days: 30 } 
+    ...getVelocityApiV1AggregationVelocityGetOptions({
+      query: { days: 30 }
     }),
     select: (data) => data as unknown as DailyVelocity[],
   });
 
-  const { 
-    data: gaps, 
+  const {
+    data: gaps,
     isLoading: gapsLoading,
-    error: gapsError 
+    error: gapsError
   } = useQuery({
     ...getCoverageGapsApiV1AggregationCoverageGapsGetOptions(),
     select: (data) => data as unknown as CoverageGap[],
@@ -62,7 +62,7 @@ export default function MarketPage() {
 
     const totalActive = Object.values(latestActiveByCompany).reduce((s, n) => s + n, 0);
 
-    let mostActiveCompany = "—";
+    let mostActiveCompany = "\u2014";
     let maxNew = 0;
     for (const [company, count] of Object.entries(newLast7ByCompany)) {
       if (count > maxNew) {
@@ -107,7 +107,11 @@ export default function MarketPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div
+        className="grid grid-cols-3 gap-4 mb-6"
+        aria-label="Market KPI metrics"
+        aria-busy={loading}
+      >
         {loading ? (
           <>
             <SkeletonBox className="h-[96px]" />
@@ -163,7 +167,7 @@ export default function MarketPage() {
               No coverage gaps detected
             </p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" aria-label="Coverage gaps by market">
               <thead>
                 <tr>
                   <th className="text-left px-4 py-2 text-[11px] font-semibold text-[#4F5D75] opacity-50 font-body uppercase tracking-widest">
@@ -184,7 +188,7 @@ export default function MarketPage() {
                       {gap.market}, {gap.state}
                     </td>
                     <td className="px-4 py-2 text-[#4F5D75] font-body">
-                      {gap.companies_absent?.join(", ") ?? "—"}
+                      {gap.companies_absent?.join(", ") ?? "\u2014"}
                     </td>
                   </tr>
                 ))}

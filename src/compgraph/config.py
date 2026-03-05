@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "dev"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    CORS_ORIGINS: str = "*"
+    CORS_ORIGINS: str = "https://compgraph.app,https://www.compgraph.app,https://dev.compgraph.io,http://localhost:3000"
 
     @model_validator(mode="after")
     def _auth_safety_check(self) -> "Settings":

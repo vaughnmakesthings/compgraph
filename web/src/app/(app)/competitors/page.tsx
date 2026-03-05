@@ -24,6 +24,7 @@ function CompanyCard({
       type="button"
       onClick={onClick}
       className="block w-full text-left"
+      aria-label={`View ${company.name} details`}
     >
       <div className="bg-white border border-[#BFC0C0] border-l-[3px] border-l-[#EF8354] rounded-lg p-5 shadow-sm transition-shadow duration-150 ease-in hover:shadow-md cursor-pointer">
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -36,7 +37,7 @@ function CompanyCard({
         </div>
         <div className="flex items-baseline gap-1">
           <span className={`font-mono text-2xl font-semibold leading-none ${loading ? 'text-[#BFC0C0]' : 'text-[#2D3142]'}`}>
-            {loading ? "—" : (activePostings ?? 0).toLocaleString()}
+            {loading ? "\u2014" : (activePostings ?? 0).toLocaleString()}
           </span>
           <span className="font-body text-xs text-[#4F5D75]">
             active postings
@@ -50,7 +51,7 @@ function CompanyCard({
 export default function CompetitorsPage() {
   const router = useRouter();
 
-  const { data: velocity, isLoading } = useQuery({
+  const { data: velocity, isLoading, error } = useQuery({
     ...getVelocityApiV1AggregationVelocityGetOptions(),
     select: (data) => data as unknown as DailyVelocity[],
   });
@@ -59,7 +60,7 @@ export default function CompetitorsPage() {
     const latestDate: Record<string, string> = {};
     const latestCount: Record<string, number> = {};
     if (!velocity) return latestCount;
-    
+
     for (const row of velocity) {
       if (!row.company_slug || !row.date) continue;
       const slug = row.company_slug;
@@ -86,6 +87,15 @@ export default function CompetitorsPage() {
           Field marketing agencies in our competitive set
         </p>
       </div>
+
+      {error && (
+        <div
+          className="mb-6 rounded-lg border-l-[3px] border-l-[#8C2C23] px-4 py-3 text-sm bg-[#8C2C231A] text-[#8C2C23] font-body"
+          role="alert"
+        >
+          {error instanceof Error ? error.message : "Failed to load competitor data. Please try again."}
+        </div>
+      )}
 
       <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
         {COMPANIES.map((company) => (

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useMemo } from "react";
@@ -6,6 +5,12 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getLeaderboardDataApiV1EvalLeaderboardDataGetOptions } from "@/api-client/@tanstack/react-query.gen";
 import type { EvalRun } from "@/lib/types";
+
+interface LeaderboardResponse {
+  runs: EvalRun[];
+  elo: Record<string, number>;
+  field_accuracy: Record<string, Record<string, number>>;
+}
 
 interface LeaderboardRow {
   rank: number;
@@ -53,14 +58,14 @@ export default function LeaderboardPage() {
 
   const { data: rawData, isLoading, error: queryError } = useQuery({
     ...getLeaderboardDataApiV1EvalLeaderboardDataGetOptions(),
-    select: (data) => data as any,
+    select: (data) => data as unknown as LeaderboardResponse,
   });
 
   const error = queryError instanceof Error ? queryError.message : null;
 
-  const runs = useMemo(() => (rawData?.runs as EvalRun[]) ?? [], [rawData]);
-  const eloRatings = useMemo(() => (rawData?.elo ?? {}) as Record<string, number>, [rawData]);
-  const fieldAccuracyMap = useMemo(() => (rawData?.field_accuracy ?? {}) as Record<string, Record<string, number>>, [rawData]);
+  const runs = useMemo(() => rawData?.runs ?? [], [rawData]);
+  const eloRatings = useMemo(() => rawData?.elo ?? {}, [rawData]);
+  const fieldAccuracyMap = useMemo(() => rawData?.field_accuracy ?? {}, [rawData]);
 
   const modelOptions = useMemo(
     () => ["all", ...[...new Set(runs.map((r) => r.model))].sort()],

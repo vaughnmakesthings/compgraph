@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -6,33 +5,36 @@ import { redirect } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserManagementSection } from "@/components/auth/user-management-section";
-import { 
-  healthCheckHealthGetOptions, 
+import {
+  healthCheckHealthGetOptions,
   triggerAggregationApiV1AggregationTriggerPostMutation,
   triggerScrapeApiV1ScrapeTriggerPostMutation,
-  pauseScrapeApiV1ScrapePausePostMutation,
-  resumeScrapeApiV1ScrapeResumePostMutation,
-  stopScrapeApiV1ScrapeStopPostMutation,
-  forceStopScrapeApiV1ScrapeForceStopPostMutation,
   triggerFullApiV1EnrichTriggerPostMutation,
   schedulerStatusApiV1SchedulerStatusGetOptions,
-  triggerJobApiV1SchedulerJobsJobIdTriggerPostMutation,
-  pauseJobApiV1SchedulerJobsJobIdPausePostMutation,
-  resumeJobApiV1SchedulerJobsJobIdResumePostMutation,
   pipelineRunsApiV1PipelineRunsGetOptions,
   scrapeStatusApiV1ScrapeStatusGetOptions,
-  enrichStatusApiV1EnrichStatusGetOptions
+  scrapeStatusApiV1ScrapeStatusGetQueryKey,
+  enrichStatusApiV1EnrichStatusGetOptions,
+  schedulerStatusApiV1SchedulerStatusGetQueryKey,
 } from "@/api-client/@tanstack/react-query.gen";
-import type { 
-  ScrapeStatusResponse, 
-  EnrichStatusResponse, 
-  SchedulerStatusResponse, 
-  PipelineRunsResponse 
+import {
+  pauseScrapeApiV1ScrapePausePost,
+  resumeScrapeApiV1ScrapeResumePost,
+  stopScrapeApiV1ScrapeStopPost,
+  forceStopScrapeApiV1ScrapeForceStopPost,
+  triggerJobApiV1SchedulerJobsJobIdTriggerPost,
+  pauseJobApiV1SchedulerJobsJobIdPausePost,
+  resumeJobApiV1SchedulerJobsJobIdResumePost,
+} from "@/api-client/sdk.gen";
+import type {
+  ScrapeStatusResponse,
+  EnrichStatusResponse,
+  SchedulerStatusResponse,
+  PipelineRunsResponse
 } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { SectionCard } from "@/components/ui/section-card";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE } from "@/lib/constants";
 const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 
 // --- Shared primitives ---
@@ -211,6 +213,7 @@ function LiveScrapePanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8E8E4]">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {Object.entries(status.company_states).map(([slug, cs]: [string, any]) => (
                 <tr key={slug}>
                   <td className="px-3 py-1.5 font-mono text-[#2D3142]">{slug}</td>
@@ -288,10 +291,10 @@ function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
 
       <div className="grid grid-cols-4 divide-x divide-[#BFC0C0]">
         {[
-          { label: "Input tokens",  value: status.total_input_tokens.toLocaleString() },
-          { label: "Output tokens", value: status.total_output_tokens.toLocaleString() },
-          { label: "API calls",     value: status.total_api_calls.toLocaleString() },
-          { label: "Dedup saved",   value: status.total_dedup_saved.toLocaleString() },
+          { label: "Input tokens",  value: (status.total_input_tokens ?? 0).toLocaleString() },
+          { label: "Output tokens", value: (status.total_output_tokens ?? 0).toLocaleString() },
+          { label: "API calls",     value: (status.total_api_calls ?? 0).toLocaleString() },
+          { label: "Dedup saved",   value: (status.total_dedup_saved ?? 0).toLocaleString() },
         ].map(({ label, value }) => (
           <div key={label} className="px-3 py-2">
             <div className="text-[10px] text-[#4F5D75] uppercase tracking-wider font-body">{label}</div>
@@ -327,6 +330,7 @@ function SettingsPageContent() {
   const { data: scrapeStatus } = useQuery({
     ...scrapeStatusApiV1ScrapeStatusGetOptions(),
     refetchInterval: (query) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const status = (query.state.data as any)?.status;
       return (status && !TERMINAL_STATES.has(status)) ? 3000 : false;
     },
@@ -336,6 +340,7 @@ function SettingsPageContent() {
   const { data: enrichStatus } = useQuery({
     ...enrichStatusApiV1EnrichStatusGetOptions(),
     refetchInterval: (query) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const status = (query.state.data as any)?.status;
       return (status && !TERMINAL_STATES.has(status)) ? 3000 : false;
     },
@@ -351,29 +356,28 @@ function SettingsPageContent() {
 
   const scrapeControlMutation = useMutation({
     mutationFn: async (action: string) => {
-      const args = [{}, {} as any] as const;
-      if (action === "pause") return (await pauseScrapeApiV1ScrapePausePostMutation().mutationFn!(...args));
-      if (action === "resume") return (await resumeScrapeApiV1ScrapeResumePostMutation().mutationFn!(...args));
-      if (action === "stop") return (await stopScrapeApiV1ScrapeStopPostMutation().mutationFn!(...args));
-      if (action === "force-stop") return (await forceStopScrapeApiV1ScrapeForceStopPostMutation().mutationFn!(...args));
+      if (action === "pause") return pauseScrapeApiV1ScrapePausePost();
+      if (action === "resume") return resumeScrapeApiV1ScrapeResumePost();
+      if (action === "stop") return stopScrapeApiV1ScrapeStopPost();
+      if (action === "force-stop") return forceStopScrapeApiV1ScrapeForceStopPost();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scrape", "status"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scrapeStatusApiV1ScrapeStatusGetQueryKey() }),
   });
 
   const schedulerMutation = useMutation({
     mutationFn: async ({ jobId, action }: { jobId: string; action: string }) => {
-      const opts = { path: { job_id: jobId } };
-      const args = [opts, {} as any] as const;
-      if (action === "trigger") return (await triggerJobApiV1SchedulerJobsJobIdTriggerPostMutation().mutationFn!(...args));
-      if (action === "pause") return (await pauseJobApiV1SchedulerJobsJobIdPausePostMutation().mutationFn!(...args));
-      if (action === "resume") return (await resumeJobApiV1SchedulerJobsJobIdResumePostMutation().mutationFn!(...args));
+      const path = { job_id: jobId };
+      if (action === "trigger") return triggerJobApiV1SchedulerJobsJobIdTriggerPost({ path });
+      if (action === "pause") return pauseJobApiV1SchedulerJobsJobIdPausePost({ path });
+      if (action === "resume") return resumeJobApiV1SchedulerJobsJobIdResumePost({ path });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scheduler", "status"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: schedulerStatusApiV1SchedulerStatusGetQueryKey() }),
   });
 
   // Derived state
   const scrapeRuns = runsRes?.scrape_runs ?? [];
   const enrichRuns = runsRes?.enrichment_runs ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const apiVersion = (health as any)?.version;
 
   const scrapeIsActive = scrapeStatus && !TERMINAL_STATES.has(scrapeStatus.status);
@@ -397,7 +401,7 @@ function SettingsPageContent() {
 
       <SectionCard title="API Health" className="p-5" headingClassName="text-base">
         <div className="flex items-center gap-4 mb-3">
-          <span className="font-mono text-xs text-[#4F5D75] bg-[#E8E8E4] rounded px-2 py-0.5">{API_URL}</span>
+          <span className="font-mono text-xs text-[#4F5D75] bg-[#E8E8E4] rounded px-2 py-0.5">{API_BASE}</span>
           {!!health && (
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-[#1B998B]" aria-hidden="true" />
@@ -425,6 +429,7 @@ function SettingsPageContent() {
 
         {aggMutation.isSuccess && (
           <div className="mt-3 rounded border border-[#1B998B33] px-3 py-2 text-[13px] bg-[#1B998B1A] text-[#1B998B] font-body">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             Success: {(aggMutation.data as any)?.message || 'Started'}
           </div>
         )}
@@ -447,7 +452,7 @@ function SettingsPageContent() {
         )}
 
         {scrapeStatus && <LiveScrapePanel status={scrapeStatus} onControl={(a) => {
-          if (a === "stop" || a === "force-stop") { setConfirmScrapeAction(a as any); setConfirmScrapeControlOpen(true); }
+          if (a === "stop" || a === "force-stop") { setConfirmScrapeAction(a); setConfirmScrapeControlOpen(true); }
           else scrapeControlMutation.mutate(a);
         }} controlRunning={scrapeControlMutation.isPending} />}
 
@@ -487,6 +492,7 @@ function SettingsPageContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8E8E4]">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {schedulerStatus.schedules.map((sched: any) => (
                       <tr key={sched.schedule_id}>
                         <td className="px-3 py-2 font-mono text-[#2D3142]">{sched.schedule_id}</td>
@@ -533,6 +539,7 @@ function SettingsPageContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8E8E4]">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {scrapeRuns.map((r: any) => {
                   const dur = r.completed_at && r.started_at ? Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s" : "—";
                   return (
@@ -565,6 +572,7 @@ function SettingsPageContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8E8E4]">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {enrichRuns.map((r: any) => {
                   const dur = r.finished_at && r.started_at ? Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s" : "—";
                   return (

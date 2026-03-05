@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
-import { 
-  listCompaniesApiV1CompaniesGetOptions, 
-  listPostingsApiV1PostingsGetOptions 
+import {
+  listCompaniesApiV1CompaniesGetOptions,
+  listPostingsApiV1PostingsGetOptions
 } from "@/api-client/@tanstack/react-query.gen";
 import type { Company, PostingListResponse, PostingListItem } from "@/lib/types";
 import { formatRoleArchetype } from "@/lib/utils";
@@ -27,13 +26,14 @@ const ROLE_ARCHETYPES = [
 ] as const;
 
 const SORT_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "first_seen_desc", label: "First Seen ↓" },
-  { value: "first_seen_asc", label: "First Seen ↑" },
-  { value: "pay_desc", label: "Pay High–Low" },
-  { value: "pay_asc", label: "Pay Low–High" },
-  { value: "title_asc", label: "Title A–Z" },
+  { value: "first_seen_desc", label: "First Seen \u2193" },
+  { value: "first_seen_asc", label: "First Seen \u2191" },
+  { value: "pay_desc", label: "Pay High\u2013Low" },
+  { value: "pay_asc", label: "Pay Low\u2013High" },
+  { value: "title_asc", label: "Title A\u2013Z" },
 ];
 
+// TODO: consolidate with lib/utils.ts
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
@@ -47,17 +47,17 @@ function formatPayRange(
   max: number | null | undefined,
   currency?: string | null,
 ): string {
-  if (min == null && max == null) return "—";
+  if (min == null && max == null) return "\u2014";
   const fmt = (n: number) =>
     n.toLocaleString("en-US", {
       minimumFractionDigits: n % 1 !== 0 ? 2 : 0,
       maximumFractionDigits: 2,
     });
   let s: string;
-  if (min != null && max != null) s = `$${fmt(min)}–$${fmt(max)}`;
+  if (min != null && max != null) s = `$${fmt(min)}\u2013$${fmt(max)}`;
   else if (min != null) s = `$${fmt(min)}+`;
   else if (max != null) s = `up to $${fmt(max)}`;
-  else return "—";
+  else return "\u2014";
   if (currency && currency !== "USD") s += ` ${currency}`;
   return s;
 }
@@ -77,10 +77,18 @@ function SkeletonRow() {
 export default function HiringPage() {
   const [offset, setOffset] = useState(0);
   const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [roleFilter, setRoleFilter] = useState("");
   const [sortBy, setSortBy] = useState("first_seen_desc");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Companies list for filter
   const { data: companies } = useQuery({
@@ -94,10 +102,10 @@ export default function HiringPage() {
   }, [companies]);
 
   // Postings list
-  const { 
-    data: postings, 
-    isLoading: loading, 
-    error: queryError 
+  const {
+    data: postings,
+    isLoading: loading,
+    error: queryError
   } = useQuery({
     ...listPostingsApiV1PostingsGetOptions({
       query: {
@@ -107,7 +115,8 @@ export default function HiringPage() {
         is_active: statusFilter === "all" ? undefined : statusFilter === "active",
         role_archetype: roleFilter || undefined,
         sort_by: sortBy,
-        search: searchInput || undefined,
+        search: debouncedSearch || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any
     }),
     select: (data) => data as unknown as PostingListResponse,
@@ -349,19 +358,19 @@ export default function HiringPage() {
                     className="px-4 py-3 max-w-xs truncate text-[#2D3142] font-body"
                     title={item.title ?? ""}
                   >
-                    {item.title ?? "—"}
+                    {item.title ?? "\u2014"}
                   </td>
                   <td className="px-4 py-3 text-[#2D3142] font-body">
                     {item.company_name ?? item.company_id}
                   </td>
                   <td className="px-4 py-3 text-[#4F5D75] font-body">
-                    {item.location ?? "—"}
+                    {item.location ?? "\u2014"}
                   </td>
                   <td className="px-4 py-3">
                     {item.role_archetype ? (
                       <Badge variant="neutral">{formatRoleArchetype(item.role_archetype)}</Badge>
                     ) : (
-                      <span className="text-[#4F5D75]">—</span>
+                      <span className="text-[#4F5D75]">\u2014</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -392,7 +401,7 @@ export default function HiringPage() {
 
       <div className="mt-3 flex items-center justify-between font-body text-[13px] text-[#4F5D75]">
         <span>
-          {total === 0 ? "No postings" : `Showing ${start}–${end} of ${total}`}
+          {total === 0 ? "No postings" : `Showing ${start}\u2013${end} of ${total}`}
         </span>
         <TablePagination
           page={total === 0 ? 1 : Math.floor(offset / PAGE_SIZE) + 1}

@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getRunsApiV1EvalRunsGetOptions, 
-  getRunResultsApiV1EvalRunsRunIdResultsGetOptions, 
+import {
+  getRunsApiV1EvalRunsGetOptions,
+  getRunResultsApiV1EvalRunsRunIdResultsGetOptions,
   getCorpusApiV1EvalCorpusGetOptions,
   getComparisonsApiV1EvalComparisonsGetOptions,
+  getComparisonsApiV1EvalComparisonsGetQueryKey,
   createComparisonApiV1EvalComparisonsPostMutation
 } from "@/api-client/@tanstack/react-query.gen";
 import type { EvalRun, EvalResult, EvalComparison, PostingListItem } from "@/lib/types";
@@ -164,6 +164,7 @@ function ReviewPageContent() {
     const mapB = new Map(resultsB.map((r) => [r.posting_id, r]));
     const corpusMap = new Map(corpus.map((c) => [c.id, c]));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const common: any[] = [];
     for (const [postingId, rA] of mapA) {
       const rB = mapB.get(postingId);
@@ -239,7 +240,7 @@ function ReviewPageContent() {
   const voteMutation = useMutation({
     ...createComparisonApiV1EvalComparisonsPostMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["eval", "comparisons"] });
+      queryClient.invalidateQueries({ queryKey: getComparisonsApiV1EvalComparisonsGetQueryKey() });
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       setLastSavedPostingId(currentItem.postingId);
       savedTimerRef.current = setTimeout(() => setLastSavedPostingId(null), 800);
@@ -248,6 +249,7 @@ function ReviewPageContent() {
         setCurrentIndex((i) => i + 1);
       }
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       setVoteError(err.message || "Failed to save vote");
     }

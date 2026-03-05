@@ -32,7 +32,6 @@
     "@supabase/supabase-js": "^2.97.0",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
-    "@testing-library/dom": "^10.4.1",
     "@tremor/react": "^3.18.7",
     "@vercel/analytics": "^1.6.1",
     "ag-grid-community": "^35.1.0",
@@ -43,10 +42,11 @@
     "react-hot-toast": "^2.6.0",
     "react-is": "^19.2.4",
     "recharts": "^3.7.0",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "@hey-api/client-fetch": "^0.13.1"
   },
   "devDependencies": {
-    "@hey-api/client-fetch": "^0.13.1",
+    "@testing-library/dom": "^10.4.1",
     "@hey-api/openapi-ts": "^0.94.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",

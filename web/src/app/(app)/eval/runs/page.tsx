@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getRunsApiV1EvalRunsGetOptions, 
-  listModelsApiV1EvalModelsGetOptions, 
+import {
+  getRunsApiV1EvalRunsGetOptions,
+  getRunsApiV1EvalRunsGetQueryKey,
+  listModelsApiV1EvalModelsGetOptions,
   createRunApiV1EvalRunsPostMutation,
   deleteRunApiV1EvalRunsRunIdDeleteMutation
 } from "@/api-client/@tanstack/react-query.gen";
@@ -22,6 +22,7 @@ function formatDate(iso: string): string {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatProgress(run: any): string {
   if (run.total_items === 0) return "\u2014";
   return `${run.completed_items} / ${run.total_items}`;
@@ -110,9 +111,10 @@ function NewRunForm({ onCancel }: { onCancel: () => void }) {
   const createMutation = useMutation({
     ...createRunApiV1EvalRunsPostMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["eval", "runs"] });
+      queryClient.invalidateQueries({ queryKey: getRunsApiV1EvalRunsGetQueryKey() });
       onCancel();
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       setFormError(err.message || "Failed to create run");
     }
@@ -252,14 +254,18 @@ export default function EvalRunsPage() {
 
   const { data: runs = [], isLoading } = useQuery({
     ...getRunsApiV1EvalRunsGetOptions(),
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const data = query.state.data as EvalRun[] | undefined;
+      const hasActive = data?.some(r => r.status === "running" || r.status === "pending");
+      return hasActive ? 5000 : false;
+    },
     select: (data) => data as unknown as EvalRun[],
   });
 
   const deleteMutation = useMutation({
     ...deleteRunApiV1EvalRunsRunIdDeleteMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["eval", "runs"] });
+      queryClient.invalidateQueries({ queryKey: getRunsApiV1EvalRunsGetQueryKey() });
       setRunToDelete(null);
     }
   });

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -13,12 +12,41 @@ import {
 import { KpiCard } from "@/components/data/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { SkeletonBox } from "@/components/ui/skeleton";
-import { 
-  pipelineStatusApiV1PipelineStatusGetOptions, 
-  getVelocityApiV1AggregationVelocityGetOptions 
+import {
+  pipelineStatusApiV1PipelineStatusGetOptions,
+  getVelocityApiV1AggregationVelocityGetOptions
 } from "@/api-client/@tanstack/react-query.gen";
-import type { PipelineStatus, DailyVelocity } from "@/lib/types";
+import type { DailyVelocity } from "@/lib/types";
 
+interface EnrichCurrentRun {
+  run_id: string;
+  status: string;
+  started_at: string;
+  pass1_total: number;
+  pass1_succeeded: number;
+  pass1_skipped: number;
+  pass2_total: number;
+  pass2_succeeded: number;
+  pass2_skipped: number;
+}
+
+interface PipelineStatusResponse {
+  status: string;
+  system_state?: string;
+  scrape: {
+    status: string;
+    current_run: Record<string, unknown> | null;
+    last_completed_at: string | null;
+  };
+  enrich: {
+    status: string;
+    current_run: EnrichCurrentRun | null;
+    last_completed_at: string | null;
+  };
+  scheduler: { enabled: boolean; next_run_at: string | null };
+}
+
+// TODO: consolidate with lib/utils.ts
 function formatTimestamp(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("en-US", {
@@ -48,7 +76,7 @@ export default function DashboardPage() {
     refetch: refetchStatus,
   } = useQuery({
     ...pipelineStatusApiV1PipelineStatusGetOptions(),
-    select: (data) => data as unknown as PipelineStatus,
+    select: (data) => data as unknown as PipelineStatusResponse,
   });
 
   const {
@@ -57,8 +85,8 @@ export default function DashboardPage() {
     error: velocityError,
     refetch: refetchVelocity,
   } = useQuery({
-    ...getVelocityApiV1AggregationVelocityGetOptions({ 
-      query: { days: chartDays } 
+    ...getVelocityApiV1AggregationVelocityGetOptions({
+      query: { days: chartDays }
     }),
     select: (data) => data as unknown as DailyVelocity[],
   });
@@ -74,9 +102,9 @@ export default function DashboardPage() {
       if (!row.company_id || !row.date) continue;
       const existing = latestByCompany[row.company_id];
       if (!existing || row.date > existing.date) {
-        latestByCompany[row.company_id] = { 
-          date: row.date, 
-          active: row.active_postings ?? 0 
+        latestByCompany[row.company_id] = {
+          date: row.date,
+          active: row.active_postings ?? 0
         };
       }
     }
@@ -89,9 +117,9 @@ export default function DashboardPage() {
       .reduce((s, r) => s + (r.new_postings ?? 0), 0);
 
     let enrichmentPct: number | null = null;
-    const enrichRun = status.enrich.current_run;
-    if (enrichRun && enrichRun.pass1_completed > 0) {
-      enrichmentPct = Math.round((enrichRun.pass2_completed / enrichRun.pass1_completed) * 100);
+    const enrichRun = status.enrich?.current_run;
+    if (enrichRun && enrichRun.pass1_succeeded > 0) {
+      enrichmentPct = Math.round((enrichRun.pass2_succeeded / enrichRun.pass1_succeeded) * 100);
     }
 
     const companies = [...new Set(velocity.map((r) => r.company_id!).filter(Boolean))].sort();
@@ -128,7 +156,7 @@ export default function DashboardPage() {
       enrichmentPct,
       chartRows,
       bars,
-      pipelineStatus: status.status,
+      pipelineStatus: status.system_state ?? status.status,
       lastUpdated: status.scrape.last_completed_at,
     };
   }, [status, velocity]);
@@ -149,44 +177,29 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1
-          className="text-2xl font-semibold tracking-tight"
-          style={{ fontFamily: "var(--font-display, 'Sora Variable', sans-serif)" }}
-        >
+        <h1 className="text-2xl font-semibold tracking-tight font-display">
           Pipeline Health
         </h1>
-        <p
-          className="mt-1 text-sm"
-          style={{ color: "var(--color-muted-foreground)" }}
-        >
+        <p className="mt-1 text-sm text-[#4F5D75]">
           Hiring activity across tracked competitors
         </p>
       </div>
 
       {error && (
         <div
-          className="mb-6 rounded-lg px-4 py-3 text-sm flex items-start gap-3"
-          style={{
-            borderLeft: "3px solid #8C2C23",
-            backgroundColor: "#8C2C231A",
-            color: "#8C2C23",
-          }}
+          className="mb-6 rounded-lg px-4 py-3 text-sm flex items-start gap-3 border-l-[3px] border-l-[#8C2C23] bg-[#8C2C231A] text-[#8C2C23]"
           role="alert"
         >
           <div className="flex-1">
             <p className="font-semibold mb-0.5">Could not connect to the pipeline API</p>
-            <p style={{ color: "#2D3142", fontSize: "13px" }}>
+            <p className="text-[#2D3142] text-[13px]">
               {error instanceof Error ? error.message : "Check that the backend service is running and try again."}
             </p>
           </div>
           <button
             type="button"
             onClick={handleRetry}
-            className="shrink-0 flex items-center gap-1.5 text-xs transition-opacity hover:opacity-70"
-            style={{
-              color: "#8C2C23",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            }}
+            className="shrink-0 flex items-center gap-1.5 text-xs transition-opacity hover:opacity-70 text-[#8C2C23] font-body"
             aria-label="Retry loading dashboard"
           >
             <ArrowPathIcon className="h-3.5 w-3.5" />
@@ -212,13 +225,13 @@ export default function DashboardPage() {
             <KpiCard
               label="Active Postings"
               value={derived ? derived.totalActive.toLocaleString() : kpiFallback.totalActive}
-              icon={<BriefcaseIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              icon={<BriefcaseIcon className="h-4 w-4 text-[#4F5D75]" />}
               trend={derived ? { value: 12, label: "vs last wk" } : undefined}
             />
             <KpiCard
               label="New This Week"
               value={derived ? derived.newThisWeek.toLocaleString() : kpiFallback.newThisWeek}
-              icon={<ArrowTrendingUpIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              icon={<ArrowTrendingUpIcon className="h-4 w-4 text-[#4F5D75]" />}
               trend={derived ? { value: 8, label: "vs prev wk" } : undefined}
             />
             <KpiCard
@@ -230,31 +243,21 @@ export default function DashboardPage() {
                     : "—"
                   : kpiFallback.enrichmentPct
               }
-              icon={<CheckCircleIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              icon={<CheckCircleIcon className="h-4 w-4 text-[#4F5D75]" />}
             />
             <KpiCard
               label="Pipeline Status"
               value={derived ? (derived.pipelineStatus as string) : kpiFallback.pipelineStatus}
-              icon={<SignalIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
+              icon={<SignalIcon className="h-4 w-4 text-[#4F5D75]" />}
               variant={derived ? pipelineCardVariant(derived.pipelineStatus) : "default"}
             />
           </>
         )}
       </div>
 
-      <div
-        className="rounded-lg border p-4 mb-4"
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#BFC0C0",
-          boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
-        }}
-      >
+      <div className="rounded-lg border border-[#BFC0C0] p-4 mb-4 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2
-            className="text-sm font-medium"
-            style={{ color: "#2D3142" }}
-          >
+          <h2 className="text-sm font-medium text-[#2D3142]">
             Daily Posting Velocity
           </h2>
           <div className="flex items-center gap-1" role="group" aria-label="Time range">
@@ -288,15 +291,13 @@ export default function DashboardPage() {
         ) : derived && derived.chartRows.length > 0 ? (
           <BarChart
             data={derived.chartRows}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             bars={derived.bars as any}
             xDataKey="date"
             height={280}
           />
         ) : (
-          <div
-            className="flex items-center justify-center h-[280px] text-sm"
-            style={{ color: "var(--color-muted-foreground)" }}
-          >
+          <div className="flex items-center justify-center h-[280px] text-sm text-[#4F5D75]">
             No velocity data available
           </div>
         )}
@@ -304,10 +305,7 @@ export default function DashboardPage() {
 
       {!initialLoading && derived && (
         <div className="flex justify-end">
-          <p
-            className="text-xs"
-            style={{ color: "var(--color-muted-foreground)" }}
-          >
+          <p className="text-xs text-[#4F5D75]">
             Last updated: {formatTimestamp(derived.lastUpdated)}
           </p>
         </div>
