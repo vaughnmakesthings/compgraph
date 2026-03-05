@@ -1,0 +1,29 @@
+src/compgraph/eval/router.py
+  babc1c7982d5b180 15,439,444,459,461
+src/compgraph/eval/config.py
+  babc1c7982d5b180 1-29
+src/compgraph/eval/schemas.py
+  babc1c7982d5b180 1-129
+tests/test_eval_schemas.py
+  babc1c7982d5b180 1-243
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "940d88c0675e026b25158f02ad270e91da07d9e7",
+  "prompts": {
+    "babc1c7982d5b180": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e5a3e863-c198-4c33-adb5-31d02f44050f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 406,
+      "total_deletions": 31,
+      "accepted_lines": 406,
+      "overriden_lines": 0
+    }
+  }
+}
