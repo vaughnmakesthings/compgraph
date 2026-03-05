@@ -107,6 +107,11 @@ def get_run(run_id: uuid.UUID) -> PipelineRun | None:
     return _pipeline_runs.get(run_id)
 
 
+def get_all_runs() -> list[PipelineRun]:
+    """Return all stored pipeline runs, most recent first."""
+    return sorted(_pipeline_runs.values(), key=lambda r: r.started_at, reverse=True)
+
+
 def get_orchestrator(run_id: uuid.UUID) -> PipelineOrchestrator | None:
     """Return the orchestrator for an active run, or None."""
     orch = _pipeline_orchestrators.get(run_id)
