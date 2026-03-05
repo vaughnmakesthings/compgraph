@@ -456,6 +456,10 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/health-check` — comprehensive production health check across all services
 - `/nia` — Nia MCP indexing and search for external docs, repos, and packages
 - `/schema-change` — end-to-end schema change workflow with migration and verification
+- `/sentry-create-alert` — create Sentry alerts using workflow engine API
+- `/sentry-fix-issues` — find and fix Sentry errors with MCP-based analysis
+- `/sentry-pr-code-review` — review PRs for issues detected by Sentry Bug Prediction
+- `/sentry-setup-ai-monitoring` — setup Sentry AI agent monitoring for LLM calls
 
 ## Code Standards
 

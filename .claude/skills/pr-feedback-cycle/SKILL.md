@@ -36,19 +36,28 @@ BOT_API_NAMES = gemini-code-assist, cursor, copilot-pull-request-reviewer, cubic
 (4 bots confirmed active Feb 2026. Copilot is intermittent — may not review every PR.)
 MAX_CYCLES    = 5
 CI_POLL       = 30s interval, 15 min timeout
-BOT_WAIT      = Poll for bot reviews after CI passes (see Step 0). 10 min timeout.
 ```
 
-### Bot Timing (observed across PRs #123, #126, #129)
+### Bot Tiers
 
+Bots are split into two tiers based on reliability and timing:
+
+**Tier 1 — Blocking (wait up to 7 min):**
 | Bot | Typical Delay | Notes |
 |-----|---------------|-------|
 | `gemini-code-assist[bot]` | < 1 min | Nearly instant after push |
 | `cubic-dev-ai[bot]` | 5-7 min | Consistent |
-| `cursor[bot]` | 30s - 28 min | Highly variable |
+| `coderabbitai[bot]` | 1-2 min | Reliable, high-quality summaries |
+
+**Tier 2 — Async (non-blocking):**
+| Bot | Typical Delay | Notes |
+|-----|---------------|-------|
+| `cursor[bot]` | 30s - 28 min | Highly variable — good bug detection but unreliable timing |
 | `copilot-pull-request-review[bot]` | 1-3 min | Intermittent — may skip PRs entirely |
 
-**Implication:** A fixed wait is unreliable. The skill MUST poll for bot review presence before triaging.
+**Tier 1** bots are waited on before triage. **Tier 2** bots are included if they arrive during the Tier 1 wait, but the cycle does NOT block on them. Late Tier 2 feedback is caught post-merge by the `late-bot-review.yml` workflow, which auto-creates issues for unresolved comments on merged PRs.
+
+**Implication:** Wait for all 3 Tier 1 bots OR 7 minutes (whichever comes first). Tier 2 feedback that arrives during the wait is triaged normally; feedback that arrives after merge is captured as issues.
 
 ## Draft Detection
 
@@ -71,9 +80,9 @@ If `false`: continue to Core Loop.
 
 Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.
 
-### Step 0 — Wait for bot reviews
+### Step 0 — Wait for bot reviews (tiered)
 
-**This step is mandatory before the first triage cycle.** Slow bots (Cubic, Cursor) take 5-28 minutes to post reviews. Without this wait, the skill will falsely report "clean" and exit.
+**This step is mandatory before the first triage cycle.**
 
 1. Poll CI status first:
    ```bash
@@ -87,23 +96,28 @@ Track a `TRIAGED_THREAD_IDS` set across cycles to avoid re-processing.
    ```
    Extract reviewer logins from the response.
 
-3. Compare detected bot logins against `BOT_LOGINS`. Track which bots have posted at least one review.
+3. Compare detected bot logins against **Tier 1 bots** (gemini-code-assist, cubic-dev-ai, coderabbitai). Track which have posted.
 
-4. Re-poll every 60 seconds until **all bots** have posted OR **10 minutes** have elapsed since CI passed.
+4. Re-poll every 60 seconds until **all 3 Tier 1 bots** have posted OR **7 minutes** have elapsed since CI passed.
 
-5. After timeout or all bots detected, report status:
+5. Also note any **Tier 2 bots** (cursor, copilot) that arrived during the wait — they'll be triaged too, but were not waited on.
+
+6. Report status:
    ```
    Bot readiness (waited Xm Ys):
+   Tier 1 (blocking):
      ✓ gemini-code-assist[bot] — detected
      ✓ cubic-dev-ai[bot] — detected
-     ✗ cursor[bot] — not detected (timed out)
-     ✗ copilot-pull-request-review[bot] — not detected (timed out)
+     ✓ coderabbitai[bot] — detected
+   Tier 2 (async):
+     ✓ cursor[bot] — detected (arrived during wait)
+     ✗ copilot-pull-request-review[bot] — not detected (async — will be caught post-merge if needed)
    Proceeding with available reviews.
    ```
 
-6. Proceed to Step 1 with whatever reviews are available. Missing bots are NOT an error — some bots skip PRs entirely.
+7. Proceed to Step 1 with all available reviews (Tier 1 + any Tier 2 that arrived). Missing Tier 2 bots are NOT an error — late feedback is caught by `late-bot-review.yml`.
 
-**Skip Step 0** on cycle 2+ (re-triage after pushing fixes). For re-triage, use a simpler 3-minute wait after CI passes, since bots only need to re-analyze the diff delta.
+**Skip Step 0** on cycle 2+ (re-triage after pushing fixes). For re-triage, use a simpler 2-minute wait after CI passes, since bots only need to re-analyze the diff delta.
 
 ### Step 1 — Fetch unresolved bot comments
 
@@ -354,6 +368,6 @@ If status is **Clean**, suggest: "Ready for `/merge-guardian` when you're satisf
 - **Maximum 5 cycles** — hard stop, report remaining threads
 - **One commit per fix** — keeps history reviewable and revertable
 - **Verify TYPE_CHECKING imports** survive ruff after each edit (known ruff pitfall)
-- **Bot readiness polling is mandatory** — Step 0 (10 min) on first cycle, 3 min on subsequent cycles. Never skip.
+- **Tier 1 bot readiness polling is mandatory** — Step 0 (7 min) on first cycle, 2 min on subsequent cycles. Never skip. Tier 2 bots are non-blocking.
 - **If GraphQL fails** (thread resolution, reply), log the error and continue — do not abort the cycle
 - **Ambiguous severity → Defer** — never silently skip a comment
