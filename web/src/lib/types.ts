@@ -1,3 +1,16 @@
+export interface Company {
+  id: string
+  name: string
+  slug: string
+  ats: string
+  created_at: string
+}
+
+export interface EvalModel {
+  id: string
+  label: string
+}
+
 export interface PipelineStatus {
   status: 'idle' | 'scraping' | 'enriching' | 'aggregating'
   scrape: {

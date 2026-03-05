@@ -1,12 +1,12 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
-export interface Company {
+export interface StaticCompany {
   name: string;
   slug: string;
   ats: string;
 }
 
-export const COMPANIES: Company[] = [
+export const COMPANIES: StaticCompany[] = [
   { name: "2020 Companies", slug: "2020", ats: "Workday" },
   { name: "BDS Connected Solutions", slug: "bds", ats: "iCIMS" },
   { name: "MarketSource", slug: "marketsource", ats: "iCIMS" },

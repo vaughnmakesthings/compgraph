@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   BriefcaseIcon,
   ArrowTrendingUpIcon,
@@ -11,10 +13,13 @@ import {
 import { KpiCard } from "@/components/data/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { SkeletonBox } from "@/components/ui/skeleton";
-import { api } from "@/lib/api-client";
+import { 
+  pipelineStatusApiV1PipelineStatusGetOptions, 
+  getVelocityApiV1AggregationVelocityGetOptions 
+} from "@/api-client/@tanstack/react-query.gen";
 import type { PipelineStatus, DailyVelocity } from "@/lib/types";
 
-function formatTimestamp(iso: string | null): string {
+function formatTimestamp(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -25,7 +30,7 @@ function formatTimestamp(iso: string | null): string {
 }
 
 function pipelineCardVariant(
-  status: PipelineStatus["status"]
+  status: string | undefined
 ): "default" | "success" | "warning" {
   if (status === "idle") return "success";
   return "default";
@@ -33,74 +38,46 @@ function pipelineCardVariant(
 
 type ChartDays = 14 | 30 | 90;
 
-interface DashboardData {
-  status: PipelineStatus;
-  velocity: DailyVelocity[];
-}
-
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [chartDays, setChartDays] = useState<ChartDays>(14);
-  const [velocityLoading, setVelocityLoading] = useState(false);
 
-  const load = useCallback(
-    async (days: ChartDays, fullLoad = true) => {
-      if (fullLoad) setLoading(true);
-      else setVelocityLoading(true);
-      setError(null);
+  const {
+    data: status,
+    isLoading: statusLoading,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useQuery({
+    ...pipelineStatusApiV1PipelineStatusGetOptions(),
+    select: (data) => data as unknown as PipelineStatus,
+  });
 
-      try {
-        if (fullLoad) {
-          const [status, velocity] = await Promise.all([
-            api.getPipelineStatus(),
-            api.getVelocity({ days }),
-          ]);
-          setData({ status, velocity });
-        } else {
-          const velocity = await api.getVelocity({ days });
-          setData((prev) => (prev ? { ...prev, velocity } : prev));
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load dashboard data"
-        );
-      } finally {
-        if (fullLoad) setLoading(false);
-        else setVelocityLoading(false);
-      }
-    },
-    []
-  );
+  const {
+    data: velocity,
+    isLoading: velocityLoading,
+    error: velocityError,
+    refetch: refetchVelocity,
+  } = useQuery({
+    ...getVelocityApiV1AggregationVelocityGetOptions({ 
+      query: { days: chartDays } 
+    }),
+    select: (data) => data as unknown as DailyVelocity[],
+  });
 
-  // Initial load
-  useEffect(() => {
-    void load(chartDays, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Re-fetch velocity when chartDays changes (skip initial)
-  const [isFirstRender, setIsFirstRender] = useState(true);
-  useEffect(() => {
-    if (isFirstRender) {
-      setIsFirstRender(false);
-      return;
-    }
-    void load(chartDays, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartDays]);
+  const error = statusError || velocityError;
+  const initialLoading = statusLoading || (velocityLoading && !velocity);
 
   const derived = useMemo(() => {
-    if (!data) return null;
-
-    const { status, velocity } = data;
+    if (!status || !velocity) return null;
 
     const latestByCompany: Record<string, { date: string; active: number }> = {};
     for (const row of velocity) {
+      if (!row.company_id || !row.date) continue;
       const existing = latestByCompany[row.company_id];
       if (!existing || row.date > existing.date) {
-        latestByCompany[row.company_id] = { date: row.date, active: row.active_postings };
+        latestByCompany[row.company_id] = { 
+          date: row.date, 
+          active: row.active_postings ?? 0 
+        };
       }
     }
     const totalActive = Object.values(latestByCompany).reduce((s, e) => s + e.active, 0);
@@ -108,23 +85,25 @@ export default function DashboardPage() {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
     const newThisWeek = velocity
-      .filter((r) => new Date(r.date) >= cutoff)
-      .reduce((s, r) => s + r.new_postings, 0);
+      .filter((r) => r.date && new Date(r.date) >= cutoff)
+      .reduce((s, r) => s + (r.new_postings ?? 0), 0);
 
-    const pass1 = status.enrich.current_run?.pass1_completed ?? 0;
-    const pass2 = status.enrich.current_run?.pass2_completed ?? 0;
-    const enrichmentPct =
-      pass1 > 0 ? Math.round((pass2 / pass1) * 100) : null;
+    let enrichmentPct: number | null = null;
+    const enrichRun = status.enrich.current_run;
+    if (enrichRun && enrichRun.pass1_completed > 0) {
+      enrichmentPct = Math.round((enrichRun.pass2_completed / enrichRun.pass1_completed) * 100);
+    }
 
-    const companies = [...new Set(velocity.map((r) => r.company_id))].sort();
+    const companies = [...new Set(velocity.map((r) => r.company_id!).filter(Boolean))].sort();
 
     const chartRows: Record<string, unknown>[] = [];
     const dateMap = new Map<string, Record<string, number>>();
     for (const row of velocity) {
+      if (!row.date || !row.company_id) continue;
       if (!dateMap.has(row.date)) {
         dateMap.set(row.date, {});
       }
-      dateMap.get(row.date)![row.company_id] = row.new_postings;
+      dateMap.get(row.date)![row.company_id] = row.new_postings ?? 0;
     }
     const sortedDates = [...dateMap.keys()].sort();
     for (const date of sortedDates) {
@@ -152,7 +131,7 @@ export default function DashboardPage() {
       pipelineStatus: status.status,
       lastUpdated: status.scrape.last_completed_at,
     };
-  }, [data]);
+  }, [status, velocity]);
 
   // KPI fallback values shown on error
   const kpiFallback = {
@@ -160,6 +139,11 @@ export default function DashboardPage() {
     newThisWeek: "—",
     enrichmentPct: "—",
     pipelineStatus: "—" as const,
+  };
+
+  const handleRetry = () => {
+    void refetchStatus();
+    void refetchVelocity();
   };
 
   return (
@@ -192,12 +176,12 @@ export default function DashboardPage() {
           <div className="flex-1">
             <p className="font-semibold mb-0.5">Could not connect to the pipeline API</p>
             <p style={{ color: "#2D3142", fontSize: "13px" }}>
-              Check that the backend service is running and try again.
+              {error instanceof Error ? error.message : "Check that the backend service is running and try again."}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => void load(chartDays, true)}
+            onClick={handleRetry}
             className="shrink-0 flex items-center gap-1.5 text-xs transition-opacity hover:opacity-70"
             style={{
               color: "#8C2C23",
@@ -213,10 +197,10 @@ export default function DashboardPage() {
 
       <div
         className="grid grid-cols-4 gap-4 mb-6"
-        aria-busy={loading}
+        aria-busy={initialLoading}
         aria-label="KPI metrics"
       >
-        {loading ? (
+        {initialLoading ? (
           <>
             <SkeletonBox className="h-[96px]" />
             <SkeletonBox className="h-[96px]" />
@@ -250,7 +234,7 @@ export default function DashboardPage() {
             />
             <KpiCard
               label="Pipeline Status"
-              value={derived ? derived.pipelineStatus : kpiFallback.pipelineStatus}
+              value={derived ? (derived.pipelineStatus as string) : kpiFallback.pipelineStatus}
               icon={<SignalIcon className="h-4 w-4" style={{ color: "#4F5D75" }} />}
               variant={derived ? pipelineCardVariant(derived.pipelineStatus) : "default"}
             />
@@ -266,7 +250,6 @@ export default function DashboardPage() {
           boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
         }}
       >
-        {/* Chart header with time-range toggle */}
         <div className="flex items-center justify-between mb-4">
           <h2
             className="text-sm font-medium"
@@ -300,12 +283,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {loading || velocityLoading ? (
+        {initialLoading || velocityLoading ? (
           <SkeletonBox className="h-[280px]" />
         ) : derived && derived.chartRows.length > 0 ? (
           <BarChart
             data={derived.chartRows}
-            bars={derived.bars}
+            bars={derived.bars as any}
             xDataKey="date"
             height={280}
           />
@@ -319,7 +302,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {!loading && derived && (
+      {!initialLoading && derived && (
         <div className="flex justify-end">
           <p
             className="text-xs"

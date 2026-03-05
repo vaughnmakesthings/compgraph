@@ -1,11 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api-client";
-import type { EvalRun } from "@/lib/types";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { 
+  getRunsApiV1EvalRunsGetOptions, 
+  listModelsApiV1EvalModelsGetOptions, 
+  createRunApiV1EvalRunsPostMutation,
+  deleteRunApiV1EvalRunsRunIdDeleteMutation
+} from "@/api-client/@tanstack/react-query.gen";
 import { Badge } from "@/components/data/badge";
 import type { BadgeVariant } from "@/components/data/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import type { EvalRun, EvalModel } from "@/lib/types";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -15,7 +22,7 @@ function formatDate(iso: string): string {
   });
 }
 
-function formatProgress(run: EvalRun): string {
+function formatProgress(run: any): string {
   if (run.total_items === 0) return "\u2014";
   return `${run.completed_items} / ${run.total_items}`;
 }
@@ -27,7 +34,7 @@ function statusVariant(status: string): BadgeVariant {
   return "neutral";
 }
 
-function RunRow({ run }: { run: EvalRun }) {
+function RunRow({ run, onDelete }: { run: EvalRun; onDelete: (id: string) => void }) {
   const progress =
     run.total_items > 0
       ? Math.round((run.completed_items / run.total_items) * 100)
@@ -35,46 +42,19 @@ function RunRow({ run }: { run: EvalRun }) {
 
   return (
     <tr className="border-b border-[#BFC0C0] last:border-0 hover:bg-[#E8E8E41A] transition-colors duration-150">
-      <td
-        className="py-3 pr-4 pl-2"
-        style={{
-          fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-          fontSize: "12px",
-          color: "#4F5D75",
-        }}
-      >
+      <td className="py-3 pr-4 pl-2 font-mono text-xs text-[#4F5D75]">
         {run.id.slice(0, 8)}
       </td>
       <td className="py-3 pr-4">
-        <span
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "13px",
-            fontWeight: 500,
-            color: "#2D3142",
-          }}
-        >
+        <span className="font-body text-[13px] font-medium text-[#2D3142]">
           {run.model}
         </span>
-        <span
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "12px",
-            color: "#4F5D75",
-          }}
-        >
+        <span className="font-body text-xs text-[#4F5D75]">
           {" / "}
           {run.prompt_version}
         </span>
       </td>
-      <td
-        className="py-3 pr-4"
-        style={{
-          fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-          fontSize: "12px",
-          color: "#4F5D75",
-        }}
-      >
+      <td className="py-3 pr-4 font-mono text-xs text-[#4F5D75]">
         {run.pass_number}
       </td>
       <td className="py-3 pr-4">
@@ -84,559 +64,282 @@ function RunRow({ run }: { run: EvalRun }) {
       </td>
       <td className="py-3 pr-4">
         <div className="flex items-center gap-2">
-          <span
-            style={{
-              fontFamily:
-                "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-              fontSize: "12px",
-              color: "#4F5D75",
-            }}
-          >
+          <span className="font-mono text-xs text-[#4F5D75]">
             {formatProgress(run)}
           </span>
           {progress !== null && (
             <div className="w-16 h-1 bg-[#E8E8E4] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${progress}%`,
-                  backgroundColor: "#EF8354",
-                }}
+                className="h-full rounded-full bg-[#EF8354]"
+                style={{ width: `${progress}%` }}
               />
             </div>
           )}
         </div>
       </td>
-      <td
-        className="py-3 text-right"
-        style={{
-          fontFamily: "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-          fontSize: "12px",
-          color: "#4F5D75",
-        }}
-      >
+      <td className="py-3 text-right font-mono text-xs text-[#4F5D75]">
         {formatDate(run.created_at)}
+      </td>
+      <td className="py-3 text-right pr-2">
+        <button
+          type="button"
+          onClick={() => onDelete(run.id)}
+          className="text-[#8C2C23] hover:opacity-70 text-xs font-medium font-body"
+        >
+          Delete
+        </button>
       </td>
     </tr>
   );
 }
 
-interface NewRunFormProps {
-  onCancel: () => void;
-  onCreated: () => void;
-}
-
-function NewRunForm({ onCancel, onCreated }: NewRunFormProps) {
+function NewRunForm({ onCancel }: { onCancel: () => void }) {
+  const queryClient = useQueryClient();
   const [passNumber, setPassNumber] = useState(1);
-  const [models, setModels] = useState<Array<{ id: string; label: string }>>([]);
-  const [modelsLoading, setModelsLoading] = useState(true);
-  const [modelsError, setModelsError] = useState<string | null>(null);
   const [model, setModel] = useState("");
   const [promptVersion, setPromptVersion] = useState("pass1_v1");
   const [concurrency, setConcurrency] = useState(5);
-  const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmStartOpen, setConfirmStartOpen] = useState(false);
 
-  const [modelsRetry, setModelsRetry] = useState(0);
+  const { data: models = [], isLoading: modelsLoading } = useQuery({
+    ...listModelsApiV1EvalModelsGetOptions(),
+    select: (data) => data as unknown as EvalModel[],
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .getEvalModels()
-      .then((list) => {
-        if (cancelled) return;
-        setModels(list);
-        setModelsLoading(false);
-        setModelsError(null);
-        setModel((prev) => {
-          const ids = list.map((m) => m.id);
-          return prev && ids.includes(prev) ? prev : list[0]?.id ?? "";
-        });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setModels([]);
-        setModelsLoading(false);
-        setModelsError(
-          err instanceof Error ? err.message : "Failed to load models",
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [modelsRetry]);
+  const createMutation = useMutation({
+    ...createRunApiV1EvalRunsPostMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["eval", "runs"] });
+      onCancel();
+    },
+    onError: (err: any) => {
+      setFormError(err.message || "Failed to create run");
+    }
+  });
 
-  const retryModels = () => {
-    setModelsLoading(true);
-    setModelsError(null);
-    setModelsRetry((n) => n + 1);
-  };
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!model) {
-      setFormError("Please select a model.");
+      setFormError("Please select a model");
       return;
     }
-    if (!promptVersion.trim()) {
-      setFormError("Prompt version is required.");
-      return;
-    }
-    setFormError(null);
     setConfirmStartOpen(true);
   };
 
-  const executeRun = async () => {
-    setSubmitting(true);
-    try {
-      await api.createEvalRun({
+  const handleConfirmedStart = () => {
+    setConfirmStartOpen(false);
+    createMutation.mutate({
+      body: {
         pass_number: passNumber,
-        model: model.trim(),
-        prompt_version: promptVersion.trim(),
+        model,
+        prompt_version: promptVersion,
         concurrency,
-      });
-      onCreated();
-    } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Failed to create run",
-      );
-      setSubmitting(false);
-    }
+      }
+    });
   };
 
   return (
-    <div
-      className="rounded-lg border p-5 mb-6"
-      style={{
-        backgroundColor: "#FFFFFF",
-        borderColor: "#BFC0C0",
-        boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
-      }}
-    >
-      <h3
-        className="mb-4 font-semibold"
-        style={{
-          fontFamily: "var(--font-display, 'Sora Variable', sans-serif)",
-          fontSize: "14px",
-          color: "#2D3142",
-        }}
-      >
-        Configure New Run
-      </h3>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div>
-          <label
-            className="mb-1 block"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#4F5D75",
-            }}
-          >
-            Pass
+    <div className="mb-8 p-6 border border-[#EF835433] rounded-lg bg-[#EF835405] shadow-sm">
+      <h2 className="text-lg font-semibold font-display text-[#2D3142] mb-4">
+        Start New Eval Run
+      </h2>
+
+      {formError && (
+        <div className="mb-4 p-3 bg-[#8C2C231A] border border-[#8C2C2333] rounded text-[#8C2C23] text-sm font-body">
+          {formError}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#4F5D75] uppercase tracking-wider font-body">
+            Pass Number
           </label>
           <select
             value={passNumber}
-            onChange={(e) => setPassNumber(Number(e.target.value))}
-            disabled={submitting}
-            className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              backgroundColor: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#2D3142",
-              borderRadius: "var(--radius-sm, 4px)",
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              setPassNumber(val);
+              setPromptVersion(val === 1 ? "pass1_v1" : "pass2_v1");
             }}
+            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354]"
           >
-            <option value={1}>Pass 1</option>
-            <option value={2}>Pass 2</option>
+            <option value={1}>Pass 1 (Classification)</option>
+            <option value={2}>Pass 2 (Extraction)</option>
           </select>
         </div>
-        <div>
-          <label
-            className="mb-1 block"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#4F5D75",
-            }}
-          >
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#4F5D75] uppercase tracking-wider font-body">
             Model
           </label>
-          <div className="flex items-center gap-1.5">
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={submitting || modelsLoading || !!modelsError}
-              className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-              style={{
-                borderColor: modelsError ? "#8C2C23" : "#BFC0C0",
-                backgroundColor: "#FFFFFF",
-                fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                fontSize: "13px",
-                color: modelsError ? "#8C2C23" : "#2D3142",
-                borderRadius: "var(--radius-sm, 4px)",
-              }}
-            >
-              {modelsLoading ? (
-                <option value="">Loading models…</option>
-              ) : modelsError ? (
-                <option value="">Failed to load models</option>
-              ) : (
-                models.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))
-              )}
-            </select>
-            {modelsError && (
-              <button
-                type="button"
-                onClick={retryModels}
-                className="shrink-0 rounded border px-1.5 py-1.5 transition-colors duration-150 hover:bg-[#E8E8E4]"
-                style={{
-                  borderColor: "#BFC0C0",
-                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-                  fontSize: "12px",
-                  color: "#4F5D75",
-                  borderRadius: "var(--radius-sm, 4px)",
-                }}
-                title="Retry loading models"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
-        <div>
-          <label
-            className="mb-1 block"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#4F5D75",
-            }}
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={modelsLoading}
+            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354] disabled:opacity-50"
           >
+            <option value="">Select a model...</option>
+            {models.map((m: EvalModel) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#4F5D75] uppercase tracking-wider font-body">
             Prompt Version
           </label>
           <input
             type="text"
             value={promptVersion}
             onChange={(e) => setPromptVersion(e.target.value)}
-            disabled={submitting}
-            placeholder="e.g. pass1_v1"
-            className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              backgroundColor: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#2D3142",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
+            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354]"
           />
         </div>
-        <div>
-          <label
-            className="mb-1 block"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "#4F5D75",
-            }}
-          >
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#4F5D75] uppercase tracking-wider font-body">
             Concurrency
           </label>
           <input
             type="number"
             min={1}
-            max={50}
+            max={20}
             value={concurrency}
-            onChange={(e) =>
-              setConcurrency(
-                Math.max(1, Math.min(50, Number(e.target.value) || 1)),
-              )
-            }
-            disabled={submitting}
-            className="w-full rounded border px-2 py-1.5 disabled:opacity-50"
-            style={{
-              borderColor: "#BFC0C0",
-              backgroundColor: "#FFFFFF",
-              fontFamily:
-                "var(--font-mono, 'JetBrains Mono Variable', monospace)",
-              fontSize: "13px",
-              color: "#2D3142",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
+            onChange={(e) => setConcurrency(parseInt(e.target.value))}
+            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354]"
           />
         </div>
-      </div>
 
-      {formError && (
-        <p
-          className="mt-3"
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "12px",
-            color: "#8C2C23",
-          }}
-        >
-          {formError}
-        </p>
-      )}
-
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !model || !promptVersion.trim()}
-          title={
-            !model
-              ? "Select a model first"
-              : !promptVersion.trim()
-                ? "Enter prompt version"
-                : undefined
-          }
-          className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
-          style={{
-            backgroundColor: "#EF8354",
-            color: "#FFFFFF",
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "13px",
-            borderRadius: "var(--radius-sm, 4px)",
-          }}
-        >
-          {submitting ? "Starting\u2026" : "Start Run"}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={submitting}
-          className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4] disabled:opacity-50"
-          style={{
-            borderColor: "#BFC0C0",
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "13px",
-            color: "#4F5D75",
-            borderRadius: "var(--radius-sm, 4px)",
-          }}
-        >
-          Cancel
-        </button>
-      </div>
+        <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-3 mt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-[#4F5D75] hover:bg-[#E8E8E4] rounded-md transition-colors duration-150 font-body"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={createMutation.isPending}
+            className="px-6 py-2 text-sm font-semibold text-white bg-[#EF8354] hover:bg-[#D86D3F] rounded-md shadow-sm transition-colors duration-150 font-body disabled:opacity-50"
+          >
+            {createMutation.isPending ? "Starting..." : "Start Run"}
+          </button>
+        </div>
+      </form>
 
       <ConfirmDialog
         open={confirmStartOpen}
-        onOpenChange={setConfirmStartOpen}
-        title="Start Eval Run"
-        description={`Pass ${passNumber} · ${model} · ${promptVersion} · Concurrency ${concurrency}. LLM API calls will be made for each corpus item.`}
+        onOpenChange={(open) => setConfirmStartOpen(open)}
+        onConfirm={handleConfirmedStart}
+        title="Start Evaluation Run"
+        description={`This will trigger LLM processing for all items in the eval corpus using ${model}. Cost will be incurred.`}
         confirmLabel="Confirm & Start"
-        confirmingLabel="Starting…"
-        onConfirm={() => executeRun()}
       />
     </div>
   );
 }
 
 export default function EvalRunsPage() {
-  const [runs, setRuns] = useState<EvalRun[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [runToDelete, setRunToDelete] = useState<string | null>(null);
 
-  const fetchRuns = useCallback(async () => {
-    try {
-      const data = await api.listEvalRuns();
-      setRuns(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch runs");
-    } finally {
-      setLoading(false);
+  const { data: runs = [], isLoading } = useQuery({
+    ...getRunsApiV1EvalRunsGetOptions(),
+    refetchInterval: 5000,
+    select: (data) => data as unknown as EvalRun[],
+  });
+
+  const deleteMutation = useMutation({
+    ...deleteRunApiV1EvalRunsRunIdDeleteMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["eval", "runs"] });
+      setRunToDelete(null);
     }
-  }, []);
-
-  useEffect(() => {
-    void fetchRuns();
-  }, [fetchRuns]);
-
-  const uniqueModels = [...new Set(runs.map((r) => r.model))].length;
+  });
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1
-          className="text-2xl font-semibold tracking-tight"
-          style={{
-            fontFamily: "var(--font-display, 'Sora Variable', sans-serif)",
-          }}
-        >
-          Eval Runs
-        </h1>
-        <p
-          className="mt-1 text-sm"
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            color: "var(--color-muted-foreground, #4F5D75)",
-          }}
-        >
-          Execution history across prompt versions and models
-        </p>
-      </div>
-
-      <div className="mb-4 flex items-center justify-between">
-        <p
-          style={{
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-            fontSize: "13px",
-            color: "#4F5D75",
-          }}
-        >
-          {loading
-            ? "Loading\u2026"
-            : `${runs.length} runs across ${uniqueModels} models`}
-        </p>
-        {!showForm && (
+    <div className="max-w-6xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight font-display text-[#2D3142]">
+            Evaluation Runs
+          </h1>
+          <p className="mt-1 text-sm font-body text-[#4F5D75]">
+            Benchmark model performance against gold-standard data
+          </p>
+        </div>
+        {!showNewForm && (
           <button
-            onClick={() => setShowForm(true)}
-            className="rounded px-3 py-1.5 font-medium transition-opacity duration-150 hover:opacity-90"
-            style={{
-              backgroundColor: "#EF8354",
-              color: "#FFFFFF",
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              borderRadius: "var(--radius-sm, 4px)",
-            }}
+            type="button"
+            onClick={() => setShowNewForm(true)}
+            className="px-4 py-2 text-sm font-semibold text-white bg-[#2D3142] hover:bg-[#4F5D75] rounded-md shadow-sm transition-colors duration-150 font-body"
           >
             New Run
           </button>
         )}
       </div>
 
-      {showForm && (
-        <NewRunForm
-          onCancel={() => setShowForm(false)}
-          onCreated={() => {
-            setShowForm(false);
-            void fetchRuns();
-          }}
-        />
-      )}
+      {showNewForm && <NewRunForm onCancel={() => setShowNewForm(false)} />}
 
-      {error && (
-        <div
-          className="mb-4 rounded-lg border px-4 py-3 text-sm"
-          role="alert"
-          style={{
-            backgroundColor: "#8C2C231A",
-            borderColor: "#8C2C2333",
-            color: "#8C2C23",
-            fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div
-        className="rounded-lg border"
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderColor: "#BFC0C0",
-          boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
-          borderRadius: "var(--radius-lg, 8px)",
-        }}
-      >
-        {loading ? (
-          <div
-            className="flex items-center justify-center py-16"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#4F5D75",
-            }}
-          >
-            Loading runs\u2026
-          </div>
-        ) : error ? (
-          <div
-            className="flex flex-col items-center justify-center gap-4 py-16 px-4"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#4F5D75",
-            }}
-          >
-            <p>Unable to load runs. Check the error above.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setLoading(true);
-                void fetchRuns();
-              }}
-              className="rounded border px-3 py-1.5 font-medium transition-colors duration-150 hover:bg-[#E8E8E4]"
-              style={{
-                borderColor: "#BFC0C0",
-                color: "#4F5D75",
-                borderRadius: "var(--radius-sm, 4px)",
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        ) : runs.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center gap-2 py-16 px-4"
-            style={{
-              fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
-              fontSize: "13px",
-              color: "#4F5D75",
-            }}
-          >
-            <p>No runs yet.</p>
-            <p className="text-sm">
-              Click &quot;New Run&quot; above to start your first eval run.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full" aria-label="Evaluation runs">
-              <thead>
-                <tr className="border-b border-[#BFC0C0]">
-                  {["ID", "Model / Prompt", "Pass", "Status", "Progress", "Date"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="pb-3 pt-4 pl-2 pr-4 text-left last:text-right"
-                        style={{
-                          fontFamily:
-                            "var(--font-body, 'DM Sans Variable', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                          color: "#4F5D75",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+      <div className="rounded-lg border border-[#BFC0C0] bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-[#E8E8E4] border-b border-[#BFC0C0]">
+              <th className="py-2.5 pr-4 pl-2 font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">ID</th>
+              <th className="py-2.5 pr-4 font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">Model / Version</th>
+              <th className="py-2.5 pr-4 font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">Pass</th>
+              <th className="py-2.5 pr-4 font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">Status</th>
+              <th className="py-2.5 pr-4 font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">Progress</th>
+              <th className="py-2.5 text-right font-body text-[11px] font-semibold text-[#4F5D75] uppercase tracking-wider">Date</th>
+              <th className="py-2.5 text-right pr-2"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#BFC0C0]">
+            {isLoading && runs.length === 0 ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td colSpan={7} className="py-4 px-2">
+                    <div className="h-4 bg-[#E8E8E4] rounded w-full" />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {runs.map((run) => (
-                  <RunRow key={run.id} run={run} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))
+            ) : runs.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-sm font-body text-[#4F5D75]">
+                  No evaluation runs found
+                </td>
+              </tr>
+            ) : (
+              runs.map((run: EvalRun) => (
+                <RunRow 
+                  key={run.id} 
+                  run={run} 
+                  onDelete={(id) => setRunToDelete(id)} 
+                />
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      <ConfirmDialog
+        open={!!runToDelete}
+        onOpenChange={(open) => !open && setRunToDelete(null)}
+        onConfirm={async () => {
+          if (runToDelete) await deleteMutation.mutateAsync({ path: { run_id: runToDelete } });
+        }}
+        title="Delete Run"
+        description="Are you sure you want to delete this evaluation run and all its results? This action cannot be undone."
+        confirmLabel="Delete"
+        confirmVariant="danger"
+      />
     </div>
   );
 }
