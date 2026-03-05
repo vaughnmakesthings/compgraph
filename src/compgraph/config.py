@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     ENTITY_AUTO_ACCEPT_THRESHOLD: int = 85
     ENTITY_REVIEW_THRESHOLD: int = 70
 
+    # Redis (OPS-06 — caching, rate limiting, arq job queue)
+    REDIS_URL: str | None = None
+
     # Alembic (optional override — used when direct host DNS fails)
     ALEMBIC_DATABASE_URL: str | None = None
 
