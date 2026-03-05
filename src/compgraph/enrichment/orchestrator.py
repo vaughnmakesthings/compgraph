@@ -720,7 +720,7 @@ class EnrichmentOrchestrator:
                 pass2_result.entities,
                 resolved,
             )
-        entity_count = len(pass2_result.entities) if pass2_result.entities else 0
+        entity_count = len(pass2_result.entities)
         await _mark_pass2_complete(save_session, enrichment_id, entity_count=entity_count)
 
     async def run_pass2(
