@@ -102,7 +102,7 @@ function FilterChip({ label, value, onRemove, ariaLabel }: FilterChipProps) {
         type="button"
         onClick={onRemove}
         aria-label={ariaLabel}
-        className="ml-0.5 rounded-sm p-0.5 transition-colors hover:bg-[var(--color-muted,#E8E8E4)]"
+        className="ml-0.5 rounded-sm p-0.5 transition-opacity hover:opacity-60"
       >
         <XMarkIcon className="size-3" aria-hidden />
       </button>
