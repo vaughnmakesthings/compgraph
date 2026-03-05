@@ -12,6 +12,18 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
+from compgraph.api.schemas.eval import (
+    EvalComparisonItem,
+    EvalCorpusItem,
+    EvalFieldReviewItem,
+    EvalLeaderboardResponse,
+    EvalModelItem,
+    EvalResultItem,
+    EvalRunCreateResponse,
+    EvalRunItem,
+    IdResponse,
+    StatusResponse,
+)
 from compgraph.eval.config import SUPPORTED_MODEL_IDS, SUPPORTED_MODELS
 from compgraph.eval.elo import calculate_elo_ratings
 from compgraph.eval.models import (
@@ -21,6 +33,7 @@ from compgraph.eval.models import (
     EvalResult,
     EvalRun,
 )
+from compgraph.eval.schemas import EvalRunProgressResponse
 
 router = APIRouter()
 
@@ -140,7 +153,6 @@ async def _get_field_accuracy_for_run(db: AsyncSession, run_id: uuid.UUID) -> di
 async def _get_field_accuracy_batch(
     db: AsyncSession, run_ids: list[uuid.UUID]
 ) -> dict[uuid.UUID, dict[str, float]]:
-    """Return mapping of run_id -> {field_name: accuracy} for all runs in one query."""
     if not run_ids:
         return {}
     stmt = (
@@ -161,17 +173,7 @@ async def _get_field_accuracy_batch(
     return out
 
 
-# --- Corpus ---
-
-
-@router.get("/corpus")
-async def get_corpus(db: DbDep) -> list[dict]:
-    rows = (await db.execute(select(EvalCorpus))).scalars().all()
-    return [_corpus_to_dict(r) for r in rows]
-
-
 async def _get_result_counts(db: AsyncSession, run_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
-    """Return mapping of run_id -> count of EvalResult rows."""
     if not run_ids:
         return {}
     stmt = (
@@ -183,10 +185,19 @@ async def _get_result_counts(db: AsyncSession, run_ids: list[uuid.UUID]) -> dict
     return {r.run_id: r.cnt for r in rows}
 
 
+# --- Corpus ---
+
+
+@router.get("/corpus", response_model=list[EvalCorpusItem])
+async def get_corpus(db: DbDep) -> list[dict]:
+    rows = (await db.execute(select(EvalCorpus))).scalars().all()
+    return [_corpus_to_dict(r) for r in rows]
+
+
 # --- Runs ---
 
 
-@router.get("/runs")
+@router.get("/runs", response_model=list[EvalRunItem])
 async def get_runs(db: DbDep) -> list[dict]:
     rows = (await db.execute(select(EvalRun).order_by(EvalRun.created_at.desc()))).scalars().all()
     run_ids = [r.id for r in rows]
@@ -194,14 +205,14 @@ async def get_runs(db: DbDep) -> list[dict]:
     return [_run_to_dict(r, counts.get(r.id, 0)) for r in rows]
 
 
-@router.get("/runs/{run_id}")
+@router.get("/runs/{run_id}", response_model=EvalRunItem)
 async def get_run(run_id: uuid.UUID, db: DbDep) -> dict:
     run = await _get_run_or_404(run_id, db)
     counts = await _get_result_counts(db, [run.id])
     return _run_to_dict(run, counts.get(run.id, 0))
 
 
-@router.delete("/runs/{run_id}")
+@router.delete("/runs/{run_id}", response_model=StatusResponse)
 async def delete_run(run_id: uuid.UUID, db: DbDep) -> dict[str, str]:
     run = await _get_run_or_404(run_id, db)
     await db.delete(run)
@@ -209,7 +220,7 @@ async def delete_run(run_id: uuid.UUID, db: DbDep) -> dict[str, str]:
     return {"status": "deleted"}
 
 
-@router.get("/runs/{run_id}/results")
+@router.get("/runs/{run_id}/results", response_model=list[EvalResultItem])
 async def get_run_results(run_id: uuid.UUID, db: DbDep) -> list[dict]:
     await _get_run_or_404(run_id, db)
     stmt = select(EvalResult).where(EvalResult.run_id == run_id).order_by(EvalResult.posting_id)
@@ -217,13 +228,13 @@ async def get_run_results(run_id: uuid.UUID, db: DbDep) -> list[dict]:
     return [_result_to_dict(r) for r in rows]
 
 
-@router.get("/runs/{run_id}/field-accuracy")
+@router.get("/runs/{run_id}/field-accuracy", response_model=dict[str, float])
 async def get_run_field_accuracy(run_id: uuid.UUID, db: DbDep) -> dict[str, float]:
     await _get_run_or_404(run_id, db)
     return await _get_field_accuracy_for_run(db, run_id)
 
 
-@router.get("/runs/{run_id}/field-reviews")
+@router.get("/runs/{run_id}/field-reviews", response_model=dict[str, list[EvalFieldReviewItem]])
 async def get_run_field_reviews(run_id: uuid.UUID, db: DbDep) -> dict[str, list[dict]]:
     await _get_run_or_404(run_id, db)
     stmt = (
@@ -240,7 +251,7 @@ async def get_run_field_reviews(run_id: uuid.UUID, db: DbDep) -> dict[str, list[
     return grouped
 
 
-@router.get("/runs/{run_id}/progress")
+@router.get("/runs/{run_id}/progress", response_model=EvalRunProgressResponse)
 async def get_run_progress(run_id: uuid.UUID, db: DbDep) -> dict:
     run = await _get_run_or_404(run_id, db)
     run_dict = _run_to_dict(run)
@@ -256,7 +267,7 @@ async def get_run_progress(run_id: uuid.UUID, db: DbDep) -> dict:
 # --- Leaderboard bulk endpoint ---
 
 
-@router.get("/leaderboard-data")
+@router.get("/leaderboard-data", response_model=EvalLeaderboardResponse)
 async def get_leaderboard_data(db: DbDep) -> dict:
     runs = (await db.execute(select(EvalRun).order_by(EvalRun.created_at.desc()))).scalars().all()
     run_ids = [r.id for r in runs]
@@ -312,7 +323,7 @@ async def get_leaderboard_data(db: DbDep) -> dict:
 # --- Comparisons ---
 
 
-@router.get("/comparisons")
+@router.get("/comparisons", response_model=list[EvalComparisonItem])
 async def get_comparisons(db: DbDep) -> list[dict]:
     rows = (
         (await db.execute(select(EvalComparison).order_by(EvalComparison.created_at)))
@@ -325,7 +336,7 @@ async def get_comparisons(db: DbDep) -> list[dict]:
 # --- ELO ---
 
 
-@router.get("/elo")
+@router.get("/elo", response_model=dict[str, float])
 async def get_elo(db: DbDep) -> dict[str, float]:
     comp_rows = (
         (await db.execute(select(EvalComparison).order_by(EvalComparison.created_at)))
@@ -366,7 +377,7 @@ class ComparisonCreate(BaseModel):
         return v
 
 
-@router.post("/comparisons")
+@router.post("/comparisons", response_model=IdResponse)
 async def create_comparison(body: ComparisonCreate, db: DbDep) -> dict[str, str]:
     comp = EvalComparison(
         id=uuid.uuid4(),
@@ -403,7 +414,7 @@ async def delete_field_review(result_id: uuid.UUID, field_name: str, db: DbDep) 
     await db.commit()
 
 
-@router.post("/field-reviews")
+@router.post("/field-reviews", response_model=IdResponse)
 async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, str]:
     stmt = text(
         """
@@ -439,7 +450,7 @@ async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, s
 # --- Supported Models (from config) ---
 
 
-@router.get("/models")
+@router.get("/models", response_model=list[EvalModelItem])
 async def list_models() -> list[dict[str, str]]:
     return SUPPORTED_MODELS
 
@@ -463,7 +474,7 @@ class RunCreate(BaseModel):
         return v
 
 
-@router.post("/runs")
+@router.post("/runs", response_model=EvalRunCreateResponse)
 async def create_run(body: RunCreate, db: DbDep) -> dict:
     corpus_path = _CORPUS_PATH
     if not corpus_path.exists():
@@ -500,9 +511,6 @@ async def create_run(body: RunCreate, db: DbDep) -> dict:
         "total": len(postings),
     }
 
-    # TODO: wire up the actual eval runner once litellm dependency is available (M6)
-    # For now, the run record is created so the frontend can track it.
-
     return {
         "tracking_id": tracking_key,
         "run_id": str(run.id),
@@ -514,7 +522,7 @@ async def create_run(body: RunCreate, db: DbDep) -> dict:
 # --- Progress ---
 
 
-@router.get("/progress/{tracking_id}")
+@router.get("/progress/{tracking_id}", response_model=EvalRunProgressResponse)
 async def get_progress(tracking_id: int) -> dict:
     if tracking_id in _run_progress:
         return _run_progress[tracking_id]

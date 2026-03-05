@@ -5,6 +5,15 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
+from compgraph.api.schemas.aggregation import (
+    AgencyOverlapItem,
+    BrandTimelineItem,
+    ChurnSignalItem,
+    CoverageGapItem,
+    LifecycleItem,
+    PayBenchmarkItem,
+    VelocityItem,
+)
 from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.services.aggregation_service import AggregationService
 
@@ -15,7 +24,7 @@ class TriggerResponse(BaseModel):
     message: str
 
 
-@router.get("/velocity")
+@router.get("/velocity", response_model=list[VelocityItem])
 async def get_velocity(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -23,7 +32,7 @@ async def get_velocity(
     return await AggregationService.get_velocity(db)
 
 
-@router.get("/brand-timeline")
+@router.get("/brand-timeline", response_model=list[BrandTimelineItem])
 async def get_brand_timeline(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -31,7 +40,7 @@ async def get_brand_timeline(
     return await AggregationService.get_brand_timeline(db)
 
 
-@router.get("/pay-benchmarks")
+@router.get("/pay-benchmarks", response_model=list[PayBenchmarkItem])
 async def get_pay_benchmarks(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -39,7 +48,7 @@ async def get_pay_benchmarks(
     return await AggregationService.get_pay_benchmarks(db)
 
 
-@router.get("/lifecycle")
+@router.get("/lifecycle", response_model=list[LifecycleItem])
 async def get_lifecycle(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -47,7 +56,7 @@ async def get_lifecycle(
     return await AggregationService.get_lifecycle(db)
 
 
-@router.get("/churn-signals")
+@router.get("/churn-signals", response_model=list[ChurnSignalItem])
 async def get_churn_signals(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -55,7 +64,7 @@ async def get_churn_signals(
     return await AggregationService.get_churn_signals(db)
 
 
-@router.get("/coverage-gaps")
+@router.get("/coverage-gaps", response_model=list[CoverageGapItem])
 async def get_coverage_gaps(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -63,7 +72,7 @@ async def get_coverage_gaps(
     return await AggregationService.get_coverage_gaps(db)
 
 
-@router.get("/agency-overlap")
+@router.get("/agency-overlap", response_model=list[AgencyOverlapItem])
 async def get_agency_overlap(
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -78,7 +87,7 @@ async def _run_aggregation() -> None:
     await orchestrator.run()
 
 
-@router.post("/trigger")
+@router.post("/trigger", response_model=TriggerResponse)
 async def trigger_aggregation(
     background_tasks: BackgroundTasks,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
