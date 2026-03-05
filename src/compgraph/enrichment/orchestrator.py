@@ -274,11 +274,13 @@ async def get_latest_enrichment_run_from_db() -> dict | None:
 async def _mark_pass2_complete(
     session: AsyncSession,
     enrichment_id: uuid.UUID,
+    entity_count: int = 0,
 ) -> None:
     """Mark an enrichment record as having completed Pass 2.
 
     Appends '+pass2' to enrichment_version so fetch_pass1_complete_postings
     skips it. Prevents infinite re-processing of postings with no entities.
+    Records entity_count to distinguish empty extraction from not-yet-extracted.
     """
     from sqlalchemy import select
 
@@ -291,6 +293,7 @@ async def _mark_pass2_complete(
         current = enrichment.enrichment_version or ""
         if "pass2" not in current:
             enrichment.enrichment_version = f"{current}+pass2" if current else "pass2"
+        enrichment.entity_count = entity_count
 
 
 class EnrichmentOrchestrator:
@@ -717,7 +720,8 @@ class EnrichmentOrchestrator:
                 pass2_result.entities,
                 resolved,
             )
-        await _mark_pass2_complete(save_session, enrichment_id)
+        entity_count = len(pass2_result.entities) if pass2_result.entities else 0
+        await _mark_pass2_complete(save_session, enrichment_id, entity_count=entity_count)
 
     async def run_pass2(
         self,
