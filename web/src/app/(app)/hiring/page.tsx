@@ -88,7 +88,7 @@ function FilterChip({ label, value, onRemove, ariaLabel }: FilterChipProps) {
       style={{
         backgroundColor: "var(--color-muted, #E8E8E4)",
         color: "var(--color-foreground, #2D3142)",
-        fontFamily: "var(--font-body)",
+        fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
       }}
     >
       <span
@@ -102,7 +102,7 @@ function FilterChip({ label, value, onRemove, ariaLabel }: FilterChipProps) {
         type="button"
         onClick={onRemove}
         aria-label={ariaLabel}
-        className="ml-0.5 rounded-sm p-0.5 transition-colors hover:bg-[#BFC0C080]"
+        className="ml-0.5 rounded-sm p-0.5 transition-colors hover:bg-[var(--color-muted,#E8E8E4)]"
       >
         <XMarkIcon className="size-3" aria-hidden />
       </button>
@@ -260,7 +260,7 @@ export default function HiringPage() {
             placeholder="Search postings..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="min-w-[180px] text-[13px] outline-none placeholder:text-[#4F5D7580]"
+            className="min-w-[180px] text-[13px] outline-none placeholder:text-[var(--color-blue-slate,#4F5D75)]/50"
             style={{
               border: "1px solid var(--color-border, #BFC0C0)",
               borderRadius: "var(--radius-sm, 4px)",
@@ -386,7 +386,7 @@ export default function HiringPage() {
           <div className="flex flex-row gap-1.5 mt-2.5 pt-2 flex-wrap items-center" style={{ borderTop: "1px solid var(--color-border, #BFC0C0)" }}>
             <span
               className="text-[11px] font-medium mr-1"
-              style={{ color: "var(--color-muted-foreground, #4F5D75)", fontFamily: "var(--font-body)" }}
+              style={{ color: "var(--color-muted-foreground, #4F5D75)", fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)" }}
             >
               Active filters ({activeChipCount}):
             </span>
@@ -435,7 +435,7 @@ export default function HiringPage() {
             <button
               type="button"
               onClick={clearAll}
-              className="ml-auto text-xs font-medium transition-colors hover:text-[#2D3142]"
+              className="ml-auto text-xs font-medium transition-colors hover:text-[var(--color-jet-black,#2D3142)]"
               style={{
                 color: "var(--color-muted-foreground, #4F5D75)",
                 fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
