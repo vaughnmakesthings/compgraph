@@ -101,15 +101,25 @@ def _run_to_response(run: PipelineRun) -> PipelineRunResponse:
 
 
 def _get_active_run_and_orchestrator(
+    run_id: uuid.UUID | None = None,
     allowed_statuses: tuple[PipelineStatus, ...] = (
         PipelineStatus.RUNNING,
         PipelineStatus.PAUSED,
     ),
 ) -> tuple[PipelineRun, PipelineOrchestrator]:
-    """Find the latest active run and its orchestrator, or raise HTTP errors."""
-    run = get_latest_run()
-    if run is None:
-        raise HTTPException(status_code=404, detail="No pipeline runs found")
+    """Find an active run and its orchestrator, or raise HTTP errors.
+
+    If run_id is provided, targets that specific run. Otherwise falls back
+    to the latest run.
+    """
+    if run_id is not None:
+        run = get_run(run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail=f"Pipeline run {run_id} not found")
+    else:
+        run = get_latest_run()
+        if run is None:
+            raise HTTPException(status_code=404, detail="No pipeline runs found")
     if run.status not in allowed_statuses:
         raise HTTPException(
             status_code=409,
@@ -230,10 +240,11 @@ async def scrape_status_by_id(
 
 @router.post("/pause", response_model=ControlResponse)
 async def pause_scrape(
+    run_id: uuid.UUID | None = None,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     """Pause the running scrape pipeline. Companies mid-scrape will finish their current page."""
-    run, orch = _get_active_run_and_orchestrator()
+    run, orch = _get_active_run_and_orchestrator(run_id=run_id)
     if run.status != PipelineStatus.RUNNING:
         raise HTTPException(status_code=409, detail="Pipeline is not running (cannot pause)")
     orch.pause(run)
@@ -246,10 +257,11 @@ async def pause_scrape(
 
 @router.post("/resume", response_model=ControlResponse)
 async def resume_scrape(
+    run_id: uuid.UUID | None = None,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     """Resume a paused scrape pipeline."""
-    run, orch = _get_active_run_and_orchestrator()
+    run, orch = _get_active_run_and_orchestrator(run_id=run_id)
     if run.status != PipelineStatus.PAUSED:
         raise HTTPException(status_code=409, detail="Pipeline is not paused (cannot resume)")
     orch.resume(run)
@@ -262,10 +274,11 @@ async def resume_scrape(
 
 @router.post("/stop", response_model=ControlResponse)
 async def stop_scrape(
+    run_id: uuid.UUID | None = None,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     """Gracefully stop the scrape pipeline. Running companies finish, pending are skipped."""
-    run, orch = _get_active_run_and_orchestrator()
+    run, orch = _get_active_run_and_orchestrator(run_id=run_id)
     orch.stop(run)
     return ControlResponse(
         run_id=run.run_id,
@@ -276,10 +289,12 @@ async def stop_scrape(
 
 @router.post("/force-stop", response_model=ControlResponse)
 async def force_stop_scrape(
+    run_id: uuid.UUID | None = None,
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     """Force stop the scrape pipeline. All tasks are cancelled immediately."""
     run, orch = _get_active_run_and_orchestrator(
+        run_id=run_id,
         allowed_statuses=(
             PipelineStatus.RUNNING,
             PipelineStatus.PAUSED,
@@ -291,4 +306,49 @@ async def force_stop_scrape(
         run_id=run.run_id,
         status=run.status,
         message="Pipeline force-stopped. All tasks cancelled.",
+    )
+
+
+# --- Run Listing ---
+
+
+class PipelineRunSummary(BaseModel):
+    run_id: uuid.UUID
+    status: PipelineStatus
+    started_at: datetime
+    finished_at: datetime | None
+    total_postings_found: int
+    total_snapshots_created: int
+    companies_succeeded: int
+    companies_failed: int
+
+
+class PipelineRunListResponse(BaseModel):
+    runs: list[PipelineRunSummary]
+    total: int
+
+
+@router.get("/runs", response_model=PipelineRunListResponse)
+async def list_scrape_runs(
+    _user: AuthUser = Depends(require_viewer),  # noqa: B008
+) -> PipelineRunListResponse:
+    """List all in-memory pipeline runs, most recent first."""
+    from compgraph.scrapers.orchestrator import get_all_runs
+
+    runs = get_all_runs()
+    return PipelineRunListResponse(
+        runs=[
+            PipelineRunSummary(
+                run_id=r.run_id,
+                status=r.status,
+                started_at=r.started_at,
+                finished_at=r.finished_at,
+                total_postings_found=r.total_postings_found,
+                total_snapshots_created=r.total_snapshots_created,
+                companies_succeeded=r.companies_succeeded,
+                companies_failed=r.companies_failed,
+            )
+            for r in runs
+        ],
+        total=len(runs),
     )
