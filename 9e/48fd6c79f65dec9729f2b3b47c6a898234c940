@@ -1,0 +1,25 @@
+src/compgraph/api/schemas/eval.py
+  85a59f4b590f3419 32
+src/compgraph/api/schemas/__init__.py
+  85a59f4b590f3419 13-24,32-40,43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "9e48fd6c79f65dec9729f2b3b47c6a898234c940",
+  "prompts": {
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 23,
+      "total_deletions": 1,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}

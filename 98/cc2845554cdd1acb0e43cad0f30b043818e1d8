@@ -1,0 +1,25 @@
+.github/workflows/late-bot-review.yml
+  85a59f4b590f3419 1-152
+.claude/skills/pr-feedback-cycle/SKILL.md
+  85a59f4b590f3419 41,43-45,50-55,58,60,83,99,101,103,105,108,111-114,118,120,371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "98cc2845554cdd1acb0e43cad0f30b043818e1d8",
+  "prompts": {
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 180,
+      "total_deletions": 14,
+      "accepted_lines": 179,
+      "overriden_lines": 0
+    }
+  }
+}
