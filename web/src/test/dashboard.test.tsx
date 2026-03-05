@@ -1,14 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import DashboardPage from "../app/(app)/page";
-import { api } from "@/lib/api-client";
-import type { PipelineStatus, DailyVelocity } from "@/lib/types";
+import type { DailyVelocity } from "@/lib/types";
+import { renderWithQueryClient } from "./test-utils";
 
-vi.mock("@/lib/api-client", () => ({
-  api: {
-    getPipelineStatus: vi.fn(),
-    getVelocity: vi.fn(),
-  },
-}));
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
 
 import "./mocks/resize-observer";
 
@@ -17,18 +15,29 @@ vi.mock("@tremor/react", async () => {
   return tremorMockWithData();
 });
 
-const mockStatus: PipelineStatus = {
+const mockStatus = {
   status: "idle",
   scrape: {
+    status: "idle",
     current_run: null,
     last_completed_at: "2026-02-23T10:00:00Z",
-    next_run_at: "2026-02-23T12:00:00Z",
   },
   enrich: {
-    current_run: { pass1_completed: 200, pass2_completed: 180 },
+    status: "idle",
+    current_run: {
+      run_id: "run-1",
+      status: "completed",
+      started_at: "2026-02-23T09:00:00Z",
+      pass1_total: 200,
+      pass1_succeeded: 200,
+      pass1_skipped: 0,
+      pass2_total: 200,
+      pass2_succeeded: 180,
+      pass2_skipped: 20,
+    },
     last_completed_at: "2026-02-23T09:45:00Z",
   },
-  scheduler: { next_run_at: "2026-02-23T12:00:00Z" },
+  scheduler: { enabled: true, next_run_at: "2026-02-23T12:00:00Z" },
 };
 
 const today = new Date();
@@ -74,7 +83,42 @@ const mockVelocity: DailyVelocity[] = [
   },
 ];
 
-const mockedApi = vi.mocked(api);
+import {
+  pipelineStatusApiV1PipelineStatusGetOptions,
+  getVelocityApiV1AggregationVelocityGetOptions,
+} from "@/api-client/@tanstack/react-query.gen";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function overrideVelocity(data: DailyVelocity[] | Promise<never>) {
+  const queryFn = data instanceof Promise ? vi.fn().mockReturnValue(data) : vi.fn().mockResolvedValue(data);
+  vi.mocked(getVelocityApiV1AggregationVelocityGetOptions).mockReturnValue({
+    queryKey: ["velocity"],
+    queryFn,
+  } as any);
+}
+
+function overrideStatus(data: Record<string, unknown> | Promise<never>) {
+  const queryFn = data instanceof Promise ? vi.fn().mockReturnValue(data) : vi.fn().mockResolvedValue(data);
+  vi.mocked(pipelineStatusApiV1PipelineStatusGetOptions).mockReturnValue({
+    queryKey: ["pipelineStatus"],
+    queryFn,
+  } as any);
+}
+
+function overrideStatusReject(err: Error) {
+  vi.mocked(pipelineStatusApiV1PipelineStatusGetOptions).mockReturnValue({
+    queryKey: ["pipelineStatus"],
+    queryFn: vi.fn().mockRejectedValue(err),
+  } as any);
+}
+
+function overrideVelocityReject(err: Error) {
+  vi.mocked(getVelocityApiV1AggregationVelocityGetOptions).mockReturnValue({
+    queryKey: ["velocity"],
+    queryFn: vi.fn().mockRejectedValue(err),
+  } as any);
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -82,10 +126,10 @@ beforeEach(() => {
 
 describe("DashboardPage", () => {
   it('renders "Pipeline Health" heading', () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     expect(
       screen.getByRole("heading", { name: /pipeline health/i })
@@ -93,10 +137,10 @@ describe("DashboardPage", () => {
   });
 
   it("shows subtitle text", () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     expect(
       screen.getByText(/hiring activity across tracked competitors/i)
@@ -104,10 +148,10 @@ describe("DashboardPage", () => {
   });
 
   it("shows skeleton loading state initially before data resolves", () => {
-    mockedApi.getPipelineStatus.mockReturnValue(new Promise(() => {}));
-    mockedApi.getVelocity.mockReturnValue(new Promise(() => {}));
+    overrideStatus(new Promise(() => {}) as Promise<never>);
+    overrideVelocity(new Promise(() => {}) as Promise<never>);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     const skeletons = document.querySelectorAll('[aria-hidden="true"]');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -116,10 +160,10 @@ describe("DashboardPage", () => {
   });
 
   it("renders KPI cards when data loads", async () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Active Postings")).toBeInTheDocument();
@@ -131,10 +175,10 @@ describe("DashboardPage", () => {
   });
 
   it("displays active postings total derived from velocity data", async () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Active Postings")).toBeInTheDocument();
@@ -144,10 +188,10 @@ describe("DashboardPage", () => {
   });
 
   it("displays enrichment coverage percentage", async () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
       expect(screen.getByText("90%")).toBeInTheDocument();
@@ -155,10 +199,10 @@ describe("DashboardPage", () => {
   });
 
   it("renders the pipeline status badge with idle label", async () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
       expect(screen.getByText("idle")).toBeInTheDocument();
@@ -166,25 +210,25 @@ describe("DashboardPage", () => {
   });
 
   it("renders the bar chart section after data loads", async () => {
-    mockedApi.getPipelineStatus.mockResolvedValue(mockStatus);
-    mockedApi.getVelocity.mockResolvedValue(mockVelocity);
+    overrideStatus(mockStatus);
+    overrideVelocity(mockVelocity);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /daily posting velocity/i })
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /daily posting velocity/i })
+    ).toBeInTheDocument();
   });
 
   it("KPI grid has aria-busy during loading and aria-label", () => {
-    mockedApi.getPipelineStatus.mockReturnValue(new Promise(() => {}));
-    mockedApi.getVelocity.mockReturnValue(new Promise(() => {}));
+    overrideStatus(new Promise(() => {}) as Promise<never>);
+    overrideVelocity(new Promise(() => {}) as Promise<never>);
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     const kpiGrid = screen.getByLabelText("KPI metrics");
     expect(kpiGrid).toHaveAttribute("aria-busy", "true");
@@ -192,14 +236,10 @@ describe("DashboardPage", () => {
   });
 
   it("shows an error alert when the API call fails", async () => {
-    mockedApi.getPipelineStatus.mockRejectedValue(
-      new Error("Network error: /api/pipeline/status")
-    );
-    mockedApi.getVelocity.mockRejectedValue(
-      new Error("Network error: /api/aggregation/velocity")
-    );
+    overrideStatusReject(new Error("Network error: /api/pipeline/status"));
+    overrideVelocityReject(new Error("Network error: /api/aggregation/velocity"));
 
-    render(<DashboardPage />);
+    renderWithQueryClient(<DashboardPage />);
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toBeInTheDocument();

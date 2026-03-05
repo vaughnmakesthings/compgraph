@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { Suspense } from "react";
+import { renderWithQueryClient } from "./test-utils";
 
 // ---------------------------------------------------------------------------
 // Mock next/navigation — required for any component using useSearchParams,
@@ -38,65 +39,20 @@ vi.mock("next/link", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock the api client. All data must be inline — vi.mock factories are hoisted
-// above variable declarations so external variables cannot be referenced.
+// Mock the api client react-query options
 // ---------------------------------------------------------------------------
-vi.mock("@/lib/api-client", () => ({
-  api: {
-    getEvalModels: vi.fn().mockResolvedValue([
-      { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (fast, cheap)" },
-      { id: "claude-sonnet-4-5-20251001", label: "Sonnet 4.5 (balanced)" },
-      { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (latest)" },
-      { id: "claude-opus-4-6", label: "Opus 4.6 (highest quality)" },
-    ]),
-    listEvalRuns: vi.fn().mockResolvedValue([
-      {
-        id: "run-abc123",
-        pass_number: 1,
-        model: "claude-haiku-4-5",
-        prompt_version: "pass1_v1",
-        status: "completed",
-        created_at: "2026-02-22T10:00:00Z",
-        completed_at: "2026-02-22T10:05:00Z",
-        total_items: 100,
-        completed_items: 100,
-      },
-    ]),
-    createEvalRun: vi.fn().mockResolvedValue({
-      run_id: "new-run",
-      tracking_id: 1,
-    }),
-    getEvalResults: vi.fn().mockResolvedValue([]),
-    getEvalLeaderboard: vi.fn().mockResolvedValue({
-      runs: [
-        {
-          id: "run-abc123",
-          pass_number: 1,
-          model: "claude-haiku-4-5",
-          prompt_version: "pass1_v1",
-          status: "completed",
-          created_at: "2026-02-22T10:00:00Z",
-          completed_at: "2026-02-22T10:05:00Z",
-          total_items: 100,
-          completed_items: 100,
-        },
-      ],
-      elo: { "claude-haiku-4-5/pass1_v1": 1500 },
-      comparisons: [],
-      field_accuracy: {},
-    }),
-    listComparisons: vi.fn().mockResolvedValue([]),
-    recordComparison: vi.fn().mockResolvedValue({ id: "cmp-1" }),
-    upsertFieldReview: vi.fn().mockResolvedValue({ id: "rev-1" }),
-    getEvalCorpus: vi.fn().mockResolvedValue([
-      { id: "posting-1", title: "Field Rep - Miami", content: "..." },
-    ]),
-  },
-}));
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
 
 // ---------------------------------------------------------------------------
 // Import pages under test (after mocks are set up).
 // ---------------------------------------------------------------------------
+import {
+  getRunsApiV1EvalRunsGetOptions,
+  listModelsApiV1EvalModelsGetOptions,
+} from "@/api-client/@tanstack/react-query.gen";
 import EvalRunsPage from "@/app/(app)/eval/runs/page";
 import LeaderboardPage from "@/app/(app)/eval/leaderboard/page";
 import AccuracyPage from "@/app/(app)/eval/accuracy/page";
@@ -108,15 +64,42 @@ import PromptDiffPage from "@/app/(app)/eval/prompt-diff/page";
 // ---------------------------------------------------------------------------
 
 describe("Eval Runs page", () => {
+  beforeEach(() => {
+    vi.mocked(getRunsApiV1EvalRunsGetOptions).mockReturnValue({
+      queryKey: ["evalRuns"],
+      queryFn: vi.fn().mockResolvedValue([
+        {
+          id: "run-abc123",
+          pass_number: 1,
+          model: "claude-haiku-4-5",
+          prompt_version: "pass1_v1",
+          status: "completed",
+          created_at: "2026-02-22T10:00:00Z",
+          completed_at: "2026-02-22T10:05:00Z",
+          total_items: 100,
+          completed_items: 100,
+        },
+      ]),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    vi.mocked(listModelsApiV1EvalModelsGetOptions).mockReturnValue({
+      queryKey: ["evalModels"],
+      queryFn: vi.fn().mockResolvedValue([
+        { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (fast, cheap)" },
+      ]),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
   it("renders the Eval Runs heading", () => {
-    render(<EvalRunsPage />);
+    renderWithQueryClient(<EvalRunsPage />);
     expect(
-      screen.getByRole("heading", { name: /eval runs/i }),
+      screen.getByRole("heading", { name: /evaluation runs/i }),
     ).toBeInTheDocument();
   });
 
   it("renders the New Run button", () => {
-    render(<EvalRunsPage />);
+    renderWithQueryClient(<EvalRunsPage />);
     expect(
       screen.getByRole("button", { name: /new run/i }),
     ).toBeInTheDocument();
@@ -129,14 +112,14 @@ describe("Eval Runs page", () => {
 
 describe("Leaderboard page", () => {
   it("renders the Leaderboard heading", () => {
-    render(<LeaderboardPage />);
+    renderWithQueryClient(<LeaderboardPage />);
     expect(
       screen.getByRole("heading", { name: /leaderboard/i }),
     ).toBeInTheDocument();
   });
 
   it("renders Pass filter buttons", () => {
-    render(<LeaderboardPage />);
+    renderWithQueryClient(<LeaderboardPage />);
     expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Pass 1" }),
@@ -153,7 +136,7 @@ describe("Leaderboard page", () => {
 
 describe("Accuracy page", () => {
   it("renders the Suspense fallback without crashing", () => {
-    render(
+    renderWithQueryClient(
       <Suspense fallback={<div>Loading…</div>}>
         <AccuracyPage />
       </Suspense>,
@@ -162,7 +145,7 @@ describe("Accuracy page", () => {
   });
 
   it("renders without throwing", () => {
-    expect(() => render(<AccuracyPage />)).not.toThrow();
+    expect(() => renderWithQueryClient(<AccuracyPage />)).not.toThrow();
   });
 });
 
@@ -172,7 +155,7 @@ describe("Accuracy page", () => {
 
 describe("Review page", () => {
   it("renders without crashing", () => {
-    expect(() => render(<ReviewPage />)).not.toThrow();
+    expect(() => renderWithQueryClient(<ReviewPage />)).not.toThrow();
   });
 });
 
@@ -182,6 +165,6 @@ describe("Review page", () => {
 
 describe("Prompt Diff page", () => {
   it("renders without crashing", () => {
-    expect(() => render(<PromptDiffPage />)).not.toThrow();
+    expect(() => renderWithQueryClient(<PromptDiffPage />)).not.toThrow();
   });
 });

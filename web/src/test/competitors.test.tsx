@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import type { DailyVelocity } from "@/lib/types";
 
 // ── Hoist mock data so it's available inside vi.mock factories ────────────────
@@ -74,38 +74,47 @@ vi.mock("@tremor/react", async () => {
   return tremorMockSimple();
 });
 
-// ── Mock api-client (used by CompetitorsPage list) ────────────────────────────
+// ── Mock api-client react-query options ──────────────────────────────────────
 
-vi.mock("@/lib/api-client", () => ({
-  api: {
-    getVelocity: vi.fn().mockResolvedValue(mockVelocity),
-  },
-}));
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 
 import CompetitorsPage from "@/app/(app)/competitors/page";
 import CompetitorDossierPage from "@/app/(app)/competitors/[slug]/page";
+import { renderWithQueryClient } from "./test-utils";
+import { getVelocityApiV1AggregationVelocityGetOptions } from "@/api-client/@tanstack/react-query.gen";
+
+beforeEach(() => {
+  vi.mocked(getVelocityApiV1AggregationVelocityGetOptions).mockReturnValue({
+    queryKey: ["velocity"],
+    queryFn: vi.fn().mockResolvedValue(mockVelocity),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+});
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("Competitors list page", () => {
   it("renders the Competitors heading", () => {
-    render(<CompetitorsPage />);
+    renderWithQueryClient(<CompetitorsPage />);
     expect(
       screen.getByRole("heading", { name: /competitors/i }),
     ).toBeInTheDocument();
   });
 
   it("renders the subtitle", () => {
-    render(<CompetitorsPage />);
+    renderWithQueryClient(<CompetitorsPage />);
     expect(
       screen.getByText(/field marketing agencies in our competitive set/i),
     ).toBeInTheDocument();
   });
 
   it("renders 5 company cards", () => {
-    render(<CompetitorsPage />);
+    renderWithQueryClient(<CompetitorsPage />);
     expect(screen.getByText("2020 Companies")).toBeInTheDocument();
     expect(screen.getByText("BDS Connected Solutions")).toBeInTheDocument();
     expect(screen.getByText("MarketSource")).toBeInTheDocument();
@@ -114,7 +123,7 @@ describe("Competitors list page", () => {
   });
 
   it("renders ATS platform badges for each company", () => {
-    render(<CompetitorsPage />);
+    renderWithQueryClient(<CompetitorsPage />);
     const workdayBadges = screen.getAllByText("Workday");
     const icimsBadges = screen.getAllByText("iCIMS");
     // 2020 Companies + T-ROC = 2 Workday; BDS + MarketSource + OSL = 3 iCIMS
@@ -123,7 +132,7 @@ describe("Competitors list page", () => {
   });
 
   it("shows active posting counts after velocity data loads", async () => {
-    render(<CompetitorsPage />);
+    renderWithQueryClient(<CompetitorsPage />);
     await waitFor(() => {
       expect(screen.getByText("120")).toBeInTheDocument();
     });
@@ -136,17 +145,17 @@ describe("Competitor dossier page", () => {
   });
 
   it("renders the company name for the 'troc' slug", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getAllByText("T-ROC").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders the ATS badge", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Workday")).toBeInTheDocument();
   });
 
   it("renders KPI cards", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Active Postings")).toBeInTheDocument();
     expect(screen.getByText("New This Week")).toBeInTheDocument();
     expect(screen.getByText("Avg Pay Min")).toBeInTheDocument();
@@ -154,7 +163,7 @@ describe("Competitor dossier page", () => {
   });
 
   it("renders KPI values from mock data", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     // $48,000 is unique to the avg pay KPI
     expect(screen.getByText("$48,000")).toBeInTheDocument();
     // 89 appears in both top KPI (Active Postings) and metrics row (Currently Open)
@@ -166,12 +175,12 @@ describe("Competitor dossier page", () => {
 
   it("renders 'Company not found' for an unknown slug", () => {
     mockSlug.current = "unknown-slug";
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText(/company not found/i)).toBeInTheDocument();
   });
 
   it("renders tab navigation", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Executive Summary")).toBeInTheDocument();
     expect(screen.getByText("Brand Intelligence")).toBeInTheDocument();
     expect(screen.getByText("Hiring")).toBeInTheDocument();
@@ -179,38 +188,38 @@ describe("Competitor dossier page", () => {
   });
 
   it("renders the Key Finding callout on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Key Finding")).toBeInTheDocument();
     expect(screen.getByText(/doubling down on Samsung/i)).toBeInTheDocument();
   });
 
   it("renders the Company Overview narrative section on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Company Overview")).toBeInTheDocument();
     expect(screen.getByText(/premier retail services company/i)).toBeInTheDocument();
   });
 
   it("renders known clients and channels on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Known Clients & Channels")).toBeInTheDocument();
     expect(screen.getByText("Samsung")).toBeInTheDocument();
   });
 
   it("renders the posting metrics row on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Total Roles Found")).toBeInTheDocument();
     expect(screen.getByText("Roles Closed")).toBeInTheDocument();
     expect(screen.getByText("Currently Open")).toBeInTheDocument();
   });
 
   it("renders the Hiring by Role section on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Hiring by Role")).toBeInTheDocument();
     expect(screen.getAllByText("Brand Ambassador").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders the Latest Roles table on the summary tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getByText("Latest Roles")).toBeInTheDocument();
     expect(
       screen.getAllByText("Field Marketing Representative – Samsung").length,
@@ -219,33 +228,33 @@ describe("Competitor dossier page", () => {
   });
 
   it("renders the Pay Benchmarks section title on the hiring tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Hiring"));
     expect(screen.getByText("Pay Benchmarks by Role")).toBeInTheDocument();
   });
 
   it("renders the Job Postings table on the hiring tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Hiring"));
     expect(screen.getByText("Job Postings")).toBeInTheDocument();
   });
 
   it("renders the Geographic Focus callout on the brands tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Brand Intelligence"));
     expect(screen.getByText("Geographic Focus")).toBeInTheDocument();
     expect(screen.getByText(/Southeast corridor dominance/i)).toBeInTheDocument();
   });
 
   it("renders the Brand Intelligence section on the brands tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Brand Intelligence"));
     // "Brand Intelligence" appears as both tab label and section heading
     expect(screen.getAllByText("Brand Intelligence").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders the Data Note caution callout on the brands tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Brand Intelligence"));
     expect(screen.getByText("Data Note")).toBeInTheDocument();
     expect(screen.getByText(/re-fills of the same position/i)).toBeInTheDocument();
@@ -253,20 +262,20 @@ describe("Competitor dossier page", () => {
 
   it("renders distinct content for the 'bds' slug", () => {
     mockSlug.current = "bds";
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     expect(screen.getAllByText("BDS Connected Solutions").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/in-store demo presence/i)).toBeInTheDocument();
   });
 
   it("renders Glassdoor overall rating on the employees tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Employee Insights"));
     // T-ROC overall rating is 3.9
     expect(screen.getAllByText("3.9").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders sentiment percentages on the employees tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Employee Insights"));
     // T-ROC: 72% recommend, 68% outlook, 79% CEO, 50% interview
     expect(screen.getByText("72%")).toBeInTheDocument();
@@ -274,14 +283,14 @@ describe("Competitor dossier page", () => {
   });
 
   it("renders review cards on the employees tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Employee Insights"));
     expect(screen.getByText("Low Pay, High Standards")).toBeInTheDocument();
     expect(screen.getByText("Great place to work and grow")).toBeInTheDocument();
   });
 
   it("renders category ratings on the employees tab", () => {
-    render(<CompetitorDossierPage />);
+    renderWithQueryClient(<CompetitorDossierPage />);
     fireEvent.click(screen.getByText("Employee Insights"));
     expect(screen.getByText("Ratings by Category")).toBeInTheDocument();
     expect(screen.getByText("Diversity & inclusion")).toBeInTheDocument();

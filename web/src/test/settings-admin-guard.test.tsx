@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { renderWithQueryClient } from "./test-utils";
 
 const mockRole = vi.fn(() => "admin");
 const mockLoading = vi.fn(() => false);
@@ -56,6 +56,29 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
+vi.mock("@/components/ui/confirm-dialog", () => ({
+  ConfirmDialog: () => null,
+}));
+
+vi.mock("@/components/auth/user-management-section", () => ({
+  UserManagementSection: () => <div data-testid="user-mgmt" />,
+}));
+
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
+
+vi.mock("@/api-client/sdk.gen", () => ({
+  pauseScrapeApiV1ScrapePausePost: vi.fn(),
+  resumeScrapeApiV1ScrapeResumePost: vi.fn(),
+  stopScrapeApiV1ScrapeStopPost: vi.fn(),
+  forceStopScrapeApiV1ScrapeForceStopPost: vi.fn(),
+  triggerJobApiV1SchedulerJobsJobIdTriggerPost: vi.fn(),
+  pauseJobApiV1SchedulerJobsJobIdPausePost: vi.fn(),
+  resumeJobApiV1SchedulerJobsJobIdResumePost: vi.fn(),
+}));
+
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -99,26 +122,26 @@ describe("Settings page admin guard", () => {
 
   it("redirects viewer-role users to /403", () => {
     mockRole.mockReturnValue("viewer");
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(mockRedirect).toHaveBeenCalledWith("/403");
   });
 
   it("redirects user-role users to /403", () => {
     mockRole.mockReturnValue("user");
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(mockRedirect).toHaveBeenCalledWith("/403");
   });
 
   it("does not redirect while auth is loading", () => {
     mockRole.mockReturnValue("viewer");
     mockLoading.mockReturnValue(true);
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it("does not redirect admin users", () => {
     mockRole.mockReturnValue("admin");
-    render(<SettingsPage />);
+    renderWithQueryClient(<SettingsPage />);
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 });
