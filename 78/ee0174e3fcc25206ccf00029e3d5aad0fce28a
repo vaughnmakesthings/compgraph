@@ -1,0 +1,36 @@
+scripts/dump_openapi.py
+  85a59f4b590f3419 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "78ee0174e3fcc25206ccf00029e3d5aad0fce28a",
+  "prompts": {
+    "08f05b160b7c05bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e238d78c-4b34-42a9-9637-27151009d48d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    },
+    "85a59f4b590f3419": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "113f79dc-b24d-4444-a144-6fb5b54d828f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
