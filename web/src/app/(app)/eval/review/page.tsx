@@ -186,7 +186,8 @@ function ReviewPageContent() {
   }, [resultsA, resultsB, corpus]);
 
   const totalComparisons = commonPostings.length;
-  const currentItem = commonPostings[currentIndex] ?? null;
+  const clampedIndex = totalComparisons > 0 ? Math.min(currentIndex, totalComparisons - 1) : 0;
+  const currentItem = commonPostings[clampedIndex] ?? null;
 
   const displayedPair = useMemo(() => {
     if (!currentItem) return null;
@@ -418,7 +419,7 @@ function ReviewPageContent() {
                   Prev
                 </button>
                 <span className="font-body text-xs text-[#4F5D75]">
-                  {currentIndex + 1} of {totalComparisons}
+                  {clampedIndex + 1} of {totalComparisons}
                 </span>
                 <button
                   onClick={goNext}

@@ -126,9 +126,15 @@ export default function LeaderboardPage() {
     unsorted.sort((a, b) => {
       const aVal = a[sortKey];
       const bVal = b[sortKey];
-      if (typeof aVal === "number" && typeof bVal === "number") {
-        return sortAsc ? aVal - bVal : bVal - aVal;
+      // Numeric compare for numbers and percentage strings like "80.0%"
+      const aNum = typeof aVal === "number" ? aVal : typeof aVal === "string" ? parseFloat(aVal) : NaN;
+      const bNum = typeof bVal === "number" ? bVal : typeof bVal === "string" ? parseFloat(bVal) : NaN;
+      if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+        return sortAsc ? aNum - bNum : bNum - aNum;
       }
+      // em-dash or non-numeric → sort to end
+      if (Number.isNaN(aNum) && !Number.isNaN(bNum)) return 1;
+      if (!Number.isNaN(aNum) && Number.isNaN(bNum)) return -1;
       const aStr = String(aVal);
       const bStr = String(bVal);
       return sortAsc ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);

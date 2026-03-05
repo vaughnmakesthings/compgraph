@@ -111,13 +111,12 @@ export default function HiringPage() {
       query: {
         limit: PAGE_SIZE,
         offset,
-        company_id: companyFilter || undefined,
+        company_id: companyFilter || null,
         is_active: statusFilter === "all" ? undefined : statusFilter === "active",
-        role_archetype: roleFilter || undefined,
+        role_archetype: roleFilter || null,
         sort_by: sortBy,
-        search: debouncedSearch || undefined,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any
+        search: debouncedSearch || null,
+      }
     }),
     select: (data) => data as unknown as PostingListResponse,
   });
@@ -290,7 +289,7 @@ export default function HiringPage() {
               Search: &quot;{searchInput}&quot;
               <button
                 type="button"
-                onClick={() => setSearchInput("")}
+                onClick={() => { setSearchInput(""); setOffset(0); }}
                 aria-label="Clear search"
                 className="ml-1 hover:opacity-70"
               >
@@ -303,7 +302,7 @@ export default function HiringPage() {
               Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? sortBy}
               <button
                 type="button"
-                onClick={() => setSortBy("first_seen_desc")}
+                onClick={() => { setSortBy("first_seen_desc"); setOffset(0); }}
                 aria-label="Reset sort"
                 className="ml-1 hover:opacity-70"
               >

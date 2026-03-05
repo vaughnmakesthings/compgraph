@@ -69,6 +69,10 @@ function AccuracyContent() {
   const [focusedFieldIdx, setFocusedFieldIdx] = useState(0);
   const [savedField, setSavedField] = useState<string | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedRunIdRef = useRef(selectedRunId);
+  useEffect(() => {
+    selectedRunIdRef.current = selectedRunId;
+  }, [selectedRunId]);
 
   const { data: runs = [] } = useQuery({
     ...getRunsApiV1EvalRunsGetOptions(),
@@ -106,7 +110,7 @@ function AccuracyContent() {
   const reviewMutation = useMutation({
     ...createFieldReviewApiV1EvalFieldReviewsPostMutation(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: getRunResultsApiV1EvalRunsRunIdResultsGetQueryKey({ path: { run_id: selectedRunId! } }) });
+      queryClient.invalidateQueries({ queryKey: getRunResultsApiV1EvalRunsRunIdResultsGetQueryKey({ path: { run_id: selectedRunIdRef.current! } }) });
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSavedField((variables as any).body.field_name);

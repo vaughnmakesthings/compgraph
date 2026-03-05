@@ -313,7 +313,7 @@ function PromptDiffContent() {
                             </td>
                             <td className="py-2.5 pr-4 font-mono text-xs text-[#2D3142]">
                               <span className="mr-1.5 inline-block size-1.5 rounded-full bg-[#8C2C23]" />
-                              {row.divergences}
+                              {row.divergences + row.baselineOnly + row.candidateOnly}
                             </td>
                             <td className={`py-2.5 pl-4 pr-5 text-right font-mono text-xs font-semibold ${pct !== null ? matchPctColor(pct) : "text-[#4F5D75]"}`}>
                               {pct !== null ? `${pct}%` : "\u2014"}
