@@ -314,8 +314,9 @@ async def persist_posting(
         full_text_hash=text_hash,
         content_changed=content_changed,
     )
-    await session.execute(snapshot_stmt)
-    return True
+    snapshot_stmt = snapshot_stmt.on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
+    result = await session.execute(snapshot_stmt)
+    return result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
 
 
 class WorkdayAdapter:
