@@ -1,21 +1,20 @@
 import { api } from '../lib/api-client'
-import { setAuthToken } from '../lib/auth-token'
+import { setAuthToken, resetAuthState } from '../lib/auth-token'
 import type { PipelineStatus, EvalResult } from '../lib/types'
 
-const mockSignOut = vi.fn().mockResolvedValue({ error: null })
 vi.mock('../lib/supabase', () => ({
-  supabase: { auth: { signOut: mockSignOut } },
+  supabase: { auth: { signOut: vi.fn().mockResolvedValue({ error: null }) } },
 }))
 
 beforeEach(() => {
   global.fetch = vi.fn()
+  // Mark auth as ready so apiFetch doesn't hang waiting for auth
   setAuthToken(null)
-  mockSignOut.mockClear()
 })
 
 afterEach(() => {
   vi.restoreAllMocks()
-  setAuthToken(null)
+  resetAuthState()
 })
 
 describe('api.getPipelineStatus', () => {
@@ -515,7 +514,8 @@ describe('auth token injection', () => {
     expect(headers.Authorization).toBeUndefined()
   })
 
-  it('calls supabase.auth.signOut on 401 response', async () => {
+  it('does not call signOut on 401 response', async () => {
+    const { supabase } = await import('../lib/supabase')
     setAuthToken('expired-token')
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
@@ -523,7 +523,58 @@ describe('auth token injection', () => {
     } as Response)
 
     await expect(api.health()).rejects.toThrow('API error 401')
-    expect(mockSignOut).toHaveBeenCalled()
+    expect(supabase?.auth.signOut).not.toHaveBeenCalled()
+  })
+
+  it('redirects to /login on 401 when auth is ready', async () => {
+    const originalLocation = window.location
+    const assignMock = vi.fn()
+    const locationProxy = { ...originalLocation }
+    Object.defineProperty(locationProxy, 'href', {
+      get: () => originalLocation.href,
+      set: assignMock,
+    })
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: locationProxy,
+    })
+
+    setAuthToken('expired-token')
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+    } as Response)
+
+    await expect(api.health()).rejects.toThrow('API error 401')
+    expect(assignMock).toHaveBeenCalledWith('/login')
+
+    Object.defineProperty(window, 'location', { writable: true, value: originalLocation })
+  })
+
+  it('waits for auth to be ready before making requests', async () => {
+    resetAuthState()
+
+    let fetchCalled = false
+    vi.mocked(fetch).mockImplementation(async () => {
+      fetchCalled = true
+      return { ok: true, json: async () => ({ status: 'ok' }) } as Response
+    })
+
+    const promise = api.health()
+
+    // Fetch should not have been called yet — auth is not ready
+    await new Promise((r) => setTimeout(r, 10))
+    expect(fetchCalled).toBe(false)
+
+    // Mark auth as ready
+    setAuthToken('late-token')
+
+    await promise
+    expect(fetchCalled).toBe(true)
+
+    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer late-token')
   })
 })
 

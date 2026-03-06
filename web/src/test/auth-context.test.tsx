@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
-import { getAuthToken, setAuthToken } from "@/lib/auth-token";
+import { getAuthToken, resetAuthState } from "@/lib/auth-token";
 import { createMockSupabaseAuth, mockSession } from "./mocks/supabase";
 
 let mockSupabase: ReturnType<typeof createMockSupabaseAuth> | null = null;
@@ -34,7 +34,7 @@ function AuthDisplay() {
 describe("AuthProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setAuthToken(null);
+    resetAuthState();
   });
 
   it("shows loading initially then resolves session", async () => {

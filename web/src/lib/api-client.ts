@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { API_BASE } from './constants'
-import { getAuthToken } from './auth-token'
+import { getAuthToken, isAuthReady, waitForAuth } from './auth-token'
 import type {
   PipelineStatus,
   PipelineRunsResponse,
@@ -27,6 +27,8 @@ function sanitizeErrorDetail(s: string): string {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  await waitForAuth()
+
   const token = getAuthToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -43,14 +45,9 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`Network error: ${path}`, { cause })
   }
   if (!res.ok) {
-    if (res.status === 401) {
-      try {
-        toast.error('Your session expired. Please sign in again.')
-        const { supabase } = await import('./supabase')
-        await supabase?.auth.signOut()
-      } catch {
-        /* sign-out best-effort — import or signOut may fail */
-      }
+    if (res.status === 401 && isAuthReady()) {
+      toast.error('Your session expired. Please sign in again.')
+      window.location.href = '/login'
     }
     let detail: string | undefined
     try {
