@@ -1,0 +1,31 @@
+tests/test_embeddings.py
+  0ab57401c35788ac 84-88,94-95
+src/compgraph/scrapers/persistence.py
+  0ab57401c35788ac 114-121
+tests/test_persistence_geocode.py
+  0ab57401c35788ac 1-81
+tests/test_geocoding.py
+  0ab57401c35788ac 1,7,134-207
+tests/test_orchestrator_embedding.py
+  0ab57401c35788ac 1-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "00cd0343476e722284f62e2ad81cfb0ffe1df209",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 277,
+      "total_deletions": 19,
+      "accepted_lines": 267,
+      "overriden_lines": 0
+    }
+  }
+}
