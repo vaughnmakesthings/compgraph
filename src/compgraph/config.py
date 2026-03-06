@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Circuit breaker (consecutive group-level API failures before aborting batch)
     ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD: int = 3
 
+    # Scraper completeness gate: skip deactivation if new postings < threshold * baseline
+    SCRAPE_COMPLETENESS_THRESHOLD: float = 0.2
+
     # Entity resolution thresholds (fuzzy matching via rapidfuzz)
     ENTITY_AUTO_ACCEPT_THRESHOLD: int = 85
     ENTITY_REVIEW_THRESHOLD: int = 70

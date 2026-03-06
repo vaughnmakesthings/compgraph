@@ -14,7 +14,8 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
-from compgraph.db.models import Company, ScrapeRun, ScrapeRunStatus
+from compgraph.config import settings
+from compgraph.db.models import Company, Posting, ScrapeRun, ScrapeRunStatus
 from compgraph.db.session import async_session_factory
 from compgraph.scrapers.base import ScrapeResult
 from compgraph.scrapers.deactivation import deactivate_stale_postings
@@ -171,6 +172,20 @@ async def check_baseline_anomaly(
         warnings.append(msg)
 
     return warnings
+
+
+async def _count_active_postings(session: AsyncSession, company_id: uuid.UUID) -> int:
+    """Return the current count of active postings for a company."""
+    result = await session.execute(
+        select(func.count())
+        .select_from(Posting)
+        .where(
+            Posting.company_id == company_id,
+            Posting.is_active.is_(True),
+        )
+    )
+    count: int = result.scalar_one()
+    return count
 
 
 async def cleanup_stale_pending_runs(session: AsyncSession, max_age_hours: int = 6) -> int:
@@ -449,9 +464,30 @@ class PipelineOrchestrator:
                     company = await session.get(Company, result.company_id)
                     if company:
                         company.last_scraped_at = datetime.now(UTC)
-                    closed = await deactivate_stale_postings(
-                        session, result.company_id, scrape_run.id
+
+                    # Completeness gate: compare new postings against baseline to prevent
+                    # false deactivation when a partial scrape returns fewer results.
+                    baseline_count = await _count_active_postings(session, result.company_id)
+                    threshold = settings.SCRAPE_COMPLETENESS_THRESHOLD
+                    gate_triggered = (
+                        baseline_count > 0 and result.postings_found < baseline_count * threshold
                     )
+                    if gate_triggered:
+                        pct = (
+                            result.postings_found / baseline_count * 100 if baseline_count else 0.0
+                        )
+                        warn_msg = (
+                            f"Scrape completeness gate triggered for {result.company_slug}: "
+                            f"{result.postings_found}/{baseline_count} ({pct:.1f}%) "
+                            f"— skipping deactivation"
+                        )
+                        logger.warning(warn_msg)
+                        result.warnings.append(warn_msg)
+                        closed = 0
+                    else:
+                        closed = await deactivate_stale_postings(
+                            session, result.company_id, scrape_run.id
+                        )
                     refreshed.postings_closed = closed
                     result.postings_closed = closed
                     baseline_warnings = await check_baseline_anomaly(
