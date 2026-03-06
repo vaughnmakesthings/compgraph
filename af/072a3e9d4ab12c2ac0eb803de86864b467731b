@@ -1,0 +1,31 @@
+src/compgraph/scheduler/jobs.py
+  48074118b48372ab 227-246
+src/compgraph/db/models.py
+  48074118b48372ab 460-481
+src/compgraph/aggregation/alerts.py
+  48074118b48372ab 1-140
+src/compgraph/main.py
+  48074118b48372ab 11,120
+src/compgraph/api/routes/alerts.py
+  48074118b48372ab 1-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "af072a3e9d4ab12c2ac0eb803de86864b467731b",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 267,
+      "total_deletions": 10,
+      "accepted_lines": 260,
+      "overriden_lines": 0
+    }
+  }
+}
