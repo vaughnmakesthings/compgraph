@@ -126,17 +126,20 @@ jobs:
         if: env.RUN_BACKEND == 'true'
         run: |
           uv run pytest -q -m "not integration" -n auto \
-            --cov=compgraph --cov-report=xml --cov-report=term-missing
+            --cov=compgraph --cov-branch --cov-report=xml --cov-report=term-missing \
+            --junitxml=junit.xml -o junit_family=legacy
         env:
           DATABASE_PASSWORD: "ci-placeholder"
       - name: Upload coverage to Codecov
         if: ${{ always() && env.RUN_BACKEND == 'true' }}
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && env.RUN_BACKEND == 'true' }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Skip (no backend changes)
         if: env.RUN_BACKEND != 'true'
         run: echo "No backend changes detected — skipping tests"
