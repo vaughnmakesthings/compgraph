@@ -1,0 +1,380 @@
+"""Tests for force_stop / stop per-company state management (issue #362)."""
+
+from __future__ import annotations
+
+import asyncio
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from compgraph.scrapers.base import ScrapeResult
+from compgraph.scrapers.orchestrator import (
+    CompanyState,
+    PipelineOrchestrator,
+    PipelineRun,
+    PipelineStatus,
+)
+from tests.test_orchestrator import (
+    _make_company,
+    _patch_session_and_companies,
+)
+from tests.test_orchestrator import (
+    clear_pipeline_runs as _clear_pipeline_runs,
+)
+
+# Re-export the autouse fixture so pytest picks it up in this module
+clear_pipeline_runs = _clear_pipeline_runs
+
+
+class TestCompanyStateCancelledEnum:
+    def test_cancelled_value_is_lowercase_string(self):
+        assert CompanyState.CANCELLED == "cancelled"
+        assert CompanyState.CANCELLED.value == "cancelled"
+
+    def test_cancelled_serializes_in_dict(self):
+        states: dict[str, CompanyState] = {"bds": CompanyState.CANCELLED}
+        serialized = {k: v.value for k, v in states.items()}
+        assert serialized == {"bds": "cancelled"}
+
+    def test_all_enum_values_are_distinct(self):
+        values = [s.value for s in CompanyState]
+        assert len(values) == len(set(values))
+
+    def test_cancelled_is_member_of_strenum(self):
+        assert isinstance(CompanyState.CANCELLED, str)
+        assert CompanyState("cancelled") is CompanyState.CANCELLED
+
+
+class TestForceStopCompanyStates:
+    def test_force_stop_sets_pending_to_cancelled(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.PENDING,
+            "marketsource": CompanyState.PENDING,
+            "2020": CompanyState.PENDING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        assert run.status == PipelineStatus.CANCELLED
+        for slug in run.company_states:
+            assert run.company_states[slug] == CompanyState.CANCELLED
+
+    def test_force_stop_sets_running_to_cancelled(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.RUNNING,
+            "marketsource": CompanyState.RUNNING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        for slug in run.company_states:
+            assert run.company_states[slug] == CompanyState.CANCELLED
+
+    def test_force_stop_preserves_terminal_states(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.COMPLETED,
+            "marketsource": CompanyState.FAILED,
+            "2020": CompanyState.SKIPPED,
+            "troc": CompanyState.RUNNING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        assert run.company_states["bds"] == CompanyState.COMPLETED
+        assert run.company_states["marketsource"] == CompanyState.FAILED
+        assert run.company_states["2020"] == CompanyState.SKIPPED
+        assert run.company_states["troc"] == CompanyState.CANCELLED
+
+    def test_force_stop_with_mixed_states(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.COMPLETED,
+            "marketsource": CompanyState.RUNNING,
+            "2020": CompanyState.PENDING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        assert run.company_states["bds"] == CompanyState.COMPLETED
+        assert run.company_states["marketsource"] == CompanyState.CANCELLED
+        assert run.company_states["2020"] == CompanyState.CANCELLED
+        assert run.status == PipelineStatus.CANCELLED
+
+    def test_force_stop_with_empty_states(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        assert run.status == PipelineStatus.CANCELLED
+        assert run.company_states == {}
+
+    def test_force_stop_cancels_tasks(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        mock_task_1 = MagicMock()
+        mock_task_2 = MagicMock()
+        orch._tasks = [mock_task_1, mock_task_2]
+
+        orch.force_stop(run)
+
+        mock_task_1.cancel.assert_called_once()
+        mock_task_2.cancel.assert_called_once()
+
+    def test_force_stop_sets_internal_flags(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.force_stop(run)
+
+        assert orch._force_stop_requested is True
+        assert orch._stop_requested is True
+
+
+class TestStopCompanyStates:
+    def test_stop_sets_pending_to_skipped(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.PENDING,
+            "marketsource": CompanyState.PENDING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.stop(run)
+
+        assert run.status == PipelineStatus.STOPPING
+        assert run.company_states["bds"] == CompanyState.SKIPPED
+        assert run.company_states["marketsource"] == CompanyState.SKIPPED
+
+    def test_stop_leaves_running_untouched(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.RUNNING,
+            "marketsource": CompanyState.PENDING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.stop(run)
+
+        assert run.company_states["bds"] == CompanyState.RUNNING
+        assert run.company_states["marketsource"] == CompanyState.SKIPPED
+
+    def test_stop_preserves_terminal_states(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        run.company_states = {
+            "bds": CompanyState.COMPLETED,
+            "marketsource": CompanyState.FAILED,
+            "2020": CompanyState.PENDING,
+        }
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.stop(run)
+
+        assert run.company_states["bds"] == CompanyState.COMPLETED
+        assert run.company_states["marketsource"] == CompanyState.FAILED
+        assert run.company_states["2020"] == CompanyState.SKIPPED
+
+    def test_stop_sets_internal_flags(self):
+        run = PipelineRun(status=PipelineStatus.RUNNING)
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.stop(run)
+
+        assert orch._stop_requested is True
+        assert orch._force_stop_requested is False
+
+
+class TestCancelledErrorStateCleanup:
+    async def test_cancelled_during_resume_wait_sets_cancelled(self):
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch._resume_event.clear()
+
+        with _patch_session_and_companies([company]):
+            task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
+            orch._tasks = [task]
+            await asyncio.sleep(0)  # yield so task blocks on cleared _resume_event
+            task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
+
+    async def test_force_stop_during_full_run_sets_all_cancelled(self):
+        companies = [_make_company("bds"), _make_company("marketsource")]
+
+        async def slow_scrape(c, s):
+            await asyncio.sleep(10)
+            return ScrapeResult(
+                company_id=c.id,
+                company_slug=c.slug,
+                postings_found=10,
+                snapshots_created=10,
+                finished_at=datetime.now(UTC),
+            )
+
+        mock_adapter = AsyncMock()
+        mock_adapter.scrape = AsyncMock(side_effect=slow_scrape)
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        pipeline_run = PipelineRun()
+
+        async def force_stop_after_start():
+            await asyncio.sleep(0.05)
+            orch.force_stop(pipeline_run)
+
+        with (
+            _patch_session_and_companies(companies),
+            patch(
+                "compgraph.scrapers.orchestrator.get_adapter",
+                return_value=mock_adapter,
+            ),
+        ):
+            stop_task = asyncio.create_task(force_stop_after_start())
+            run = await orch.run(pipeline_run)
+            await stop_task
+
+        assert run.status == PipelineStatus.CANCELLED
+        for slug in run.company_states:
+            assert run.company_states[slug] in (
+                CompanyState.CANCELLED,
+                CompanyState.SKIPPED,
+            ), f"{slug} has unexpected state: {run.company_states[slug]}"
+
+    async def test_stop_requested_before_semaphore_returns_skipped(self):
+        """Lines 362-369: stop requested before acquiring semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch._stop_requested = True  # Pre-set stop flag
+
+        with _patch_session_and_companies([company]):
+            result = await orch._scrape_company_with_isolation(company, pipeline_run)
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.SKIPPED
+        assert result.errors == ["Skipped: pipeline stop requested"]
+
+    async def test_stop_requested_after_semaphore_returns_skipped(self):
+        """Lines 374-381: stop requested after acquiring semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        original_semaphore = orch.semaphore
+
+        class StopAfterAcquire:
+            async def __aenter__(self_inner):
+                await original_semaphore.__aenter__()
+                orch._stop_requested = True
+                return self_inner
+
+            async def __aexit__(self_inner, *args):
+                return await original_semaphore.__aexit__(*args)
+
+        orch.semaphore = StopAfterAcquire()
+
+        with _patch_session_and_companies([company]):
+            result = await orch._scrape_company_with_isolation(company, pipeline_run)
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.SKIPPED
+        assert result.errors == ["Skipped: pipeline stop requested"]
+
+    async def test_cancelled_waiting_for_semaphore_sets_cancelled(self):
+        """Lines 415-421: CancelledError while waiting for semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        # Use a semaphore with 0 slots so the task blocks on acquire
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.semaphore = asyncio.Semaphore(0)
+
+        with _patch_session_and_companies([company]):
+            task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
+            orch._tasks = [task]
+            await asyncio.sleep(0)  # yield so task blocks on Semaphore(0)
+            task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
+
+    async def test_cancelled_during_scrape_sets_cancelled_not_failed(self):
+        """CancelledError in _scrape_with_retries must set CANCELLED, not FAILED.
+
+        Before the fix, ``except BaseException`` caught CancelledError and the
+        ``finally`` block set state to FAILED before the outer handler ran.
+        With ``except Exception``, CancelledError bypasses the inner handler.
+        """
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.RUNNING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        async def cancelling_scrape(*_args, **_kwargs):
+            raise asyncio.CancelledError()
+
+        with (
+            _patch_session_and_companies([company]),
+            patch.object(orch, "_scrape_with_retries", side_effect=cancelling_scrape),
+            patch.object(orch, "_create_scrape_run", return_value=MagicMock()),
+            patch.object(orch, "_finalize_scrape_run", new_callable=AsyncMock),
+        ):
+            task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
+            orch._tasks = [task]
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
+
+    async def test_post_gather_fixup_uses_cancelled_for_cancelled_tasks(self):
+        companies = [_make_company("bds"), _make_company("marketsource")]
+
+        call_count = 0
+
+        async def slow_then_cancel_scrape(c, s):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(10)
+            return ScrapeResult(
+                company_id=c.id,
+                company_slug=c.slug,
+                postings_found=5,
+                snapshots_created=5,
+                finished_at=datetime.now(UTC),
+            )
+
+        mock_adapter = AsyncMock()
+        mock_adapter.scrape = AsyncMock(side_effect=slow_then_cancel_scrape)
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        pipeline_run = PipelineRun()
+
+        async def force_stop_soon():
+            await asyncio.sleep(0.05)
+            orch.force_stop(pipeline_run)
+
+        with (
+            _patch_session_and_companies(companies),
+            patch(
+                "compgraph.scrapers.orchestrator.get_adapter",
+                return_value=mock_adapter,
+            ),
+        ):
+            stop_task = asyncio.create_task(force_stop_soon())
+            run = await orch.run(pipeline_run)
+            await stop_task
+
+        for slug, state in run.company_states.items():
+            assert state != CompanyState.RUNNING, f"{slug} still RUNNING after force stop"
+            assert state != CompanyState.PENDING, f"{slug} still PENDING after force stop"

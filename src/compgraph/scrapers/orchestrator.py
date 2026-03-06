@@ -45,6 +45,7 @@ class CompanyState(StrEnum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+    CANCELLED = "cancelled"
 
 
 @dataclass
@@ -244,8 +245,11 @@ class PipelineOrchestrator:
     def stop(self, run: PipelineRun) -> None:
         """Graceful stop: running companies finish, pending companies get skipped."""
         self._stop_requested = True
-        self._resume_event.set()  # unblock if paused so loop can see stop flag
+        self._resume_event.set()
         run.status = PipelineStatus.STOPPING
+        for slug in run.company_states:
+            if run.company_states[slug] == CompanyState.PENDING:
+                run.company_states[slug] = CompanyState.SKIPPED
 
     def force_stop(self, run: PipelineRun) -> None:
         """Force stop: cancel all tasks immediately."""
@@ -255,6 +259,10 @@ class PipelineOrchestrator:
         for task in self._tasks:
             task.cancel()
         run.status = PipelineStatus.CANCELLED
+        _NON_TERMINAL = {CompanyState.PENDING, CompanyState.RUNNING}
+        for slug in run.company_states:
+            if run.company_states[slug] in _NON_TERMINAL:
+                run.company_states[slug] = CompanyState.CANCELLED
 
     async def run(self, pipeline_run: PipelineRun | None = None) -> PipelineRun:
         """Execute a full scrape pipeline run.
@@ -294,7 +302,6 @@ class PipelineOrchestrator:
 
             for company, result in zip(companies, results, strict=True):
                 if isinstance(result, BaseException):
-                    # CancelledError from force-stop -> SKIPPED, not FAILED
                     is_cancelled = isinstance(result, asyncio.CancelledError)
                     error_result = ScrapeResult(
                         company_id=company.id,
@@ -308,7 +315,7 @@ class PipelineOrchestrator:
                     )
                     pipeline_run.company_results[company.slug] = error_result
                     pipeline_run.company_states[company.slug] = (
-                        CompanyState.SKIPPED if is_cancelled else CompanyState.FAILED
+                        CompanyState.CANCELLED if is_cancelled else CompanyState.FAILED
                     )
                     if not is_cancelled:
                         logger.error("Unhandled exception scraping %s: %r", company.slug, result)
@@ -353,23 +360,9 @@ class PipelineOrchestrator:
     async def _scrape_company_with_isolation(
         self, company: Company, pipeline_run: PipelineRun
     ) -> ScrapeResult:
-        # Wait if paused
-        await self._resume_event.wait()
+        try:
+            await self._resume_event.wait()
 
-        # Check graceful stop before acquiring semaphore
-        if self._stop_requested:
-            pipeline_run.company_states[company.slug] = CompanyState.SKIPPED
-            return ScrapeResult(
-                company_id=company.id,
-                company_slug=company.slug,
-                errors=["Skipped: pipeline stop requested"],
-                finished_at=datetime.now(UTC),
-            )
-
-        pipeline_run.company_states[company.slug] = CompanyState.RUNNING
-
-        async with self.semaphore:
-            # Re-check after acquiring semaphore (may have been queued while stop was issued)
             if self._stop_requested:
                 pipeline_run.company_states[company.slug] = CompanyState.SKIPPED
                 return ScrapeResult(
@@ -379,38 +372,58 @@ class PipelineOrchestrator:
                     finished_at=datetime.now(UTC),
                 )
 
-            scrape_run = await self._create_scrape_run(company)
+            pipeline_run.company_states[company.slug] = CompanyState.RUNNING
 
-            result: ScrapeResult | None = None
-            try:
-                result = await self._scrape_with_retries(company)
-            except BaseException as exc:
-                result = ScrapeResult(
-                    company_id=company.id,
-                    company_slug=company.slug,
-                    errors=[f"Unexpected exception: {exc!r}"],
-                    finished_at=datetime.now(UTC),
-                )
-                raise
-            finally:
-                if scrape_run is not None and result is None:
+            async with self.semaphore:
+                if self._stop_requested:
+                    pipeline_run.company_states[company.slug] = CompanyState.SKIPPED
+                    return ScrapeResult(
+                        company_id=company.id,
+                        company_slug=company.slug,
+                        errors=["Skipped: pipeline stop requested"],
+                        finished_at=datetime.now(UTC),
+                    )
+
+                scrape_run = await self._create_scrape_run(company)
+
+                result: ScrapeResult | None = None
+                try:
+                    result = await self._scrape_with_retries(company)
+                except Exception as exc:
                     result = ScrapeResult(
                         company_id=company.id,
                         company_slug=company.slug,
-                        errors=["Scrape interrupted before completion"],
+                        errors=[f"Unexpected exception: {exc!r}"],
                         finished_at=datetime.now(UTC),
                     )
-                if result is not None:
-                    pipeline_run.company_states[company.slug] = (
-                        CompanyState.COMPLETED if result.success else CompanyState.FAILED
-                    )
-                    pipeline_run.company_results[company.slug] = result
-                    try:
-                        await asyncio.shield(self._finalize_scrape_run(scrape_run, result))
-                    except asyncio.CancelledError:
-                        pass
+                    raise
+                finally:
+                    if scrape_run is not None and result is None:
+                        result = ScrapeResult(
+                            company_id=company.id,
+                            company_slug=company.slug,
+                            errors=["Scrape interrupted before completion"],
+                            finished_at=datetime.now(UTC),
+                        )
+                    if result is not None:
+                        pipeline_run.company_states[company.slug] = (
+                            CompanyState.COMPLETED if result.success else CompanyState.FAILED
+                        )
+                        pipeline_run.company_results[company.slug] = result
+                        try:
+                            await asyncio.shield(self._finalize_scrape_run(scrape_run, result))
+                        except asyncio.CancelledError:
+                            pass
 
-            return result
+                return result
+        except asyncio.CancelledError:
+            if pipeline_run.company_states.get(company.slug) in (
+                CompanyState.PENDING,
+                CompanyState.RUNNING,
+                CompanyState.FAILED,  # finally block sets FAILED during cancel propagation
+            ):
+                pipeline_run.company_states[company.slug] = CompanyState.CANCELLED
+            raise
 
     async def _create_scrape_run(self, company: Company) -> ScrapeRun | None:
         try:
