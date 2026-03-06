@@ -1,0 +1,23 @@
+src/compgraph/services/aggregation_service.py
+  c482aeaa56739ace 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "3548fea338ea0ccd5a5f9b4c4088adccb08e5868",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
