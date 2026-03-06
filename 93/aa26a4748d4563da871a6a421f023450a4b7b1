@@ -1,0 +1,25 @@
+src/compgraph/enrichment/orchestrator.py
+  208e065629c2c573 345-349,354,435-439,442,776-780,785,871-875,878
+src/compgraph/api/routes/health.py
+  208e065629c2c573 12,65-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "93aa26a4748d4563da871a6a421f023450a4b7b1",
+  "prompts": {
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    }
+  }
+}
