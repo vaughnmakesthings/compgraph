@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,7 +71,7 @@ class MarketCoverageGapsJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        today = date.today()
+        today = datetime.now(UTC).date()
         rows: list[dict] = []
         for row in result.mappings().all():
             brand_names = row["brand_names"]
