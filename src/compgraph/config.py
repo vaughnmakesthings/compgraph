@@ -59,12 +59,6 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = 30
     DB_POOL_RECYCLE: int = 300
 
-    # Dashboard connection pool (sync, smaller)
-    DASHBOARD_DB_POOL_SIZE: int = 2
-    DASHBOARD_DB_MAX_OVERFLOW: int = 1
-    DASHBOARD_DB_POOL_TIMEOUT: int = 30
-    DASHBOARD_DB_POOL_RECYCLE: int = 300
-
     # Sentry
     SENTRY_DSN: str = ""  # empty = disabled
 
