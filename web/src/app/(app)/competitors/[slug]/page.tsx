@@ -384,11 +384,26 @@ export default function CompetitorDossierPage() {
   const slug =
     typeof params.slug === "string" ? params.slug : (params.slug?.[0] ?? "");
 
-  const { data: companies } = useCompanies();
+  const { data: companies, isLoading } = useCompanies();
   const company = companies?.find((c) => c.slug === slug);
   const mock = DOSSIER_MOCKS[slug];
 
   const [activeTab, setActiveTab] = useState<Tab>("summary");
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+          color: "#4F5D75",
+          padding: "2rem 0",
+        }}
+        aria-busy="true"
+      >
+        Loading company data...
+      </div>
+    );
+  }
 
   if (!company || !mock) {
     return (
