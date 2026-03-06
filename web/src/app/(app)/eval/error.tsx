@@ -48,7 +48,7 @@ export default function EvalError({
                 color: "var(--color-blue-slate)",
               }}
             >
-              {error.message || "Failed to load evaluation data. Please try again."}
+              Failed to load evaluation data. Please try again.
             </p>
             {error.digest && (
               <p

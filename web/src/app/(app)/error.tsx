@@ -48,7 +48,7 @@ export default function AppError({
                 color: "var(--color-blue-slate)",
               }}
             >
-              {error.message || "An unexpected error occurred. Please try again."}
+              An unexpected error occurred. Please try again.
             </p>
             {error.digest && (
               <p

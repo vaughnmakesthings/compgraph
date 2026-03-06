@@ -17,7 +17,7 @@ export default function AuthError({
 
   return (
     <div
-      className="flex flex-col items-center justify-center px-4"
+      className="flex flex-1 flex-col items-center justify-center px-4"
       style={{ minHeight: "100vh", backgroundColor: "var(--color-background)" }}
     >
       <div
@@ -44,7 +44,7 @@ export default function AuthError({
             color: "var(--color-blue-slate)",
           }}
         >
-          {error.message || "Something went wrong during authentication. Please try again."}
+          Something went wrong during authentication. Please try again.
         </p>
         <button
           type="button"

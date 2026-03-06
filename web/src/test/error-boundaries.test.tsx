@@ -20,7 +20,7 @@ describe("(app) error.tsx", () => {
     render(<AppError error={mockError} reset={mockReset} />);
 
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-    expect(screen.getByText("Test error message")).toBeInTheDocument();
+    expect(screen.getByText("An unexpected error occurred. Please try again.")).toBeInTheDocument();
     expect(screen.getByText("Error ID: abc123")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
@@ -70,7 +70,7 @@ describe("(app)/eval error.tsx", () => {
     render(<EvalError error={mockError} reset={mockReset} />);
 
     expect(screen.getByText("Evaluation error")).toBeInTheDocument();
-    expect(screen.getByText("Test error message")).toBeInTheDocument();
+    expect(screen.getByText("Failed to load evaluation data. Please try again.")).toBeInTheDocument();
   });
 });
 
