@@ -1,0 +1,25 @@
+tests/test_api_aggregation.py
+  c482aeaa56739ace 59-79
+src/compgraph/api/routes/aggregation.py
+  c482aeaa56739ace 3,22,31,35,41,45,51,55,61,65,71,75,81,85,91,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "a4d0a8c9d9141a1eb1a3bc8543261aee601b27f2",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 41,
+      "total_deletions": 3,
+      "accepted_lines": 38,
+      "overriden_lines": 0
+    }
+  }
+}
