@@ -1164,13 +1164,14 @@ class EnrichmentOrchestrator:
 
         from compgraph.enrichment.fingerprint import detect_reposts
 
-        # Acquire session-level advisory lock for mutual exclusion.
-        # Uses pg_try_advisory_lock (non-blocking): returns false immediately
+        # Acquire transaction-scoped advisory lock for mutual exclusion.
+        # Uses pg_try_advisory_xact_lock (non-blocking): returns false immediately
         # if another enrichment run holds the lock, instead of waiting.
-        # The lock auto-releases when lock_session closes.
+        # The lock auto-releases when the transaction ends (session context exit),
+        # which is safe with connection pooling (unlike session-level locks).
         async with async_session_factory() as lock_session:
             result = await lock_session.execute(
-                text("SELECT pg_try_advisory_lock(:key)"),
+                text("SELECT pg_try_advisory_xact_lock(:key)"),
                 {"key": ENRICHMENT_ADVISORY_LOCK_KEY},
             )
             acquired = result.scalar()
