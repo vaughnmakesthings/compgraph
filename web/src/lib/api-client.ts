@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { API_BASE } from './constants'
-import { getAuthToken, isAuthReady, waitForAuth } from './auth-token'
+import { getAuthToken, waitForAuth } from './auth-token'
 import type {
   PipelineStatus,
   PipelineRunsResponse,
@@ -45,7 +45,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`Network error: ${path}`, { cause })
   }
   if (!res.ok) {
-    if (res.status === 401 && isAuthReady()) {
+    if (res.status === 401) {
       toast.error('Your session expired. Please sign in again.')
       window.location.href = '/login'
     }
