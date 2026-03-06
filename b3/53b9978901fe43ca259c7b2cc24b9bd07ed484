@@ -1,0 +1,53 @@
+tests/test_persistence_geocode.py
+  0ab57401c35788ac 1-81
+tests/test_orchestrator_embedding.py
+  0ab57401c35788ac 1-95
+tests/test_geocoding.py
+  0ab57401c35788ac 1-125
+src/compgraph/enrichment/orchestrator.py
+  0ab57401c35788ac 308-323
+src/compgraph/geocoding.py
+  0ab57401c35788ac 1-44
+scripts/backfill_embeddings.py
+  0ab57401c35788ac 1-115
+tests/test_foundation_models.py
+  0ab57401c35788ac 1-39
+tests/test_icims_adapter.py
+  0ab57401c35788ac 5,439-446,549-556
+pyproject.toml
+  0ab57401c35788ac 24-27
+tests/test_embeddings.py
+  0ab57401c35788ac 1-92
+src/compgraph/db/models.py
+  0ab57401c35788ac 5,20,210-213,224-228,300-301
+tests/test_jobsync_adapter.py
+  0ab57401c35788ac 461-468,588-595
+src/compgraph/enrichment/embeddings.py
+  0ab57401c35788ac 1-28
+tests/test_workday_adapter.py
+  0ab57401c35788ac 353-360,507-514
+scripts/backfill_geocoding.py
+  0ab57401c35788ac 1-154
+src/compgraph/scrapers/persistence.py
+  0ab57401c35788ac 76-78,117-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "b353b9978901fe43ca259c7b2cc24b9bd07ed484",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 277,
+      "total_deletions": 19,
+      "accepted_lines": 888,
+      "overriden_lines": 0
+    }
+  }
+}
