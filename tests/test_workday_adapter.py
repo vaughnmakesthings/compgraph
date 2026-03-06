@@ -382,8 +382,16 @@ class TestPersistPosting:
         prev_hash_result = MagicMock()
         prev_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         session.execute = AsyncMock(
-            side_effect=[posting_result, snapshot_check_result, prev_hash_result, MagicMock()]
+            side_effect=[
+                posting_result,
+                snapshot_check_result,
+                prev_hash_result,
+                snapshot_insert_result,
+            ]
         )
 
         created = await persist_posting(session, company_id, raw)
@@ -426,6 +434,7 @@ class TestPersistPosting:
         prev_hash_result.scalar_one_or_none.return_value = "oldhash123"
 
         snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
 
         session.execute = AsyncMock(
             side_effect=[
@@ -456,8 +465,16 @@ class TestPersistPosting:
         prev_hash_result = MagicMock()
         prev_hash_result.scalar_one_or_none.return_value = None
 
+        snapshot_insert_result = MagicMock()
+        snapshot_insert_result.rowcount = 1
+
         session.execute = AsyncMock(
-            side_effect=[posting_result, snapshot_check_result, prev_hash_result, MagicMock()]
+            side_effect=[
+                posting_result,
+                snapshot_check_result,
+                prev_hash_result,
+                snapshot_insert_result,
+            ]
         )
 
         created = await persist_posting(session, company_id, raw, first_seen_at=first_seen)
@@ -511,8 +528,11 @@ class TestWorkdayAdapter:
         prev_hash = MagicMock()
         prev_hash.scalar_one_or_none.return_value = None
 
+        snapshot_insert = MagicMock()
+        snapshot_insert.rowcount = 1
+
         session.execute = AsyncMock(
-            side_effect=[posting_result, snapshot_check, prev_hash, MagicMock()] * 5
+            side_effect=[posting_result, snapshot_check, prev_hash, snapshot_insert] * 5
         )
         session.begin_nested = MagicMock(return_value=AsyncMock())
         session.commit = AsyncMock()
