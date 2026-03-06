@@ -167,7 +167,11 @@ app.include_router(health_router)
 app.include_router(v1_router)
 
 
-@app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@app.api_route(
+    "/api/{path:path}",
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    include_in_schema=False,
+)
 async def legacy_api_redirect(request: Request, path: str) -> RedirectResponse:
     if path.startswith("v1/") or path == "v1":
         raise HTTPException(status_code=404, detail="Not Found")

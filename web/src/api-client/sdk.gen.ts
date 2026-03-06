@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateComparisonApiV1EvalComparisonsPostData, CreateComparisonApiV1EvalComparisonsPostErrors, CreateComparisonApiV1EvalComparisonsPostResponses, CreateFieldReviewApiV1EvalFieldReviewsPostData, CreateFieldReviewApiV1EvalFieldReviewsPostErrors, CreateFieldReviewApiV1EvalFieldReviewsPostResponses, CreateRunApiV1EvalRunsPostData, CreateRunApiV1EvalRunsPostErrors, CreateRunApiV1EvalRunsPostResponses, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteErrors, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponses, DeleteRunApiV1EvalRunsRunIdDeleteData, DeleteRunApiV1EvalRunsRunIdDeleteErrors, DeleteRunApiV1EvalRunsRunIdDeleteResponses, EnrichStatusApiV1EnrichStatusGetData, EnrichStatusApiV1EnrichStatusGetResponses, EnrichStatusByIdApiV1EnrichStatusRunIdGetData, EnrichStatusByIdApiV1EnrichStatusRunIdGetErrors, EnrichStatusByIdApiV1EnrichStatusRunIdGetResponses, ForceStopScrapeApiV1ScrapeForceStopPostData, ForceStopScrapeApiV1ScrapeForceStopPostErrors, ForceStopScrapeApiV1ScrapeForceStopPostResponses, GetAgencyOverlapApiV1AggregationAgencyOverlapGetData, GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponses, GetBrandTimelineApiV1AggregationBrandTimelineGetData, GetBrandTimelineApiV1AggregationBrandTimelineGetResponses, GetChurnSignalsApiV1AggregationChurnSignalsGetData, GetChurnSignalsApiV1AggregationChurnSignalsGetResponses, GetComparisonsApiV1EvalComparisonsGetData, GetComparisonsApiV1EvalComparisonsGetResponses, GetCorpusApiV1EvalCorpusGetData, GetCorpusApiV1EvalCorpusGetResponses, GetCoverageGapsApiV1AggregationCoverageGapsGetData, GetCoverageGapsApiV1AggregationCoverageGapsGetResponses, GetEloApiV1EvalEloGetData, GetEloApiV1EvalEloGetResponses, GetLeaderboardDataApiV1EvalLeaderboardDataGetData, GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses, GetLifecycleApiV1AggregationLifecycleGetData, GetLifecycleApiV1AggregationLifecycleGetResponses, GetPayBenchmarksApiV1AggregationPayBenchmarksGetData, GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponses, GetPostingApiV1PostingsPostingIdGetData, GetPostingApiV1PostingsPostingIdGetErrors, GetPostingApiV1PostingsPostingIdGetResponses, GetProgressApiV1EvalProgressTrackingIdGetData, GetProgressApiV1EvalProgressTrackingIdGetErrors, GetProgressApiV1EvalProgressTrackingIdGetResponses, GetRunApiV1EvalRunsRunIdGetData, GetRunApiV1EvalRunsRunIdGetErrors, GetRunApiV1EvalRunsRunIdGetResponses, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetErrors, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponses, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetErrors, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponses, GetRunProgressApiV1EvalRunsRunIdProgressGetData, GetRunProgressApiV1EvalRunsRunIdProgressGetErrors, GetRunProgressApiV1EvalRunsRunIdProgressGetResponses, GetRunResultsApiV1EvalRunsRunIdResultsGetData, GetRunResultsApiV1EvalRunsRunIdResultsGetErrors, GetRunResultsApiV1EvalRunsRunIdResultsGetResponses, GetRunsApiV1EvalRunsGetData, GetRunsApiV1EvalRunsGetResponses, GetVelocityApiV1AggregationVelocityGetData, GetVelocityApiV1AggregationVelocityGetErrors, GetVelocityApiV1AggregationVelocityGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, InviteUserApiV1AdminInvitePostData, InviteUserApiV1AdminInvitePostErrors, InviteUserApiV1AdminInvitePostResponses, LegacyApiRedirectApiPathPost2Data, LegacyApiRedirectApiPathPost2Errors, LegacyApiRedirectApiPathPost2Responses, LegacyApiRedirectApiPathPost3Data, LegacyApiRedirectApiPathPost3Errors, LegacyApiRedirectApiPathPost3Responses, LegacyApiRedirectApiPathPost4Data, LegacyApiRedirectApiPathPost4Errors, LegacyApiRedirectApiPathPost4Responses, LegacyApiRedirectApiPathPost5Data, LegacyApiRedirectApiPathPost5Errors, LegacyApiRedirectApiPathPost5Responses, LegacyApiRedirectApiPathPostData, LegacyApiRedirectApiPathPostErrors, LegacyApiRedirectApiPathPostResponses, ListCompaniesApiV1CompaniesGetData, ListCompaniesApiV1CompaniesGetResponses, ListModelsApiV1EvalModelsGetData, ListModelsApiV1EvalModelsGetResponses, ListPostingsApiV1PostingsGetData, ListPostingsApiV1PostingsGetErrors, ListPostingsApiV1PostingsGetResponses, ListScrapeRunsApiV1ScrapeRunsGetData, ListScrapeRunsApiV1ScrapeRunsGetResponses, ListUsersApiV1AdminUsersGetData, ListUsersApiV1AdminUsersGetResponses, PauseJobApiV1SchedulerJobsJobIdPausePostData, PauseJobApiV1SchedulerJobsJobIdPausePostErrors, PauseJobApiV1SchedulerJobsJobIdPausePostResponses, PauseScrapeApiV1ScrapePausePostData, PauseScrapeApiV1ScrapePausePostErrors, PauseScrapeApiV1ScrapePausePostResponses, PipelineRunsApiV1PipelineRunsGetData, PipelineRunsApiV1PipelineRunsGetResponses, PipelineStatusApiV1PipelineStatusGetData, PipelineStatusApiV1PipelineStatusGetResponses, ResumeJobApiV1SchedulerJobsJobIdResumePostData, ResumeJobApiV1SchedulerJobsJobIdResumePostErrors, ResumeJobApiV1SchedulerJobsJobIdResumePostResponses, ResumeScrapeApiV1ScrapeResumePostData, ResumeScrapeApiV1ScrapeResumePostErrors, ResumeScrapeApiV1ScrapeResumePostResponses, SchedulerStatusApiV1SchedulerStatusGetData, SchedulerStatusApiV1SchedulerStatusGetResponses, ScrapeStatusApiV1ScrapeStatusGetData, ScrapeStatusApiV1ScrapeStatusGetResponses, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetData, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetErrors, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetResponses, StopScrapeApiV1ScrapeStopPostData, StopScrapeApiV1ScrapeStopPostErrors, StopScrapeApiV1ScrapeStopPostResponses, TriggerAggregationApiV1AggregationTriggerPostData, TriggerAggregationApiV1AggregationTriggerPostResponses, TriggerFullApiV1EnrichTriggerPostData, TriggerFullApiV1EnrichTriggerPostResponses, TriggerJobApiV1SchedulerJobsJobIdTriggerPostData, TriggerJobApiV1SchedulerJobsJobIdTriggerPostErrors, TriggerJobApiV1SchedulerJobsJobIdTriggerPostResponses, TriggerPass1ApiV1EnrichPass1TriggerPostData, TriggerPass1ApiV1EnrichPass1TriggerPostResponses, TriggerPass2ApiV1EnrichPass2TriggerPostData, TriggerPass2ApiV1EnrichPass2TriggerPostResponses, TriggerScrapeApiV1ScrapeTriggerPostData, TriggerScrapeApiV1ScrapeTriggerPostResponses } from './types.gen';
+import type { CreateComparisonApiV1EvalComparisonsPostData, CreateComparisonApiV1EvalComparisonsPostErrors, CreateComparisonApiV1EvalComparisonsPostResponses, CreateFieldReviewApiV1EvalFieldReviewsPostData, CreateFieldReviewApiV1EvalFieldReviewsPostErrors, CreateFieldReviewApiV1EvalFieldReviewsPostResponses, CreateRunApiV1EvalRunsPostData, CreateRunApiV1EvalRunsPostErrors, CreateRunApiV1EvalRunsPostResponses, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteErrors, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponses, DeleteRunApiV1EvalRunsRunIdDeleteData, DeleteRunApiV1EvalRunsRunIdDeleteErrors, DeleteRunApiV1EvalRunsRunIdDeleteResponses, EnrichStatusApiV1EnrichStatusGetData, EnrichStatusApiV1EnrichStatusGetResponses, EnrichStatusByIdApiV1EnrichStatusRunIdGetData, EnrichStatusByIdApiV1EnrichStatusRunIdGetErrors, EnrichStatusByIdApiV1EnrichStatusRunIdGetResponses, ForceStopScrapeApiV1ScrapeForceStopPostData, ForceStopScrapeApiV1ScrapeForceStopPostErrors, ForceStopScrapeApiV1ScrapeForceStopPostResponses, GetAgencyOverlapApiV1AggregationAgencyOverlapGetData, GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponses, GetBrandTimelineApiV1AggregationBrandTimelineGetData, GetBrandTimelineApiV1AggregationBrandTimelineGetResponses, GetChurnSignalsApiV1AggregationChurnSignalsGetData, GetChurnSignalsApiV1AggregationChurnSignalsGetResponses, GetComparisonsApiV1EvalComparisonsGetData, GetComparisonsApiV1EvalComparisonsGetResponses, GetCorpusApiV1EvalCorpusGetData, GetCorpusApiV1EvalCorpusGetResponses, GetCoverageGapsApiV1AggregationCoverageGapsGetData, GetCoverageGapsApiV1AggregationCoverageGapsGetResponses, GetEloApiV1EvalEloGetData, GetEloApiV1EvalEloGetResponses, GetLeaderboardDataApiV1EvalLeaderboardDataGetData, GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses, GetLifecycleApiV1AggregationLifecycleGetData, GetLifecycleApiV1AggregationLifecycleGetResponses, GetPayBenchmarksApiV1AggregationPayBenchmarksGetData, GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponses, GetPostingApiV1PostingsPostingIdGetData, GetPostingApiV1PostingsPostingIdGetErrors, GetPostingApiV1PostingsPostingIdGetResponses, GetProgressApiV1EvalProgressTrackingIdGetData, GetProgressApiV1EvalProgressTrackingIdGetErrors, GetProgressApiV1EvalProgressTrackingIdGetResponses, GetRunApiV1EvalRunsRunIdGetData, GetRunApiV1EvalRunsRunIdGetErrors, GetRunApiV1EvalRunsRunIdGetResponses, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetErrors, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponses, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetErrors, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponses, GetRunProgressApiV1EvalRunsRunIdProgressGetData, GetRunProgressApiV1EvalRunsRunIdProgressGetErrors, GetRunProgressApiV1EvalRunsRunIdProgressGetResponses, GetRunResultsApiV1EvalRunsRunIdResultsGetData, GetRunResultsApiV1EvalRunsRunIdResultsGetErrors, GetRunResultsApiV1EvalRunsRunIdResultsGetResponses, GetRunsApiV1EvalRunsGetData, GetRunsApiV1EvalRunsGetResponses, GetVelocityApiV1AggregationVelocityGetData, GetVelocityApiV1AggregationVelocityGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, InviteUserApiV1AdminInvitePostData, InviteUserApiV1AdminInvitePostErrors, InviteUserApiV1AdminInvitePostResponses, ListAlertsApiV1AlertsGetData, ListAlertsApiV1AlertsGetErrors, ListAlertsApiV1AlertsGetResponses, ListCompaniesApiV1CompaniesGetData, ListCompaniesApiV1CompaniesGetResponses, ListModelsApiV1EvalModelsGetData, ListModelsApiV1EvalModelsGetResponses, ListPostingsApiV1PostingsGetData, ListPostingsApiV1PostingsGetErrors, ListPostingsApiV1PostingsGetResponses, ListScrapeRunsApiV1ScrapeRunsGetData, ListScrapeRunsApiV1ScrapeRunsGetResponses, ListUsersApiV1AdminUsersGetData, ListUsersApiV1AdminUsersGetResponses, PauseJobApiV1SchedulerJobsJobIdPausePostData, PauseJobApiV1SchedulerJobsJobIdPausePostErrors, PauseJobApiV1SchedulerJobsJobIdPausePostResponses, PauseScrapeApiV1ScrapePausePostData, PauseScrapeApiV1ScrapePausePostErrors, PauseScrapeApiV1ScrapePausePostResponses, PipelineRunsApiV1PipelineRunsGetData, PipelineRunsApiV1PipelineRunsGetResponses, PipelineStatusApiV1PipelineStatusGetData, PipelineStatusApiV1PipelineStatusGetResponses, ResumeJobApiV1SchedulerJobsJobIdResumePostData, ResumeJobApiV1SchedulerJobsJobIdResumePostErrors, ResumeJobApiV1SchedulerJobsJobIdResumePostResponses, ResumeScrapeApiV1ScrapeResumePostData, ResumeScrapeApiV1ScrapeResumePostErrors, ResumeScrapeApiV1ScrapeResumePostResponses, SchedulerStatusApiV1SchedulerStatusGetData, SchedulerStatusApiV1SchedulerStatusGetResponses, ScrapeStatusApiV1ScrapeStatusGetData, ScrapeStatusApiV1ScrapeStatusGetResponses, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetData, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetErrors, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetResponses, StopScrapeApiV1ScrapeStopPostData, StopScrapeApiV1ScrapeStopPostErrors, StopScrapeApiV1ScrapeStopPostResponses, TriggerAggregationApiV1AggregationTriggerPostData, TriggerAggregationApiV1AggregationTriggerPostResponses, TriggerFullApiV1EnrichTriggerPostData, TriggerFullApiV1EnrichTriggerPostResponses, TriggerJobApiV1SchedulerJobsJobIdTriggerPostData, TriggerJobApiV1SchedulerJobsJobIdTriggerPostErrors, TriggerJobApiV1SchedulerJobsJobIdTriggerPostResponses, TriggerPass1ApiV1EnrichPass1TriggerPostData, TriggerPass1ApiV1EnrichPass1TriggerPostResponses, TriggerPass2ApiV1EnrichPass2TriggerPostData, TriggerPass2ApiV1EnrichPass2TriggerPostResponses, TriggerScrapeApiV1ScrapeTriggerPostData, TriggerScrapeApiV1ScrapeTriggerPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -221,7 +221,7 @@ export const pipelineStatusApiV1PipelineStatusGet = <ThrowOnError extends boolea
 /**
  * Get Velocity
  */
-export const getVelocityApiV1AggregationVelocityGet = <ThrowOnError extends boolean = true>(options?: Options<GetVelocityApiV1AggregationVelocityGetData, ThrowOnError>) => (options?.client ?? client).get<GetVelocityApiV1AggregationVelocityGetResponses, GetVelocityApiV1AggregationVelocityGetErrors, ThrowOnError>({
+export const getVelocityApiV1AggregationVelocityGet = <ThrowOnError extends boolean = true>(options?: Options<GetVelocityApiV1AggregationVelocityGetData, ThrowOnError>) => (options?.client ?? client).get<GetVelocityApiV1AggregationVelocityGetResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/aggregation/velocity',
     ...options
@@ -293,32 +293,53 @@ export const triggerAggregationApiV1AggregationTriggerPost = <ThrowOnError exten
 /**
  * List Companies
  */
-export const listCompaniesApiV1CompaniesGet = <ThrowOnError extends boolean = true>(options?: Options<ListCompaniesApiV1CompaniesGetData, ThrowOnError>) => (options?.client ?? client).get<ListCompaniesApiV1CompaniesGetResponses, unknown, ThrowOnError>({ url: '/api/v1/companies', ...options });
+export const listCompaniesApiV1CompaniesGet = <ThrowOnError extends boolean = true>(options?: Options<ListCompaniesApiV1CompaniesGetData, ThrowOnError>) => (options?.client ?? client).get<ListCompaniesApiV1CompaniesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/companies',
+    ...options
+});
 
 /**
  * List Postings
  */
-export const listPostingsApiV1PostingsGet = <ThrowOnError extends boolean = true>(options?: Options<ListPostingsApiV1PostingsGetData, ThrowOnError>) => (options?.client ?? client).get<ListPostingsApiV1PostingsGetResponses, ListPostingsApiV1PostingsGetErrors, ThrowOnError>({ url: '/api/v1/postings', ...options });
+export const listPostingsApiV1PostingsGet = <ThrowOnError extends boolean = true>(options?: Options<ListPostingsApiV1PostingsGetData, ThrowOnError>) => (options?.client ?? client).get<ListPostingsApiV1PostingsGetResponses, ListPostingsApiV1PostingsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/postings',
+    ...options
+});
 
 /**
  * Get Posting
  */
-export const getPostingApiV1PostingsPostingIdGet = <ThrowOnError extends boolean = true>(options: Options<GetPostingApiV1PostingsPostingIdGetData, ThrowOnError>) => (options.client ?? client).get<GetPostingApiV1PostingsPostingIdGetResponses, GetPostingApiV1PostingsPostingIdGetErrors, ThrowOnError>({ url: '/api/v1/postings/{posting_id}', ...options });
+export const getPostingApiV1PostingsPostingIdGet = <ThrowOnError extends boolean = true>(options: Options<GetPostingApiV1PostingsPostingIdGetData, ThrowOnError>) => (options.client ?? client).get<GetPostingApiV1PostingsPostingIdGetResponses, GetPostingApiV1PostingsPostingIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/postings/{posting_id}',
+    ...options
+});
 
 /**
  * Get Corpus
  */
-export const getCorpusApiV1EvalCorpusGet = <ThrowOnError extends boolean = true>(options?: Options<GetCorpusApiV1EvalCorpusGetData, ThrowOnError>) => (options?.client ?? client).get<GetCorpusApiV1EvalCorpusGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/corpus', ...options });
+export const getCorpusApiV1EvalCorpusGet = <ThrowOnError extends boolean = true>(options?: Options<GetCorpusApiV1EvalCorpusGetData, ThrowOnError>) => (options?.client ?? client).get<GetCorpusApiV1EvalCorpusGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/corpus',
+    ...options
+});
 
 /**
  * Get Runs
  */
-export const getRunsApiV1EvalRunsGet = <ThrowOnError extends boolean = true>(options?: Options<GetRunsApiV1EvalRunsGetData, ThrowOnError>) => (options?.client ?? client).get<GetRunsApiV1EvalRunsGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/runs', ...options });
+export const getRunsApiV1EvalRunsGet = <ThrowOnError extends boolean = true>(options?: Options<GetRunsApiV1EvalRunsGetData, ThrowOnError>) => (options?.client ?? client).get<GetRunsApiV1EvalRunsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs',
+    ...options
+});
 
 /**
  * Create Run
  */
 export const createRunApiV1EvalRunsPost = <ThrowOnError extends boolean = true>(options: Options<CreateRunApiV1EvalRunsPostData, ThrowOnError>) => (options.client ?? client).post<CreateRunApiV1EvalRunsPostResponses, CreateRunApiV1EvalRunsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/eval/runs',
     ...options,
     headers: {
@@ -330,47 +351,80 @@ export const createRunApiV1EvalRunsPost = <ThrowOnError extends boolean = true>(
 /**
  * Delete Run
  */
-export const deleteRunApiV1EvalRunsRunIdDelete = <ThrowOnError extends boolean = true>(options: Options<DeleteRunApiV1EvalRunsRunIdDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteRunApiV1EvalRunsRunIdDeleteResponses, DeleteRunApiV1EvalRunsRunIdDeleteErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}', ...options });
+export const deleteRunApiV1EvalRunsRunIdDelete = <ThrowOnError extends boolean = true>(options: Options<DeleteRunApiV1EvalRunsRunIdDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteRunApiV1EvalRunsRunIdDeleteResponses, DeleteRunApiV1EvalRunsRunIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}',
+    ...options
+});
 
 /**
  * Get Run
  */
-export const getRunApiV1EvalRunsRunIdGet = <ThrowOnError extends boolean = true>(options: Options<GetRunApiV1EvalRunsRunIdGetData, ThrowOnError>) => (options.client ?? client).get<GetRunApiV1EvalRunsRunIdGetResponses, GetRunApiV1EvalRunsRunIdGetErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}', ...options });
+export const getRunApiV1EvalRunsRunIdGet = <ThrowOnError extends boolean = true>(options: Options<GetRunApiV1EvalRunsRunIdGetData, ThrowOnError>) => (options.client ?? client).get<GetRunApiV1EvalRunsRunIdGetResponses, GetRunApiV1EvalRunsRunIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}',
+    ...options
+});
 
 /**
  * Get Run Results
  */
-export const getRunResultsApiV1EvalRunsRunIdResultsGet = <ThrowOnError extends boolean = true>(options: Options<GetRunResultsApiV1EvalRunsRunIdResultsGetData, ThrowOnError>) => (options.client ?? client).get<GetRunResultsApiV1EvalRunsRunIdResultsGetResponses, GetRunResultsApiV1EvalRunsRunIdResultsGetErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}/results', ...options });
+export const getRunResultsApiV1EvalRunsRunIdResultsGet = <ThrowOnError extends boolean = true>(options: Options<GetRunResultsApiV1EvalRunsRunIdResultsGetData, ThrowOnError>) => (options.client ?? client).get<GetRunResultsApiV1EvalRunsRunIdResultsGetResponses, GetRunResultsApiV1EvalRunsRunIdResultsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}/results',
+    ...options
+});
 
 /**
  * Get Run Field Accuracy
  */
-export const getRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGet = <ThrowOnError extends boolean = true>(options: Options<GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, ThrowOnError>) => (options.client ?? client).get<GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponses, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}/field-accuracy', ...options });
+export const getRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGet = <ThrowOnError extends boolean = true>(options: Options<GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, ThrowOnError>) => (options.client ?? client).get<GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponses, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}/field-accuracy',
+    ...options
+});
 
 /**
  * Get Run Field Reviews
  */
-export const getRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGet = <ThrowOnError extends boolean = true>(options: Options<GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, ThrowOnError>) => (options.client ?? client).get<GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponses, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}/field-reviews', ...options });
+export const getRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGet = <ThrowOnError extends boolean = true>(options: Options<GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, ThrowOnError>) => (options.client ?? client).get<GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponses, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}/field-reviews',
+    ...options
+});
 
 /**
  * Get Run Progress
  */
-export const getRunProgressApiV1EvalRunsRunIdProgressGet = <ThrowOnError extends boolean = true>(options: Options<GetRunProgressApiV1EvalRunsRunIdProgressGetData, ThrowOnError>) => (options.client ?? client).get<GetRunProgressApiV1EvalRunsRunIdProgressGetResponses, GetRunProgressApiV1EvalRunsRunIdProgressGetErrors, ThrowOnError>({ url: '/api/v1/eval/runs/{run_id}/progress', ...options });
+export const getRunProgressApiV1EvalRunsRunIdProgressGet = <ThrowOnError extends boolean = true>(options: Options<GetRunProgressApiV1EvalRunsRunIdProgressGetData, ThrowOnError>) => (options.client ?? client).get<GetRunProgressApiV1EvalRunsRunIdProgressGetResponses, GetRunProgressApiV1EvalRunsRunIdProgressGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/runs/{run_id}/progress',
+    ...options
+});
 
 /**
  * Get Leaderboard Data
  */
-export const getLeaderboardDataApiV1EvalLeaderboardDataGet = <ThrowOnError extends boolean = true>(options?: Options<GetLeaderboardDataApiV1EvalLeaderboardDataGetData, ThrowOnError>) => (options?.client ?? client).get<GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/leaderboard-data', ...options });
+export const getLeaderboardDataApiV1EvalLeaderboardDataGet = <ThrowOnError extends boolean = true>(options?: Options<GetLeaderboardDataApiV1EvalLeaderboardDataGetData, ThrowOnError>) => (options?.client ?? client).get<GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/leaderboard-data',
+    ...options
+});
 
 /**
  * Get Comparisons
  */
-export const getComparisonsApiV1EvalComparisonsGet = <ThrowOnError extends boolean = true>(options?: Options<GetComparisonsApiV1EvalComparisonsGetData, ThrowOnError>) => (options?.client ?? client).get<GetComparisonsApiV1EvalComparisonsGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/comparisons', ...options });
+export const getComparisonsApiV1EvalComparisonsGet = <ThrowOnError extends boolean = true>(options?: Options<GetComparisonsApiV1EvalComparisonsGetData, ThrowOnError>) => (options?.client ?? client).get<GetComparisonsApiV1EvalComparisonsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/comparisons',
+    ...options
+});
 
 /**
  * Create Comparison
  */
 export const createComparisonApiV1EvalComparisonsPost = <ThrowOnError extends boolean = true>(options: Options<CreateComparisonApiV1EvalComparisonsPostData, ThrowOnError>) => (options.client ?? client).post<CreateComparisonApiV1EvalComparisonsPostResponses, CreateComparisonApiV1EvalComparisonsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/eval/comparisons',
     ...options,
     headers: {
@@ -382,17 +436,26 @@ export const createComparisonApiV1EvalComparisonsPost = <ThrowOnError extends bo
 /**
  * Get Elo
  */
-export const getEloApiV1EvalEloGet = <ThrowOnError extends boolean = true>(options?: Options<GetEloApiV1EvalEloGetData, ThrowOnError>) => (options?.client ?? client).get<GetEloApiV1EvalEloGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/elo', ...options });
+export const getEloApiV1EvalEloGet = <ThrowOnError extends boolean = true>(options?: Options<GetEloApiV1EvalEloGetData, ThrowOnError>) => (options?.client ?? client).get<GetEloApiV1EvalEloGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/elo',
+    ...options
+});
 
 /**
  * Delete Field Review
  */
-export const deleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDelete = <ThrowOnError extends boolean = true>(options: Options<DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponses, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteErrors, ThrowOnError>({ url: '/api/v1/eval/field-reviews/{result_id}/{field_name}', ...options });
+export const deleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDelete = <ThrowOnError extends boolean = true>(options: Options<DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponses, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/field-reviews/{result_id}/{field_name}',
+    ...options
+});
 
 /**
  * Create Field Review
  */
 export const createFieldReviewApiV1EvalFieldReviewsPost = <ThrowOnError extends boolean = true>(options: Options<CreateFieldReviewApiV1EvalFieldReviewsPostData, ThrowOnError>) => (options.client ?? client).post<CreateFieldReviewApiV1EvalFieldReviewsPostResponses, CreateFieldReviewApiV1EvalFieldReviewsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/eval/field-reviews',
     ...options,
     headers: {
@@ -404,12 +467,20 @@ export const createFieldReviewApiV1EvalFieldReviewsPost = <ThrowOnError extends 
 /**
  * List Models
  */
-export const listModelsApiV1EvalModelsGet = <ThrowOnError extends boolean = true>(options?: Options<ListModelsApiV1EvalModelsGetData, ThrowOnError>) => (options?.client ?? client).get<ListModelsApiV1EvalModelsGetResponses, unknown, ThrowOnError>({ url: '/api/v1/eval/models', ...options });
+export const listModelsApiV1EvalModelsGet = <ThrowOnError extends boolean = true>(options?: Options<ListModelsApiV1EvalModelsGetData, ThrowOnError>) => (options?.client ?? client).get<ListModelsApiV1EvalModelsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/models',
+    ...options
+});
 
 /**
  * Get Progress
  */
-export const getProgressApiV1EvalProgressTrackingIdGet = <ThrowOnError extends boolean = true>(options: Options<GetProgressApiV1EvalProgressTrackingIdGetData, ThrowOnError>) => (options.client ?? client).get<GetProgressApiV1EvalProgressTrackingIdGetResponses, GetProgressApiV1EvalProgressTrackingIdGetErrors, ThrowOnError>({ url: '/api/v1/eval/progress/{tracking_id}', ...options });
+export const getProgressApiV1EvalProgressTrackingIdGet = <ThrowOnError extends boolean = true>(options: Options<GetProgressApiV1EvalProgressTrackingIdGetData, ThrowOnError>) => (options.client ?? client).get<GetProgressApiV1EvalProgressTrackingIdGetResponses, GetProgressApiV1EvalProgressTrackingIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/eval/progress/{tracking_id}',
+    ...options
+});
 
 /**
  * Invite User
@@ -434,26 +505,10 @@ export const listUsersApiV1AdminUsersGet = <ThrowOnError extends boolean = true>
 });
 
 /**
- * Legacy Api Redirect
+ * List Alerts
  */
-export const legacyApiRedirectApiPathPost = <ThrowOnError extends boolean = true>(options: Options<LegacyApiRedirectApiPathPostData, ThrowOnError>) => (options.client ?? client).delete<LegacyApiRedirectApiPathPostResponses, LegacyApiRedirectApiPathPostErrors, ThrowOnError>({ url: '/api/{path}', ...options });
-
-/**
- * Legacy Api Redirect
- */
-export const legacyApiRedirectApiPathPost2 = <ThrowOnError extends boolean = true>(options: Options<LegacyApiRedirectApiPathPost2Data, ThrowOnError>) => (options.client ?? client).get<LegacyApiRedirectApiPathPost2Responses, LegacyApiRedirectApiPathPost2Errors, ThrowOnError>({ url: '/api/{path}', ...options });
-
-/**
- * Legacy Api Redirect
- */
-export const legacyApiRedirectApiPathPost3 = <ThrowOnError extends boolean = true>(options: Options<LegacyApiRedirectApiPathPost3Data, ThrowOnError>) => (options.client ?? client).patch<LegacyApiRedirectApiPathPost3Responses, LegacyApiRedirectApiPathPost3Errors, ThrowOnError>({ url: '/api/{path}', ...options });
-
-/**
- * Legacy Api Redirect
- */
-export const legacyApiRedirectApiPathPost4 = <ThrowOnError extends boolean = true>(options: Options<LegacyApiRedirectApiPathPost4Data, ThrowOnError>) => (options.client ?? client).post<LegacyApiRedirectApiPathPost4Responses, LegacyApiRedirectApiPathPost4Errors, ThrowOnError>({ url: '/api/{path}', ...options });
-
-/**
- * Legacy Api Redirect
- */
-export const legacyApiRedirectApiPathPost5 = <ThrowOnError extends boolean = true>(options: Options<LegacyApiRedirectApiPathPost5Data, ThrowOnError>) => (options.client ?? client).put<LegacyApiRedirectApiPathPost5Responses, LegacyApiRedirectApiPathPost5Errors, ThrowOnError>({ url: '/api/{path}', ...options });
+export const listAlertsApiV1AlertsGet = <ThrowOnError extends boolean = true>(options?: Options<ListAlertsApiV1AlertsGetData, ThrowOnError>) => (options?.client ?? client).get<ListAlertsApiV1AlertsGetResponses, ListAlertsApiV1AlertsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/alerts',
+    ...options
+});
