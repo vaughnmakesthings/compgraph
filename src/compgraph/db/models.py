@@ -214,6 +214,7 @@ class Posting(Base):
         UniqueConstraint("company_id", "external_job_id", name="uq_postings_company_external"),
         Index("ix_postings_fingerprint_hash", "fingerprint_hash"),
         Index("ix_postings_brand_active", "company_id", "is_active"),
+        Index("ix_postings_first_seen_at", "first_seen_at", postgresql_using="btree"),
     )
 
 
@@ -237,6 +238,7 @@ class PostingSnapshot(Base):
 
     __table_args__ = (
         Index("ix_snapshots_company_brand_date", "posting_id", "snapshot_date"),
+        Index("ix_snapshots_date", "snapshot_date", postgresql_using="btree"),
         UniqueConstraint("posting_id", "snapshot_date", name="uq_snapshots_posting_date"),
     )
 
@@ -293,6 +295,11 @@ class PostingEnrichment(Base):
 
     __table_args__ = (
         Index("ix_posting_enrichment_posting_version", "posting_id", "enrichment_version"),
+        Index(
+            "ix_posting_enrichments_posting_enriched",
+            "posting_id",
+            enriched_at.desc().nulls_last(),
+        ),
         Index("ix_posting_enrichment_brand_id", "brand_id"),
         Index("ix_posting_enrichment_retailer_id", "retailer_id"),
         Index("ix_posting_enrichment_market_id", "market_id"),
