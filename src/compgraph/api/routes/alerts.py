@@ -45,15 +45,15 @@ async def list_alerts(
 ) -> AlertListResponse:
     from sqlalchemy import func
 
-    count_stmt = select(func.count(Alert.id))
-    data_stmt = select(Alert).order_by(Alert.triggered_at.desc(), Alert.id)
-
+    # Build base query with filters once, derive count + data from it
+    base = select(Alert)
     if company_id is not None:
-        count_stmt = count_stmt.where(Alert.company_id == company_id)
-        data_stmt = data_stmt.where(Alert.company_id == company_id)
+        base = base.where(Alert.company_id == company_id)
     if alert_type is not None:
-        count_stmt = count_stmt.where(Alert.alert_type == alert_type)
-        data_stmt = data_stmt.where(Alert.alert_type == alert_type)
+        base = base.where(Alert.alert_type == alert_type)
+
+    count_stmt = select(func.count()).select_from(base.subquery())
+    data_stmt = base.order_by(Alert.triggered_at.desc(), Alert.id)
 
     total = (await db.execute(count_stmt)).scalar_one()
     rows = (await db.execute(data_stmt.limit(limit).offset(offset))).scalars().all()

@@ -18,11 +18,16 @@ PIPELINE_WAITED=0
 
 echo "[0/5] Checking for active pipeline..."
 while [ $PIPELINE_WAITED -lt $PIPELINE_WAIT_MAX ]; do
-    HEALTH_JSON=$(curl -sf "$HEALTH_URL" 2>/dev/null || echo '{}')
-    PIPELINE_STATUS=$(echo "$HEALTH_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('checks',{}).get('pipeline','unknown'))" 2>/dev/null || echo "unknown")
+    HEALTH_JSON=$(curl -sf "$HEALTH_URL" || echo '{}')
+    PIPELINE_STATUS=$(echo "$HEALTH_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('checks',{}).get('pipeline','unknown'))" || echo "unknown")
 
-    if [ "$PIPELINE_STATUS" = "idle" ] || [ "$PIPELINE_STATUS" = "unknown" ]; then
+    if [ "$PIPELINE_STATUS" = "idle" ]; then
         echo "  Pipeline is idle. Proceeding with deploy."
+        break
+    fi
+
+    if [ "$PIPELINE_STATUS" = "unknown" ]; then
+        echo "  WARNING: Pipeline status unknown (health endpoint may be down). Proceeding with deploy."
         break
     fi
 
