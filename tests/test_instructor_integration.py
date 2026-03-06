@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anthropic
 import pytest
+from pydantic import ValidationError
 
 from compgraph.enrichment.retry import (
     EnrichmentAPIError,
@@ -441,6 +442,195 @@ class TestCallLLMRouter:
         assert isinstance(result, LLMCallResult)
         assert result.result.role_archetype == "field_rep"
         mock_instructor_client.create_with_completion.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# USE_INSTRUCTOR config flag
+# ---------------------------------------------------------------------------
+
+
+class TestInstructorAPIStatusError429:
+    """Cover APIStatusError with 429 status code (distinct from RateLimitError)."""
+
+    @pytest.mark.asyncio
+    async def test_api_status_429_retries_then_succeeds(self):
+        parsed = Pass1Result.model_validate(SAMPLE_PASS1)
+        raw = _mock_raw_response()
+
+        api_429 = anthropic.APIStatusError(
+            message="Too many requests",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(side_effect=[api_429, (parsed, raw)])
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+        ):
+            result = await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert result.result.role_archetype == "field_rep"
+        assert mock_client.create_with_completion.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_api_status_429_exhausted(self):
+        api_429 = anthropic.APIStatusError(
+            message="Too many requests",
+            response=MagicMock(status_code=429, headers={}),
+            body=None,
+        )
+
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(side_effect=api_429)
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value.category == ErrorCategory.RATE_LIMIT
+        assert mock_client.create_with_completion.await_count == 3
+
+
+class TestInstructorTransientExhausted:
+    """Cover transient (non-429, non-permanent) errors exhausting retries."""
+
+    @pytest.mark.asyncio
+    async def test_transient_error_exhausted(self):
+        api_error = anthropic.APIStatusError(
+            message="Internal Server Error",
+            response=MagicMock(status_code=500, headers={}),
+            body=None,
+        )
+
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(side_effect=api_error)
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value.category == ErrorCategory.TRANSIENT
+        assert mock_client.create_with_completion.await_count == 3
+
+
+class TestInstructorParseErrors:
+    """Cover ValidationError and JSONDecodeError in instructor path."""
+
+    @pytest.mark.asyncio
+    async def test_validation_error_classified_as_parse(self):
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(
+            side_effect=ValidationError.from_exception_data(
+                title="Pass1Result",
+                line_errors=[],
+            )
+        )
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value.category == ErrorCategory.PARSE_ERROR
+        assert mock_client.create_with_completion.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_json_decode_error_classified_as_parse(self):
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(
+            side_effect=json.JSONDecodeError("Expecting value", "", 0)
+        )
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value.category == ErrorCategory.PARSE_ERROR
+        assert mock_client.create_with_completion.await_count == 1
+
+
+class TestInstructorReRaisesEnrichmentAPIError:
+    """Cover the re-raise path for EnrichmentAPIError in instructor path."""
+
+    @pytest.mark.asyncio
+    async def test_enrichment_api_error_re_raised(self):
+        original_err = EnrichmentAPIError(
+            "Already wrapped error",
+            category=ErrorCategory.PERMANENT,
+        )
+
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(side_effect=original_err)
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value is original_err
+        assert exc_info.value.category == ErrorCategory.PERMANENT
+        assert mock_client.create_with_completion.await_count == 1
 
 
 # ---------------------------------------------------------------------------

@@ -301,6 +301,28 @@ async def call_llm_with_instructor(  # noqa: UP047
     result_type: type[T],
     pass_label: str,
 ) -> LLMCallResult[T]:
+    """Call Anthropic API via Instructor for Pydantic-validated structured output.
+
+    Uses tool_use mode so the LLM returns a structured response that Instructor
+    validates against ``result_type``. Instructor's internal retries (max_retries=2)
+    handle schema validation failures; the outer loop retries on rate-limit and
+    transient API errors (same backoff as call_llm_with_retry).
+
+    Args:
+        posting_id: UUID of the posting (for logging).
+        model: Model ID to use.
+        max_tokens: Maximum tokens in response.
+        system_prompt: System prompt text.
+        messages: Message list for the API call.
+        result_type: Pydantic model class for structured output validation.
+        pass_label: Human-readable label for log messages (e.g. "Pass 1").
+
+    Returns:
+        LLMCallResult containing validated result and token usage.
+
+    Raises:
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
+    """
     instructor_client = get_instructor_client()
 
     last_error: Exception | None = None
@@ -444,6 +466,28 @@ async def call_llm(  # noqa: UP047
     result_type: type[T],
     pass_label: str,
 ) -> LLMCallResult[T]:
+    """Route LLM calls to Instructor or manual-parse path based on feature flag.
+
+    When ``USE_INSTRUCTOR`` is True, delegates to ``call_llm_with_instructor``
+    which uses Anthropic tool_use for Pydantic-validated structured output.
+    Otherwise falls back to ``call_llm_with_retry`` with manual JSON parsing.
+
+    Args:
+        client: AsyncAnthropic client instance (used only by the manual path).
+        posting_id: UUID of the posting (for logging).
+        model: Model ID to use.
+        max_tokens: Maximum tokens in response.
+        system_prompt: System prompt text.
+        messages: Message list for the API call.
+        result_type: Pydantic model class to parse the response into.
+        pass_label: Human-readable label for log messages (e.g. "Pass 1").
+
+    Returns:
+        LLMCallResult containing parsed/validated result and token usage.
+
+    Raises:
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
+    """
     from compgraph.config import settings
 
     if settings.USE_INSTRUCTOR:

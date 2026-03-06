@@ -19,6 +19,25 @@ async def enrich_posting_pass1(
     location: str,
     full_text: str,
 ) -> LLMCallResult[Pass1Result]:
+    """Run Pass 1 enrichment on a single posting.
+
+    Calls Haiku to classify the posting and extract structured fields.
+    Routes through the feature-flagged call_llm dispatcher which selects
+    between Instructor (structured output) and manual JSON parsing paths.
+
+    Args:
+        client: AsyncAnthropic client instance.
+        posting_id: UUID of the posting (for logging).
+        title: Raw title from the posting snapshot.
+        location: Raw location from the posting snapshot.
+        full_text: Full text content from the posting snapshot.
+
+    Returns:
+        LLMCallResult wrapping Pass1Result with token usage.
+
+    Raises:
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
+    """
     messages = build_pass1_messages(title, location, full_text)
 
     return await call_llm(
