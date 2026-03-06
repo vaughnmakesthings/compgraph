@@ -24,6 +24,7 @@ from compgraph.api.schemas.eval import (
     IdResponse,
     StatusResponse,
 )
+from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
 from compgraph.eval.config import SUPPORTED_MODEL_IDS, SUPPORTED_MODELS
 from compgraph.eval.elo import calculate_elo_ratings
 from compgraph.eval.models import (
@@ -35,7 +36,7 @@ from compgraph.eval.models import (
 )
 from compgraph.eval.schemas import EvalRunProgressResponse
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_viewer)])
 
 _CORPUS_PATH = Path(__file__).parent.parent.parent.parent / "eval" / "data" / "corpus.json"
 
@@ -213,7 +214,11 @@ async def get_run(run_id: uuid.UUID, db: DbDep) -> dict:
 
 
 @router.delete("/runs/{run_id}", response_model=StatusResponse)
-async def delete_run(run_id: uuid.UUID, db: DbDep) -> dict[str, str]:
+async def delete_run(
+    run_id: uuid.UUID,
+    db: DbDep,
+    _user: AuthUser = Depends(require_admin),  # noqa: B008
+) -> dict[str, str]:
     run = await _get_run_or_404(run_id, db)
     await db.delete(run)
     await db.commit()
@@ -378,7 +383,11 @@ class ComparisonCreate(BaseModel):
 
 
 @router.post("/comparisons", response_model=IdResponse)
-async def create_comparison(body: ComparisonCreate, db: DbDep) -> dict[str, str]:
+async def create_comparison(
+    body: ComparisonCreate,
+    db: DbDep,
+    _user: AuthUser = Depends(require_admin),  # noqa: B008
+) -> dict[str, str]:
     comp = EvalComparison(
         id=uuid.uuid4(),
         posting_id=body.posting_id,
@@ -405,7 +414,12 @@ class FieldReviewCreate(BaseModel):
 
 
 @router.delete("/field-reviews/{result_id}/{field_name}", status_code=204)
-async def delete_field_review(result_id: uuid.UUID, field_name: str, db: DbDep) -> None:
+async def delete_field_review(
+    result_id: uuid.UUID,
+    field_name: str,
+    db: DbDep,
+    _user: AuthUser = Depends(require_admin),  # noqa: B008
+) -> None:
     stmt = delete(EvalFieldReview).where(
         EvalFieldReview.result_id == result_id,
         EvalFieldReview.field_name == field_name,
@@ -415,7 +429,11 @@ async def delete_field_review(result_id: uuid.UUID, field_name: str, db: DbDep) 
 
 
 @router.post("/field-reviews", response_model=IdResponse)
-async def create_field_review(body: FieldReviewCreate, db: DbDep) -> dict[str, str]:
+async def create_field_review(
+    body: FieldReviewCreate,
+    db: DbDep,
+    _user: AuthUser = Depends(require_admin),  # noqa: B008
+) -> dict[str, str]:
     stmt = text(
         """
         INSERT INTO eval_field_reviews
@@ -475,7 +493,11 @@ class RunCreate(BaseModel):
 
 
 @router.post("/runs", response_model=EvalRunCreateResponse)
-async def create_run(body: RunCreate, db: DbDep) -> dict:
+async def create_run(
+    body: RunCreate,
+    db: DbDep,
+    _user: AuthUser = Depends(require_admin),  # noqa: B008
+) -> dict:
     corpus_path = _CORPUS_PATH
     if not corpus_path.exists():
         raise HTTPException(status_code=400, detail="No corpus file found")
