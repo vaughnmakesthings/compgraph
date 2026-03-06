@@ -1,0 +1,31 @@
+infra/deploy-ci.sh
+  48074118b48372ab 14-37
+src/compgraph/main.py
+  48074118b48372ab 1,3,73-100,103-112,120,126
+src/compgraph/api/routes/health.py
+  48074118b48372ab 53-72,74-75
+src/compgraph/enrichment/orchestrator.py
+  48074118b48372ab 346-352,768-774
+src/compgraph/scheduler/jobs.py
+  48074118b48372ab 134-142,200-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "d15f9db9e78e0ceaa017bca8caadc47b414807d1",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 44,
+      "total_deletions": 20,
+      "accepted_lines": 117,
+      "overriden_lines": 0
+    }
+  }
+}
