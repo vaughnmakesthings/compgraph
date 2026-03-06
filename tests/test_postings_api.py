@@ -456,3 +456,37 @@ class TestPostingsDetailEndpoint:
         assert body["location"] is None
         assert body["url"] is None
         assert body["enrichment"] is not None
+
+
+class TestPostingsLimitValidation:
+    """Tests for limit/offset parameter bounds (#281)."""
+
+    def test_limit_exceeding_max_returns_422(self) -> None:
+        with TestClient(app) as client:
+            r = client.get("/api/v1/postings?limit=501")
+        assert r.status_code == 422
+
+    def test_limit_zero_returns_422(self) -> None:
+        with TestClient(app) as client:
+            r = client.get("/api/v1/postings?limit=0")
+        assert r.status_code == 422
+
+    def test_limit_negative_returns_422(self) -> None:
+        with TestClient(app) as client:
+            r = client.get("/api/v1/postings?limit=-1")
+        assert r.status_code == 422
+
+    def test_offset_negative_returns_422(self) -> None:
+        with TestClient(app) as client:
+            r = client.get("/api/v1/postings?offset=-1")
+        assert r.status_code == 422
+
+    def test_limit_at_max_accepted(self) -> None:
+        mock_session = _make_mock_db_for_list(rows=[], total=0)
+        app.dependency_overrides[get_db] = lambda: mock_session
+        try:
+            with TestClient(app) as client:
+                r = client.get("/api/v1/postings?limit=500")
+        finally:
+            app.dependency_overrides.pop(get_db, None)
+        assert r.status_code == 200
