@@ -1,0 +1,23 @@
+src/compgraph/enrichment/orchestrator.py
+  208e065629c2c573 344,346-347,353,434-435,440-441,773,775-776,782,868-869,874-875
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "6f4fca8026c36fad678bc31f92345c4aae049b26",
+  "prompts": {
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
