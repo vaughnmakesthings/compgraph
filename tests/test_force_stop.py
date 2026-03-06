@@ -272,6 +272,69 @@ class TestCancelledErrorStateCleanup:
                 CompanyState.SKIPPED,
             ), f"{slug} has unexpected state: {run.company_states[slug]}"
 
+    async def test_stop_requested_before_semaphore_returns_skipped(self):
+        """Lines 362-369: stop requested before acquiring semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch._stop_requested = True  # Pre-set stop flag
+
+        with _patch_session_and_companies([company]):
+            result = await orch._scrape_company_with_isolation(company, pipeline_run)
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.SKIPPED
+        assert result.errors == ["Skipped: pipeline stop requested"]
+
+    async def test_stop_requested_after_semaphore_returns_skipped(self):
+        """Lines 374-381: stop requested after acquiring semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        original_semaphore = orch.semaphore
+
+        class StopAfterAcquire:
+            async def __aenter__(self_inner):
+                await original_semaphore.__aenter__()
+                orch._stop_requested = True
+                return self_inner
+
+            async def __aexit__(self_inner, *args):
+                return await original_semaphore.__aexit__(*args)
+
+        orch.semaphore = StopAfterAcquire()
+
+        with _patch_session_and_companies([company]):
+            result = await orch._scrape_company_with_isolation(company, pipeline_run)
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.SKIPPED
+        assert result.errors == ["Skipped: pipeline stop requested"]
+
+    async def test_cancelled_waiting_for_semaphore_sets_cancelled(self):
+        """Lines 415-421: CancelledError while waiting for semaphore."""
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.PENDING
+
+        # Use a semaphore with 0 slots so the task blocks on acquire
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+        orch.semaphore = asyncio.Semaphore(0)
+
+        with _patch_session_and_companies([company]):
+            task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
+            orch._tasks = [task]
+            await asyncio.sleep(0.02)  # Let it reach the semaphore wait
+            task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
+
     async def test_post_gather_fixup_uses_cancelled_for_cancelled_tasks(self):
         companies = [_make_company("bds"), _make_company("marketsource")]
 
