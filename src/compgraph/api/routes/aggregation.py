@@ -31,9 +31,10 @@ async def get_velocity(
     response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
+    days: int = 30,
 ) -> list[dict]:
     response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
-    return await AggregationService.get_velocity(db)
+    return await AggregationService.get_velocity(db, days=days)
 
 
 @router.get("/brand-timeline", response_model=list[BrandTimelineItem])

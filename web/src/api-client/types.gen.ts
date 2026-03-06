@@ -2135,9 +2135,23 @@ export type PipelineStatusApiV1PipelineStatusGetResponse = PipelineStatusApiV1Pi
 export type GetVelocityApiV1AggregationVelocityGetData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Days
+         */
+        days?: number;
+    };
     url: '/api/v1/aggregation/velocity';
 };
+
+export type GetVelocityApiV1AggregationVelocityGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetVelocityApiV1AggregationVelocityGetError = GetVelocityApiV1AggregationVelocityGetErrors[keyof GetVelocityApiV1AggregationVelocityGetErrors];
 
 export type GetVelocityApiV1AggregationVelocityGetResponses = {
     /**
