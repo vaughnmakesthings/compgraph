@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -15,38 +14,17 @@ from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
     PipelineRun,
     PipelineStatus,
-    _pipeline_runs,
+)
+from tests.test_orchestrator import (
+    _make_company,
+    _patch_session_and_companies,
+)
+from tests.test_orchestrator import (
+    clear_pipeline_runs as _clear_pipeline_runs,
 )
 
-
-@pytest.fixture(autouse=True)
-def clear_pipeline_runs():
-    _pipeline_runs.clear()
-    yield
-    _pipeline_runs.clear()
-
-
-def _make_company(slug: str = "bds", ats_platform: str = "icims") -> MagicMock:
-    company = MagicMock()
-    company.id = uuid.uuid4()
-    company.slug = slug
-    company.name = slug.replace("-", " ").title()
-    company.ats_platform = ats_platform
-    company.scraper_config = {}
-    return company
-
-
-def _patch_session_and_companies(companies: list[MagicMock]):
-    mock_session = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = companies
-    mock_session.execute = AsyncMock(return_value=mock_result)
-
-    mock_factory = MagicMock()
-    mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
-    return patch("compgraph.scrapers.orchestrator.async_session_factory", mock_factory)
+# Re-export the autouse fixture so pytest picks it up in this module
+clear_pipeline_runs = _clear_pipeline_runs
 
 
 class TestCompanyStateCancelledEnum:
