@@ -1,0 +1,35 @@
+src/compgraph/config.py
+  0ab57401c35788ac 38-40,44-46
+src/compgraph/enrichment/client.py
+  0ab57401c35788ac 6,12-14,16,21,23-26,32-35,42-50,52-53,55
+pyproject.toml
+  0ab57401c35788ac 16
+src/compgraph/enrichment/pass1.py
+  0ab57401c35788ac 11,22-40,43
+tests/test_instructor_integration.py
+  0ab57401c35788ac 1-645
+src/compgraph/enrichment/retry.py
+  0ab57401c35788ac 14,17,22,38-39,54-55,69-70,93-96,104,119-138,287-370,372-379,450-511
+src/compgraph/enrichment/pass2.py
+  0ab57401c35788ac 11,23-43,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "7b481205224266309001eb799d7c05e113adf643",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 277,
+      "total_deletions": 19,
+      "accepted_lines": 910,
+      "overriden_lines": 0
+    }
+  }
+}
