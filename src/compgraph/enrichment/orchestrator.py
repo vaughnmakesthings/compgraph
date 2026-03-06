@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from sqlalchemy import text
+
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -1159,16 +1161,15 @@ class EnrichmentOrchestrator:
 
         Returns tuple of (pass1_result, pass2_result).
         """
-        from sqlalchemy import text
 
         from compgraph.enrichment.fingerprint import detect_reposts
 
         # Acquire session-level advisory lock for mutual exclusion.
         # Uses pg_try_advisory_lock (non-blocking): returns false immediately
         # if another enrichment run holds the lock, instead of waiting.
-        # The lock auto-releases when lock_conn closes.
-        async with async_session_factory() as lock_conn:
-            result = await lock_conn.execute(
+        # The lock auto-releases when lock_session closes.
+        async with async_session_factory() as lock_session:
+            result = await lock_session.execute(
                 text("SELECT pg_try_advisory_lock(:key)"),
                 {"key": ENRICHMENT_ADVISORY_LOCK_KEY},
             )
