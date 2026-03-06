@@ -1,0 +1,31 @@
+web/src/components/auth/login-form.tsx
+  c482aeaa56739ace 75
+web/src/app/(auth)/reset-password/page.tsx
+  c482aeaa56739ace 1-81
+supabase/config.toml
+  c482aeaa56739ace 154,156
+web/src/test/components/auth-components.test.tsx
+  c482aeaa56739ace 6,272-302,466-595
+web/src/components/auth/reset-password-form.tsx
+  c482aeaa56739ace 1-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "925336de8500f1c1c8c9d9fe2f9bf3d9511be524",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 540,
+      "total_deletions": 0,
+      "accepted_lines": 540,
+      "overriden_lines": 0
+    }
+  }
+}
