@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import httpx
 from sqlalchemy import select
@@ -282,7 +282,7 @@ async def persist_posting(
     result = await session.execute(posting_stmt)
     posting_id = result.scalar_one()
 
-    today = date.today()
+    today = now.date()
     text_hash = _hash_text(raw.full_text) if raw.full_text else None
 
     existing_snapshot = await session.execute(
