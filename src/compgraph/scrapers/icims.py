@@ -213,14 +213,10 @@ class ICIMSFetcher:
         self,
         client: httpx.AsyncClient,
         base_url: str,
-        delay_min: float = 2.0,
-        delay_max: float = 8.0,
         search_url: str | None = None,
     ) -> None:
         self.client = client
         self.base_url = base_url.rstrip("/")
-        self.delay_min = delay_min
-        self.delay_max = delay_max
         self.search_url = search_url
         self.consecutive_failures = 0
         self.circuit_open = False
@@ -337,8 +333,6 @@ class ICIMSAdapter:
         )
 
         config = company.scraper_config or {}
-        delay_min = config.get("delay_min", 2.0)
-        delay_max = config.get("delay_max", 8.0)
         search_urls: list[str] = config.get("search_urls", [])
         # #278: configurable concurrency for detail fetches (default 3)
         detail_concurrency: int = int(config.get("detail_concurrency", 3))
@@ -356,7 +350,7 @@ class ICIMSAdapter:
                 # Collect job entries — multi-URL or single default
                 if search_urls:
                     job_entries, failed_urls, pages = await self._fetch_multi_url(
-                        client, search_urls, delay_min, delay_max
+                        client, search_urls
                     )
                     result.pages_scraped = pages
                     if failed_urls and job_entries:
@@ -371,8 +365,6 @@ class ICIMSAdapter:
                     fetcher = ICIMSFetcher(
                         client=client,
                         base_url=company.career_site_url,
-                        delay_min=delay_min,
-                        delay_max=delay_max,
                     )
                     job_entries = [
                         (entry, company.career_site_url)
@@ -401,8 +393,6 @@ class ICIMSAdapter:
                         fetchers[base_url] = ICIMSFetcher(
                             client=client,
                             base_url=base_url,
-                            delay_min=delay_min,
-                            delay_max=delay_max,
                         )
 
                 # #278: fetch detail pages concurrently with a semaphore
@@ -511,8 +501,6 @@ class ICIMSAdapter:
         self,
         client: httpx.AsyncClient,
         search_urls: list[str],
-        delay_min: float,
-        delay_max: float,
     ) -> tuple[list[tuple[dict[str, str], str]], list[str], int]:
         """Fetch listings from multiple search URLs, deduplicating by (base_url, job_id).
 
@@ -532,8 +520,6 @@ class ICIMSAdapter:
             fetcher = ICIMSFetcher(
                 client=client,
                 base_url=base_url,
-                delay_min=delay_min,
-                delay_max=delay_max,
                 search_url=search_url,
             )
             try:

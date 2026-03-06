@@ -251,8 +251,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         jobs = await fetcher.fetch_all_listings()
 
@@ -268,8 +266,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("47917", "meta-lab-assistant-manager")
 
@@ -285,8 +281,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("99999", "nonexistent")
 
@@ -300,8 +294,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
 
         for _ in range(3):
@@ -329,8 +321,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
 
         await fetcher.fetch_detail("1", "a")
@@ -352,8 +342,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://careers-bdssolutions.icims.com",
-            delay_min=0,
-            delay_max=0,
             search_url="https://careers-bdssolutions.icims.com/jobs/search?searchCategory=25262",
         )
         jobs = await fetcher.fetch_all_listings()
@@ -375,8 +363,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://careers-apolloretail.icims.com",
-            delay_min=0,
-            delay_max=0,
             search_url="https://careers-apolloretail.icims.com/jobs/search",
         )
         jobs = await fetcher.fetch_all_listings()
@@ -394,8 +380,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("48000", "senior-field-technician")
 
@@ -663,7 +647,7 @@ class TestICIMSAdapter:
         company.id = uuid.uuid4()
         company.slug = "marketsource"
         company.career_site_url = "https://applyatmarketsource-msc.icims.com"
-        company.scraper_config = {"delay_min": 1.0, "delay_max": 3.0}
+        company.scraper_config = {}
 
         mock_session = AsyncMock()
 
