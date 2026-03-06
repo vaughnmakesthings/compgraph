@@ -1,0 +1,27 @@
+src/compgraph/api/routes/companies.py
+  48074118b48372ab 8,11
+src/compgraph/api/routes/postings.py
+  48074118b48372ab 11,14
+src/compgraph/eval/router.py
+  48074118b48372ab 27,39,219-220,388-389,420-421,434-435,498-499
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "f9f5563ce9e5ea7ae13673d45a86174e48170a49",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 33,
+      "total_deletions": 9,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
