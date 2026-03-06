@@ -50,9 +50,29 @@ async def health_check(
     else:
         checks["scheduler"] = "disabled"
 
+    # Pipeline status (for deploy safety checks)
+    from compgraph.scrapers.orchestrator import PipelineStatus, _pipeline_runs
+
+    active_pipelines = [
+        r
+        for r in _pipeline_runs.values()
+        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED)
+    ]
+    if active_pipelines:
+        checks["pipeline"] = f"active ({len(active_pipelines)} run(s))"
+    else:
+        checks["pipeline"] = "idle"
+
+    # Shutdown status
+    from compgraph.main import shutdown_event
+
+    shutting_down = shutdown_event.is_set()
+    if shutting_down:
+        checks["shutdown"] = "in_progress"
+
     has_errors = any(v.startswith("error") for v in checks.values())
-    status_code = 503 if has_errors else 200
-    overall = "degraded" if has_errors else "ok"
+    status_code = 503 if has_errors or shutting_down else 200
+    overall = "shutting_down" if shutting_down else ("degraded" if has_errors else "ok")
 
     return JSONResponse(
         status_code=status_code,

@@ -343,6 +343,13 @@ class EnrichmentOrchestrator:
         content_cache: dict[str, Pass1Result] = {}
 
         while True:
+            # Check for graceful shutdown signal
+            from compgraph.main import shutdown_event
+
+            if shutdown_event.is_set():
+                logger.info("Pass 1 stopping early — shutdown signal received")
+                break
+
             async with async_session_factory() as session:
                 batch = await fetch_unenriched_postings(
                     session,
@@ -758,6 +765,13 @@ class EnrichmentOrchestrator:
         content_cache_p2: dict[str, Pass2Result] = {}
 
         while True:
+            # Check for graceful shutdown signal
+            from compgraph.main import shutdown_event
+
+            if shutdown_event.is_set():
+                logger.info("Pass 2 stopping early — shutdown signal received")
+                break
+
             async with async_session_factory() as session:
                 batch = await fetch_pass1_complete_postings(
                     session,
