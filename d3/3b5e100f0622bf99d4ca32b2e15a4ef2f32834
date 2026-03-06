@@ -1,0 +1,29 @@
+src/compgraph/enrichment/pass2.py
+  0ab57401c35788ac 23-43
+tests/test_instructor_integration.py
+  0ab57401c35788ac 11,452-640
+src/compgraph/enrichment/pass1.py
+  0ab57401c35788ac 22-40
+src/compgraph/enrichment/retry.py
+  0ab57401c35788ac 304-325,469-490
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "d33b5e100f0622bf99d4ca32b2e15a4ef2f32834",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 274,
+      "total_deletions": 0,
+      "accepted_lines": 274,
+      "overriden_lines": 0
+    }
+  }
+}
