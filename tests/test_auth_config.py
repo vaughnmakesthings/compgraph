@@ -8,18 +8,18 @@ from compgraph.config import Settings
 
 def test_auth_disabled_blocked_in_production():
     """AUTH_DISABLED=true must raise when ENVIRONMENT=production."""
-    with pytest.raises(ValidationError, match=r"AUTH_DISABLED.*only allowed when ENVIRONMENT=test"):
+    with pytest.raises(ValidationError, match=r"AUTH_DISABLED.*forbidden"):
         Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="production")
 
 
-def test_auth_disabled_blocked_in_dev():
-    """AUTH_DISABLED=true must raise when ENVIRONMENT=dev (internet-facing)."""
-    with pytest.raises(ValidationError, match=r"AUTH_DISABLED.*only allowed when ENVIRONMENT=test"):
-        Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="dev")
+def test_auth_disabled_allowed_in_dev():
+    """AUTH_DISABLED=true is fine in dev (local development)."""
+    s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="dev")
+    assert s.AUTH_DISABLED is True
 
 
 def test_auth_disabled_allowed_in_test():
-    """AUTH_DISABLED=true is only allowed in test environment."""
+    """AUTH_DISABLED=true is fine in test environment."""
     s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="test")
     assert s.AUTH_DISABLED is True
 

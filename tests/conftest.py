@@ -14,7 +14,7 @@ import os
 
 # Set placeholder before any compgraph imports trigger Settings() validation
 os.environ.setdefault("DATABASE_PASSWORD", "test-placeholder")
-os.environ.setdefault("ENVIRONMENT", "test")
+os.environ["ENVIRONMENT"] = "test"  # force — setdefault leaks shell ENVIRONMENT
 os.environ.setdefault("AUTH_DISABLED", "true")
 
 from collections.abc import AsyncGenerator
