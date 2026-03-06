@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 from compgraph.config import settings
 from compgraph.db.session import async_session_factory
 from compgraph.enrichment.client import get_anthropic_client
+from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
 from compgraph.enrichment.fingerprint import compute_content_hash
 from compgraph.enrichment.pass1 import enrich_posting_pass1
 from compgraph.enrichment.pass2 import enrich_posting_pass2
@@ -298,8 +299,10 @@ async def _mark_pass2_complete(
     enrichment = result.scalar_one_or_none()
     if enrichment:
         current = enrichment.enrichment_version or ""
-        if "pass2" not in current:
-            enrichment.enrichment_version = f"{current}+pass2" if current else "pass2"
+        if ENRICHMENT_VERSION_PASS2 not in current:
+            enrichment.enrichment_version = (
+                f"{current}+{ENRICHMENT_VERSION_PASS2}" if current else ENRICHMENT_VERSION_PASS2
+            )
         enrichment.entity_count = entity_count
 
 
