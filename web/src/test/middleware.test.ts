@@ -17,12 +17,12 @@ vi.mock("next/server", () => {
     };
     static next({ request }: { request: MockNextRequest }) {
       const res = new MockNextResponse();
-      (res as Record<string, unknown>)._request = request;
+      (res as unknown as Record<string, unknown>)._request = request;
       return res;
     }
     static redirect(url: URL) {
       const res = new MockNextResponse();
-      (res as Record<string, unknown>)._redirectUrl = url.toString();
+      (res as unknown as Record<string, unknown>)._redirectUrl = url.toString();
       return res;
     }
   }
@@ -64,7 +64,7 @@ describe("updateSession middleware", () => {
 
     expect(mockGetUser).toHaveBeenCalledOnce();
     expect(response).toBeDefined();
-    expect((response as Record<string, unknown>)._redirectUrl).toBeUndefined();
+    expect((response as unknown as Record<string, unknown>)._redirectUrl).toBeUndefined();
   });
 
   it("redirects unauthenticated users to /login with expired param", async () => {
@@ -75,7 +75,7 @@ describe("updateSession middleware", () => {
     const request = new NextRequest("http://localhost:3000/settings");
     const response = await updateSession(request);
 
-    const redirectUrl = (response as Record<string, unknown>)._redirectUrl as string;
+    const redirectUrl = (response as unknown as Record<string, unknown>)._redirectUrl as string;
     expect(redirectUrl).toContain("/login");
     expect(redirectUrl).toContain("expired=1");
   });
@@ -88,7 +88,7 @@ describe("updateSession middleware", () => {
     const request = new NextRequest("http://localhost:3000/login");
     const response = await updateSession(request);
 
-    expect((response as Record<string, unknown>)._redirectUrl).toBeUndefined();
+    expect((response as unknown as Record<string, unknown>)._redirectUrl).toBeUndefined();
   });
 
   it("allows unauthenticated users to access /setup", async () => {
@@ -99,7 +99,7 @@ describe("updateSession middleware", () => {
     const request = new NextRequest("http://localhost:3000/setup?email=test@example.com");
     const response = await updateSession(request);
 
-    expect((response as Record<string, unknown>)._redirectUrl).toBeUndefined();
+    expect((response as unknown as Record<string, unknown>)._redirectUrl).toBeUndefined();
   });
 
   it("allows unauthenticated users to access /403", async () => {
@@ -110,6 +110,6 @@ describe("updateSession middleware", () => {
     const request = new NextRequest("http://localhost:3000/403");
     const response = await updateSession(request);
 
-    expect((response as Record<string, unknown>)._redirectUrl).toBeUndefined();
+    expect((response as unknown as Record<string, unknown>)._redirectUrl).toBeUndefined();
   });
 });
