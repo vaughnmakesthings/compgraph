@@ -83,7 +83,6 @@ Run these checks immediately after the restore completes:
 ssh compgraph-do "cd /opt/compgraph && op run --env-file=.env -- uv run python -c \"
 from sqlalchemy import text
 from compgraph.db.session import get_engine
-from sqlalchemy import text
 import asyncio
 async def check():
     engine = get_engine()
