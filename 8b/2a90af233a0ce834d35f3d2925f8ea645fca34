@@ -1,0 +1,27 @@
+tests/test_auth_config.py
+  48074118b48372ab 11,15-23,29,60
+tests/conftest.py
+  48074118b48372ab 17
+src/compgraph/config.py
+  48074118b48372ab 79,81-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "8b2a90af233a0ce834d35f3d2925f8ea645fca34",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 8,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
