@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Brand, Posting, PostingEnrichment, PostingSnapshot
+from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,7 @@ async def detect_reposts(session: AsyncSession, company_id: uuid.UUID | None = N
         .join(PostingEnrichment, Posting.id == PostingEnrichment.posting_id)
         .where(Posting.fingerprint_hash.is_(None))
         .where(Posting.is_active.is_(True))
-        .where(PostingEnrichment.enrichment_version.like("%pass2%"))
+        .where(PostingEnrichment.enrichment_version.like(f"%{ENRICHMENT_VERSION_PASS2}%"))
     )
     if company_id is not None:
         stmt = stmt.where(Posting.company_id == company_id)

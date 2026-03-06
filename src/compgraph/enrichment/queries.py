@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Posting, PostingEnrichment, PostingSnapshot
+from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
 from compgraph.enrichment.schemas import Pass1Result
 
 
@@ -169,7 +170,7 @@ async def fetch_pass1_complete_postings(
             PostingEnrichment.id == latest_enrichment.c.enrichment_id,
         )
         .where(
-            PostingEnrichment.enrichment_version.not_like("%pass2%"),
+            PostingEnrichment.enrichment_version.not_like(f"%{ENRICHMENT_VERSION_PASS2}%"),
         )
         .where(Posting.is_active.is_(True))
         .order_by(Posting.first_seen_at.asc())
