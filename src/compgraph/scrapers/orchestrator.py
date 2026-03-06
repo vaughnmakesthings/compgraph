@@ -38,6 +38,8 @@ class PipelineStatus(StrEnum):
 
 
 class CompanyState(StrEnum):
+    """Per-company scrape state within a pipeline run."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -241,6 +243,7 @@ class PipelineOrchestrator:
         run.status = PipelineStatus.RUNNING
 
     def stop(self, run: PipelineRun) -> None:
+        """Graceful stop: running companies finish, pending companies get skipped."""
         self._stop_requested = True
         self._resume_event.set()
         run.status = PipelineStatus.STOPPING
@@ -249,6 +252,7 @@ class PipelineOrchestrator:
                 run.company_states[slug] = CompanyState.SKIPPED
 
     def force_stop(self, run: PipelineRun) -> None:
+        """Force stop: cancel all tasks immediately."""
         self._force_stop_requested = True
         self._stop_requested = True
         self._resume_event.set()
