@@ -1,0 +1,25 @@
+scripts/dump_openapi.py
+  c482aeaa56739ace 14-30,34,36-37
+src/compgraph/main.py
+  c482aeaa56739ace 172-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "06a1eb2bcf6ea0dd71d754b36481b6c2cc75fb6d",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 22,
+      "overriden_lines": 0
+    }
+  }
+}
