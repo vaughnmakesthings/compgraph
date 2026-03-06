@@ -14,6 +14,7 @@ from compgraph.db.models import Company
 from compgraph.scrapers.base import RawPosting, ScrapeResult
 from compgraph.scrapers.persistence import persist_posting
 from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
+from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ WORKDAY_PAGE_SIZE = 20
 SEARCH_DELAY_SECONDS = 1.0
 DETAIL_DELAY_SECONDS = 0.5
 DETAIL_CONCURRENCY = 5
+_WORKDAY_DOMAIN = "myworkdayjobs.com"
 
 
 @dataclass
@@ -149,11 +151,12 @@ class WorkdayFetcher:
             "searchText": "",
         }
         try:
-            resp = await client.post(
-                url,
-                json=payload,
-                headers={"Content-Type": "application/json"},
-            )
+            async with get_limiter(_WORKDAY_DOMAIN):
+                resp = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                )
             resp.raise_for_status()
             result = parse_search_response(resp.json())
             self._record_success()
@@ -199,7 +202,8 @@ class WorkdayFetcher:
         self._check_circuit()
         url = _build_detail_url(self.base_url, self.tenant, self.site, external_path)
         try:
-            resp = await client.get(url)
+            async with get_limiter(_WORKDAY_DOMAIN):
+                resp = await client.get(url)
             resp.raise_for_status()
             result = parse_detail_response(resp.json())
             self._record_success()
@@ -267,7 +271,7 @@ class WorkdayAdapter:
 
         fetcher = WorkdayFetcher(base_url=base_url, tenant=tenant, site=site)
 
-        proxy_kwargs = get_proxy_client_kwargs(settings)
+        proxy_kwargs = get_proxy_client_kwargs(settings, domain=_WORKDAY_DOMAIN)
         try:
             async with httpx.AsyncClient(
                 timeout=30.0,

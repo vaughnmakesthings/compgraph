@@ -27,12 +27,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from compgraph.db.models import Company, Posting, PostingSnapshot
 from compgraph.scrapers.base import RawPosting, ScrapeResult
 from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
+from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
 
 JOBSYNC_API_BASE = "https://prod-search-api.jobsyn.org/api/v1/solr/search"
 JOBSYNC_PAGE_SIZE = 14  # server-enforced maximum
 JOBSYNC_X_ORIGIN = "acosta.jobs"
+_JOBSYNC_DOMAIN = "jobsyn.org"
 JOBSYNC_SITE_BASE = "https://acosta.jobs"
 CIRCUIT_BREAKER_THRESHOLD = 3
 DEFAULT_DELAY_MIN = 0.5
@@ -170,14 +172,15 @@ class JobSyncFetcher:
             params["agency"] = agency_slug
 
         try:
-            resp = await client.get(
-                self.api_base,
-                params=params,
-                headers={
-                    "X-Origin": self.x_origin,
-                    "Accept": "application/json",
-                },
-            )
+            async with get_limiter(_JOBSYNC_DOMAIN):
+                resp = await client.get(
+                    self.api_base,
+                    params=params,
+                    headers={
+                        "X-Origin": self.x_origin,
+                        "Accept": "application/json",
+                    },
+                )
             resp.raise_for_status()
             result = parse_page(resp.json(), agency_name)
             self._record_success()
@@ -348,7 +351,7 @@ class JobSyncAdapter:
 
         from compgraph.config import settings  # local import avoids circular dep at module level
 
-        proxy_kwargs = get_proxy_client_kwargs(settings)
+        proxy_kwargs = get_proxy_client_kwargs(settings, domain="jobsyn.org")
         try:
             async with httpx.AsyncClient(
                 timeout=30.0,

@@ -17,8 +17,14 @@ from compgraph.db.models import Company
 from compgraph.scrapers.base import RawPosting, ScrapeResult
 from compgraph.scrapers.persistence import persist_posting
 from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
+from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
+
+_ICIMS_DOMAIN = "icims.com"
+# Secondary politeness jitter applied AFTER the rate limiter token is acquired.
+_JITTER_MIN = 0.1
+_JITTER_MAX = 0.3
 
 
 def _validate_redirect_domain(response: httpx.Response, expected_url: str) -> None:
@@ -207,22 +213,18 @@ class ICIMSFetcher:
         self,
         client: httpx.AsyncClient,
         base_url: str,
-        delay_min: float = 2.0,
-        delay_max: float = 8.0,
         search_url: str | None = None,
     ) -> None:
         self.client = client
         self.base_url = base_url.rstrip("/")
-        self.delay_min = delay_min
-        self.delay_max = delay_max
         self.search_url = search_url
         self.consecutive_failures = 0
         self.circuit_open = False
         self.pages_fetched = 0
 
-    async def _delay(self) -> None:
-        if self.delay_min > 0 or self.delay_max > 0:
-            await asyncio.sleep(random.uniform(self.delay_min, self.delay_max))  # noqa: S311
+    async def _jitter(self) -> None:
+        """Small politeness pause applied after rate-limiter token acquisition."""
+        await asyncio.sleep(random.uniform(_JITTER_MIN, _JITTER_MAX))  # noqa: S311
 
     async def fetch_all_listings(self) -> list[dict[str, str]]:
         all_jobs: list[dict[str, str]] = []
@@ -234,8 +236,10 @@ class ICIMSFetcher:
                 url = f"{self.search_url}{sep}pr={page}&in_iframe=1"
             else:
                 url = f"{self.base_url}/jobs/search?pr={page}&in_iframe=1"
-            await self._delay()
-            response = await self.client.get(url)
+
+            async with get_limiter(_ICIMS_DOMAIN):
+                await self._jitter()
+                response = await self.client.get(url)
             response.raise_for_status()
             _validate_redirect_domain(response, url)
 
@@ -256,10 +260,11 @@ class ICIMSFetcher:
             logger.warning("Circuit breaker open — skipping job %s", job_id)
             return None
 
-        await self._delay()
         try:
             url = f"{self.base_url}/jobs/{job_id}/{slug}/job?in_iframe=1"
-            response = await self.client.get(url)
+            async with get_limiter(_ICIMS_DOMAIN):
+                await self._jitter()
+                response = await self.client.get(url)
 
             if response.status_code != 200:
                 logger.warning("HTTP %d for job %s", response.status_code, job_id)
@@ -328,11 +333,11 @@ class ICIMSAdapter:
         )
 
         config = company.scraper_config or {}
-        delay_min = config.get("delay_min", 2.0)
-        delay_max = config.get("delay_max", 8.0)
         search_urls: list[str] = config.get("search_urls", [])
+        # #278: configurable concurrency for detail fetches (default 3, clamped 1-10)
+        detail_concurrency: int = max(1, min(int(config.get("detail_concurrency", 3)), 10))
 
-        proxy_kwargs = get_proxy_client_kwargs(settings)
+        proxy_kwargs = get_proxy_client_kwargs(settings, domain=_ICIMS_DOMAIN)
         headers = {"User-Agent": random_user_agent()}
 
         try:
@@ -345,7 +350,7 @@ class ICIMSAdapter:
                 # Collect job entries — multi-URL or single default
                 if search_urls:
                     job_entries, failed_urls, pages = await self._fetch_multi_url(
-                        client, search_urls, delay_min, delay_max
+                        client, search_urls
                     )
                     result.pages_scraped = pages
                     if failed_urls and job_entries:
@@ -360,8 +365,6 @@ class ICIMSAdapter:
                     fetcher = ICIMSFetcher(
                         client=client,
                         base_url=company.career_site_url,
-                        delay_min=delay_min,
-                        delay_max=delay_max,
                     )
                     job_entries = [
                         (entry, company.career_site_url)
@@ -382,32 +385,27 @@ class ICIMSAdapter:
                     distinct_portals = len({_base_url_from_search_url(u) for u in search_urls})
                 else:
                     distinct_portals = 1
+
+                # Build per-portal fetchers (re-used across concurrent detail calls)
                 fetchers: dict[str, ICIMSFetcher] = {}
-                for entry, base_url in job_entries:
+                for _entry, base_url in job_entries:
                     if base_url not in fetchers:
                         fetchers[base_url] = ICIMSFetcher(
                             client=client,
                             base_url=base_url,
-                            delay_min=delay_min,
-                            delay_max=delay_max,
                         )
 
-                    fetcher = fetchers[base_url]
-                    if fetcher.circuit_open:
-                        result.errors.append(
-                            f"Circuit breaker open for {base_url} after "
-                            f"{fetcher.consecutive_failures} failures"
-                        )
-                        continue
+                # #278: fetch detail pages concurrently with a semaphore
+                details = await self._fetch_details_concurrent(
+                    job_entries=job_entries,
+                    fetchers=fetchers,
+                    distinct_portals=distinct_portals,
+                    concurrency=detail_concurrency,
+                )
 
-                    detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
+                for entry, base_url, detail in details:
                     if detail is None:
                         continue
-
-                    # Disambiguate cross-portal IDs when multiple portals present
-                    if distinct_portals > 1 and detail.get("job_id"):
-                        portal_host = urlparse(base_url).netloc
-                        detail["job_id"] = f"{portal_host}:{detail['job_id']}"
 
                     external_job_id = detail.get("job_id")
                     if not external_job_id:
@@ -453,12 +451,56 @@ class ICIMSAdapter:
         result.finished_at = datetime.now(UTC)
         return result
 
+    async def _fetch_details_concurrent(
+        self,
+        job_entries: list[tuple[dict[str, str], str]],
+        fetchers: dict[str, ICIMSFetcher],
+        distinct_portals: int,
+        concurrency: int,
+    ) -> list[tuple[dict[str, str], str, dict[str, str | int | None] | None]]:
+        """Fetch detail pages concurrently, bounded by a semaphore.
+
+        Returns list of (entry, base_url, detail_or_None) in input order.
+        """
+        sem = asyncio.Semaphore(concurrency)
+
+        async def fetch_one(
+            entry: dict[str, str], base_url: str
+        ) -> tuple[dict[str, str], str, dict[str, str | int | None] | None]:
+            fetcher = fetchers[base_url]
+            if fetcher.circuit_open:
+                return entry, base_url, None
+            async with sem:
+                detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
+
+            if detail is not None and distinct_portals > 1 and detail.get("job_id"):
+                portal_host = urlparse(base_url).hostname
+                detail["job_id"] = f"{portal_host}:{detail['job_id']}"
+
+            return entry, base_url, detail
+
+        tasks = [fetch_one(entry, base_url) for entry, base_url in job_entries]
+        gather_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        output: list[tuple[dict[str, str], str, dict[str, str | int | None] | None]] = []
+        for i, gr in enumerate(gather_results):
+            if isinstance(gr, BaseException):
+                entry, base_url = job_entries[i]
+                logger.warning(
+                    "Detail fetch raised exception for job %s: %r",
+                    entry.get("job_id"),
+                    gr,
+                )
+                output.append((entry, base_url, None))
+            else:
+                output.append(gr)
+
+        return output
+
     async def _fetch_multi_url(
         self,
         client: httpx.AsyncClient,
         search_urls: list[str],
-        delay_min: float,
-        delay_max: float,
     ) -> tuple[list[tuple[dict[str, str], str]], list[str], int]:
         """Fetch listings from multiple search URLs, deduplicating by (base_url, job_id).
 
@@ -478,8 +520,6 @@ class ICIMSAdapter:
             fetcher = ICIMSFetcher(
                 client=client,
                 base_url=base_url,
-                delay_min=delay_min,
-                delay_max=delay_max,
                 search_url=search_url,
             )
             try:

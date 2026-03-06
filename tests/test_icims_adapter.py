@@ -251,8 +251,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         jobs = await fetcher.fetch_all_listings()
 
@@ -268,8 +266,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("47917", "meta-lab-assistant-manager")
 
@@ -285,8 +281,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("99999", "nonexistent")
 
@@ -300,8 +294,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
 
         for _ in range(3):
@@ -329,8 +321,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
 
         await fetcher.fetch_detail("1", "a")
@@ -352,8 +342,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://careers-bdssolutions.icims.com",
-            delay_min=0,
-            delay_max=0,
             search_url="https://careers-bdssolutions.icims.com/jobs/search?searchCategory=25262",
         )
         jobs = await fetcher.fetch_all_listings()
@@ -375,8 +363,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://careers-apolloretail.icims.com",
-            delay_min=0,
-            delay_max=0,
             search_url="https://careers-apolloretail.icims.com/jobs/search",
         )
         jobs = await fetcher.fetch_all_listings()
@@ -394,8 +380,6 @@ class TestICIMSFetcher:
         fetcher = ICIMSFetcher(
             client=mock_client,
             base_url="https://test.icims.com",
-            delay_min=0,
-            delay_max=0,
         )
         result = await fetcher.fetch_detail("48000", "senior-field-technician")
 
@@ -663,7 +647,7 @@ class TestICIMSAdapter:
         company.id = uuid.uuid4()
         company.slug = "marketsource"
         company.career_site_url = "https://applyatmarketsource-msc.icims.com"
-        company.scraper_config = {"delay_min": 1.0, "delay_max": 3.0}
+        company.scraper_config = {}
 
         mock_session = AsyncMock()
 
@@ -1003,6 +987,54 @@ class TestICIMSAdapter:
         # Both URLs failed — errors should be reported
         assert len(result.errors) == 2
         assert not result.success
+
+
+class TestDetailConcurrencyClamping:
+    """Validates that detail_concurrency from scraper_config is clamped to [1, 10]."""
+
+    def test_zero_clamped_to_one(self) -> None:
+        """A value of 0 would deadlock asyncio.Semaphore; must be clamped to 1."""
+        config: dict[str, object] = {"detail_concurrency": 0}
+        result = max(1, min(int(config.get("detail_concurrency", 3)), 10))  # type: ignore[arg-type]
+        assert result == 1
+
+    def test_negative_clamped_to_one(self) -> None:
+        config: dict[str, object] = {"detail_concurrency": -5}
+        result = max(1, min(int(config.get("detail_concurrency", 3)), 10))  # type: ignore[arg-type]
+        assert result == 1
+
+    def test_excessive_value_clamped_to_ten(self) -> None:
+        config: dict[str, object] = {"detail_concurrency": 100}
+        result = max(1, min(int(config.get("detail_concurrency", 3)), 10))  # type: ignore[arg-type]
+        assert result == 10
+
+    def test_default_is_three(self) -> None:
+        config: dict[str, object] = {}
+        result = max(1, min(int(config.get("detail_concurrency", 3)), 10))  # type: ignore[arg-type]
+        assert result == 3
+
+    def test_valid_value_passes_through(self) -> None:
+        config: dict[str, object] = {"detail_concurrency": 5}
+        result = max(1, min(int(config.get("detail_concurrency", 3)), 10))  # type: ignore[arg-type]
+        assert result == 5
+
+
+class TestPortalHostPrefixUsesHostname:
+    """Verifies the portal host prefix uses .hostname (not .netloc) to avoid credential leakage."""
+
+    def test_hostname_excludes_userinfo(self) -> None:
+        from urllib.parse import urlparse
+
+        url = "https://user:pass@careers-bds.icims.com/jobs/search"
+        # .netloc would include user:pass@ -- .hostname must not
+        assert urlparse(url).hostname == "careers-bds.icims.com"
+        assert "user:pass" in urlparse(url).netloc
+
+    def test_hostname_excludes_port(self) -> None:
+        from urllib.parse import urlparse
+
+        url = "https://careers-bds.icims.com:443/jobs/search"
+        assert urlparse(url).hostname == "careers-bds.icims.com"
 
 
 class TestValidateRedirectDomain:

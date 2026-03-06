@@ -25,6 +25,27 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # ---------------------------------------------------------------------------
+# Rate limiter isolation (session-wide, applies to all adapter tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _isolate_rate_limiters():
+    """Reset rate limiters between tests to avoid cross-loop warnings.
+
+    The module-level _domain_limiters cache in scrapers/rate_limiter.py
+    persists across test functions that each get their own event loop.
+    Resetting before and after every test prevents AsyncLimiter cross-loop
+    reuse warnings in Workday and iCIMS adapter tests.
+    """
+    from compgraph.scrapers.rate_limiter import reset_limiters
+
+    reset_limiters()
+    yield
+    reset_limiters()
+
+
+# ---------------------------------------------------------------------------
 # Unit test fixtures (no database required)
 # ---------------------------------------------------------------------------
 

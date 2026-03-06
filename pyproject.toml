@@ -19,6 +19,7 @@ dependencies = [
     "PyJWT>=2.8.0",
     "email-validator>=2.1.0",
     "sentry-sdk[anthropic,fastapi]>=2.19.0",
+    "aiolimiter>=1.1.0",
 ]
 
 [project.scripts]
