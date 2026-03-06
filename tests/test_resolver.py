@@ -235,22 +235,36 @@ class TestEntityCache:
         yield
         clear_entity_cache()
 
+    def _mock_row(
+        self,
+        *,
+        entity_id: uuid.UUID | None = None,
+        name: str = "Samsung",
+        slug: str = "samsung",
+    ) -> MagicMock:
+        row = MagicMock()
+        row.id = entity_id or uuid.uuid4()
+        row.name = name
+        row.slug = slug
+        return row
+
+    def _mock_result(self, rows: list) -> MagicMock:
+        mock_result = MagicMock()
+        mock_result.all.return_value = rows
+        return mock_result
+
     @pytest.mark.asyncio
     async def test_first_call_populates_cache(self):
         from compgraph.db.models import Brand
-        from compgraph.enrichment.resolver import _entity_cache, _get_all_entities
-
-        mock_brand = MagicMock()
-        mock_brand.name = "Samsung"
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [mock_brand]
+        from compgraph.enrichment.resolver import CachedEntity, _entity_cache, _get_all_entities
 
         session = AsyncMock()
-        session.execute = AsyncMock(return_value=mock_result)
+        session.execute = AsyncMock(return_value=self._mock_result([self._mock_row()]))
 
         result = await _get_all_entities(session, Brand, "Brand")
 
         assert len(result) == 1
+        assert isinstance(result[0], CachedEntity)
         assert result[0].name == "Samsung"
         assert "Brand" in _entity_cache
         session.execute.assert_awaited_once()
@@ -260,13 +274,8 @@ class TestEntityCache:
         from compgraph.db.models import Brand
         from compgraph.enrichment.resolver import _get_all_entities
 
-        mock_brand = MagicMock()
-        mock_brand.name = "Samsung"
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [mock_brand]
-
         session = AsyncMock()
-        session.execute = AsyncMock(return_value=mock_result)
+        session.execute = AsyncMock(return_value=self._mock_result([self._mock_row()]))
 
         await _get_all_entities(session, Brand, "Brand")
         await _get_all_entities(session, Brand, "Brand")
@@ -278,20 +287,18 @@ class TestEntityCache:
         import time
 
         from compgraph.db.models import Brand
-        from compgraph.enrichment.resolver import _entity_cache, _get_all_entities
-
-        mock_brand = MagicMock()
-        mock_brand.name = "Samsung"
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [mock_brand]
+        from compgraph.enrichment.resolver import CachedEntity, _entity_cache, _get_all_entities
 
         session = AsyncMock()
-        session.execute = AsyncMock(return_value=mock_result)
+        session.execute = AsyncMock(return_value=self._mock_result([self._mock_row()]))
 
         await _get_all_entities(session, Brand, "Brand")
         assert session.execute.await_count == 1
 
-        _entity_cache["Brand"] = (time.monotonic() - 400, [mock_brand])
+        _entity_cache["Brand"] = (
+            time.monotonic() - 400,
+            [CachedEntity(id=uuid.uuid4(), name="Samsung", slug="samsung")],
+        )
         await _get_all_entities(session, Brand, "Brand")
         assert session.execute.await_count == 2
 
@@ -300,13 +307,8 @@ class TestEntityCache:
         from compgraph.db.models import Brand
         from compgraph.enrichment.resolver import _get_all_entities, clear_entity_cache
 
-        mock_brand = MagicMock()
-        mock_brand.name = "Samsung"
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [mock_brand]
-
         session = AsyncMock()
-        session.execute = AsyncMock(return_value=mock_result)
+        session.execute = AsyncMock(return_value=self._mock_result([self._mock_row()]))
 
         await _get_all_entities(session, Brand, "Brand")
         assert session.execute.await_count == 1
@@ -317,30 +319,42 @@ class TestEntityCache:
 
     @pytest.mark.asyncio
     async def test_create_entity_invalidates_cache(self):
-        """Creating a new entity should invalidate the cache for that model."""
         from compgraph.db.models import Brand
         from compgraph.enrichment.resolver import _create_entity, _entity_cache, _get_all_entities
 
-        mock_brand = MagicMock()
-        mock_brand.name = "Samsung"
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [mock_brand]
-
         session = AsyncMock()
-        session.execute = AsyncMock(return_value=mock_result)
+        session.execute = AsyncMock(return_value=self._mock_result([self._mock_row()]))
         session.begin_nested = MagicMock(return_value=AsyncMock())
         session.flush = AsyncMock()
 
-        # Populate cache
         await _get_all_entities(session, Brand, "Brand")
         assert "Brand" in _entity_cache
 
-        # Create entity should invalidate cache
-        new_brand = MagicMock()
-        new_brand.id = uuid.uuid4()
-        new_brand.name = "NewBrand"
-        new_brand.slug = "newbrand"
         session.add = MagicMock()
 
         await _create_entity(session, "NewBrand", Brand)
         assert "Brand" not in _entity_cache
+
+    @pytest.mark.asyncio
+    async def test_cached_entities_are_tuples_not_orm_objects(self):
+        from compgraph.db.models import Brand
+        from compgraph.enrichment.resolver import CachedEntity, _entity_cache, _get_all_entities
+
+        brand_id = uuid.uuid4()
+        session = AsyncMock()
+        session.execute = AsyncMock(
+            return_value=self._mock_result(
+                [self._mock_row(entity_id=brand_id, name="Samsung", slug="samsung")]
+            )
+        )
+
+        result = await _get_all_entities(session, Brand, "Brand")
+
+        assert len(result) == 1
+        cached = result[0]
+        assert isinstance(cached, CachedEntity)
+        assert cached.id == brand_id
+        assert cached.name == "Samsung"
+        assert cached.slug == "samsung"
+        _, cache_entries = _entity_cache["Brand"]
+        assert all(isinstance(e, CachedEntity) for e in cache_entries)
