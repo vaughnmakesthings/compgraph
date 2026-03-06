@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import signal
 import sys
 from contextlib import asynccontextmanager
 
@@ -69,8 +71,46 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+shutdown_event = asyncio.Event()
+
+
+def _signal_handler(sig: int) -> None:
+    """Handle SIGTERM/SIGINT by setting shutdown flag and stopping active pipelines."""
+    sig_name = signal.Signals(sig).name
+    logger.info("Received %s — initiating graceful shutdown", sig_name)
+    shutdown_event.set()
+
+    # Stop any active scrape pipeline runs gracefully
+    from compgraph.scrapers.orchestrator import (
+        PipelineStatus,
+        _pipeline_runs,
+        get_orchestrator,
+    )
+
+    active_runs = [
+        r
+        for r in _pipeline_runs.values()
+        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED)
+    ]
+    for run in active_runs:
+        orch = get_orchestrator(run.run_id)
+        if orch is not None:
+            orch.stop(run)
+            logger.info("Sent stop signal to pipeline run %s", run.run_id)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    loop = asyncio.get_running_loop()
+    try:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, _signal_handler, sig)
+    except (RuntimeError, NotImplementedError):
+        # Signal handlers only work in main thread (fails in TestClient)
+        pass
+
+    app.state.shutdown_event = shutdown_event
+
     if settings.SCHEDULER_ENABLED:
         from compgraph.scheduler.app import setup_scheduler
 
@@ -78,11 +118,13 @@ async def lifespan(app: FastAPI):
         await scheduler.start_in_background()
         app.state.scheduler = scheduler
     yield
+    logger.info("Lifespan cleanup starting")
     try:
         if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
             await app.state.scheduler.__aexit__(None, None, None)
     finally:
         await engine.dispose()
+    logger.info("Lifespan cleanup complete")
 
 
 app = FastAPI(

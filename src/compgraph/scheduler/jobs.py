@@ -131,6 +131,15 @@ async def pipeline_job() -> None:
             pipeline_run.total_postings_found,
         )
 
+    # --- Check for shutdown before continuing ---
+    from compgraph.main import shutdown_event
+
+    if shutdown_event.is_set():
+        logger.warning("[PIPELINE] Shutdown signal received — skipping remaining phases")
+        _last_pipeline_finished_at = datetime.now(UTC)
+        _last_pipeline_success = False
+        return
+
     # --- Enrich phase ---
     enrich_succeeded = False
     if scrape_succeeded:
@@ -187,6 +196,12 @@ async def pipeline_job() -> None:
             "[ENRICH] Skipping enrichment — scrape fully failed (status=%s)",
             pipeline_run.status.value,
         )
+
+    if shutdown_event.is_set():
+        logger.warning("[PIPELINE] Shutdown signal received — skipping aggregation")
+        _last_pipeline_finished_at = datetime.now(UTC)
+        _last_pipeline_success = False
+        return
 
     # --- Aggregate phase ---
     agg_succeeded = True
