@@ -11,6 +11,30 @@ cd "$APP_DIR"
 
 echo "=== CD Deploy: $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
 
+# ── 0. Pre-deploy: wait for active pipeline to finish ──
+PIPELINE_WAIT_MAX=600  # 10 minutes max wait
+PIPELINE_WAIT_INTERVAL=15
+PIPELINE_WAITED=0
+
+echo "[0/5] Checking for active pipeline..."
+while [ $PIPELINE_WAITED -lt $PIPELINE_WAIT_MAX ]; do
+    HEALTH_JSON=$(curl -sf "$HEALTH_URL" 2>/dev/null || echo '{}')
+    PIPELINE_STATUS=$(echo "$HEALTH_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('checks',{}).get('pipeline','unknown'))" 2>/dev/null || echo "unknown")
+
+    if [ "$PIPELINE_STATUS" = "idle" ] || [ "$PIPELINE_STATUS" = "unknown" ]; then
+        echo "  Pipeline is idle. Proceeding with deploy."
+        break
+    fi
+
+    echo "  Pipeline is $PIPELINE_STATUS. Waiting ${PIPELINE_WAIT_INTERVAL}s... (${PIPELINE_WAITED}/${PIPELINE_WAIT_MAX}s)"
+    sleep $PIPELINE_WAIT_INTERVAL
+    PIPELINE_WAITED=$((PIPELINE_WAITED + PIPELINE_WAIT_INTERVAL))
+done
+
+if [ $PIPELINE_WAITED -ge $PIPELINE_WAIT_MAX ]; then
+    echo "  WARNING: Pipeline still active after ${PIPELINE_WAIT_MAX}s. Deploying anyway."
+fi
+
 # ── 1. Pull latest code ──
 echo "[1/5] Pulling latest code..."
 git config --global safe.directory "$APP_DIR"
