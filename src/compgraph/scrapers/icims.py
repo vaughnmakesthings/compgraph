@@ -201,7 +201,7 @@ def parse_html_fallback(html: str) -> dict[str, str | int | None] | None:
 
 
 class ICIMSFetcher:
-    CIRCUIT_BREAKER_THRESHOLD = 3
+    CIRCUIT_BREAKER_THRESHOLD = settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD
 
     def __init__(
         self,
