@@ -1,0 +1,42 @@
+tests/test_scheduler.py
+  208e065629c2c573 230-234,321-325
+src/compgraph/aggregation/alerts.py
+  208e065629c2c573 16,37-44,46,48-51,53-55,60-64,68,74-75,86-91,93-94,99,103-105,118-126,130-132,149-157,164-166
+src/compgraph/api/routes/alerts.py
+  208e065629c2c573 49
+src/compgraph/scheduler/jobs.py
+  208e065629c2c573 21,82-84,105-107,115-116,251,268,271,274-276
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "0037dced5a89d022594c33f5989a8105ff93cd0b",
+  "prompts": {
+    "11190444a8631cbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "79e74a72-60cc-4b6f-8f4e-1f3f13dbafc4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 5,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    },
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 145,
+      "total_deletions": 68,
+      "accepted_lines": 136,
+      "overriden_lines": 4
+    }
+  }
+}
