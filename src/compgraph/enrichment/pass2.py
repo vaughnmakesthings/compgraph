@@ -8,7 +8,7 @@ import anthropic
 
 from compgraph.config import settings
 from compgraph.enrichment.prompts import PASS2_SYSTEM_PROMPT, build_pass2_messages
-from compgraph.enrichment.retry import LLMCallResult, call_llm_with_retry
+from compgraph.enrichment.retry import LLMCallResult, call_llm
 from compgraph.enrichment.schemas import Pass2Result
 
 
@@ -24,7 +24,8 @@ async def enrich_posting_pass2(
 
     Calls Sonnet to extract brand and retailer entities.
     Uses content_role_specific from Pass 1 as primary input.
-    Retries on rate limits and transient API errors.
+    Routes through the feature-flagged call_llm dispatcher which selects
+    between Instructor (structured output) and manual JSON parsing paths.
 
     Args:
         client: AsyncAnthropic client instance.
@@ -42,7 +43,7 @@ async def enrich_posting_pass2(
     """
     messages = build_pass2_messages(title, location, content_role_specific, full_text)
 
-    return await call_llm_with_retry(
+    return await call_llm(
         client,
         posting_id=posting_id,
         model=settings.ENRICHMENT_MODEL_PASS2,
