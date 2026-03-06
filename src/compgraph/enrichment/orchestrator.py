@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
+
 from compgraph.config import settings
 from compgraph.db.session import async_session_factory
 from compgraph.enrichment.client import get_anthropic_client
@@ -113,6 +114,10 @@ class EnrichmentRun:
 # In-memory run storage (mirrors scrape orchestrator pattern)
 _runs: dict[uuid.UUID, EnrichmentRun] = {}
 MAX_STORED_ENRICHMENT_RUNS = 10
+
+# Advisory lock key for enrichment mutual exclusion.
+# md5(b"compgraph-enrichment").digest()[:8] as signed bigint.
+ENRICHMENT_ADVISORY_LOCK_KEY = -6_705_433_518_358_464_913
 
 
 def _store_run(run: EnrichmentRun) -> None:
@@ -1154,21 +1159,45 @@ class EnrichmentOrchestrator:
 
         Returns tuple of (pass1_result, pass2_result).
         """
+        from sqlalchemy import text
+
         from compgraph.enrichment.fingerprint import detect_reposts
 
-        pass1_result = await self.run_pass1(run, company_id=company_id, finalize=False)
-        pass2_result = await self.run_pass2(run, company_id=company_id)
+        # Acquire session-level advisory lock for mutual exclusion.
+        # Uses pg_try_advisory_lock (non-blocking): returns false immediately
+        # if another enrichment run holds the lock, instead of waiting.
+        # The lock auto-releases when lock_conn closes.
+        async with async_session_factory() as lock_conn:
+            result = await lock_conn.execute(
+                text("SELECT pg_try_advisory_lock(:key)"),
+                {"key": ENRICHMENT_ADVISORY_LOCK_KEY},
+            )
+            acquired = result.scalar()
 
-        # Run fingerprinting after entity resolution provides brand_slug
-        try:
-            async with async_session_factory() as session:
-                reposts = await detect_reposts(session, company_id=company_id)
-                await session.commit()
-                logger.info("Fingerprinting complete: %d reposts detected", reposts)
-        except Exception:
-            logger.exception("Fingerprinting failed")
-            # Downgrade status since pipeline didn't fully complete
-            if run.status == EnrichmentStatus.SUCCESS:
-                run.status = EnrichmentStatus.PARTIAL
+            if not acquired:
+                logger.warning(
+                    "Enrichment run %s skipped — another run holds the advisory lock",
+                    run.run_id,
+                )
+                run.status = EnrichmentStatus.FAILED
+                run.finished_at = datetime.now(UTC)
+                run.error_summary = "Skipped: concurrent enrichment run in progress"
+                return EnrichResult(), EnrichResult()
 
-        return pass1_result, pass2_result
+            logger.info("Advisory lock acquired for enrichment run %s", run.run_id)
+
+            pass1_result = await self.run_pass1(run, company_id=company_id, finalize=False)
+            pass2_result = await self.run_pass2(run, company_id=company_id)
+
+            # Run fingerprinting after entity resolution provides brand_slug
+            try:
+                async with async_session_factory() as session:
+                    reposts = await detect_reposts(session, company_id=company_id)
+                    await session.commit()
+                    logger.info("Fingerprinting complete: %d reposts detected", reposts)
+            except Exception:
+                logger.exception("Fingerprinting failed")
+                if run.status == EnrichmentStatus.SUCCESS:
+                    run.status = EnrichmentStatus.PARTIAL
+
+            return pass1_result, pass2_result
