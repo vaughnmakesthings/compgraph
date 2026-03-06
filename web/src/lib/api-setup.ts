@@ -1,6 +1,6 @@
 import { client } from '../api-client/client.gen';
 import { toast } from 'sonner';
-import { getAuthToken } from './auth-token';
+import { getAuthToken, waitForAuth } from './auth-token';
 import { API_BASE } from './constants';
 
 let initialized = false;
@@ -14,6 +14,7 @@ export function setupApi() {
   });
 
   client.interceptors.request.use(async (request) => {
+    await waitForAuth();
     const token = getAuthToken();
     if (token) {
       request.headers.set('Authorization', `Bearer ${token}`);
@@ -24,8 +25,7 @@ export function setupApi() {
   client.interceptors.response.use(async (response) => {
     if (response.status === 401) {
       toast.error('Your session expired. Please sign in again.');
-      const { supabase } = await import('./supabase');
-      await supabase?.auth.signOut();
+      window.location.href = '/login';
     }
     return response;
   });

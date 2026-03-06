@@ -64,7 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       prevTokenRef.current = s?.access_token ?? null;
       setLoading(false);
     }).catch(() => {
-      if (mounted) setLoading(false);
+      if (mounted) {
+        setAuthToken(null);
+        setLoading(false);
+      }
     });
 
     const {

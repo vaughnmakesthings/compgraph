@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import { createMockSupabaseAuth, mockSession } from "./mocks/supabase";
-import { setAuthToken } from "@/lib/auth-token";
+import { setAuthToken, resetAuthState } from "@/lib/auth-token";
 import { AuthProvider } from "@/lib/auth-context";
 import { renderWithQueryClient } from "./test-utils";
 
@@ -54,6 +54,7 @@ function renderWithAuth(ui: React.ReactElement) {
 describe("AppLayout auth guard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetAuthState();
     setAuthToken(null);
     vi.stubGlobal(
       "fetch",
