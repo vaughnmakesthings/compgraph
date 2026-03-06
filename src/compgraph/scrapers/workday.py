@@ -282,7 +282,7 @@ async def persist_posting(
     result = await session.execute(posting_stmt)
     posting_id = result.scalar_one()
 
-    today = datetime.now(UTC).date()
+    today = now.date()
     text_hash = _hash_text(raw.full_text) if raw.full_text else None
 
     existing_snapshot = await session.execute(
