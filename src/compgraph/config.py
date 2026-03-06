@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     ENRICHMENT_MODEL_PASS1: str = "claude-haiku-4-5-20251001"
     ENRICHMENT_MODEL_PASS2: str = "claude-sonnet-4-5-20250929"
 
+    # Instructor (structured LLM output via tool_use — replaces manual JSON parsing)
+    USE_INSTRUCTOR: bool = False
+
     # Circuit breaker (consecutive group-level API failures before aborting batch)
     ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD: int = 3
 

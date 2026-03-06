@@ -13,10 +13,11 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast
 import anthropic
 from pydantic import BaseModel, ValidationError
 
-from compgraph.enrichment.client import strip_markdown_fences
+from compgraph.enrichment.client import get_instructor_client, strip_markdown_fences
 
 if TYPE_CHECKING:
     from anthropic.types import MessageParam
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,6 @@ _QUOTA_KEYWORDS = ("usage limit", "spending limit", "quota exceeded", "billing")
 
 
 class ErrorCategory(StrEnum):
-    """Classification of API errors for circuit breaker decisions."""
-
     RATE_LIMIT = "rate_limit"
     QUOTA_EXHAUSTED = "quota_exhausted"
     TRANSIENT = "transient"
@@ -49,8 +48,6 @@ API_FAILURE_CATEGORIES = frozenset(
 
 
 class EnrichmentAPIError(Exception):
-    """Wraps API errors with classification for circuit breaker decisions."""
-
     def __init__(
         self,
         message: str,
@@ -64,8 +61,6 @@ class EnrichmentAPIError(Exception):
 
 @dataclass
 class LLMCallResult(Generic[T]):  # noqa: UP046
-    """Result from an LLM call including token usage."""
-
     result: T
     input_tokens: int
     output_tokens: int
@@ -88,10 +83,6 @@ def _classify_rate_limit_headers(response: object | None, message: str | None) -
 
 
 def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
-    """Classify a rate-limit error as transient or quota-exhausted.
-
-    Works for both RateLimitError and APIStatusError (RateLimitError inherits from it).
-    """
     return _classify_rate_limit_headers(
         getattr(error, "response", None),
         getattr(error, "message", None),
@@ -99,7 +90,6 @@ def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
 
 
 async def _retry_sleep(delay: float) -> None:
-    """Sleep wrapper for retry backoff. Extracted for testability."""
     await asyncio.sleep(delay)
 
 
@@ -114,26 +104,6 @@ async def call_llm_with_retry(  # noqa: UP047
     result_type: type[T],
     pass_label: str,
 ) -> LLMCallResult[T]:
-    """Call Anthropic API with retry logic for rate limits and transient errors.
-
-    Shared by both Pass 1 and Pass 2 enrichment functions.
-
-    Args:
-        client: AsyncAnthropic client instance.
-        posting_id: UUID of the posting (for logging).
-        model: Model ID to use.
-        max_tokens: Maximum tokens in response.
-        system_prompt: System prompt text.
-        messages: Message list for the API call.
-        result_type: Pydantic model class to parse the response into.
-        pass_label: Human-readable label for log messages (e.g. "Pass 1").
-
-    Returns:
-        LLMCallResult containing parsed result and token usage.
-
-    Raises:
-        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
-    """
     typed_messages = cast("list[MessageParam]", messages)
 
     last_error: Exception | None = None
@@ -281,4 +251,178 @@ async def call_llm_with_retry(  # noqa: UP047
         f"{pass_label} failed after {MAX_RETRIES} retries for posting {posting_id}",
         category=last_category,
         original=last_error,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Instructor path — structured LLM output via Anthropic tool_use
+# ---------------------------------------------------------------------------
+
+
+async def call_llm_with_instructor(  # noqa: UP047
+    *,
+    posting_id: uuid.UUID,
+    model: str,
+    max_tokens: int,
+    system_prompt: str,
+    messages: list[dict],
+    result_type: type[T],
+    pass_label: str,
+) -> LLMCallResult[T]:
+    instructor_client = get_instructor_client()
+
+    last_error: Exception | None = None
+    last_category: ErrorCategory = ErrorCategory.TRANSIENT
+    for attempt in range(MAX_RETRIES):
+        try:
+            # Instructor's type stubs expect OpenAI message types, but the Anthropic
+            # adapter accepts Anthropic-format messages at runtime.
+            result, raw_response = await instructor_client.create_with_completion(
+                response_model=result_type,
+                max_retries=2,
+                messages=messages,  # type: ignore[arg-type]
+                model=model,
+                max_tokens=max_tokens,
+                temperature=0.1,
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            )
+
+            input_tokens = 0
+            output_tokens = 0
+            if hasattr(raw_response, "usage") and raw_response.usage:
+                input_tokens = getattr(raw_response.usage, "input_tokens", 0) or 0
+                output_tokens = getattr(raw_response.usage, "output_tokens", 0) or 0
+
+            return LLMCallResult(
+                result=result,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+        except EnrichmentAPIError:
+            raise
+
+        except (ValidationError, json.JSONDecodeError) as parse_err:
+            raise EnrichmentAPIError(
+                f"Failed to parse {pass_label} response for posting {posting_id}: {parse_err}",
+                category=ErrorCategory.PARSE_ERROR,
+                original=parse_err,
+            ) from parse_err
+
+        except anthropic.RateLimitError as e:
+            last_error = e
+            last_category = _classify_rate_limit(e)
+            if attempt < MAX_RETRIES - 1:
+                delay = RATE_LIMIT_BASE_DELAY * (2**attempt)
+                logger.warning(
+                    "Rate limited on posting %s (%s), retrying in %.0fs (attempt %d/%d)",
+                    posting_id,
+                    last_category,
+                    delay,
+                    attempt + 1,
+                    MAX_RETRIES,
+                )
+                await _retry_sleep(delay)
+            else:
+                logger.error("Rate limit exhausted for posting %s (%s)", posting_id, last_category)
+
+        except anthropic.APIStatusError as e:
+            last_error = e
+            if e.status_code in PERMANENT_STATUS_CODES:
+                logger.error(
+                    "Permanent API error %d for posting %s, not retrying",
+                    e.status_code,
+                    posting_id,
+                )
+                raise EnrichmentAPIError(
+                    f"Permanent API error {e.status_code} for posting {posting_id}",
+                    category=ErrorCategory.PERMANENT,
+                    original=e,
+                ) from e
+            if e.status_code == 429:
+                last_category = _classify_rate_limit(e)
+                if attempt < MAX_RETRIES - 1:
+                    delay = RATE_LIMIT_BASE_DELAY * (2**attempt)
+                    logger.warning(
+                        "Rate limited (APIStatusError) on posting %s (%s), "
+                        "retrying in %.0fs (attempt %d/%d)",
+                        posting_id,
+                        last_category,
+                        delay,
+                        attempt + 1,
+                        MAX_RETRIES,
+                    )
+                    await _retry_sleep(delay)
+                else:
+                    logger.error(
+                        "Rate limit exhausted for posting %s (%s)", posting_id, last_category
+                    )
+            else:
+                last_category = ErrorCategory.TRANSIENT
+                if attempt < MAX_RETRIES - 1:
+                    delay = 2.0 * (2**attempt)
+                    logger.warning(
+                        "API error on posting %s: %s, retrying in %.0fs (attempt %d/%d)",
+                        posting_id,
+                        e.status_code,
+                        delay,
+                        attempt + 1,
+                        MAX_RETRIES,
+                    )
+                    await _retry_sleep(delay)
+                else:
+                    logger.error(
+                        "API error exhausted for posting %s: %s", posting_id, e.status_code
+                    )
+
+    raise EnrichmentAPIError(
+        f"{pass_label} failed after {MAX_RETRIES} retries for posting {posting_id}",
+        category=last_category,
+        original=last_error,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Router — feature flag selects Instructor vs manual JSON parsing
+# ---------------------------------------------------------------------------
+
+
+async def call_llm(  # noqa: UP047
+    client: anthropic.AsyncAnthropic,
+    *,
+    posting_id: uuid.UUID,
+    model: str,
+    max_tokens: int,
+    system_prompt: str,
+    messages: list[dict],
+    result_type: type[T],
+    pass_label: str,
+) -> LLMCallResult[T]:
+    from compgraph.config import settings
+
+    if settings.USE_INSTRUCTOR:
+        return await call_llm_with_instructor(
+            posting_id=posting_id,
+            model=model,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+            messages=messages,
+            result_type=result_type,
+            pass_label=pass_label,
+        )
+    return await call_llm_with_retry(
+        client,
+        posting_id=posting_id,
+        model=model,
+        max_tokens=max_tokens,
+        system_prompt=system_prompt,
+        messages=messages,
+        result_type=result_type,
+        pass_label=pass_label,
     )
