@@ -181,6 +181,36 @@ jobs:
         run: uv run pytest tests/ -q --tb=short
         working-directory: eval
 
+  openapi-freshness:
+    name: OpenAPI Spec Freshness
+    needs: changes
+    if: >
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+      - run: uv sync --extra dev
+      - run: uv run python scripts/dump_openapi.py
+      - run: npm ci
+        working-directory: web
+      - run: npm run generate-client
+        working-directory: web
+      - name: Check for uncommitted changes
+        run: git diff --exit-code openapi.json web/src/api-client/
+
   frontend-ci:
     name: Frontend CI
     needs: changes
