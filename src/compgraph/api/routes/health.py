@@ -63,10 +63,9 @@ async def health_check(
     else:
         checks["pipeline"] = "idle"
 
-    # Shutdown status
-    from compgraph.main import shutdown_event
-
-    shutting_down = shutdown_event.is_set()
+    # Shutdown status (access via app.state to avoid circular import with main)
+    shutdown_evt = getattr(request.app.state, "shutdown_event", None)
+    shutting_down = shutdown_evt is not None and shutdown_evt.is_set()
     if shutting_down:
         checks["shutdown"] = "in_progress"
 

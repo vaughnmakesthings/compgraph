@@ -341,13 +341,16 @@ class EnrichmentOrchestrator:
         )
         total_processed = 0
         content_cache: dict[str, Pass1Result] = {}
+        shutdown_interrupted = False
+
+        # Import once outside the loop (deferred to avoid circular import at module level)
+        from compgraph.main import shutdown_event
 
         while True:
             # Check for graceful shutdown signal
-            from compgraph.main import shutdown_event
-
             if shutdown_event.is_set():
                 logger.info("Pass 1 stopping early — shutdown signal received")
+                shutdown_interrupted = True
                 break
 
             async with async_session_factory() as session:
@@ -428,10 +431,14 @@ class EnrichmentOrchestrator:
             result.total_input_tokens,
             result.total_output_tokens,
         )
+        if shutdown_interrupted:
+            run.error_summary = "interrupted by graceful shutdown"
         if state.breaker.tripped:
             run.circuit_breaker_tripped = True
             run.error_summary = f"circuit breaker triggered: {state.breaker.trip_reason}"
         run.finish(result, finalize=finalize)
+        if shutdown_interrupted and run.status == EnrichmentStatus.SUCCESS:
+            run.status = EnrichmentStatus.PARTIAL
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
 
         update_fields: dict[str, object] = {
@@ -763,13 +770,16 @@ class EnrichmentOrchestrator:
         )
         total_processed = 0
         content_cache_p2: dict[str, Pass2Result] = {}
+        shutdown_interrupted = False
+
+        # Import once outside the loop (deferred to avoid circular import at module level)
+        from compgraph.main import shutdown_event
 
         while True:
             # Check for graceful shutdown signal
-            from compgraph.main import shutdown_event
-
             if shutdown_event.is_set():
                 logger.info("Pass 2 stopping early — shutdown signal received")
+                shutdown_interrupted = True
                 break
 
             async with async_session_factory() as session:
@@ -855,10 +865,14 @@ class EnrichmentOrchestrator:
             result.total_input_tokens,
             result.total_output_tokens,
         )
+        if shutdown_interrupted:
+            run.error_summary = "interrupted by graceful shutdown"
         if state.breaker.tripped:
             run.circuit_breaker_tripped = True
             run.error_summary = f"circuit breaker triggered: {state.breaker.trip_reason}"
         run.finish_pass2(result)
+        if shutdown_interrupted and run.status == EnrichmentStatus.SUCCESS:
+            run.status = EnrichmentStatus.PARTIAL
         from compgraph.db.models import EnrichmentRunStatus as DBStatus
 
         final_status = (
