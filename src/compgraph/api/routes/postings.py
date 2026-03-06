@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
+from compgraph.auth.dependencies import require_viewer
 from compgraph.services.posting_service import SORT_BY_ALLOWED, PostingService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_viewer)])
 
 
 class PostingListItem(BaseModel):

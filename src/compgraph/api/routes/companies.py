@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.api.deps import get_db
 from compgraph.api.schemas.companies import CompanyItem
+from compgraph.auth.dependencies import require_viewer
 from compgraph.services.company_service import CompanyService
 
-router = APIRouter(prefix="/companies", tags=["companies"])
+router = APIRouter(prefix="/companies", tags=["companies"], dependencies=[Depends(require_viewer)])
 
 
 @router.get("", response_model=list[CompanyItem])
