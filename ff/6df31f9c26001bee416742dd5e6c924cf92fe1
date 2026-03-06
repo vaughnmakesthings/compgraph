@@ -1,0 +1,41 @@
+src/compgraph/scrapers/rate_limiter.py
+  0ab57401c35788ac 1-60
+src/compgraph/scrapers/icims.py
+  0ab57401c35788ac 20,24-27,229-231,243-245,269-270,343-344,346,396-397,399,408-414,416,464-508
+src/compgraph/config.py
+  0ab57401c35788ac 41-43
+src/compgraph/scrapers/workday.py
+  0ab57401c35788ac 17,25,154,205,274
+pyproject.toml
+  0ab57401c35788ac 22
+src/compgraph/scrapers/proxy.py
+  0ab57401c35788ac 5,7-8,13-14,42-135,137-143,145-214,217-218,222-224,229-240
+src/compgraph/scrapers/jobsync.py
+  0ab57401c35788ac 30,37,175,354
+tests/test_proxy_providers.py
+  0ab57401c35788ac 1-277
+src/compgraph/scrapers/orchestrator.py
+  0ab57401c35788ac 17-18,177-190,467-473,475-490
+tests/test_rate_limiter.py
+  0ab57401c35788ac 1-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "ff6df31f9c26001bee416742dd5e6c924cf92fe1",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 792,
+      "total_deletions": 47,
+      "accepted_lines": 772,
+      "overriden_lines": 0
+    }
+  }
+}
