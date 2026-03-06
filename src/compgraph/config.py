@@ -76,8 +76,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _auth_safety_check(self) -> "Settings":
-        if self.AUTH_DISABLED and self.ENVIRONMENT == "production":
-            raise ValueError("AUTH_DISABLED=true is forbidden when ENVIRONMENT=production")
+        if self.AUTH_DISABLED and self.ENVIRONMENT not in ("test",):
+            raise ValueError(
+                "AUTH_DISABLED=true is only allowed when ENVIRONMENT=test. "
+                f"Current ENVIRONMENT={self.ENVIRONMENT!r}"
+            )
         return self
 
     @model_validator(mode="after")
