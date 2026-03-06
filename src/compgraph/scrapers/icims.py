@@ -334,8 +334,8 @@ class ICIMSAdapter:
 
         config = company.scraper_config or {}
         search_urls: list[str] = config.get("search_urls", [])
-        # #278: configurable concurrency for detail fetches (default 3)
-        detail_concurrency: int = int(config.get("detail_concurrency", 3))
+        # #278: configurable concurrency for detail fetches (default 3, clamped 1-10)
+        detail_concurrency: int = max(1, min(int(config.get("detail_concurrency", 3)), 10))
 
         proxy_kwargs = get_proxy_client_kwargs(settings, domain=_ICIMS_DOMAIN)
         headers = {"User-Agent": random_user_agent()}
@@ -474,7 +474,7 @@ class ICIMSAdapter:
                 detail = await fetcher.fetch_detail(entry["job_id"], entry["slug"])
 
             if detail is not None and distinct_portals > 1 and detail.get("job_id"):
-                portal_host = urlparse(base_url).netloc
+                portal_host = urlparse(base_url).hostname
                 detail["job_id"] = f"{portal_host}:{detail['job_id']}"
 
             return entry, base_url, detail

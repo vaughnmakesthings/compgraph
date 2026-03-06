@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import random
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 if TYPE_CHECKING:
     from compgraph.config import Settings
@@ -120,12 +120,12 @@ class OxylabsProvider:
         self._successes: dict[str, int] = {}
 
     def _build_url(self, domain: str) -> str:
-        user = f"{self._username}-country-{self._country}"
+        user = f"{quote(self._username, safe='')}-country-{quote(self._country, safe='')}"
         if self._sticky_session:
             # Deterministic session ID per domain (numeric, Oxylabs requirement)
             session_id = abs(hash(domain)) % 10_000
             user = f"{user}-sessid-{session_id}"
-        return f"https://{user}:{self._password}@{self._HOST}:{self._PORT}"
+        return f"https://{user}:{quote(self._password, safe='')}@{self._HOST}:{self._PORT}"
 
     async def get_proxy_url(self, domain: str) -> str | None:
         return self._build_url(domain)
@@ -190,20 +190,6 @@ class ProxyPool:
     def report_failure(self, domain: str) -> None:
         if self._provider is not None:
             self._provider.report_failure(domain)
-
-
-# ---------------------------------------------------------------------------
-# Module-level pool (singleton per settings instance)
-# ---------------------------------------------------------------------------
-
-_pool: ProxyPool | None = None
-
-
-def _get_pool(settings: Settings) -> ProxyPool:
-    global _pool
-    if _pool is None:
-        _pool = ProxyPool(settings)
-    return _pool
 
 
 # ---------------------------------------------------------------------------

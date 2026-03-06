@@ -130,6 +130,16 @@ class TestOxylabsProvider:
         provider.report_failure("icims.com")
         assert provider._failures["icims.com"] == 2
 
+    def test_special_chars_in_credentials_are_escaped(self) -> None:
+        """Credentials with URL-unsafe characters must be percent-encoded."""
+        provider = OxylabsProvider(username="user@org", password="p@ss:w/rd")
+        url = provider._build_url("icims.com")
+        # @ and : must not appear unescaped in the userinfo portion
+        assert "user%40org" in url
+        assert "p%40ss%3Aw%2Frd" in url
+        # The host portion should still be present and unescaped
+        assert "@pr.oxylabs.io:7777" in url
+
 
 # ---------------------------------------------------------------------------
 # ProxyPool
