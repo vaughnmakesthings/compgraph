@@ -1,0 +1,23 @@
+infra/deploy-ci.sh
+  48074118b48372ab 14-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "4b730ade0d36ae0f8dd8a394510a4d09e61c809f",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 44,
+      "total_deletions": 20,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    }
+  }
+}
