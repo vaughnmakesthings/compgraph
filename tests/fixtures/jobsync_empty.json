@@ -1,0 +1,15 @@
+{
+  "featured_jobs": [],
+  "filters": {},
+  "jobs": [],
+  "meta": {
+    "query": "",
+    "agency": "premium"
+  },
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 0,
+    "total_count": 0,
+    "page_size": 14
+  }
+}

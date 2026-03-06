@@ -1,0 +1,73 @@
+{
+  "featured_jobs": [],
+  "filters": {
+    "agency": [
+      {
+        "label": "Premium",
+        "value": "premium",
+        "count": 2932
+      },
+      {
+        "label": "Product Connections",
+        "value": "product-connections",
+        "count": 1756
+      },
+      {
+        "label": "Acosta",
+        "value": "acosta",
+        "count": 995
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "guid": "abc123def456",
+      "reqid": "REQ-001",
+      "title_exact": "Retail Sales Merchandiser",
+      "city_exact": "Chicago",
+      "state_short": "IL",
+      "country_exact": "United States",
+      "description": "<p>Join our team as a Retail Sales Merchandiser in Chicago.</p>",
+      "date_added": "2026-02-15T00:00:00",
+      "date_updated": "2026-03-01T00:00:00",
+      "company_exact": "Acosta Group",
+      "GeoLocation": "41.8781,-87.6298"
+    },
+    {
+      "guid": "def789ghi012",
+      "reqid": "REQ-002",
+      "title_exact": "Brand Ambassador",
+      "city_exact": "New York",
+      "state_short": "NY",
+      "country_exact": "United States",
+      "description": "<p>Brand Ambassador for Premium brands across New York retail stores.</p>",
+      "date_added": "2026-02-20T00:00:00",
+      "date_updated": "2026-03-02T00:00:00",
+      "company_exact": "Acosta Group",
+      "GeoLocation": "40.7128,-74.0060"
+    },
+    {
+      "guid": "jkl345mno678",
+      "reqid": "REQ-003",
+      "title_exact": "Territory Sales Manager",
+      "city_exact": "Los Angeles",
+      "state_short": "CA",
+      "country_exact": "United States",
+      "description": "<p>Lead sales representatives across greater Los Angeles.</p>",
+      "date_added": "2026-02-25T00:00:00",
+      "date_updated": "2026-03-03T00:00:00",
+      "company_exact": "Acosta Group",
+      "GeoLocation": "34.0522,-118.2437"
+    }
+  ],
+  "meta": {
+    "query": "",
+    "agency": "premium"
+  },
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 3,
+    "total_count": 42,
+    "page_size": 14
+  }
+}
