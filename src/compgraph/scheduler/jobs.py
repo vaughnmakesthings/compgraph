@@ -224,6 +224,26 @@ async def pipeline_job() -> None:
         logger.warning("[AGGREGATE] Skipping aggregation — enrichment failed")
         agg_succeeded = False
 
+    # --- Alert generation phase ---
+    if agg_succeeded:
+        with sentry_sdk.start_span(op="pipeline.alerts", name="Generate alerts"):
+            logger.info("[ALERTS] Starting alert generation")
+            try:
+                from compgraph.aggregation.alerts import generate_alerts
+
+                alert_counts = await generate_alerts()
+                total_alerts = sum(alert_counts.values())
+                sentry_sdk.set_context(
+                    "pipeline_alerts",
+                    {"phase": "alerts", "counts": alert_counts, "total": total_alerts},
+                )
+                logger.info("[ALERTS] Alert generation complete: %d alerts", total_alerts)
+            except Exception:
+                logger.exception("[ALERTS] Alert generation failed")
+                sentry_sdk.capture_exception()
+    else:
+        logger.warning("[ALERTS] Skipping alert generation — aggregation failed")
+
     _last_pipeline_finished_at = datetime.now(UTC)
     _last_pipeline_success = scrape_succeeded and enrich_succeeded and agg_succeeded
     logger.info("[PIPELINE] Scheduled pipeline job complete")

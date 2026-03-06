@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 
 from compgraph.api.routes.admin import router as admin_router
 from compgraph.api.routes.aggregation import router as aggregation_router
+from compgraph.api.routes.alerts import router as alerts_router
 from compgraph.api.routes.companies import (
     router as companies_router,
 )
@@ -116,6 +117,7 @@ v1_router.include_router(companies_router)
 v1_router.include_router(postings_router, prefix="/postings", tags=["postings"])
 v1_router.include_router(eval_router, prefix="/eval", tags=["eval"])
 v1_router.include_router(admin_router)
+v1_router.include_router(alerts_router)
 
 app.include_router(health_router)
 app.include_router(v1_router)
