@@ -1,9 +1,10 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from compgraph.geocoding import (
     _geocode_cache,
+    _geocode_sync,
     _get_geolocator,
     _normalize_location,
     compute_h3_index,
@@ -130,3 +131,77 @@ def test_compute_h3_index_distant_different_cell():
     nyc = compute_h3_index(40.7128, -74.0060)
     la = compute_h3_index(34.0522, -118.2437)
     assert nyc != la
+
+
+@patch("geopy.geocoders.Nominatim")
+def test_get_geolocator_returns_nominatim(mock_nominatim):
+    """Verify _get_geolocator creates a Nominatim instance with correct user_agent."""
+    mock_instance = MagicMock()
+    mock_nominatim.return_value = mock_instance
+
+    result = _get_geolocator()
+
+    assert result is mock_instance
+    mock_nominatim.assert_called_once_with(user_agent="compgraph-geocoder")
+
+
+@patch("geopy.geocoders.Nominatim")
+def test_get_geolocator_cached_singleton(mock_nominatim):
+    """Verify _get_geolocator returns same instance on repeated calls."""
+    mock_nominatim.return_value = MagicMock()
+
+    first = _get_geolocator()
+    second = _get_geolocator()
+
+    assert first is second
+    mock_nominatim.assert_called_once()
+
+
+@patch("compgraph.geocoding._get_geolocator")
+def test_geocode_sync_returns_coords_when_found(mock_get_geo):
+    """Verify _geocode_sync returns (lat, lon) tuple when location is found."""
+    mock_location = MagicMock()
+    mock_location.latitude = 40.7128
+    mock_location.longitude = -74.0060
+    mock_geolocator = MagicMock()
+    mock_geolocator.geocode.return_value = mock_location
+    mock_get_geo.return_value = mock_geolocator
+
+    result = _geocode_sync("New York, NY")
+
+    assert result == (40.7128, -74.0060)
+    mock_geolocator.geocode.assert_called_once_with("New York, NY", timeout=10)
+
+
+@patch("compgraph.geocoding._get_geolocator")
+def test_geocode_sync_returns_none_when_not_found(mock_get_geo):
+    """Verify _geocode_sync returns None when geocoding finds no result."""
+    mock_geolocator = MagicMock()
+    mock_geolocator.geocode.return_value = None
+    mock_get_geo.return_value = mock_geolocator
+
+    result = _geocode_sync("xyznonexistent123")
+
+    assert result is None
+
+
+@patch("compgraph.geocoding._geocode_sync")
+async def test_geocode_location_cache_eviction(mock_sync):
+    """Verify the cache is cleared when it exceeds _MAX_CACHE_SIZE."""
+    from compgraph.geocoding import _MAX_CACHE_SIZE, geocode_location
+
+    mock_sync.return_value = (1.0, 2.0)
+
+    # Fill cache to max
+    for i in range(_MAX_CACHE_SIZE):
+        _geocode_cache[f"location_{i}"] = (float(i), float(i))
+
+    assert len(_geocode_cache) == _MAX_CACHE_SIZE
+
+    # Next geocode call should trigger cache clear
+    result = await geocode_location("new location")
+
+    assert result == (1.0, 2.0)
+    # Cache was cleared, then new entry added
+    assert len(_geocode_cache) == 1
+    assert "new location" in _geocode_cache

@@ -81,12 +81,15 @@ async def test_generate_embeddings_batch(mock_get_model):
     assert all(isinstance(v, list) for v in results)
 
 
-@patch("compgraph.enrichment.embeddings._get_model")
-async def test_model_getter_called_per_invocation(mock_get_model):
-    mock_get_model.return_value = _make_mock_model()
+@patch("sentence_transformers.SentenceTransformer")
+async def test_model_is_loaded_only_once(mock_sentence_transformer):
+    """Verify that the model is a singleton loaded only once via lru_cache."""
+    mock_model = _make_mock_model()
+    mock_sentence_transformer.return_value = mock_model
     from compgraph.enrichment.embeddings import generate_embedding
 
     await generate_embedding("first call")
     await generate_embedding("second call")
 
-    assert mock_get_model.call_count == 2
+    mock_sentence_transformer.assert_called_once_with("all-MiniLM-L6-v2")
+    assert mock_model.encode.call_count == 2

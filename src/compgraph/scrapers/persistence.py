@@ -73,9 +73,6 @@ async def persist_posting(
     result = await session.execute(posting_stmt)
     posting_id = result.scalar_one()
 
-    if raw.location:
-        await _maybe_geocode_posting(session, posting_id, raw.location)
-
     today = now.date()
 
     # Early-return if we already wrote today's snapshot (idempotent within a day)
@@ -114,7 +111,14 @@ async def persist_posting(
         .on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
     )
     snapshot_result = await session.execute(snapshot_stmt)
-    return snapshot_result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
+    inserted: bool = snapshot_result.rowcount > 0  # type: ignore[attr-defined]
+
+    # Geocode after snapshot work to avoid holding session open during HTTP call
+    # on idempotent repeat calls. Backfill script handles historical data.
+    if inserted and raw.location:
+        await _maybe_geocode_posting(session, posting_id, raw.location)
+
+    return inserted
 
 
 async def _maybe_geocode_posting(
