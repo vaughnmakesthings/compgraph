@@ -1,0 +1,42 @@
+src/compgraph/aggregation/agency_overlap.py
+  d3e3826caa4ddace 4,70
+src/compgraph/aggregation/coverage_gaps.py
+  d3e3826caa4ddace 4,74
+src/compgraph/scrapers/workday.py
+  d3e3826caa4ddace 285
+src/compgraph/aggregation/brand_churn.py
+  d3e3826caa4ddace 4,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "ccaf3d891931a74cf14c5ee5cabda9a4fc39df5e",
+  "prompts": {
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 248,
+      "overriden_lines": 0
+    },
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 8,
+      "accepted_lines": 44,
+      "overriden_lines": 0
+    }
+  }
+}
