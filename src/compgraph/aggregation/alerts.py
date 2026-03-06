@@ -54,7 +54,12 @@ async def _insert_alerts(session: AsyncSession, alerts: list[dict]) -> int:
 
 
 async def _detect_velocity_spikes(session: AsyncSession) -> int:
-    """Detect >30% increase in active postings vs trailing 30-day average."""
+    """Detect >30% increase in active postings vs trailing 30-day average.
+
+    Uses the aggregate date as triggered_at (not wall-clock time) so that
+    reruns against the same data produce the same dedup key and are skipped.
+    Requires at least 7 days of trailing data to avoid noisy alerts on new companies.
+    """
     sql = text("""
         WITH latest_date AS (
             SELECT MAX(date) AS max_date
@@ -74,8 +79,9 @@ async def _detect_velocity_spikes(session: AsyncSession) -> int:
               AND date >= (SELECT max_date FROM latest_date) - 30
               AND date < (SELECT max_date FROM latest_date)
             GROUP BY company_id
+            HAVING COUNT(*) >= 7
         )
-        SELECT l.company_id, l.active_postings, t.avg_active
+        SELECT l.company_id, l.active_postings, l.date AS spike_date, t.avg_active
         FROM latest l
         JOIN trailing t ON l.company_id = t.company_id
         WHERE t.avg_active > 0
@@ -83,14 +89,13 @@ async def _detect_velocity_spikes(session: AsyncSession) -> int:
     """)
     result = await session.execute(sql)
     rows = result.all()
-    now = datetime.now(UTC)
     alerts = [
         {
             "id": uuid.uuid4(),
             "alert_type": "velocity_spike",
             "company_id": row.company_id,
             "brand_id": None,
-            "triggered_at": now,
+            "triggered_at": datetime.combine(row.spike_date, datetime.min.time(), tzinfo=UTC),
             "metadata_json": {
                 "active_postings": row.active_postings,
                 "avg_30d": round(float(row.avg_active), 1),
@@ -106,23 +111,24 @@ async def _detect_velocity_spikes(session: AsyncSession) -> int:
 
 
 async def _detect_new_brands(session: AsyncSession) -> int:
-    """Detect brands appearing for the first time at a company (first_seen within last 7 days)."""
+    """Detect brands appearing for the first time at a company (first_seen within last 7 days).
+
+    Uses first_seen_at as triggered_at so that reruns produce the same dedup key.
+    """
     sql = text("""
         SELECT company_id, brand_id, first_seen_at
         FROM agg_brand_timeline
         WHERE first_seen_at >= NOW() - INTERVAL '7 days'
-          AND total_postings_all_time <= 3
     """)
     result = await session.execute(sql)
     rows = result.all()
-    now = datetime.now(UTC)
     alerts = [
         {
             "id": uuid.uuid4(),
             "alert_type": "new_brand",
             "company_id": row.company_id,
             "brand_id": row.brand_id,
-            "triggered_at": now,
+            "triggered_at": row.first_seen_at,
             "metadata_json": {
                 "first_seen_at": row.first_seen_at.isoformat() if row.first_seen_at else None,
             },
@@ -133,7 +139,10 @@ async def _detect_new_brands(session: AsyncSession) -> int:
 
 
 async def _detect_brand_lost(session: AsyncSession) -> int:
-    """Detect brands that had 30+ day presence but now have zero active postings."""
+    """Detect brands that had 30+ day presence but now have zero active postings.
+
+    Uses last_seen_at as triggered_at so that reruns produce the same dedup key.
+    """
     sql = text("""
         SELECT company_id, brand_id, first_seen_at, last_seen_at,
                total_postings_all_time, peak_active_postings
@@ -146,14 +155,13 @@ async def _detect_brand_lost(session: AsyncSession) -> int:
     """)
     result = await session.execute(sql)
     rows = result.all()
-    now = datetime.now(UTC)
     alerts = [
         {
             "id": uuid.uuid4(),
             "alert_type": "brand_lost",
             "company_id": row.company_id,
             "brand_id": row.brand_id,
-            "triggered_at": now,
+            "triggered_at": row.last_seen_at,
             "metadata_json": {
                 "first_seen_at": row.first_seen_at.isoformat() if row.first_seen_at else None,
                 "last_seen_at": row.last_seen_at.isoformat() if row.last_seen_at else None,

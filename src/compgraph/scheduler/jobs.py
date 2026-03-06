@@ -247,6 +247,12 @@ async def pipeline_job() -> None:
         logger.warning("[AGGREGATE] Skipping aggregation — enrichment failed")
         agg_succeeded = False
 
+    if shutdown_event.is_set():
+        logger.warning("[PIPELINE] Shutdown signal received — skipping alert generation")
+        _last_pipeline_finished_at = datetime.now(UTC)
+        _last_pipeline_success = False
+        return
+
     # --- Alert generation phase ---
     alerts_succeeded = True
     if agg_succeeded:
