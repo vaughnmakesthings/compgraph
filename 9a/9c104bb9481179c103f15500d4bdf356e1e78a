@@ -1,0 +1,23 @@
+web/src/test/middleware.test.ts
+  d3e3826caa4ddace 20,25,67,78,91,102,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "9a9c104bb9481179c103f15500d4bdf356e1e78a",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  }
+}
