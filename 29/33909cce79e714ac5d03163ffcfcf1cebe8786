@@ -1,0 +1,27 @@
+web/src/app/(app)/eval/error.tsx
+  d3e3826caa4ddace 51
+web/src/app/(auth)/error.tsx
+  d3e3826caa4ddace 20,47
+web/src/app/(app)/error.tsx
+  d3e3826caa4ddace 51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "2933909cce79e714ac5d03163ffcfcf1cebe8786",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
