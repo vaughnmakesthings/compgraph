@@ -1,0 +1,27 @@
+web/src/test/components/section-error-boundary.test.tsx
+  c482aeaa56739ace 1-123
+web/src/app/(app)/page.tsx
+  c482aeaa56739ace 15,212-213,258-259,261,309
+web/src/components/ui/section-error-boundary.tsx
+  c482aeaa56739ace 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "1ee0aada8da60af1008ca1efdc416773bd054ac9",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 256,
+      "total_deletions": 46,
+      "accepted_lines": 212,
+      "overriden_lines": 0
+    }
+  }
+}
