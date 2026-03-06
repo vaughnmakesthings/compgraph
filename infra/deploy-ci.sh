@@ -46,7 +46,7 @@ systemctl reload caddy
 
 # ── 5. Health check ──
 echo "[5/5] Waiting for startup..."
-sleep 5
+sleep 2
 
 ATTEMPTS=0
 MAX_ATTEMPTS=6
@@ -59,8 +59,8 @@ while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
         exit 0
     fi
     ATTEMPTS=$((ATTEMPTS + 1))
-    echo "  Health check attempt $ATTEMPTS/$MAX_ATTEMPTS failed, retrying in 5s..."
-    sleep 5
+    echo "  Health check attempt $ATTEMPTS/$MAX_ATTEMPTS failed, retrying in 3s..."
+    sleep 3
 done
 
 echo ""
