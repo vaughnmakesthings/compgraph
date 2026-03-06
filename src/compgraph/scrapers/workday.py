@@ -21,7 +21,6 @@ WORKDAY_PAGE_SIZE = 20
 SEARCH_DELAY_SECONDS = 1.0
 DETAIL_DELAY_SECONDS = 0.5
 DETAIL_CONCURRENCY = 5
-CIRCUIT_BREAKER_THRESHOLD = 3
 
 
 @dataclass
@@ -112,7 +111,9 @@ class WorkdayFetcher:
     search_delay: float = SEARCH_DELAY_SECONDS
     detail_delay: float = DETAIL_DELAY_SECONDS
     detail_concurrency: int = DETAIL_CONCURRENCY
-    circuit_breaker_threshold: int = CIRCUIT_BREAKER_THRESHOLD
+    circuit_breaker_threshold: int = field(
+        default_factory=lambda: settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD
+    )
     _consecutive_failures: int = field(default=0, init=False, repr=False)
     _circuit_open: bool = field(default=False, init=False, repr=False)
     pages_fetched: int = field(default=0, init=False, repr=False)
