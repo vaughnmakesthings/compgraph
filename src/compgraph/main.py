@@ -47,7 +47,7 @@ if settings.SENTRY_DSN:
         profiles_sample_rate=0.1 if settings.ENVIRONMENT == "production" else 1.0,
         send_default_pii=False,
         integrations=[
-            AnthropicIntegration(include_prompts=True),
+            AnthropicIntegration(include_prompts=False),
             FastApiIntegration(),
             SqlalchemyIntegration(),
             HttpxIntegration(),
