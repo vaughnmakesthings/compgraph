@@ -1,0 +1,41 @@
+web/src/app/(app)/error.tsx
+  d3e3826caa4ddace 1-83
+web/src/app/(app)/not-found.tsx
+  d3e3826caa4ddace 1-47
+web/src/test/error-boundaries.test.tsx
+  d3e3826caa4ddace 1-126
+web/src/app/(auth)/not-found.tsx
+  d3e3826caa4ddace 1-50
+web/src/app/not-found.tsx
+  d3e3826caa4ddace 1-50
+web/src/app/(auth)/error.tsx
+  d3e3826caa4ddace 1-66
+web/src/app/(app)/loading.tsx
+  d3e3826caa4ddace 1-25
+web/src/app/(auth)/loading.tsx
+  d3e3826caa4ddace 1-15
+web/src/app/(app)/eval/loading.tsx
+  d3e3826caa4ddace 1-18
+web/src/app/(app)/eval/error.tsx
+  d3e3826caa4ddace 1-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "69cfd45302ef210c184674871a96fe5c21cbbd22",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 563,
+      "total_deletions": 0,
+      "accepted_lines": 563,
+      "overriden_lines": 0
+    }
+  }
+}
