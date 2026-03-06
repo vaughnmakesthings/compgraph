@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 import re
-import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 import httpx
-from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.config import settings
-from compgraph.db.models import Company, Posting, PostingSnapshot
+from compgraph.db.models import Company
 from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.persistence import persist_posting
 from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
@@ -101,10 +98,6 @@ _EXTERNAL_PATH_PREFIX = re.compile(r"^(?:[a-z]{2}-[A-Z]{2}/)?job/")
 def _build_detail_url(base_url: str, tenant: str, site: str, external_path: str) -> str:
     cleaned = _EXTERNAL_PATH_PREFIX.sub("", external_path.lstrip("/"))
     return f"{base_url}/wday/cxs/{tenant}/{site}/job/{cleaned}"
-
-
-def _hash_text(text: str) -> str:
-    return hashlib.sha256(text.encode()).hexdigest()
 
 
 class CircuitBreakerOpen(Exception):
@@ -247,76 +240,6 @@ class WorkdayFetcher:
             logger.warning("Detail fetch had %d errors out of %d", len(errors), len(external_paths))
 
         return results
-
-
-async def persist_posting(
-    session: AsyncSession,
-    company_id: uuid.UUID,
-    raw: RawPosting,
-    first_seen_at: datetime | None = None,
-) -> bool:
-    now = datetime.now(UTC)
-    fingerprint = _hash_text(raw.full_text) if raw.full_text else None
-
-    posting_stmt = (
-        pg_insert(Posting)
-        .values(
-            id=uuid.uuid4(),
-            company_id=company_id,
-            external_job_id=raw.external_job_id,
-            fingerprint_hash=fingerprint,
-            first_seen_at=first_seen_at or now,
-            last_seen_at=now,
-            is_active=True,
-            times_reposted=0,
-        )
-        .on_conflict_do_update(
-            index_elements=["company_id", "external_job_id"],
-            set_={
-                "last_seen_at": now,
-                "is_active": True,
-            },
-        )
-        .returning(Posting.id)
-    )
-    result = await session.execute(posting_stmt)
-    posting_id = result.scalar_one()
-
-    today = now.date()
-    text_hash = _hash_text(raw.full_text) if raw.full_text else None
-
-    existing_snapshot = await session.execute(
-        select(PostingSnapshot.id).where(
-            PostingSnapshot.posting_id == posting_id,
-            PostingSnapshot.snapshot_date == today,
-        )
-    )
-    if existing_snapshot.scalar_one_or_none() is not None:
-        return False
-
-    prev_snapshot = await session.execute(
-        select(PostingSnapshot.full_text_hash)
-        .where(PostingSnapshot.posting_id == posting_id)
-        .order_by(PostingSnapshot.snapshot_date.desc())
-        .limit(1)
-    )
-    prev_hash = prev_snapshot.scalar_one_or_none()
-    content_changed = prev_hash is not None and prev_hash != text_hash
-
-    snapshot_stmt = pg_insert(PostingSnapshot).values(
-        id=uuid.uuid4(),
-        posting_id=posting_id,
-        snapshot_date=today,
-        title_raw=raw.title,
-        location_raw=raw.location,
-        url=raw.url,
-        full_text_raw=raw.full_text,
-        full_text_hash=text_hash,
-        content_changed=content_changed,
-    )
-    snapshot_stmt = snapshot_stmt.on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
-    result = await session.execute(snapshot_stmt)
-    return result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
 
 
 class WorkdayAdapter:

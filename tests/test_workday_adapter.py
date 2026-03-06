@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from compgraph.scrapers.persistence import _hash_text, persist_posting
 from compgraph.scrapers.workday import (
     WORKDAY_PAGE_SIZE,
     CircuitBreakerOpen,
@@ -16,10 +17,8 @@ from compgraph.scrapers.workday import (
     SearchResult,
     WorkdayAdapter,
     WorkdayFetcher,
-    _hash_text,
     parse_detail_response,
     parse_search_response,
-    persist_posting,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"

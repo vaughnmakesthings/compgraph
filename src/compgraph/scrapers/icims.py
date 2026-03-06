@@ -1,24 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
 import random
 import re
-import uuid
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.config import settings
-from compgraph.db.models import Company, Posting, PostingSnapshot
-from compgraph.scrapers.base import ScrapeResult
+from compgraph.db.models import Company
+from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.persistence import persist_posting
 from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 logger = logging.getLogger(__name__)
@@ -301,78 +298,24 @@ class ICIMSFetcher:
             )
 
 
-async def persist_posting(
-    session: AsyncSession,
+def _build_posting_url(
     raw: dict[str, str | int | None],
-    company_id: uuid.UUID,
     base_url: str,
     url_path: str | None = None,
-) -> bool:
-    external_job_id = raw.get("job_id")
-    if not external_job_id:
-        logger.warning("Skipping posting with no job_id")
-        return False
-
-    full_text = str(raw.get("description", ""))
-    full_text_hash = hashlib.sha256(full_text.encode()).hexdigest()
-
-    now = datetime.now(UTC)
-
-    posting_result = await session.execute(
-        pg_insert(Posting)
-        .values(
-            id=uuid.uuid4(),
-            company_id=company_id,
-            external_job_id=str(external_job_id),
-            first_seen_at=now,
-            last_seen_at=now,
-            is_active=True,
-        )
-        .on_conflict_do_update(
-            index_elements=["company_id", "external_job_id"],
-            set_={"last_seen_at": now, "is_active": True},
-        )
-        .returning(Posting.id)
-    )
-    posting_id = posting_result.scalar_one()
-
-    snap_result = await session.execute(
-        select(PostingSnapshot.full_text_hash)
-        .where(PostingSnapshot.posting_id == posting_id)
-        .order_by(PostingSnapshot.created_at.desc())
-        .limit(1)
-    )
-    last_hash = snap_result.scalar_one_or_none()
-    content_changed = last_hash is not None and last_hash != full_text_hash
-
+) -> str:
+    """Build the canonical URL for an iCIMS posting."""
     raw_url = raw.get("url") or ""
-    if raw_url and not str(raw_url).startswith("http"):
-        raw_url = f"{base_url}{raw_url}"
-    url = raw_url or (
-        f"{base_url}{url_path}" if url_path else f"{base_url}/jobs/{external_job_id}/job"
-    )
-
-    snapshot_date = datetime.now(UTC).date()
-    stmt = pg_insert(PostingSnapshot).values(
-        id=uuid.uuid4(),
-        posting_id=posting_id,
-        snapshot_date=snapshot_date,
-        title_raw=str(raw.get("title", "")),
-        location_raw=str(raw.get("location", "")),
-        url=str(url),
-        full_text_raw=full_text,
-        full_text_hash=full_text_hash,
-        content_changed=content_changed,
-    )
-    stmt = stmt.on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
-    result = await session.execute(stmt)
-
-    return result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
+    if raw_url and str(raw_url).startswith("http"):
+        return str(raw_url)
+    if raw_url:
+        return f"{base_url}{raw_url}"
+    if url_path:
+        return f"{base_url}{url_path}"
+    return f"{base_url}/jobs/{raw.get('job_id', '')}/job"
 
 
 def _base_url_from_search_url(search_url: str) -> str:
     """Extract scheme + host from a full search URL for use as base_url."""
-
     parsed = urlparse(search_url)
     return f"{parsed.scheme}://{parsed.netloc}"
 
@@ -466,15 +409,23 @@ class ICIMSAdapter:
                         portal_host = urlparse(base_url).netloc
                         detail["job_id"] = f"{portal_host}:{detail['job_id']}"
 
+                    external_job_id = detail.get("job_id")
+                    if not external_job_id:
+                        logger.warning("Skipping posting with no job_id for %s", company.slug)
+                        continue
+
+                    url = _build_posting_url(detail, base_url, entry.get("url_path"))
+                    raw = RawPosting(
+                        external_job_id=str(external_job_id),
+                        title=str(detail.get("title", "")),
+                        location=str(detail.get("location", "")),
+                        url=url,
+                        full_text=str(detail.get("description", "")),
+                    )
+
                     try:
                         async with session.begin_nested():
-                            persisted = await persist_posting(
-                                session,
-                                detail,
-                                company.id,
-                                base_url,
-                                url_path=entry.get("url_path"),
-                            )
+                            persisted = await persist_posting(session, company.id, raw)
                         if persisted:
                             result.snapshots_created += 1
                     except Exception as exc:
