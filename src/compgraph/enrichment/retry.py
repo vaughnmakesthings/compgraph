@@ -11,6 +11,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
 import anthropic
+from instructor.core import InstructorRetryException
 from pydantic import BaseModel, ValidationError
 
 from compgraph.enrichment.client import get_instructor_client, strip_markdown_fences
@@ -34,6 +35,8 @@ _QUOTA_KEYWORDS = ("usage limit", "spending limit", "quota exceeded", "billing")
 
 
 class ErrorCategory(StrEnum):
+    """Classification of API errors for circuit breaker decisions."""
+
     RATE_LIMIT = "rate_limit"
     QUOTA_EXHAUSTED = "quota_exhausted"
     TRANSIENT = "transient"
@@ -48,6 +51,8 @@ API_FAILURE_CATEGORIES = frozenset(
 
 
 class EnrichmentAPIError(Exception):
+    """Wraps API errors with classification for circuit breaker decisions."""
+
     def __init__(
         self,
         message: str,
@@ -61,6 +66,8 @@ class EnrichmentAPIError(Exception):
 
 @dataclass
 class LLMCallResult(Generic[T]):  # noqa: UP046
+    """Result from an LLM call including token usage."""
+
     result: T
     input_tokens: int
     output_tokens: int
@@ -83,6 +90,10 @@ def _classify_rate_limit_headers(response: object | None, message: str | None) -
 
 
 def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
+    """Classify a rate-limit error as transient or quota-exhausted.
+
+    Works for both RateLimitError and APIStatusError (RateLimitError inherits from it).
+    """
     return _classify_rate_limit_headers(
         getattr(error, "response", None),
         getattr(error, "message", None),
@@ -90,6 +101,7 @@ def _classify_rate_limit(error: anthropic.APIStatusError) -> ErrorCategory:
 
 
 async def _retry_sleep(delay: float) -> None:
+    """Sleep wrapper for retry backoff. Extracted for testability."""
     await asyncio.sleep(delay)
 
 
@@ -104,6 +116,26 @@ async def call_llm_with_retry(  # noqa: UP047
     result_type: type[T],
     pass_label: str,
 ) -> LLMCallResult[T]:
+    """Call Anthropic API with retry logic for rate limits and transient errors.
+
+    Shared by both Pass 1 and Pass 2 enrichment functions.
+
+    Args:
+        client: AsyncAnthropic client instance.
+        posting_id: UUID of the posting (for logging).
+        model: Model ID to use.
+        max_tokens: Maximum tokens in response.
+        system_prompt: System prompt text.
+        messages: Message list for the API call.
+        result_type: Pydantic model class to parse the response into.
+        pass_label: Human-readable label for log messages (e.g. "Pass 1").
+
+    Returns:
+        LLMCallResult containing parsed result and token usage.
+
+    Raises:
+        EnrichmentAPIError: After exhausting retries or on permanent/parse errors.
+    """
     typed_messages = cast("list[MessageParam]", messages)
 
     last_error: Exception | None = None
@@ -314,6 +346,14 @@ async def call_llm_with_instructor(  # noqa: UP047
                 category=ErrorCategory.PARSE_ERROR,
                 original=parse_err,
             ) from parse_err
+
+        except InstructorRetryException as instructor_err:
+            raise EnrichmentAPIError(
+                f"Instructor validation retries exhausted for posting "
+                f"{posting_id}: {instructor_err}",
+                category=ErrorCategory.PARSE_ERROR,
+                original=instructor_err,
+            ) from instructor_err
 
         except anthropic.RateLimitError as e:
             last_error = e

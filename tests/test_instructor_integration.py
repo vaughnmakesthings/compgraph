@@ -344,6 +344,41 @@ class TestInstructorErrorHandling:
 
         assert exc_info.value.category == ErrorCategory.QUOTA_EXHAUSTED
 
+    @pytest.mark.asyncio
+    async def test_instructor_retry_exception_classified_as_parse_error(self):
+        """InstructorRetryException from exhausted validation retries is classified as PARSE_ERROR."""
+        from instructor.core import InstructorRetryException
+
+        instructor_err = InstructorRetryException(
+            "Validation failed after retries",
+            n_attempts=3,
+            total_usage=0,
+        )
+
+        mock_client = AsyncMock()
+        mock_client.create_with_completion = AsyncMock(side_effect=instructor_err)
+
+        with (
+            patch("compgraph.enrichment.retry.get_instructor_client", return_value=mock_client),
+            patch("compgraph.enrichment.retry._retry_sleep", new_callable=AsyncMock),
+            pytest.raises(EnrichmentAPIError) as exc_info,
+        ):
+            await call_llm_with_instructor(
+                posting_id=uuid.uuid4(),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=2048,
+                system_prompt="Test prompt",
+                messages=[{"role": "user", "content": "test"}],
+                result_type=Pass1Result,
+                pass_label="Pass 1",
+            )
+
+        assert exc_info.value.category == ErrorCategory.PARSE_ERROR
+        assert "Instructor validation retries exhausted" in str(exc_info.value)
+        assert exc_info.value.original is instructor_err
+        # Must NOT retry at the outer level — only 1 call to the instructor client
+        assert mock_client.create_with_completion.await_count == 1
+
 
 # ---------------------------------------------------------------------------
 # Feature flag routing — call_llm()
