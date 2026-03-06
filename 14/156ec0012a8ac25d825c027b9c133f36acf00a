@@ -1,0 +1,25 @@
+docs/references/prd-task-decomposition.md
+  ee5eb0865e4e6498 1-190
+docs/context-packs.md
+  ee5eb0865e4e6498 459
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "14156ec0012a8ac25d825c027b9c133f36acf00a",
+  "prompts": {
+    "ee5eb0865e4e6498": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bee1c483-c46f-44da-84ae-866577b38f99",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 0,
+      "accepted_lines": 191,
+      "overriden_lines": 0
+    }
+  }
+}
