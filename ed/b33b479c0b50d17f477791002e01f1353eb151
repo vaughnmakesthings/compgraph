@@ -1,0 +1,29 @@
+src/compgraph/enrichment/retry.py
+  0ab57401c35788ac 14,38-39,54-55,69-70,93-96,104,119-138,350-357
+src/compgraph/enrichment/client.py
+  0ab57401c35788ac 23-26,32-35,52
+tests/test_instructor_integration.py
+  0ab57401c35788ac 347-381
+pyproject.toml
+  0ab57401c35788ac 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "edb33b479c0b50d17f477791002e01f1353eb151",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 85,
+      "total_deletions": 1,
+      "accepted_lines": 85,
+      "overriden_lines": 0
+    }
+  }
+}
