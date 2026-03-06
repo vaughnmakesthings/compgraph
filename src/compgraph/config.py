@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     SCHEDULER_TIMEZONE: str = "America/New_York"
 
     # Connection pool
-    DB_POOL_SIZE: int = 5
-    DB_MAX_OVERFLOW: int = 3
+    DB_POOL_SIZE: int = 15
+    DB_MAX_OVERFLOW: int = 10
     DB_POOL_TIMEOUT: int = 30
     DB_POOL_RECYCLE: int = 300
 
