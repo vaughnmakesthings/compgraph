@@ -435,6 +435,7 @@ Custom skills in `.claude/skills/` (invoke via `/skillname`):
 - `/deploy` — deploy main to Digital Ocean dev server
 - `/merge-guardian` — enforce CI pass + review before merge (detects stacked PRs)
 - `/pr-feedback-cycle` — triage and resolve bot review comments (draft-aware)
+- `/plan-feature` — decompose feature spec into prioritized, agent-ready GitHub issues (interactive 6-step workflow)
 - `/sprint-plan` — analyze issues, build file-overlap matrix, generate merge-wave plan
 - `/research` — structured codebase/web research with scope boundaries (Nia-integrated)
 - `/nia-research` — deep research using Nia Oracle/Deep Research for complex multi-source questions (5-10 credits)
