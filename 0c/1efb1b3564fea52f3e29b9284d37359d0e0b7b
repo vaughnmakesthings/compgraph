@@ -1,0 +1,33 @@
+tests/fixtures/jobsync_page_2.json
+  c482aeaa56739ace 1-11,13-24,26-42
+src/compgraph/scrapers/jobsync.py
+  c482aeaa56739ace 1-196,198-206,215-349,351-426
+src/compgraph/scrapers/__init__.py
+  c482aeaa56739ace 5,21-22,26
+tests/fixtures/jobsync_empty.json
+  c482aeaa56739ace 1-15
+tests/test_jobsync_adapter.py
+  c482aeaa56739ace 1-57,59-67,69-80,82-265,267-268,270-354,356-358,360-448,450-507,509-525,528-531,533-580,582-672,674-710,713,715-781,783-867
+tests/fixtures/jobsync_page_1.json
+  c482aeaa56739ace 1-29,31-42,44-55,57-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "0c1efb1b3564fea52f3e29b9284d37359d0e0b7b",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1509,
+      "total_deletions": 0,
+      "accepted_lines": 1394,
+      "overriden_lines": 23
+    }
+  }
+}
