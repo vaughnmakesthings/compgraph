@@ -1,0 +1,29 @@
+src/compgraph/scrapers/proxy.py
+  0ab57401c35788ac 8,123,128
+src/compgraph/scrapers/icims.py
+  0ab57401c35788ac 337-338,477
+tests/test_proxy_providers.py
+  0ab57401c35788ac 133-142
+tests/test_icims_adapter.py
+  0ab57401c35788ac 992-1039
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "ca43a2dce09296481afce1fb2137695c78e0dada",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 64,
+      "total_deletions": 20,
+      "accepted_lines": 64,
+      "overriden_lines": 0
+    }
+  }
+}
