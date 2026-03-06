@@ -407,6 +407,7 @@ class AggPayBenchmarks(Base):
             "brand_id",
             "period",
             name="uq_pay_benchmarks_natural_key",
+            postgresql_nulls_not_distinct=True,
         ),
         Index("ix_agg_pay_benchmarks_company_role", "company_id", "role_archetype"),
     )
@@ -434,6 +435,7 @@ class AggPostingLifecycle(Base):
             "market_id",
             "period",
             name="uq_posting_lifecycle_natural_key",
+            postgresql_nulls_not_distinct=True,
         ),
         Index("ix_agg_posting_lifecycle_company_period", "company_id", "period"),
     )

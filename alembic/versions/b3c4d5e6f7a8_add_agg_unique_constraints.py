@@ -29,15 +29,14 @@ def upgrade() -> None:
         "agg_brand_timeline",
         ["company_id", "brand_id"],
     )
-    op.create_unique_constraint(
-        "uq_pay_benchmarks_natural_key",
-        "agg_pay_benchmarks",
-        ["company_id", "role_archetype", "market_id", "brand_id", "period"],
+    # Nullable columns need NULLS NOT DISTINCT (PostgreSQL 15+)
+    op.execute(
+        "ALTER TABLE agg_pay_benchmarks ADD CONSTRAINT uq_pay_benchmarks_natural_key "
+        "UNIQUE NULLS NOT DISTINCT (company_id, role_archetype, market_id, brand_id, period)"
     )
-    op.create_unique_constraint(
-        "uq_posting_lifecycle_natural_key",
-        "agg_posting_lifecycle",
-        ["company_id", "role_archetype", "brand_id", "market_id", "period"],
+    op.execute(
+        "ALTER TABLE agg_posting_lifecycle ADD CONSTRAINT uq_posting_lifecycle_natural_key "
+        "UNIQUE NULLS NOT DISTINCT (company_id, role_archetype, brand_id, market_id, period)"
     )
     op.create_unique_constraint(
         "uq_churn_signals_company_brand_period",
