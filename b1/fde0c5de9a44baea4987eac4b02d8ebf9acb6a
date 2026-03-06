@@ -1,0 +1,23 @@
+tests/test_postings_api.py
+  48074118b48372ab 459-492
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "b1fde0c5de9a44baea4987eac4b02d8ebf9acb6a",
+  "prompts": {
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 34,
+      "total_deletions": 0,
+      "accepted_lines": 34,
+      "overriden_lines": 0
+    }
+  }
+}
