@@ -1,0 +1,49 @@
+tests/test_workday_adapter.py
+  0ab57401c35788ac 353-360,507-514
+src/compgraph/enrichment/orchestrator.py
+  0ab57401c35788ac 308-323
+tests/test_icims_adapter.py
+  0ab57401c35788ac 5,455-462,565-572
+src/compgraph/scrapers/persistence.py
+  0ab57401c35788ac 76-78,118-146
+src/compgraph/enrichment/embeddings.py
+  0ab57401c35788ac 1-28
+tests/test_geocoding.py
+  0ab57401c35788ac 1-125
+src/compgraph/geocoding.py
+  0ab57401c35788ac 1-44
+pyproject.toml
+  0ab57401c35788ac 22-25
+tests/test_embeddings.py
+  0ab57401c35788ac 1-92
+tests/test_foundation_models.py
+  0ab57401c35788ac 1-39
+tests/test_jobsync_adapter.py
+  0ab57401c35788ac 461-468,588-595
+scripts/backfill_geocoding.py
+  0ab57401c35788ac 1-154
+scripts/backfill_embeddings.py
+  0ab57401c35788ac 1-115
+src/compgraph/db/models.py
+  0ab57401c35788ac 5,20,210-213,224-228,300-301
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "5dc959a06c306e9d30ae839d2772d60be5f67d8d",
+  "prompts": {
+    "0ab57401c35788ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69dee6ff-5015-45bd-a7b6-850fa039a265",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 734,
+      "total_deletions": 23,
+      "accepted_lines": 712,
+      "overriden_lines": 0
+    }
+  }
+}
