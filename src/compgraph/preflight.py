@@ -1002,7 +1002,7 @@ def write_diagnostics(report: PreflightReport, project_root: Path) -> Path | Non
     diag_dir = project_root / ".diagnostics"
     diag_dir.mkdir(exist_ok=True)
 
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     diag_file = diag_dir / f"preflight_{ts}.json"
     diag_file.write_text(report.to_json())
     return diag_file
