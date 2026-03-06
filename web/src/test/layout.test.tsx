@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { Sidebar } from "../components/layout/sidebar";
 import { Header } from "../components/layout/header";
 import Shell from "../components/layout/shell";
+import { renderWithQueryClient } from "./test-utils";
 
 const mockUsePathname = vi.fn(() => "/");
 const mockRole = vi.fn(() => "admin");
@@ -36,6 +37,11 @@ vi.mock("@/lib/auth-context", () => ({
     signOut: vi.fn(),
   }),
 }));
+
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
 
 // Stub localStorage — jsdom's localstorage may not be available depending on
 // the vitest jsdom build. Using a minimal in-memory stub is reliable.
@@ -189,26 +195,26 @@ describe("Sidebar", () => {
 
 describe("Header", () => {
   it("renders the breadcrumb for current route", () => {
-    render(<Header />);
+    renderWithQueryClient(<Header />);
     expect(screen.getByText("Pipeline Health")).toBeInTheDocument();
   });
 
   it("renders the API connection status label", async () => {
-    render(<Header />);
+    renderWithQueryClient(<Header />);
     await waitFor(() => {
       expect(screen.getByText(/api connected/i)).toBeInTheDocument();
     });
   });
 
   it("renders as a header landmark", () => {
-    render(<Header />);
+    renderWithQueryClient(<Header />);
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 });
 
 describe("Shell", () => {
   it("renders sidebar and header together", () => {
-    render(
+    renderWithQueryClient(
       <Shell>
         <div>page content</div>
       </Shell>
@@ -220,7 +226,7 @@ describe("Shell", () => {
   });
 
   it("renders children inside main", () => {
-    render(
+    renderWithQueryClient(
       <Shell>
         <div>page content</div>
       </Shell>
@@ -230,7 +236,7 @@ describe("Shell", () => {
   });
 
   it("renders the CompGraph wordmark via the header", () => {
-    render(
+    renderWithQueryClient(
       <Shell>
         <div>content</div>
       </Shell>

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/data/badge";
 import { getVelocityApiV1AggregationVelocityGetOptions } from "@/api-client/@tanstack/react-query.gen";
-import type { DailyVelocity } from "@/lib/types";
-import { COMPANIES, type StaticCompany } from "@/lib/constants";
+import type { Company, DailyVelocity } from "@/lib/types";
+import { useCompanies } from "@/lib/hooks/use-companies";
 
 function CompanyCard({
   company,
@@ -14,7 +14,7 @@ function CompanyCard({
   loading,
   onClick,
 }: {
-  company: StaticCompany;
+  company: Company;
   activePostings: number | null;
   loading: boolean;
   onClick: () => void;
@@ -32,7 +32,7 @@ function CompanyCard({
             {company.name}
           </h2>
           <Badge variant="neutral" size="sm">
-            {company.ats}
+            {company.ats_platform}
           </Badge>
         </div>
         <div className="flex items-baseline gap-1">
@@ -51,10 +51,15 @@ function CompanyCard({
 export default function CompetitorsPage() {
   const router = useRouter();
 
-  const { data: velocity, isLoading, error } = useQuery({
+  const { data: companies, isLoading: companiesLoading, error: companiesError } = useCompanies();
+
+  const { data: velocity, isLoading: velocityLoading, error: velocityError } = useQuery({
     ...getVelocityApiV1AggregationVelocityGetOptions(),
     select: (data) => data as unknown as DailyVelocity[],
   });
+
+  const isLoading = companiesLoading || velocityLoading;
+  const error = companiesError || velocityError;
 
   const activeByCompanySlug = useMemo(() => {
     const latestDate: Record<string, string> = {};
@@ -72,7 +77,7 @@ export default function CompetitorsPage() {
     return latestCount;
   }, [velocity]);
 
-  function resolveActivePostings(company: StaticCompany): number | null {
+  function resolveActivePostings(company: Company): number | null {
     const count = activeByCompanySlug[company.slug];
     return count !== undefined ? count : null;
   }
@@ -98,7 +103,7 @@ export default function CompetitorsPage() {
       )}
 
       <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-        {COMPANIES.map((company) => (
+        {(companies ?? []).map((company) => (
           <CompanyCard
             key={company.slug}
             company={company}

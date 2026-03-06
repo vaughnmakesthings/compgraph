@@ -7,7 +7,7 @@ import { KpiCard } from "@/components/data/kpi-card";
 import { Badge } from "@/components/data/badge";
 import { Callout } from "@/components/content/callout";
 import { BarChart } from "@/components/charts/bar-chart";
-import { COMPANIES } from "@/lib/constants";
+import { useCompanies } from "@/lib/hooks/use-companies";
 import { SectionCard } from "@/components/ui/section-card";
 import { formatRoleArchetype } from "@/lib/utils";
 import { DOSSIER_MOCKS } from "@/lib/mock/dossiers";
@@ -384,10 +384,26 @@ export default function CompetitorDossierPage() {
   const slug =
     typeof params.slug === "string" ? params.slug : (params.slug?.[0] ?? "");
 
-  const company = COMPANIES.find((c) => c.slug === slug);
+  const { data: companies, isLoading } = useCompanies();
+  const company = companies?.find((c) => c.slug === slug);
   const mock = DOSSIER_MOCKS[slug];
 
   const [activeTab, setActiveTab] = useState<Tab>("summary");
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+          color: "#4F5D75",
+          padding: "2rem 0",
+        }}
+        aria-busy="true"
+      >
+        Loading company data...
+      </div>
+    );
+  }
 
   if (!company || !mock) {
     return (
@@ -445,7 +461,7 @@ export default function CompetitorDossierPage() {
             >
               {company.name}
             </h1>
-            <Badge variant="neutral">{company.ats}</Badge>
+            <Badge variant="neutral">{company.ats_platform}</Badge>
           </div>
           <p
             style={{

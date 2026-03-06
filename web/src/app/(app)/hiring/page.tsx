@@ -5,10 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/data/badge";
 import { TablePagination } from "@/components/data/table-pagination";
 import {
-  listCompaniesApiV1CompaniesGetOptions,
   listPostingsApiV1PostingsGetOptions
 } from "@/api-client/@tanstack/react-query.gen";
-import type { Company, PostingListResponse, PostingListItem } from "@/lib/types";
+import type { PostingListResponse, PostingListItem } from "@/lib/types";
+import { useCompanies } from "@/lib/hooks/use-companies";
 import { formatRoleArchetype } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
@@ -90,11 +90,7 @@ export default function HiringPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Companies list for filter
-  const { data: companies } = useQuery({
-    ...listCompaniesApiV1CompaniesGetOptions(),
-    select: (data) => data as unknown as Company[],
-  });
+  const { data: companies } = useCompanies();
 
   const allCompanies = useMemo(() => {
     if (!companies) return [];
