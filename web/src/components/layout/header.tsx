@@ -3,45 +3,44 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { COMPANIES } from "@/lib/constants";
+import { useCompanies } from "@/lib/hooks/use-companies";
+import type { Company } from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-// Breadcrumb derivation from pathname
 interface Crumb {
   label: string;
   href?: string;
 }
 
-function deriveCrumbs(pathname: string): Crumb[] {
+const ROUTE_MAP: Record<string, Crumb[]> = {
+  "/competitors":    [{ label: "Competitors" }],
+  "/prospects":      [{ label: "Prospects" }],
+  "/market":         [{ label: "Market Overview" }],
+  "/hiring":         [{ label: "Job Feed" }],
+  "/eval":           [{ label: "Eval" }],
+  "/eval/runs":      [{ label: "Eval", href: "/eval" }, { label: "Runs" }],
+  "/eval/review":    [{ label: "Eval", href: "/eval" }, { label: "Review" }],
+  "/eval/accuracy":  [{ label: "Eval", href: "/eval" }, { label: "Accuracy" }],
+  "/eval/leaderboard": [{ label: "Eval", href: "/eval" }, { label: "Leaderboard" }],
+  "/eval/prompt-diff": [{ label: "Eval", href: "/eval" }, { label: "Run Diff" }],
+  "/settings":       [{ label: "Settings" }],
+};
+
+function deriveCrumbs(pathname: string, companies: Company[] | undefined): Crumb[] {
   if (pathname === "/") {
     return [{ label: "Dashboard", href: "/" }, { label: "Pipeline Health" }];
   }
 
-  // Competitor dossier: /competitors/[slug]
   const competitorMatch = /^\/competitors\/([^/]+)$/.exec(pathname);
   if (competitorMatch) {
     const slug = competitorMatch[1];
-    const company = COMPANIES.find((c) => c.slug === slug);
+    const company = companies?.find((c) => c.slug === slug);
     return [
       { label: "Competitors", href: "/competitors" },
       { label: company?.name ?? slug },
     ];
   }
-
-  const ROUTE_MAP: Record<string, Crumb[]> = {
-    "/competitors":    [{ label: "Competitors" }],
-    "/prospects":      [{ label: "Prospects" }],
-    "/market":         [{ label: "Market Overview" }],
-    "/hiring":         [{ label: "Job Feed" }],
-    "/eval":           [{ label: "Eval" }],
-    "/eval/runs":      [{ label: "Eval", href: "/eval" }, { label: "Runs" }],
-    "/eval/review":    [{ label: "Eval", href: "/eval" }, { label: "Review" }],
-    "/eval/accuracy":  [{ label: "Eval", href: "/eval" }, { label: "Accuracy" }],
-    "/eval/leaderboard": [{ label: "Eval", href: "/eval" }, { label: "Leaderboard" }],
-    "/eval/prompt-diff": [{ label: "Eval", href: "/eval" }, { label: "Run Diff" }],
-    "/settings":       [{ label: "Settings" }],
-  };
 
   return ROUTE_MAP[pathname] ?? [{ label: pathname.replace("/", "").replace(/-/g, " ") }];
 }
@@ -50,7 +49,8 @@ type ApiStatus = "checking" | "ok" | "error";
 
 export function Header() {
   const pathname = usePathname();
-  const crumbs = deriveCrumbs(pathname);
+  const { data: companies } = useCompanies();
+  const crumbs = deriveCrumbs(pathname, companies);
 
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
 
@@ -71,7 +71,7 @@ export function Header() {
   const dotColor =
     apiStatus === "ok" ? "#1B998B" : apiStatus === "error" ? "#8C2C23" : "#BFC0C0";
   const dotLabel =
-    apiStatus === "ok" ? "API connected" : apiStatus === "error" ? "API unreachable" : "Checking API…";
+    apiStatus === "ok" ? "API connected" : apiStatus === "error" ? "API unreachable" : "Checking API\u2026";
 
   return (
     <header

@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { createMockSupabaseAuth, mockSession } from "./mocks/supabase";
 import { setAuthToken } from "@/lib/auth-token";
 import { AuthProvider } from "@/lib/auth-context";
+import { renderWithQueryClient } from "./test-utils";
 
 let mockSupabase: ReturnType<typeof createMockSupabaseAuth> | null = null;
 
@@ -37,10 +38,17 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("@/api-client/@tanstack/react-query.gen", async () => {
+  const { apiClientRqMock } = await import("./mocks/api-client-rq");
+  return apiClientRqMock();
+});
+
 import AppLayout from "@/app/(app)/layout";
 
 function renderWithAuth(ui: React.ReactElement) {
-  return render(<AuthProvider>{ui}</AuthProvider>);
+  return renderWithQueryClient(
+    <AuthProvider>{ui}</AuthProvider>,
+  );
 }
 
 describe("AppLayout auth guard", () => {

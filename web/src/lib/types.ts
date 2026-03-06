@@ -2,8 +2,7 @@ export interface Company {
   id: string
   name: string
   slug: string
-  ats: string
-  created_at: string
+  ats_platform: string
 }
 
 export interface EvalModel {
