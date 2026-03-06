@@ -1,6 +1,6 @@
 """add unique constraints on aggregation tables
 
-Revision ID: b3c4d5e6f7a8
+Revision ID: d4e5f6a7b8c9
 Revises: 0657aded6e05
 Create Date: 2026-03-06 14:00:00.000000
 
@@ -12,7 +12,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "b3c4d5e6f7a8"
+revision: str = "d4e5f6a7b8c9"
 down_revision: str | None = "0657aded6e05"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
