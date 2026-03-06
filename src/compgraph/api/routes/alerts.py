@@ -46,7 +46,7 @@ async def list_alerts(
     from sqlalchemy import func
 
     count_stmt = select(func.count(Alert.id))
-    data_stmt = select(Alert).order_by(Alert.triggered_at.desc())
+    data_stmt = select(Alert).order_by(Alert.triggered_at.desc(), Alert.id)
 
     if company_id is not None:
         count_stmt = count_stmt.where(Alert.company_id == company_id)
