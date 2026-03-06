@@ -214,20 +214,14 @@ class TestCancelledErrorStateCleanup:
         orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
         orch._resume_event.clear()
 
-        async def cancel_after_start():
-            await asyncio.sleep(0.01)
-            for task in orch._tasks:
-                task.cancel()
-
         with _patch_session_and_companies([company]):
             task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
             orch._tasks = [task]
-            cancel_task = asyncio.create_task(cancel_after_start())
+            await asyncio.sleep(0)  # yield so task blocks on cleared _resume_event
+            task.cancel()
 
             with pytest.raises(asyncio.CancelledError):
                 await task
-
-            await cancel_task
 
         assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
 
@@ -327,7 +321,7 @@ class TestCancelledErrorStateCleanup:
         with _patch_session_and_companies([company]):
             task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
             orch._tasks = [task]
-            await asyncio.sleep(0.02)  # Let it reach the semaphore wait
+            await asyncio.sleep(0)  # yield so task blocks on Semaphore(0)
             task.cancel()
 
             with pytest.raises(asyncio.CancelledError):
