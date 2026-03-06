@@ -149,6 +149,81 @@ describe("AuthProvider", () => {
     });
   });
 
+  it("redirects recovery token to /setup by default", async () => {
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: {
+        ...window.location,
+        hash: "#type=recovery",
+        pathname: "/",
+      },
+    });
+
+    let authChangeCallback: (
+      event: string,
+      session: typeof mockSession | null,
+    ) => void = () => {};
+    mockSupabase = createMockSupabaseAuth({ session: null });
+    mockSupabase.auth.onAuthStateChange = vi.fn().mockImplementation((cb) => {
+      authChangeCallback = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+
+    render(
+      <AuthProvider>
+        <AuthDisplay />
+      </AuthProvider>,
+    );
+
+    authChangeCallback("SIGNED_IN", mockSession);
+
+    await waitFor(() => {
+      expect(mockRouter.replace).toHaveBeenCalledWith(
+        "/setup?email=test%40example.com",
+      );
+    });
+
+    window.location.hash = "";
+  });
+
+  it("does not redirect recovery token away from /reset-password", async () => {
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: {
+        ...window.location,
+        hash: "#type=recovery",
+        pathname: "/reset-password",
+      },
+    });
+
+    let authChangeCallback: (
+      event: string,
+      session: typeof mockSession | null,
+    ) => void = () => {};
+    mockSupabase = createMockSupabaseAuth({ session: null });
+    mockSupabase.auth.onAuthStateChange = vi.fn().mockImplementation((cb) => {
+      authChangeCallback = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+
+    render(
+      <AuthProvider>
+        <AuthDisplay />
+      </AuthProvider>,
+    );
+
+    authChangeCallback("SIGNED_IN", mockSession);
+
+    // Give React a chance to process
+    await waitFor(() => {
+      expect(screen.getByText("Not authenticated")).toBeInTheDocument();
+    });
+
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+
+    window.location.hash = "";
+  });
+
   it("unsubscribes from auth state changes on unmount", async () => {
     mockSupabase = createMockSupabaseAuth({ session: null });
     const unsubscribe = mockSupabase._unsubscribe;

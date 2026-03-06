@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { LoginForm } from "@/components/auth/login-form";
 import { AccountSetupForm } from "@/components/auth/account-setup-form";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { InviteUserForm } from "@/components/auth/invite-user-form";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import { UserTable } from "@/components/auth/user-table";
@@ -268,6 +269,37 @@ describe("LoginForm", () => {
     });
   });
 
+  it("calls resetPasswordForEmail with redirectTo on forgot password", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email address"), "user@test.com");
+    await user.click(screen.getByText("Forgot password?"));
+
+    await waitFor(() => {
+      expect(mockSupabase!.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        "user@test.com",
+        { redirectTo: "http://localhost:3000/reset-password" },
+      );
+    });
+
+    expect(screen.getByText("Check your email")).toBeInTheDocument();
+    expect(
+      screen.getByText(/a password reset link/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error when forgot password clicked without email", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.click(screen.getByText("Forgot password?"));
+
+    expect(
+      screen.getByRole("alert"),
+    ).toHaveTextContent("Enter your email address first");
+  });
+
   it("calls signInWithOtp in magic-link mode", async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
@@ -423,6 +455,137 @@ describe("AccountSetupForm", () => {
     await user.type(screen.getByLabelText("Create password"), "StrongPw1!");
     await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
     await user.click(screen.getByRole("button", { name: "Create Account" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Password too weak")).toBeInTheDocument();
+    });
+  });
+});
+
+// =========================================================================
+// ResetPasswordForm
+// =========================================================================
+
+describe("ResetPasswordForm", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSupabase = createMockSupabaseAuth();
+  });
+
+  it("renders password and confirm fields", () => {
+    render(<ResetPasswordForm />);
+    expect(screen.getByLabelText("New password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirm password")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Update password" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders back to sign in link", () => {
+    render(<ResetPasswordForm />);
+    expect(screen.getByText("Back to sign in")).toBeInTheDocument();
+    expect(screen.getByText("Back to sign in").closest("a")).toHaveAttribute(
+      "href",
+      "/login",
+    );
+  });
+
+  it("shows validation error for short password", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "short");
+    await user.type(screen.getByLabelText("Confirm password"), "short");
+    await user.click(screen.getByRole("button", { name: "Update password" }));
+
+    expect(
+      screen.getByText("Password must be at least 8 characters"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows mismatch error when passwords differ", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "Password1!");
+    await user.type(screen.getByLabelText("Confirm password"), "Different1!");
+    await user.click(screen.getByRole("button", { name: "Update password" }));
+
+    expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+  });
+
+  it("shows password strength meter when typing", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    expect(screen.queryByText(/Strength:/)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("New password"), "ab");
+    expect(screen.getByText("Strength: Weak")).toBeInTheDocument();
+  });
+
+  it("shows Strong strength for complex password", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "Abcdefghij1!");
+    expect(screen.getByText("Strength: Strong")).toBeInTheDocument();
+  });
+
+  it("toggles password visibility", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    const pwInput = screen.getByLabelText("New password");
+    expect(pwInput).toHaveAttribute("type", "password");
+
+    const showButtons = screen.getAllByLabelText("Show password");
+    await user.click(showButtons[0]);
+    expect(pwInput).toHaveAttribute("type", "text");
+  });
+
+  it("calls updateUser on successful submit", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "StrongPw1!");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
+    await user.click(screen.getByRole("button", { name: "Update password" }));
+
+    await waitFor(() => {
+      expect(mockSupabase!.auth.updateUser).toHaveBeenCalledWith({
+        password: "StrongPw1!",
+      });
+    });
+  });
+
+  it("shows success message after password update", async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "StrongPw1!");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
+    await user.click(screen.getByRole("button", { name: "Update password" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Password updated")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/Your password has been changed/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Go to sign in")).toBeInTheDocument();
+  });
+
+  it("displays Supabase error on updateUser failure", async () => {
+    mockSupabase = createMockSupabaseAuth({
+      updateUserError: { message: "Password too weak" },
+    });
+    const user = userEvent.setup();
+    render(<ResetPasswordForm />);
+
+    await user.type(screen.getByLabelText("New password"), "StrongPw1!");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPw1!");
+    await user.click(screen.getByRole("button", { name: "Update password" }));
 
     await waitFor(() => {
       expect(screen.getByText("Password too weak")).toBeInTheDocument();

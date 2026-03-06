@@ -77,15 +77,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthToken(newToken);
       }
 
-      // Redirect invite/recovery users to /setup after session is established
+      // Redirect invite/recovery users after session is established.
+      // Invite tokens always go to /setup for initial password creation.
+      // Recovery tokens go to /setup unless the user initiated a password
+      // reset (already on /reset-password), in which case we leave them there.
       if (
         newSession &&
         !redirectedRef.current &&
         (hashType === "invite" || hashType === "recovery")
       ) {
-        redirectedRef.current = true;
-        const email = newSession.user?.email ?? "";
-        router.replace(`/setup?email=${encodeURIComponent(email)}`);
+        const isPasswordReset =
+          hashType === "recovery" &&
+          typeof window !== "undefined" &&
+          window.location.pathname === "/reset-password";
+
+        if (!isPasswordReset) {
+          redirectedRef.current = true;
+          const email = newSession.user?.email ?? "";
+          router.replace(`/setup?email=${encodeURIComponent(email)}`);
+        }
       }
     });
 

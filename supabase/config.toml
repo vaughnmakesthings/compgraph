@@ -151,7 +151,9 @@ site_url = "https://compgraph.app"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = [
   "https://compgraph.app/setup",
+  "https://compgraph.app/reset-password",
   "http://localhost:3000/setup",
+  "http://localhost:3000/reset-password",
   "https://compgraph-vmud-7e8ea93d.vercel.app/",
   "https://compgraph-vmud-7e8ea93d.vercel.app/**",
   "https://compgraph-*-vmud-7e8ea93d.vercel.app",
