@@ -458,6 +458,14 @@ class TestJobSyncFetcher:
 
 
 class TestPersistPosting:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     def _raw(
         self,
         external_job_id: str = "abc123def456",
@@ -577,6 +585,14 @@ class TestHashText:
 
 
 class TestJobSyncAdapter:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     async def test_scrape_missing_agency_slug_returns_error(self):
         company = _make_company(scraper_config={})
         session = AsyncMock()

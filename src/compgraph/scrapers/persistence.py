@@ -111,4 +111,40 @@ async def persist_posting(
         .on_conflict_do_nothing(constraint="uq_snapshots_posting_date")
     )
     snapshot_result = await session.execute(snapshot_stmt)
-    return snapshot_result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
+    inserted: bool = snapshot_result.rowcount > 0  # type: ignore[attr-defined]
+
+    # Geocode after snapshot work to avoid holding session open during HTTP call
+    # on idempotent repeat calls. Backfill script handles historical data.
+    if inserted and raw.location:
+        await _maybe_geocode_posting(session, posting_id, raw.location)
+
+    return inserted
+
+
+async def _maybe_geocode_posting(
+    session: AsyncSession,
+    posting_id: uuid.UUID,
+    location_str: str,
+) -> None:
+    posting_row = await session.execute(select(Posting.latitude).where(Posting.id == posting_id))
+    if posting_row.scalar_one_or_none() is not None:
+        return
+
+    try:
+        from compgraph.geocoding import compute_h3_index, geocode_location
+
+        coords = await geocode_location(location_str)
+        if coords:
+            from sqlalchemy import update
+
+            await session.execute(
+                update(Posting)
+                .where(Posting.id == posting_id)
+                .values(
+                    latitude=coords[0],
+                    longitude=coords[1],
+                    h3_index=compute_h3_index(coords[0], coords[1]),
+                )
+            )
+    except Exception:
+        logger.warning("Geocoding failed for posting %s", posting_id, exc_info=True)
