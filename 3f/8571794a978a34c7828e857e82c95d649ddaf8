@@ -1,0 +1,51 @@
+src/compgraph/main.py
+  48074118b48372ab 1,3,73-77,80-85,91-102,105-114,122,128
+  208e065629c2c573 78-79,86-90
+infra/deploy-ci.sh
+  48074118b48372ab 14-20,23,25-28,34-42
+  208e065629c2c573 21-22,24,29-30
+tests/test_scheduler.py
+  208e065629c2c573 29-42
+src/compgraph/scheduler/jobs.py
+  48074118b48372ab 143-148,206-211,247-275
+  208e065629c2c573 82-84,97,105-107,115-116
+src/compgraph/enrichment/orchestrator.py
+  208e065629c2c573 344,346-347,353,434-435,440-441,773,775-776,782,868-869,874-875
+  48074118b48372ab 350-352,354-355,779-781,783-784
+src/compgraph/api/routes/health.py
+  48074118b48372ab 53-58,60-65,69-71,73-74
+  208e065629c2c573 59,66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "3f8571794a978a34c7828e857e82c95d649ddaf8",
+  "prompts": {
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 58,
+      "total_deletions": 33,
+      "accepted_lines": 55,
+      "overriden_lines": 0
+    },
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 267,
+      "total_deletions": 10,
+      "accepted_lines": 126,
+      "overriden_lines": 0
+    }
+  }
+}
