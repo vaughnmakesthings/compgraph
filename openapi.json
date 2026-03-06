@@ -783,8 +783,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/components/schemas/VelocityItem"
                   },
                   "title": "Response Get Velocity Api V1 Aggregation Velocity Get"
                 }
@@ -818,8 +817,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/BrandTimelineItem"
                   },
                   "type": "array",
                   "title": "Response Get Brand Timeline Api V1 Aggregation Brand Timeline Get"
@@ -849,8 +847,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/PayBenchmarkItem"
                   },
                   "type": "array",
                   "title": "Response Get Pay Benchmarks Api V1 Aggregation Pay Benchmarks Get"
@@ -880,8 +877,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/LifecycleItem"
                   },
                   "type": "array",
                   "title": "Response Get Lifecycle Api V1 Aggregation Lifecycle Get"
@@ -911,8 +907,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/ChurnSignalItem"
                   },
                   "type": "array",
                   "title": "Response Get Churn Signals Api V1 Aggregation Churn Signals Get"
@@ -942,8 +937,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/CoverageGapItem"
                   },
                   "type": "array",
                   "title": "Response Get Coverage Gaps Api V1 Aggregation Coverage Gaps Get"
@@ -973,8 +967,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/AgencyOverlapItem"
                   },
                   "type": "array",
                   "title": "Response Get Agency Overlap Api V1 Aggregation Agency Overlap Get"
@@ -1030,8 +1023,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/CompanyItem"
                   },
                   "type": "array",
                   "title": "Response List Companies Api V1 Companies Get"
@@ -1039,7 +1031,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/postings": {
@@ -1049,6 +1046,11 @@
         ],
         "summary": "List Postings",
         "operationId": "list_postings_api_v1_postings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -1056,6 +1058,8 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
               "default": 50,
               "title": "Limit"
             }
@@ -1066,6 +1070,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
               "default": 0,
               "title": "Offset"
             }
@@ -1177,6 +1182,11 @@
         ],
         "summary": "Get Posting",
         "operationId": "get_posting_api_v1_postings__posting_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "posting_id",
@@ -1226,8 +1236,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/EvalCorpusItem"
                   },
                   "type": "array",
                   "title": "Response Get Corpus Api V1 Eval Corpus Get"
@@ -1235,7 +1244,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/runs": {
@@ -1252,8 +1266,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/EvalRunItem"
                   },
                   "type": "array",
                   "title": "Response Get Runs Api V1 Eval Runs Get"
@@ -1261,7 +1274,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -1285,9 +1303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Create Run Api V1 Eval Runs Post"
+                  "$ref": "#/components/schemas/EvalRunCreateResponse"
                 }
               }
             }
@@ -1302,7 +1318,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/runs/{run_id}": {
@@ -1312,6 +1333,11 @@
         ],
         "summary": "Get Run",
         "operationId": "get_run_api_v1_eval_runs__run_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1330,9 +1356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Run Api V1 Eval Runs  Run Id  Get"
+                  "$ref": "#/components/schemas/EvalRunItem"
                 }
               }
             }
@@ -1355,6 +1379,11 @@
         ],
         "summary": "Delete Run",
         "operationId": "delete_run_api_v1_eval_runs__run_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1373,11 +1402,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Delete Run Api V1 Eval Runs  Run Id  Delete"
+                  "$ref": "#/components/schemas/StatusResponse"
                 }
               }
             }
@@ -1402,6 +1427,11 @@
         ],
         "summary": "Get Run Results",
         "operationId": "get_run_results_api_v1_eval_runs__run_id__results_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1422,8 +1452,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/components/schemas/EvalResultItem"
                   },
                   "title": "Response Get Run Results Api V1 Eval Runs  Run Id  Results Get"
                 }
@@ -1450,6 +1479,11 @@
         ],
         "summary": "Get Run Field Accuracy",
         "operationId": "get_run_field_accuracy_api_v1_eval_runs__run_id__field_accuracy_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1497,6 +1531,11 @@
         ],
         "summary": "Get Run Field Reviews",
         "operationId": "get_run_field_reviews_api_v1_eval_runs__run_id__field_reviews_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1519,8 +1558,7 @@
                   "additionalProperties": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "additionalProperties": true
+                      "$ref": "#/components/schemas/EvalFieldReviewItem"
                     }
                   },
                   "title": "Response Get Run Field Reviews Api V1 Eval Runs  Run Id  Field Reviews Get"
@@ -1548,6 +1586,11 @@
         ],
         "summary": "Get Run Progress",
         "operationId": "get_run_progress_api_v1_eval_runs__run_id__progress_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1566,9 +1609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Run Progress Api V1 Eval Runs  Run Id  Progress Get"
+                  "$ref": "#/components/schemas/EvalRunProgressResponse"
                 }
               }
             }
@@ -1599,14 +1640,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Get Leaderboard Data Api V1 Eval Leaderboard Data Get"
+                  "$ref": "#/components/schemas/EvalLeaderboardResponse"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/comparisons": {
@@ -1623,8 +1667,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/EvalComparisonItem"
                   },
                   "type": "array",
                   "title": "Response Get Comparisons Api V1 Eval Comparisons Get"
@@ -1632,7 +1675,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -1656,11 +1704,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Create Comparison Api V1 Eval Comparisons Post"
+                  "$ref": "#/components/schemas/IdResponse"
                 }
               }
             }
@@ -1675,7 +1719,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/elo": {
@@ -1700,7 +1749,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/field-reviews/{result_id}/{field_name}": {
@@ -1710,6 +1764,11 @@
         ],
         "summary": "Delete Field Review",
         "operationId": "delete_field_review_api_v1_eval_field_reviews__result_id___field_name__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "result_id",
@@ -1771,11 +1830,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Create Field Review Api V1 Eval Field Reviews Post"
+                  "$ref": "#/components/schemas/IdResponse"
                 }
               }
             }
@@ -1790,7 +1845,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/models": {
@@ -1807,10 +1867,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": {
-                      "type": "string"
-                    },
-                    "type": "object"
+                    "$ref": "#/components/schemas/EvalModelItem"
                   },
                   "type": "array",
                   "title": "Response List Models Api V1 Eval Models Get"
@@ -1818,7 +1875,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/eval/progress/{tracking_id}": {
@@ -1828,6 +1890,11 @@
         ],
         "summary": "Get Progress",
         "operationId": "get_progress_api_v1_eval_progress__tracking_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "tracking_id",
@@ -1845,9 +1912,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Progress Api V1 Eval Progress  Tracking Id  Get"
+                  "$ref": "#/components/schemas/EvalRunProgressResponse"
                 }
               }
             }
@@ -1941,167 +2006,84 @@
         ]
       }
     },
-    "/api/{path}": {
-      "post": {
-        "summary": "Legacy Api Redirect",
-        "operationId": "legacy_api_redirect_api__path__post",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "summary": "Legacy Api Redirect",
-        "operationId": "legacy_api_redirect_api__path__post",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Legacy Api Redirect",
-        "operationId": "legacy_api_redirect_api__path__post",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
+    "/api/v1/alerts": {
       "get": {
-        "summary": "Legacy Api Redirect",
-        "operationId": "legacy_api_redirect_api__path__post",
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List Alerts",
+        "operationId": "list_alerts_api_v1_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
-            "name": "path",
-            "in": "path",
-            "required": true,
+            "name": "limit",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string",
-              "title": "Path"
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "alert_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Alert Type"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/AlertListResponse"
                 }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "summary": "Legacy Api Redirect",
-        "operationId": "legacy_api_redirect_api__path__post",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },
@@ -2121,6 +2103,170 @@
   },
   "components": {
     "schemas": {
+      "AgencyOverlapItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Brand Id"
+          },
+          "period": {
+            "type": "string",
+            "format": "date",
+            "title": "Period"
+          },
+          "agency_count": {
+            "type": "integer",
+            "title": "Agency Count"
+          },
+          "agency_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agency Names"
+          },
+          "primary_company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Company Id"
+          },
+          "primary_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Share"
+          },
+          "is_exclusive": {
+            "type": "boolean",
+            "title": "Is Exclusive"
+          },
+          "is_contested": {
+            "type": "boolean",
+            "title": "Is Contested"
+          },
+          "total_postings": {
+            "type": "integer",
+            "title": "Total Postings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "period",
+          "agency_count",
+          "agency_names",
+          "primary_company_id",
+          "primary_share",
+          "is_exclusive",
+          "is_contested",
+          "total_postings"
+        ],
+        "title": "AgencyOverlapItem"
+      },
+      "AlertItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "alert_type": {
+            "type": "string",
+            "title": "Alert Type"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "brand_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Id"
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Triggered At"
+          },
+          "metadata_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "alert_type",
+          "company_id",
+          "brand_id",
+          "triggered_at",
+          "metadata_json"
+        ],
+        "title": "AlertItem"
+      },
+      "AlertListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AlertListResponse"
+      },
       "BrandMentionDetail": {
         "properties": {
           "id": {
@@ -2181,6 +2327,224 @@
           "confidence_score"
         ],
         "title": "BrandMentionDetail"
+      },
+      "BrandTimelineItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Brand Id"
+          },
+          "first_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Seen At"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "is_currently_active": {
+            "type": "boolean",
+            "title": "Is Currently Active"
+          },
+          "total_postings_all_time": {
+            "type": "integer",
+            "title": "Total Postings All Time"
+          },
+          "current_active_postings": {
+            "type": "integer",
+            "title": "Current Active Postings"
+          },
+          "peak_active_postings": {
+            "type": "integer",
+            "title": "Peak Active Postings"
+          },
+          "peak_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Date"
+          },
+          "brand_name": {
+            "type": "string",
+            "title": "Brand Name"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "company_slug": {
+            "type": "string",
+            "title": "Company Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "brand_id",
+          "first_seen_at",
+          "last_seen_at",
+          "is_currently_active",
+          "total_postings_all_time",
+          "current_active_postings",
+          "peak_active_postings",
+          "peak_date",
+          "brand_name",
+          "company_name",
+          "company_slug"
+        ],
+        "title": "BrandTimelineItem"
+      },
+      "ChurnSignalItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Brand Id"
+          },
+          "period": {
+            "type": "string",
+            "format": "date",
+            "title": "Period"
+          },
+          "active_posting_count": {
+            "type": "integer",
+            "title": "Active Posting Count"
+          },
+          "prior_period_count": {
+            "type": "integer",
+            "title": "Prior Period Count"
+          },
+          "velocity_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Velocity Delta"
+          },
+          "avg_days_active": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Days Active"
+          },
+          "repost_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repost Rate"
+          },
+          "churn_signal_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Churn Signal Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "brand_id",
+          "period",
+          "active_posting_count",
+          "prior_period_count",
+          "velocity_delta",
+          "avg_days_active",
+          "repost_rate",
+          "churn_signal_score"
+        ],
+        "title": "ChurnSignalItem"
+      },
+      "CompanyItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "ats_platform": {
+            "type": "string",
+            "title": "Ats Platform"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "ats_platform"
+        ],
+        "title": "CompanyItem"
       },
       "CompanyResultResponse": {
         "properties": {
@@ -2285,6 +2649,63 @@
           "winner"
         ],
         "title": "ComparisonCreate"
+      },
+      "CoverageGapItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "market_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Market Id"
+          },
+          "period": {
+            "type": "string",
+            "format": "date",
+            "title": "Period"
+          },
+          "total_active_postings": {
+            "type": "integer",
+            "title": "Total Active Postings"
+          },
+          "brand_count": {
+            "type": "integer",
+            "title": "Brand Count"
+          },
+          "brand_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "market_id",
+          "period",
+          "total_active_postings",
+          "brand_count",
+          "brand_names"
+        ],
+        "title": "CoverageGapItem"
       },
       "EnrichCurrentRun": {
         "properties": {
@@ -2706,6 +3127,539 @@
         ],
         "title": "EnrichmentStatus"
       },
+      "EvalComparisonItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "posting_id": {
+            "type": "string",
+            "title": "Posting Id"
+          },
+          "result_a_id": {
+            "type": "string",
+            "title": "Result A Id"
+          },
+          "result_b_id": {
+            "type": "string",
+            "title": "Result B Id"
+          },
+          "winner": {
+            "type": "string",
+            "title": "Winner"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "posting_id",
+          "result_a_id",
+          "result_b_id",
+          "winner"
+        ],
+        "title": "EvalComparisonItem"
+      },
+      "EvalCorpusItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "company_slug": {
+            "type": "string",
+            "title": "Company Slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "full_text": {
+            "type": "string",
+            "title": "Full Text"
+          },
+          "reference_pass1": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Pass1"
+          },
+          "reference_pass2": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Pass2"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_slug",
+          "title",
+          "full_text"
+        ],
+        "title": "EvalCorpusItem"
+      },
+      "EvalFieldReviewItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "result_id": {
+            "type": "string",
+            "title": "Result Id"
+          },
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "model_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Value"
+          },
+          "is_correct": {
+            "type": "integer",
+            "enum": [
+              -1,
+              0,
+              1
+            ],
+            "title": "Is Correct"
+          },
+          "correct_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correct Value"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "result_id",
+          "field_name",
+          "is_correct"
+        ],
+        "title": "EvalFieldReviewItem"
+      },
+      "EvalLeaderboardResponse": {
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/EvalRunItem"
+            },
+            "type": "array",
+            "title": "Runs"
+          },
+          "elo": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Elo"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/EvalComparisonItem"
+            },
+            "type": "array",
+            "title": "Comparisons"
+          },
+          "field_accuracy": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Field Accuracy"
+          },
+          "results": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/EvalResultItem"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "runs",
+          "elo",
+          "comparisons",
+          "field_accuracy",
+          "results"
+        ],
+        "title": "EvalLeaderboardResponse"
+      },
+      "EvalModelItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "EvalModelItem"
+      },
+      "EvalResultItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "posting_id": {
+            "type": "string",
+            "title": "Posting Id"
+          },
+          "raw_response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Response"
+          },
+          "parsed_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parsed Result"
+          },
+          "parse_success": {
+            "type": "boolean",
+            "title": "Parse Success"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "posting_id",
+          "parse_success"
+        ],
+        "title": "EvalResultItem"
+      },
+      "EvalRunCreateResponse": {
+        "properties": {
+          "tracking_id": {
+            "type": "integer",
+            "title": "Tracking Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tracking_id",
+          "run_id",
+          "status",
+          "total"
+        ],
+        "title": "EvalRunCreateResponse"
+      },
+      "EvalRunItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "pass_number": {
+            "type": "integer",
+            "title": "Pass Number"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "corpus_size": {
+            "type": "integer",
+            "title": "Corpus Size"
+          },
+          "total_input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Input Tokens"
+          },
+          "total_output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Output Tokens"
+          },
+          "total_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost Usd"
+          },
+          "total_duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Duration Ms"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_items": {
+            "type": "integer",
+            "title": "Total Items"
+          },
+          "completed_items": {
+            "type": "integer",
+            "title": "Completed Items"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pass_number",
+          "model",
+          "prompt_version",
+          "corpus_size",
+          "status",
+          "total_items",
+          "completed_items"
+        ],
+        "title": "EvalRunItem"
+      },
+      "EvalRunProgressResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EvalRunProgressResponse"
+      },
       "FieldReviewCreate": {
         "properties": {
           "result_id": {
@@ -2771,6 +3725,19 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "IdResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "IdResponse"
+      },
       "InviteRequest": {
         "properties": {
           "email": {
@@ -2816,6 +3783,235 @@
           "invited"
         ],
         "title": "InviteResponse"
+      },
+      "LifecycleItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "role_archetype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Archetype"
+          },
+          "brand_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Id"
+          },
+          "market_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Id"
+          },
+          "period": {
+            "type": "string",
+            "format": "date",
+            "title": "Period"
+          },
+          "avg_days_open": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Days Open"
+          },
+          "median_days_open": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Days Open"
+          },
+          "repost_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repost Rate"
+          },
+          "avg_repost_gap_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Repost Gap Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "role_archetype",
+          "brand_id",
+          "market_id",
+          "period",
+          "avg_days_open",
+          "median_days_open",
+          "repost_rate",
+          "avg_repost_gap_days"
+        ],
+        "title": "LifecycleItem"
+      },
+      "PayBenchmarkItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "role_archetype": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Archetype"
+          },
+          "market_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Id"
+          },
+          "brand_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Id"
+          },
+          "period": {
+            "type": "string",
+            "format": "date",
+            "title": "Period"
+          },
+          "avg_pay_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Pay Min"
+          },
+          "avg_pay_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Pay Max"
+          },
+          "median_pay_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Pay Min"
+          },
+          "median_pay_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Pay Max"
+          },
+          "sample_size": {
+            "type": "integer",
+            "title": "Sample Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "role_archetype",
+          "market_id",
+          "brand_id",
+          "period",
+          "avg_pay_min",
+          "avg_pay_max",
+          "median_pay_min",
+          "median_pay_max",
+          "sample_size"
+        ],
+        "title": "PayBenchmarkItem"
       },
       "PipelineRunListResponse": {
         "properties": {
@@ -3624,6 +4820,19 @@
         ],
         "title": "StageStatus"
       },
+      "StatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "StatusResponse"
+      },
       "UserResponse": {
         "properties": {
           "id": {
@@ -3716,6 +4925,88 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VelocityItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "brand_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Id"
+          },
+          "market_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Id"
+          },
+          "active_postings": {
+            "type": "integer",
+            "title": "Active Postings"
+          },
+          "new_postings": {
+            "type": "integer",
+            "title": "New Postings"
+          },
+          "closed_postings": {
+            "type": "integer",
+            "title": "Closed Postings"
+          },
+          "net_change": {
+            "type": "integer",
+            "title": "Net Change"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "company_slug": {
+            "type": "string",
+            "title": "Company Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "company_id",
+          "brand_id",
+          "market_id",
+          "active_postings",
+          "new_postings",
+          "closed_postings",
+          "net_change",
+          "company_name",
+          "company_slug"
+        ],
+        "title": "VelocityItem"
       },
       "compgraph__api__routes__aggregation__TriggerResponse": {
         "properties": {

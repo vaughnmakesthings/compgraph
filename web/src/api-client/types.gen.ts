@@ -5,6 +5,98 @@ export type ClientOptions = {
 };
 
 /**
+ * AgencyOverlapItem
+ */
+export type AgencyOverlapItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Brand Id
+     */
+    brand_id: string;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Agency Count
+     */
+    agency_count: number;
+    /**
+     * Agency Names
+     */
+    agency_names: Array<string> | null;
+    /**
+     * Primary Company Id
+     */
+    primary_company_id: string | null;
+    /**
+     * Primary Share
+     */
+    primary_share: number | null;
+    /**
+     * Is Exclusive
+     */
+    is_exclusive: boolean;
+    /**
+     * Is Contested
+     */
+    is_contested: boolean;
+    /**
+     * Total Postings
+     */
+    total_postings: number;
+};
+
+/**
+ * AlertItem
+ */
+export type AlertItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Alert Type
+     */
+    alert_type: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Brand Id
+     */
+    brand_id: string | null;
+    /**
+     * Triggered At
+     */
+    triggered_at: string;
+    /**
+     * Metadata Json
+     */
+    metadata_json: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
+ * AlertListResponse
+ */
+export type AlertListResponse = {
+    /**
+     * Items
+     */
+    items: Array<AlertItem>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * BrandMentionDetail
  */
 export type BrandMentionDetail = {
@@ -32,6 +124,132 @@ export type BrandMentionDetail = {
      * Confidence Score
      */
     confidence_score: number | null;
+};
+
+/**
+ * BrandTimelineItem
+ */
+export type BrandTimelineItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Brand Id
+     */
+    brand_id: string;
+    /**
+     * First Seen At
+     */
+    first_seen_at: string | null;
+    /**
+     * Last Seen At
+     */
+    last_seen_at: string | null;
+    /**
+     * Is Currently Active
+     */
+    is_currently_active: boolean;
+    /**
+     * Total Postings All Time
+     */
+    total_postings_all_time: number;
+    /**
+     * Current Active Postings
+     */
+    current_active_postings: number;
+    /**
+     * Peak Active Postings
+     */
+    peak_active_postings: number;
+    /**
+     * Peak Date
+     */
+    peak_date: string | null;
+    /**
+     * Brand Name
+     */
+    brand_name: string;
+    /**
+     * Company Name
+     */
+    company_name: string;
+    /**
+     * Company Slug
+     */
+    company_slug: string;
+};
+
+/**
+ * ChurnSignalItem
+ */
+export type ChurnSignalItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Brand Id
+     */
+    brand_id: string;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Active Posting Count
+     */
+    active_posting_count: number;
+    /**
+     * Prior Period Count
+     */
+    prior_period_count: number;
+    /**
+     * Velocity Delta
+     */
+    velocity_delta: number | null;
+    /**
+     * Avg Days Active
+     */
+    avg_days_active: number | null;
+    /**
+     * Repost Rate
+     */
+    repost_rate: number | null;
+    /**
+     * Churn Signal Score
+     */
+    churn_signal_score: number | null;
+};
+
+/**
+ * CompanyItem
+ */
+export type CompanyItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Ats Platform
+     */
+    ats_platform: string;
 };
 
 /**
@@ -96,6 +314,40 @@ export type ComparisonCreate = {
      * Notes
      */
     notes?: string | null;
+};
+
+/**
+ * CoverageGapItem
+ */
+export type CoverageGapItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Market Id
+     */
+    market_id: string;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Total Active Postings
+     */
+    total_active_postings: number;
+    /**
+     * Brand Count
+     */
+    brand_count: number;
+    /**
+     * Brand Names
+     */
+    brand_names: Array<string> | null;
 };
 
 /**
@@ -309,6 +561,314 @@ export type EnrichmentRunSummary = {
 export type EnrichmentStatus = 'pending' | 'running' | 'success' | 'partial' | 'failed';
 
 /**
+ * EvalComparisonItem
+ */
+export type EvalComparisonItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Posting Id
+     */
+    posting_id: string;
+    /**
+     * Result A Id
+     */
+    result_a_id: string;
+    /**
+     * Result B Id
+     */
+    result_b_id: string;
+    /**
+     * Winner
+     */
+    winner: string;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * EvalCorpusItem
+ */
+export type EvalCorpusItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Slug
+     */
+    company_slug: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Location
+     */
+    location?: string | null;
+    /**
+     * Full Text
+     */
+    full_text: string;
+    /**
+     * Reference Pass1
+     */
+    reference_pass1?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Reference Pass2
+     */
+    reference_pass2?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
+ * EvalFieldReviewItem
+ */
+export type EvalFieldReviewItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Result Id
+     */
+    result_id: string;
+    /**
+     * Field Name
+     */
+    field_name: string;
+    /**
+     * Model Value
+     */
+    model_value?: string | null;
+    /**
+     * Is Correct
+     */
+    is_correct: -1 | 0 | 1;
+    /**
+     * Correct Value
+     */
+    correct_value?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * EvalLeaderboardResponse
+ */
+export type EvalLeaderboardResponse = {
+    /**
+     * Runs
+     */
+    runs: Array<EvalRunItem>;
+    /**
+     * Elo
+     */
+    elo: {
+        [key: string]: number;
+    };
+    /**
+     * Comparisons
+     */
+    comparisons: Array<EvalComparisonItem>;
+    /**
+     * Field Accuracy
+     */
+    field_accuracy: {
+        [key: string]: {
+            [key: string]: number;
+        };
+    };
+    /**
+     * Results
+     */
+    results: {
+        [key: string]: Array<EvalResultItem>;
+    };
+};
+
+/**
+ * EvalModelItem
+ */
+export type EvalModelItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * EvalResultItem
+ */
+export type EvalResultItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Posting Id
+     */
+    posting_id: string;
+    /**
+     * Raw Response
+     */
+    raw_response?: string | null;
+    /**
+     * Parsed Result
+     */
+    parsed_result?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Parse Success
+     */
+    parse_success: boolean;
+    /**
+     * Input Tokens
+     */
+    input_tokens?: number | null;
+    /**
+     * Output Tokens
+     */
+    output_tokens?: number | null;
+    /**
+     * Cost Usd
+     */
+    cost_usd?: number | null;
+    /**
+     * Latency Ms
+     */
+    latency_ms?: number | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * EvalRunCreateResponse
+ */
+export type EvalRunCreateResponse = {
+    /**
+     * Tracking Id
+     */
+    tracking_id: number;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * EvalRunItem
+ */
+export type EvalRunItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Pass Number
+     */
+    pass_number: number;
+    /**
+     * Model
+     */
+    model: string;
+    /**
+     * Prompt Version
+     */
+    prompt_version: string;
+    /**
+     * Corpus Size
+     */
+    corpus_size: number;
+    /**
+     * Total Input Tokens
+     */
+    total_input_tokens?: number | null;
+    /**
+     * Total Output Tokens
+     */
+    total_output_tokens?: number | null;
+    /**
+     * Total Cost Usd
+     */
+    total_cost_usd?: number | null;
+    /**
+     * Total Duration Ms
+     */
+    total_duration_ms?: number | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Total Items
+     */
+    total_items: number;
+    /**
+     * Completed Items
+     */
+    completed_items: number;
+    /**
+     * Completed At
+     */
+    completed_at?: string | null;
+};
+
+/**
+ * EvalRunProgressResponse
+ */
+export type EvalRunProgressResponse = {
+    /**
+     * Status
+     */
+    status: 'starting' | 'running' | 'completed' | 'failed';
+    /**
+     * Completed
+     */
+    completed?: number;
+    /**
+     * Total
+     */
+    total?: number;
+};
+
+/**
  * FieldReviewCreate
  */
 export type FieldReviewCreate = {
@@ -345,6 +905,16 @@ export type HttpValidationError = {
 };
 
 /**
+ * IdResponse
+ */
+export type IdResponse = {
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
  * InviteRequest
  */
 export type InviteRequest = {
@@ -374,6 +944,102 @@ export type InviteResponse = {
      * Invited
      */
     invited: boolean;
+};
+
+/**
+ * LifecycleItem
+ */
+export type LifecycleItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Role Archetype
+     */
+    role_archetype: string | null;
+    /**
+     * Brand Id
+     */
+    brand_id: string | null;
+    /**
+     * Market Id
+     */
+    market_id: string | null;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Avg Days Open
+     */
+    avg_days_open: number | null;
+    /**
+     * Median Days Open
+     */
+    median_days_open: number | null;
+    /**
+     * Repost Rate
+     */
+    repost_rate: number | null;
+    /**
+     * Avg Repost Gap Days
+     */
+    avg_repost_gap_days: number | null;
+};
+
+/**
+ * PayBenchmarkItem
+ */
+export type PayBenchmarkItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Role Archetype
+     */
+    role_archetype: string | null;
+    /**
+     * Market Id
+     */
+    market_id: string | null;
+    /**
+     * Brand Id
+     */
+    brand_id: string | null;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Avg Pay Min
+     */
+    avg_pay_min: number | null;
+    /**
+     * Avg Pay Max
+     */
+    avg_pay_max: number | null;
+    /**
+     * Median Pay Min
+     */
+    median_pay_min: number | null;
+    /**
+     * Median Pay Max
+     */
+    median_pay_max: number | null;
+    /**
+     * Sample Size
+     */
+    sample_size: number;
 };
 
 /**
@@ -820,6 +1486,16 @@ export type StageStatus = {
 };
 
 /**
+ * StatusResponse
+ */
+export type StatusResponse = {
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * UserResponse
  */
 export type UserResponse = {
@@ -875,6 +1551,56 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * VelocityItem
+ */
+export type VelocityItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Brand Id
+     */
+    brand_id: string | null;
+    /**
+     * Market Id
+     */
+    market_id: string | null;
+    /**
+     * Active Postings
+     */
+    active_postings: number;
+    /**
+     * New Postings
+     */
+    new_postings: number;
+    /**
+     * Closed Postings
+     */
+    closed_postings: number;
+    /**
+     * Net Change
+     */
+    net_change: number;
+    /**
+     * Company Name
+     */
+    company_name: string;
+    /**
+     * Company Slug
+     */
+    company_slug: string;
 };
 
 /**
@@ -1433,9 +2159,7 @@ export type GetVelocityApiV1AggregationVelocityGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<VelocityItem>;
 };
 
 export type GetVelocityApiV1AggregationVelocityGetResponse = GetVelocityApiV1AggregationVelocityGetResponses[keyof GetVelocityApiV1AggregationVelocityGetResponses];
@@ -1453,9 +2177,7 @@ export type GetBrandTimelineApiV1AggregationBrandTimelineGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<BrandTimelineItem>;
 };
 
 export type GetBrandTimelineApiV1AggregationBrandTimelineGetResponse = GetBrandTimelineApiV1AggregationBrandTimelineGetResponses[keyof GetBrandTimelineApiV1AggregationBrandTimelineGetResponses];
@@ -1473,9 +2195,7 @@ export type GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<PayBenchmarkItem>;
 };
 
 export type GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponse = GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponses[keyof GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponses];
@@ -1493,9 +2213,7 @@ export type GetLifecycleApiV1AggregationLifecycleGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<LifecycleItem>;
 };
 
 export type GetLifecycleApiV1AggregationLifecycleGetResponse = GetLifecycleApiV1AggregationLifecycleGetResponses[keyof GetLifecycleApiV1AggregationLifecycleGetResponses];
@@ -1513,9 +2231,7 @@ export type GetChurnSignalsApiV1AggregationChurnSignalsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<ChurnSignalItem>;
 };
 
 export type GetChurnSignalsApiV1AggregationChurnSignalsGetResponse = GetChurnSignalsApiV1AggregationChurnSignalsGetResponses[keyof GetChurnSignalsApiV1AggregationChurnSignalsGetResponses];
@@ -1533,9 +2249,7 @@ export type GetCoverageGapsApiV1AggregationCoverageGapsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<CoverageGapItem>;
 };
 
 export type GetCoverageGapsApiV1AggregationCoverageGapsGetResponse = GetCoverageGapsApiV1AggregationCoverageGapsGetResponses[keyof GetCoverageGapsApiV1AggregationCoverageGapsGetResponses];
@@ -1553,9 +2267,7 @@ export type GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<AgencyOverlapItem>;
 };
 
 export type GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponse = GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponses[keyof GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponses];
@@ -1589,9 +2301,7 @@ export type ListCompaniesApiV1CompaniesGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<CompanyItem>;
 };
 
 export type ListCompaniesApiV1CompaniesGetResponse = ListCompaniesApiV1CompaniesGetResponses[keyof ListCompaniesApiV1CompaniesGetResponses];
@@ -1693,9 +2403,7 @@ export type GetCorpusApiV1EvalCorpusGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<EvalCorpusItem>;
 };
 
 export type GetCorpusApiV1EvalCorpusGetResponse = GetCorpusApiV1EvalCorpusGetResponses[keyof GetCorpusApiV1EvalCorpusGetResponses];
@@ -1713,9 +2421,7 @@ export type GetRunsApiV1EvalRunsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<EvalRunItem>;
 };
 
 export type GetRunsApiV1EvalRunsGetResponse = GetRunsApiV1EvalRunsGetResponses[keyof GetRunsApiV1EvalRunsGetResponses];
@@ -1738,13 +2444,9 @@ export type CreateRunApiV1EvalRunsPostError = CreateRunApiV1EvalRunsPostErrors[k
 
 export type CreateRunApiV1EvalRunsPostResponses = {
     /**
-     * Response Create Run Api V1 Eval Runs Post
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: EvalRunCreateResponse;
 };
 
 export type CreateRunApiV1EvalRunsPostResponse = CreateRunApiV1EvalRunsPostResponses[keyof CreateRunApiV1EvalRunsPostResponses];
@@ -1772,13 +2474,9 @@ export type DeleteRunApiV1EvalRunsRunIdDeleteError = DeleteRunApiV1EvalRunsRunId
 
 export type DeleteRunApiV1EvalRunsRunIdDeleteResponses = {
     /**
-     * Response Delete Run Api V1 Eval Runs  Run Id  Delete
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: string;
-    };
+    200: StatusResponse;
 };
 
 export type DeleteRunApiV1EvalRunsRunIdDeleteResponse = DeleteRunApiV1EvalRunsRunIdDeleteResponses[keyof DeleteRunApiV1EvalRunsRunIdDeleteResponses];
@@ -1806,13 +2504,9 @@ export type GetRunApiV1EvalRunsRunIdGetError = GetRunApiV1EvalRunsRunIdGetErrors
 
 export type GetRunApiV1EvalRunsRunIdGetResponses = {
     /**
-     * Response Get Run Api V1 Eval Runs  Run Id  Get
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: EvalRunItem;
 };
 
 export type GetRunApiV1EvalRunsRunIdGetResponse = GetRunApiV1EvalRunsRunIdGetResponses[keyof GetRunApiV1EvalRunsRunIdGetResponses];
@@ -1844,9 +2538,7 @@ export type GetRunResultsApiV1EvalRunsRunIdResultsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<EvalResultItem>;
 };
 
 export type GetRunResultsApiV1EvalRunsRunIdResultsGetResponse = GetRunResultsApiV1EvalRunsRunIdResultsGetResponses[keyof GetRunResultsApiV1EvalRunsRunIdResultsGetResponses];
@@ -1913,9 +2605,7 @@ export type GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponses = {
      * Successful Response
      */
     200: {
-        [key: string]: Array<{
-            [key: string]: unknown;
-        }>;
+        [key: string]: Array<EvalFieldReviewItem>;
     };
 };
 
@@ -1944,13 +2634,9 @@ export type GetRunProgressApiV1EvalRunsRunIdProgressGetError = GetRunProgressApi
 
 export type GetRunProgressApiV1EvalRunsRunIdProgressGetResponses = {
     /**
-     * Response Get Run Progress Api V1 Eval Runs  Run Id  Progress Get
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: EvalRunProgressResponse;
 };
 
 export type GetRunProgressApiV1EvalRunsRunIdProgressGetResponse = GetRunProgressApiV1EvalRunsRunIdProgressGetResponses[keyof GetRunProgressApiV1EvalRunsRunIdProgressGetResponses];
@@ -1964,13 +2650,9 @@ export type GetLeaderboardDataApiV1EvalLeaderboardDataGetData = {
 
 export type GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses = {
     /**
-     * Response Get Leaderboard Data Api V1 Eval Leaderboard Data Get
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: EvalLeaderboardResponse;
 };
 
 export type GetLeaderboardDataApiV1EvalLeaderboardDataGetResponse = GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses[keyof GetLeaderboardDataApiV1EvalLeaderboardDataGetResponses];
@@ -1988,9 +2670,7 @@ export type GetComparisonsApiV1EvalComparisonsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<EvalComparisonItem>;
 };
 
 export type GetComparisonsApiV1EvalComparisonsGetResponse = GetComparisonsApiV1EvalComparisonsGetResponses[keyof GetComparisonsApiV1EvalComparisonsGetResponses];
@@ -2013,13 +2693,9 @@ export type CreateComparisonApiV1EvalComparisonsPostError = CreateComparisonApiV
 
 export type CreateComparisonApiV1EvalComparisonsPostResponses = {
     /**
-     * Response Create Comparison Api V1 Eval Comparisons Post
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: string;
-    };
+    200: IdResponse;
 };
 
 export type CreateComparisonApiV1EvalComparisonsPostResponse = CreateComparisonApiV1EvalComparisonsPostResponses[keyof CreateComparisonApiV1EvalComparisonsPostResponses];
@@ -2096,13 +2772,9 @@ export type CreateFieldReviewApiV1EvalFieldReviewsPostError = CreateFieldReviewA
 
 export type CreateFieldReviewApiV1EvalFieldReviewsPostResponses = {
     /**
-     * Response Create Field Review Api V1 Eval Field Reviews Post
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: string;
-    };
+    200: IdResponse;
 };
 
 export type CreateFieldReviewApiV1EvalFieldReviewsPostResponse = CreateFieldReviewApiV1EvalFieldReviewsPostResponses[keyof CreateFieldReviewApiV1EvalFieldReviewsPostResponses];
@@ -2120,9 +2792,7 @@ export type ListModelsApiV1EvalModelsGetResponses = {
      *
      * Successful Response
      */
-    200: Array<{
-        [key: string]: string;
-    }>;
+    200: Array<EvalModelItem>;
 };
 
 export type ListModelsApiV1EvalModelsGetResponse = ListModelsApiV1EvalModelsGetResponses[keyof ListModelsApiV1EvalModelsGetResponses];
@@ -2150,13 +2820,9 @@ export type GetProgressApiV1EvalProgressTrackingIdGetError = GetProgressApiV1Eva
 
 export type GetProgressApiV1EvalProgressTrackingIdGetResponses = {
     /**
-     * Response Get Progress Api V1 Eval Progress  Tracking Id  Get
-     *
      * Successful Response
      */
-    200: {
-        [key: string]: unknown;
-    };
+    200: EvalRunProgressResponse;
 };
 
 export type GetProgressApiV1EvalProgressTrackingIdGetResponse = GetProgressApiV1EvalProgressTrackingIdGetResponses[keyof GetProgressApiV1EvalProgressTrackingIdGetResponses];
@@ -2204,142 +2870,44 @@ export type ListUsersApiV1AdminUsersGetResponses = {
 
 export type ListUsersApiV1AdminUsersGetResponse = ListUsersApiV1AdminUsersGetResponses[keyof ListUsersApiV1AdminUsersGetResponses];
 
-export type LegacyApiRedirectApiPathPostData = {
+export type ListAlertsApiV1AlertsGetData = {
     body?: never;
-    path: {
+    path?: never;
+    query?: {
         /**
-         * Path
+         * Limit
          */
-        path: string;
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Company Id
+         */
+        company_id?: string | null;
+        /**
+         * Alert Type
+         */
+        alert_type?: string | null;
     };
-    query?: never;
-    url: '/api/{path}';
+    url: '/api/v1/alerts';
 };
 
-export type LegacyApiRedirectApiPathPostErrors = {
+export type ListAlertsApiV1AlertsGetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type LegacyApiRedirectApiPathPostError = LegacyApiRedirectApiPathPostErrors[keyof LegacyApiRedirectApiPathPostErrors];
+export type ListAlertsApiV1AlertsGetError = ListAlertsApiV1AlertsGetErrors[keyof ListAlertsApiV1AlertsGetErrors];
 
-export type LegacyApiRedirectApiPathPostResponses = {
+export type ListAlertsApiV1AlertsGetResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: AlertListResponse;
 };
 
-export type LegacyApiRedirectApiPathPost2Data = {
-    body?: never;
-    path: {
-        /**
-         * Path
-         */
-        path: string;
-    };
-    query?: never;
-    url: '/api/{path}';
-};
-
-export type LegacyApiRedirectApiPathPost2Errors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type LegacyApiRedirectApiPathPost2Error = LegacyApiRedirectApiPathPost2Errors[keyof LegacyApiRedirectApiPathPost2Errors];
-
-export type LegacyApiRedirectApiPathPost2Responses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type LegacyApiRedirectApiPathPost3Data = {
-    body?: never;
-    path: {
-        /**
-         * Path
-         */
-        path: string;
-    };
-    query?: never;
-    url: '/api/{path}';
-};
-
-export type LegacyApiRedirectApiPathPost3Errors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type LegacyApiRedirectApiPathPost3Error = LegacyApiRedirectApiPathPost3Errors[keyof LegacyApiRedirectApiPathPost3Errors];
-
-export type LegacyApiRedirectApiPathPost3Responses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type LegacyApiRedirectApiPathPost4Data = {
-    body?: never;
-    path: {
-        /**
-         * Path
-         */
-        path: string;
-    };
-    query?: never;
-    url: '/api/{path}';
-};
-
-export type LegacyApiRedirectApiPathPost4Errors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type LegacyApiRedirectApiPathPost4Error = LegacyApiRedirectApiPathPost4Errors[keyof LegacyApiRedirectApiPathPost4Errors];
-
-export type LegacyApiRedirectApiPathPost4Responses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type LegacyApiRedirectApiPathPost5Data = {
-    body?: never;
-    path: {
-        /**
-         * Path
-         */
-        path: string;
-    };
-    query?: never;
-    url: '/api/{path}';
-};
-
-export type LegacyApiRedirectApiPathPost5Errors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type LegacyApiRedirectApiPathPost5Error = LegacyApiRedirectApiPathPost5Errors[keyof LegacyApiRedirectApiPathPost5Errors];
-
-export type LegacyApiRedirectApiPathPost5Responses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
+export type ListAlertsApiV1AlertsGetResponse = ListAlertsApiV1AlertsGetResponses[keyof ListAlertsApiV1AlertsGetResponses];

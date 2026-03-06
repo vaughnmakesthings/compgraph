@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +29,9 @@ class AggregationService:
     """Encapsulates all aggregation-table read queries."""
 
     @staticmethod
-    async def get_velocity(db: AsyncSession) -> list[dict]:
+    async def get_velocity(db: AsyncSession, *, days: int = 30) -> list[dict]:
+        days = max(1, min(days, 365))
+        cutoff = datetime.now(UTC).date() - timedelta(days=days)
         stmt = (
             select(
                 AggDailyVelocity,
@@ -35,8 +39,8 @@ class AggregationService:
                 Company.slug.label("company_slug"),
             )
             .join(Company, AggDailyVelocity.company_id == Company.id)
+            .where(AggDailyVelocity.date >= cutoff)
             .order_by(AggDailyVelocity.date.desc())
-            .limit(500)
         )
         result = await db.execute(stmt)
         return [

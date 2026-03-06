@@ -1,0 +1,42 @@
+{
+  "featured_jobs": [],
+  "filters": {},
+  "jobs": [
+    {
+      "guid": "pqr901stu234",
+      "reqid": "REQ-004",
+      "title_exact": "Field Sales Representative",
+      "city_exact": "Houston",
+      "state_short": "TX",
+      "country_exact": "United States",
+      "description": "<p>Field sales role covering Houston territory.</p>",
+      "date_added": "2026-02-28T00:00:00",
+      "date_updated": "2026-03-04T00:00:00",
+      "company_exact": "Acosta Group",
+      "GeoLocation": "29.7604,-95.3698"
+    },
+    {
+      "guid": "vwx567yza890",
+      "reqid": "REQ-005",
+      "title_exact": "Retail Execution Specialist",
+      "city_exact": "Phoenix",
+      "state_short": "AZ",
+      "country_exact": "United States",
+      "description": "<p>Execute in-store programs in Phoenix metro area.</p>",
+      "date_added": "2026-03-01T00:00:00",
+      "date_updated": "2026-03-05T00:00:00",
+      "company_exact": "Acosta Group",
+      "GeoLocation": "33.4484,-112.0740"
+    }
+  ],
+  "meta": {
+    "query": "",
+    "agency": "premium"
+  },
+  "pagination": {
+    "current_page": 2,
+    "total_pages": 3,
+    "total_count": 42,
+    "page_size": 14
+  }
+}

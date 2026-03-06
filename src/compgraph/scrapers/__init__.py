@@ -2,6 +2,7 @@
 
 from compgraph.scrapers.base import RawPosting, ScraperAdapter, ScrapeResult
 from compgraph.scrapers.icims import ICIMSAdapter
+from compgraph.scrapers.jobsync import JobSyncAdapter
 from compgraph.scrapers.orchestrator import (
     CompanyState,
     PipelineOrchestrator,
@@ -17,9 +18,12 @@ register_adapter("workday", WorkdayAdapter)
 
 register_adapter("icims", ICIMSAdapter)
 
+register_adapter("jobsyn", JobSyncAdapter)
+
 __all__ = [
     "CompanyState",
     "ICIMSAdapter",
+    "JobSyncAdapter",
     "PipelineOrchestrator",
     "PipelineRun",
     "PipelineStatus",
