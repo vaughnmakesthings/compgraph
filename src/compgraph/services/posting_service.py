@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,14 +17,25 @@ from compgraph.db.models import (
     PostingSnapshot,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy import Subquery
+
 SORT_BY_ALLOWED = frozenset(
     {"first_seen_desc", "first_seen_asc", "pay_desc", "pay_asc", "title_asc"}
 )
 
 
 def _escape_like(s: str) -> str:
-    """Escape SQL LIKE metacharacters (%, _) for literal matching."""
     return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _latest_snapshot_subquery() -> Subquery:
+    return (
+        select(PostingSnapshot)
+        .distinct(PostingSnapshot.posting_id)
+        .order_by(PostingSnapshot.posting_id, PostingSnapshot.snapshot_date.desc())
+        .subquery()
+    )
 
 
 def _build_filters(
@@ -31,8 +43,8 @@ def _build_filters(
     is_active: bool | None,
     role_archetype: str | None,
     search: str | None,
+    snapshot_subq: Any = None,
 ) -> tuple[list, bool]:
-    """Return (filters, needs_snapshot_join)."""
     filters: list = []
     if company_id is not None:
         filters.append(Posting.company_id == company_id)
@@ -44,23 +56,14 @@ def _build_filters(
     needs_snapshot = bool(search_trimmed)
     if needs_snapshot:
         escaped = _escape_like(search_trimmed)
-        filters.append(PostingSnapshot.title_raw.ilike(f"%{escaped}%", escape="\\"))
+        title_col = (
+            snapshot_subq.c.title_raw if snapshot_subq is not None else PostingSnapshot.title_raw
+        )
+        filters.append(title_col.ilike(f"%{escaped}%", escape="\\"))
     return filters, needs_snapshot
 
 
-def _latest_snapshot_join():
-    """Correlated join to latest PostingSnapshot per Posting."""
-    return (PostingSnapshot.posting_id == Posting.id) & (
-        PostingSnapshot.snapshot_date
-        == select(func.max(PostingSnapshot.snapshot_date))
-        .where(PostingSnapshot.posting_id == Posting.id)
-        .correlate(Posting)
-        .scalar_subquery()
-    )
-
-
-def _order_by_clause(sort_by: str):
-    """Map sort_by string to SQLAlchemy order_by clause."""
+def _order_by_clause(sort_by: str, snapshot_subq: Any) -> Any:
     from sqlalchemy.sql import nulls_last
 
     mapping = {
@@ -68,14 +71,12 @@ def _order_by_clause(sort_by: str):
         "first_seen_asc": Posting.first_seen_at.asc(),
         "pay_desc": nulls_last(PostingEnrichment.pay_max.desc()),
         "pay_asc": nulls_last(PostingEnrichment.pay_max.asc()),
-        "title_asc": nulls_last(PostingSnapshot.title_raw.asc()),
+        "title_asc": nulls_last(snapshot_subq.c.title_raw.asc()),
     }
     return mapping.get(sort_by, Posting.first_seen_at.desc())
 
 
 class PostingService:
-    """Encapsulates all posting-related database queries."""
-
     @staticmethod
     async def list_postings(
         db: AsyncSession,
@@ -88,15 +89,17 @@ class PostingService:
         sort_by: str = "first_seen_desc",
         search: str | None = None,
     ) -> tuple[list[dict], int]:
-        """Return (items, total_count) for the posting list endpoint."""
-        filters, needs_snapshot = _build_filters(company_id, is_active, role_archetype, search)
+        latest_snap = _latest_snapshot_subquery()
+        filters, needs_snapshot = _build_filters(
+            company_id, is_active, role_archetype, search, snapshot_subq=latest_snap
+        )
 
         # Count query
         count_base = select(Posting).outerjoin(
             PostingEnrichment, PostingEnrichment.posting_id == Posting.id
         )
         if needs_snapshot:
-            count_base = count_base.outerjoin(PostingSnapshot, _latest_snapshot_join())
+            count_base = count_base.outerjoin(latest_snap, latest_snap.c.posting_id == Posting.id)
         count_subq = count_base.where(*filters).subquery()
         count_result = await db.execute(select(func.count()).select_from(count_subq))
         total = count_result.scalar_one()
@@ -110,16 +113,16 @@ class PostingService:
                 PostingEnrichment.pay_max,
                 PostingEnrichment.pay_currency,
                 PostingEnrichment.employment_type,
-                PostingSnapshot.title_raw,
-                PostingSnapshot.location_raw,
+                latest_snap.c.title_raw,
+                latest_snap.c.location_raw,
                 Company.name.label("company_name"),
                 Company.slug.label("company_slug"),
             )
             .outerjoin(PostingEnrichment, PostingEnrichment.posting_id == Posting.id)
             .outerjoin(Company, Company.id == Posting.company_id)
-            .outerjoin(PostingSnapshot, _latest_snapshot_join())
+            .outerjoin(latest_snap, latest_snap.c.posting_id == Posting.id)
             .where(*filters)
-            .order_by(_order_by_clause(sort_by))
+            .order_by(_order_by_clause(sort_by, latest_snap))
             .limit(limit)
             .offset(offset)
         )
@@ -151,7 +154,6 @@ class PostingService:
         db: AsyncSession,
         posting_id: uuid.UUID,
     ) -> dict | None:
-        """Return full posting detail with enrichment and brand mentions, or None."""
         posting_result = await db.execute(select(Posting).where(Posting.id == posting_id))
         posting = posting_result.scalar_one_or_none()
         if posting is None:
