@@ -81,7 +81,7 @@ class TestAdvisoryLockAcquired:
 
             lock_session.execute.assert_awaited_once()
             call_args = lock_session.execute.call_args
-            assert str(call_args[0][0]) == "SELECT pg_try_advisory_lock(:key)"
+            assert str(call_args[0][0]) == "SELECT pg_try_advisory_xact_lock(:key)"
             assert call_args[0][1]["key"] == ENRICHMENT_ADVISORY_LOCK_KEY
 
 
