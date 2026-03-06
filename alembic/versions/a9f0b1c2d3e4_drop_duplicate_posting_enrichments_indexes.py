@@ -1,7 +1,7 @@
 """drop duplicate posting_enrichments indexes
 
 Revision ID: a9f0b1c2d3e4
-Revises: 7d1276046127
+Revises: c3d4e5f6a7b9
 Create Date: 2026-03-05 12:00:00.000000
 
 Migration cc45d3e4f5a6 created plural-named indexes on posting_enrichments
@@ -24,7 +24,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "a9f0b1c2d3e4"
-down_revision: str | None = "7d1276046127"
+down_revision: str | None = "c3d4e5f6a7b9"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
