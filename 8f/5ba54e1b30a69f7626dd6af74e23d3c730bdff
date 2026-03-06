@@ -1,0 +1,38 @@
+.claude/skills/plan-feature/SKILL.md
+  ee5eb0865e4e6498 1-456
+CLAUDE.md
+  ee5eb0865e4e6498 438
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "8f5ba54e1b30a69f7626dd6af74e23d3c730bdff",
+  "prompts": {
+    "c482aeaa56739ace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74164cc0-d9be-440c-800f-aa6a75b7155f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 25,
+      "total_deletions": 2,
+      "accepted_lines": 22,
+      "overriden_lines": 0
+    },
+    "ee5eb0865e4e6498": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bee1c483-c46f-44da-84ae-866577b38f99",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 457,
+      "total_deletions": 0,
+      "accepted_lines": 457,
+      "overriden_lines": 0
+    }
+  }
+}
