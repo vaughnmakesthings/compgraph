@@ -1,0 +1,27 @@
+web/src/test/middleware.test.ts
+  d3e3826caa4ddace 70,76-79,87-99
+web/src/lib/supabase/middleware.ts
+  d3e3826caa4ddace 44-49,51
+web/src/components/auth/login-form.tsx
+  d3e3826caa4ddace 28-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "b752829271eef43704fd7de358233815163a0ded",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 31,
+      "total_deletions": 3,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
