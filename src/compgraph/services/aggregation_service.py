@@ -30,6 +30,7 @@ class AggregationService:
 
     @staticmethod
     async def get_velocity(db: AsyncSession, *, days: int = 30) -> list[dict]:
+        days = max(1, min(days, 365))
         cutoff = datetime.now(UTC).date() - timedelta(days=days)
         stmt = (
             select(
