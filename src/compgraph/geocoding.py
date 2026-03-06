@@ -1,15 +1,24 @@
 import asyncio
 import logging
+from functools import lru_cache
 
 import h3
 
 logger = logging.getLogger(__name__)
 
+_MAX_CACHE_SIZE = 10_000
 _geocode_cache: dict[str, tuple[float, float] | None] = {}
 
 
 def _normalize_location(location: str) -> str:
     return location.strip().lower()
+
+
+@lru_cache(maxsize=1)
+def _get_geolocator():
+    from geopy.geocoders import Nominatim
+
+    return Nominatim(user_agent="compgraph-geocoder")
 
 
 async def geocode_location(location_str: str) -> tuple[float, float] | None:
@@ -22,6 +31,8 @@ async def geocode_location(location_str: str) -> tuple[float, float] | None:
 
     try:
         result = await asyncio.to_thread(_geocode_sync, location_str)
+        if len(_geocode_cache) >= _MAX_CACHE_SIZE:
+            _geocode_cache.clear()
         _geocode_cache[cache_key] = result
         return result
     except Exception:
@@ -31,9 +42,7 @@ async def geocode_location(location_str: str) -> tuple[float, float] | None:
 
 
 def _geocode_sync(location_str: str) -> tuple[float, float] | None:
-    from geopy.geocoders import Nominatim
-
-    geolocator = Nominatim(user_agent="compgraph-geocoder")
+    geolocator = _get_geolocator()
     location = geolocator.geocode(location_str, timeout=10)
     if location:
         return (location.latitude, location.longitude)

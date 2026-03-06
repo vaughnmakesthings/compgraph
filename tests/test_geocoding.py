@@ -2,14 +2,21 @@ from unittest.mock import patch
 
 import pytest
 
-from compgraph.geocoding import _geocode_cache, _normalize_location, compute_h3_index
+from compgraph.geocoding import (
+    _geocode_cache,
+    _get_geolocator,
+    _normalize_location,
+    compute_h3_index,
+)
 
 
 @pytest.fixture(autouse=True)
 def _clear_geocode_cache():
     _geocode_cache.clear()
+    _get_geolocator.cache_clear()
     yield
     _geocode_cache.clear()
+    _get_geolocator.cache_clear()
 
 
 def test_normalize_location_strips_and_lowercases():

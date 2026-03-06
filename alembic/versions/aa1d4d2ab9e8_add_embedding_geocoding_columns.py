@@ -1,7 +1,7 @@
 """add embedding, latitude, longitude, h3_index columns for Phase 0 foundation
 
 Revision ID: aa1d4d2ab9e8
-Revises: b3c4d5e6f7a8
+Revises: d4e5f6a7b8c9
 Create Date: 2026-03-06 18:00:00.000000
 
 Adds pgvector embedding column to posting_enrichments for semantic search,
@@ -16,7 +16,7 @@ from alembic import op
 from pgvector.sqlalchemy import Vector
 
 revision: str = "aa1d4d2ab9e8"
-down_revision: str | None = "b3c4d5e6f7a8"
+down_revision: str | None = "d4e5f6a7b8c9"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

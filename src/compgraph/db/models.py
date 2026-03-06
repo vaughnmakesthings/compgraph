@@ -209,7 +209,7 @@ class Posting(Base):
 
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
-    h3_index: Mapped[str | None] = mapped_column(String(15), nullable=True, index=True)
+    h3_index: Mapped[str | None] = mapped_column(String(15), nullable=True)
 
     company: Mapped["Company"] = relationship(back_populates="postings")
     snapshots: Mapped[list["PostingSnapshot"]] = relationship(back_populates="posting")
