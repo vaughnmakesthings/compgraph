@@ -18,6 +18,7 @@ from compgraph.scrapers.orchestrator import (
     PipelineOrchestrator,
     PipelineRun,
     PipelineStatus,
+    _pipeline_orchestrators,
 )
 from compgraph.scrapers.orchestrator import (
     _store_run as _store_scrape_run,
@@ -78,6 +79,9 @@ async def pipeline_job() -> None:
 
     logger.info("[PIPELINE] Scheduled pipeline job starting")
 
+    # Deferred import to avoid circular dependency (jobs -> main -> health -> ...)
+    from compgraph.main import shutdown_event
+
     # --- Cleanup stale PENDING runs before starting ---
     try:
         from compgraph.db.session import async_session_factory
@@ -98,6 +102,9 @@ async def pipeline_job() -> None:
         _store_scrape_run(pipeline_run)
         orchestrator = PipelineOrchestrator()
 
+        # Register orchestrator so signal handler can stop scheduler-triggered runs
+        _pipeline_orchestrators[pipeline_run.run_id] = orchestrator
+
         try:
             await orchestrator.run(pipeline_run)
         except Exception:
@@ -105,6 +112,8 @@ async def pipeline_job() -> None:
             sentry_sdk.capture_exception()
             pipeline_run.status = PipelineStatus.FAILED
             pipeline_run.finished_at = datetime.now(UTC)
+        finally:
+            _pipeline_orchestrators.pop(pipeline_run.run_id, None)
 
         scrape_succeeded = pipeline_run.status in (
             PipelineStatus.SUCCESS,
@@ -132,7 +141,6 @@ async def pipeline_job() -> None:
         )
 
     # --- Check for shutdown before continuing ---
-    from compgraph.main import shutdown_event
 
     if shutdown_event.is_set():
         logger.warning("[PIPELINE] Shutdown signal received — skipping remaining phases")
@@ -240,6 +248,7 @@ async def pipeline_job() -> None:
         agg_succeeded = False
 
     # --- Alert generation phase ---
+    alerts_succeeded = True
     if agg_succeeded:
         with sentry_sdk.start_span(op="pipeline.alerts", name="Generate alerts"):
             logger.info("[ALERTS] Starting alert generation")
@@ -256,9 +265,13 @@ async def pipeline_job() -> None:
             except Exception:
                 logger.exception("[ALERTS] Alert generation failed")
                 sentry_sdk.capture_exception()
+                alerts_succeeded = False
     else:
         logger.warning("[ALERTS] Skipping alert generation — aggregation failed")
+        alerts_succeeded = False
 
     _last_pipeline_finished_at = datetime.now(UTC)
-    _last_pipeline_success = scrape_succeeded and enrich_succeeded and agg_succeeded
+    _last_pipeline_success = (
+        scrape_succeeded and enrich_succeeded and agg_succeeded and alerts_succeeded
+    )
     logger.info("[PIPELINE] Scheduled pipeline job complete")

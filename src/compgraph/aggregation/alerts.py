@@ -13,6 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Alert
@@ -33,21 +34,45 @@ async def generate_alerts() -> dict[str, int]:
     return counts
 
 
+async def _insert_alerts(session: AsyncSession, alerts: list[dict]) -> int:
+    """Insert alerts with ON CONFLICT DO NOTHING for dedup safety.
+
+    The uq_alert_dedup unique index ensures one alert per
+    (type, company, brand, day). Reruns silently skip duplicates.
+    """
+    if not alerts:
+        return 0
+    stmt = (
+        pg_insert(Alert)
+        .values(alerts)
+        .on_conflict_do_nothing(  # type: ignore[arg-type]
+            index_elements=["alert_type", "company_id", "brand_id", text("(triggered_at::date)")],
+        )
+    )
+    result = await session.execute(stmt)
+    return result.rowcount  # type: ignore[attr-defined,no-any-return]
+
+
 async def _detect_velocity_spikes(session: AsyncSession) -> int:
     """Detect >30% increase in active postings vs trailing 30-day average."""
     sql = text("""
-        WITH latest AS (
+        WITH latest_date AS (
+            SELECT MAX(date) AS max_date
+            FROM agg_daily_velocity
+            WHERE brand_id IS NULL
+        ),
+        latest AS (
             SELECT company_id, active_postings, date
             FROM agg_daily_velocity
             WHERE brand_id IS NULL AND market_id IS NULL
-              AND date = (SELECT MAX(date) FROM agg_daily_velocity WHERE brand_id IS NULL)
+              AND date = (SELECT max_date FROM latest_date)
         ),
         trailing AS (
             SELECT company_id, AVG(active_postings) AS avg_active
             FROM agg_daily_velocity
             WHERE brand_id IS NULL AND market_id IS NULL
-              AND date >= (SELECT MAX(date) - 30 FROM agg_daily_velocity WHERE brand_id IS NULL)
-              AND date < (SELECT MAX(date) FROM agg_daily_velocity WHERE brand_id IS NULL)
+              AND date >= (SELECT max_date FROM latest_date) - 30
+              AND date < (SELECT max_date FROM latest_date)
             GROUP BY company_id
         )
         SELECT l.company_id, l.active_postings, t.avg_active
@@ -58,25 +83,26 @@ async def _detect_velocity_spikes(session: AsyncSession) -> int:
     """)
     result = await session.execute(sql)
     rows = result.all()
-    count = 0
-    for row in rows:
-        alert = Alert(
-            id=uuid.uuid4(),
-            alert_type="velocity_spike",
-            company_id=row.company_id,
-            brand_id=None,
-            triggered_at=datetime.now(UTC),
-            metadata_json={
+    now = datetime.now(UTC)
+    alerts = [
+        {
+            "id": uuid.uuid4(),
+            "alert_type": "velocity_spike",
+            "company_id": row.company_id,
+            "brand_id": None,
+            "triggered_at": now,
+            "metadata_json": {
                 "active_postings": row.active_postings,
                 "avg_30d": round(float(row.avg_active), 1),
                 "pct_increase": round(
-                    (row.active_postings - float(row.avg_active)) / float(row.avg_active) * 100, 1
+                    (row.active_postings - float(row.avg_active)) / float(row.avg_active) * 100,
+                    1,
                 ),
             },
-        )
-        session.add(alert)
-        count += 1
-    return count
+        }
+        for row in rows
+    ]
+    return await _insert_alerts(session, alerts)
 
 
 async def _detect_new_brands(session: AsyncSession) -> int:
@@ -89,21 +115,21 @@ async def _detect_new_brands(session: AsyncSession) -> int:
     """)
     result = await session.execute(sql)
     rows = result.all()
-    count = 0
-    for row in rows:
-        alert = Alert(
-            id=uuid.uuid4(),
-            alert_type="new_brand",
-            company_id=row.company_id,
-            brand_id=row.brand_id,
-            triggered_at=datetime.now(UTC),
-            metadata_json={
+    now = datetime.now(UTC)
+    alerts = [
+        {
+            "id": uuid.uuid4(),
+            "alert_type": "new_brand",
+            "company_id": row.company_id,
+            "brand_id": row.brand_id,
+            "triggered_at": now,
+            "metadata_json": {
                 "first_seen_at": row.first_seen_at.isoformat() if row.first_seen_at else None,
             },
-        )
-        session.add(alert)
-        count += 1
-    return count
+        }
+        for row in rows
+    ]
+    return await _insert_alerts(session, alerts)
 
 
 async def _detect_brand_lost(session: AsyncSession) -> int:
@@ -120,21 +146,21 @@ async def _detect_brand_lost(session: AsyncSession) -> int:
     """)
     result = await session.execute(sql)
     rows = result.all()
-    count = 0
-    for row in rows:
-        alert = Alert(
-            id=uuid.uuid4(),
-            alert_type="brand_lost",
-            company_id=row.company_id,
-            brand_id=row.brand_id,
-            triggered_at=datetime.now(UTC),
-            metadata_json={
+    now = datetime.now(UTC)
+    alerts = [
+        {
+            "id": uuid.uuid4(),
+            "alert_type": "brand_lost",
+            "company_id": row.company_id,
+            "brand_id": row.brand_id,
+            "triggered_at": now,
+            "metadata_json": {
                 "first_seen_at": row.first_seen_at.isoformat() if row.first_seen_at else None,
                 "last_seen_at": row.last_seen_at.isoformat() if row.last_seen_at else None,
                 "total_postings": row.total_postings_all_time,
                 "peak_active": row.peak_active_postings,
             },
-        )
-        session.add(alert)
-        count += 1
-    return count
+        }
+        for row in rows
+    ]
+    return await _insert_alerts(session, alerts)
