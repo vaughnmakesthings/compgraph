@@ -458,6 +458,8 @@ class EnrichmentOrchestrator:
                 else DBStatus.FAILED
             )
             update_fields["finished_at"] = run.finished_at
+            if shutdown_interrupted:
+                update_fields["error_summary"] = "interrupted by graceful shutdown"
             if state.breaker.tripped:
                 update_fields["error_summary"] = (
                     f"circuit breaker triggered: {state.breaker.trip_reason}"

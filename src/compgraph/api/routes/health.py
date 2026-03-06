@@ -56,7 +56,7 @@ async def health_check(
     active_pipelines = [
         r
         for r in _pipeline_runs.values()
-        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED)
+        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED, PipelineStatus.STOPPING)
     ]
     if active_pipelines:
         checks["pipeline"] = f"active ({len(active_pipelines)} run(s))"
