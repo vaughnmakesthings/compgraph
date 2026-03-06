@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from compgraph.api.deps import get_db
+from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
 from compgraph.main import app
 from compgraph.services.posting_service import _escape_like
 
@@ -43,7 +44,7 @@ def _make_enrichment(posting_id: uuid.UUID) -> MagicMock:
     e.employment_type = "full_time"
     e.commission_mentioned = False
     e.benefits_mentioned = True
-    e.enrichment_version = "pass2"
+    e.enrichment_version = ENRICHMENT_VERSION_PASS2
     e.enriched_at = datetime(2024, 1, 16, 8, 0, 0, tzinfo=UTC)
     return e
 
@@ -398,7 +399,7 @@ class TestPostingsDetailEndpoint:
         assert enr["pay_min"] == 18.0
         assert enr["pay_max"] == 24.0
         assert enr["employment_type"] == "full_time"
-        assert enr["enrichment_version"] == "pass2"
+        assert enr["enrichment_version"] == ENRICHMENT_VERSION_PASS2
 
         assert len(body["brand_mentions"]) == 1
         bm = body["brand_mentions"][0]

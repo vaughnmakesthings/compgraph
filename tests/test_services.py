@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
 from compgraph.services.aggregation_service import AggregationService, _model_to_dict
 from compgraph.services.company_service import CompanyService
 from compgraph.services.posting_service import (
@@ -153,7 +154,7 @@ class TestPostingServiceGetPosting:
         enrichment.employment_type = "full_time"
         enrichment.commission_mentioned = False
         enrichment.benefits_mentioned = True
-        enrichment.enrichment_version = "pass2"
+        enrichment.enrichment_version = ENRICHMENT_VERSION_PASS2
         enrichment.enriched_at = datetime(2024, 1, 16, tzinfo=UTC)
 
         snapshot = MagicMock()
