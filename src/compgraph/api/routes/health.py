@@ -56,17 +56,16 @@ async def health_check(
     active_pipelines = [
         r
         for r in _pipeline_runs.values()
-        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED)
+        if r.status in (PipelineStatus.RUNNING, PipelineStatus.PAUSED, PipelineStatus.STOPPING)
     ]
     if active_pipelines:
         checks["pipeline"] = f"active ({len(active_pipelines)} run(s))"
     else:
         checks["pipeline"] = "idle"
 
-    # Shutdown status
-    from compgraph.main import shutdown_event
-
-    shutting_down = shutdown_event.is_set()
+    # Shutdown status (access via app.state to avoid circular import with main)
+    shutdown_evt = getattr(request.app.state, "shutdown_event", None)
+    shutting_down = shutdown_evt is not None and shutdown_evt.is_set()
     if shutting_down:
         checks["shutdown"] = "in_progress"
 

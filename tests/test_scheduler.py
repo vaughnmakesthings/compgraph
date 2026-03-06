@@ -26,6 +26,20 @@ def _reset_scheduler_state():
     jobs_mod._last_pipeline_success = False
 
 
+@pytest.fixture(autouse=True)
+def _mock_db_session():
+    """Mock DB session factory to avoid DB connection in unit tests."""
+    mock_session = AsyncMock()
+    mock_cm = AsyncMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_cm.__aexit__ = AsyncMock(return_value=False)
+    with patch(
+        "compgraph.db.session.async_session_factory",
+        return_value=mock_cm,
+    ):
+        yield
+
+
 def _mock_agg_orchestrator() -> MagicMock:
     mock_result = AggregationResult()
     mock_result.succeeded = {"agg_daily_velocity": 10}

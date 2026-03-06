@@ -76,17 +76,19 @@ shutdown_event = asyncio.Event()
 
 def _signal_handler(sig: int) -> None:
     """Handle SIGTERM/SIGINT by setting shutdown flag and stopping active pipelines."""
-    sig_name = signal.Signals(sig).name
-    logger.info("Received %s — initiating graceful shutdown", sig_name)
-    shutdown_event.set()
-
-    # Stop any active scrape pipeline runs gracefully
+    # Import here to avoid circular import (main -> scrapers.orchestrator is safe,
+    # but module-level import would execute before app is fully configured)
     from compgraph.scrapers.orchestrator import (
         PipelineStatus,
         _pipeline_runs,
         get_orchestrator,
     )
 
+    sig_name = signal.Signals(sig).name
+    logger.info("Received %s — initiating graceful shutdown", sig_name)
+    shutdown_event.set()
+
+    # Stop any active scrape pipeline runs gracefully
     active_runs = [
         r
         for r in _pipeline_runs.values()

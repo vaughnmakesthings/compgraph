@@ -140,8 +140,6 @@ async def pipeline_job() -> None:
             pipeline_run.total_postings_found,
         )
 
-    # --- Check for shutdown before continuing ---
-
     if shutdown_event.is_set():
         logger.warning("[PIPELINE] Shutdown signal received — skipping remaining phases")
         _last_pipeline_finished_at = datetime.now(UTC)
