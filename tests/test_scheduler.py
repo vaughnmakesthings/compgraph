@@ -78,6 +78,11 @@ class TestPipelineJobScrapesThenEnriches:
                 "compgraph.aggregation.orchestrator.AggregationOrchestrator",
                 _mock_agg_orchestrator(),
             ),
+            patch(
+                "compgraph.aggregation.alerts.generate_alerts",
+                new_callable=AsyncMock,
+                return_value={"velocity_spike": 0, "new_brand": 0, "brand_lost": 0},
+            ),
         ):
             await pipeline_job()
 
@@ -183,6 +188,11 @@ class TestPipelineJobPartialTriggers:
                 "compgraph.aggregation.orchestrator.AggregationOrchestrator",
                 _mock_agg_orchestrator(),
             ),
+            patch(
+                "compgraph.aggregation.alerts.generate_alerts",
+                new_callable=AsyncMock,
+                return_value={"velocity_spike": 0, "new_brand": 0, "brand_lost": 0},
+            ),
         ):
             await pipeline_job()
 
@@ -226,6 +236,11 @@ class TestPipelineJobTracksState:
             patch(
                 "compgraph.aggregation.orchestrator.AggregationOrchestrator",
                 _mock_agg_orchestrator(),
+            ),
+            patch(
+                "compgraph.aggregation.alerts.generate_alerts",
+                new_callable=AsyncMock,
+                return_value={"velocity_spike": 0, "new_brand": 0, "brand_lost": 0},
             ),
         ):
             await pipeline_job()
@@ -312,6 +327,11 @@ class TestPipelineJobPartialEnrichSucceeds:
             patch(
                 "compgraph.aggregation.orchestrator.AggregationOrchestrator",
                 _mock_agg_orchestrator(),
+            ),
+            patch(
+                "compgraph.aggregation.alerts.generate_alerts",
+                new_callable=AsyncMock,
+                return_value={"velocity_spike": 0, "new_brand": 0, "brand_lost": 0},
             ),
         ):
             await pipeline_job()

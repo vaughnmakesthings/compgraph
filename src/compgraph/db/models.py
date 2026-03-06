@@ -457,6 +457,29 @@ class AggBrandAgencyOverlap(Base):
 
 
 # ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    alert_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    brand_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("brands.id"), nullable=True)
+    triggered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    metadata_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    __table_args__ = (
+        Index("ix_alerts_company_type", "company_id", "alert_type"),
+        Index("ix_alerts_triggered_at", "triggered_at"),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
 
