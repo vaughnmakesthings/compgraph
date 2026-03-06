@@ -1,0 +1,105 @@
+tests/conftest.py
+  48074118b48372ab 17
+tests/test_auth_config.py
+  48074118b48372ab 11,15-23,29,60
+src/compgraph/config.py
+  48074118b48372ab 79,81-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "4a7674e9fc2a54e1155a49f0c45eed67090485a4",
+  "prompts": {
+    "2c773c2e8317a2ee": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "ac5f5304-a4af-44c7-b26f-e4a736a5e6e9",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "48074118b48372ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b8b6c685-7d49-43d1-bb1f-2d7dc3e1731c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 8,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    },
+    "a314f0594d608fa1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "491b4a99-b886-4448-bf38-28aeb60fc78b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 322,
+      "total_deletions": 84,
+      "accepted_lines": 274,
+      "overriden_lines": 0
+    },
+    "a74311534177cfb1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ec03832-cb96-49dc-a379-d1b372c46cd2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 43,
+      "total_deletions": 19,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    },
+    "b9987e5317f5920f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2845a3c0-fa98-4369-a65d-dd96b1b563cc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 725,
+      "total_deletions": 0,
+      "accepted_lines": 725,
+      "overriden_lines": 0
+    },
+    "ccc02f99c61c7442": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ace39e73-6c7c-4210-9fb8-facc425f5e14",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 338,
+      "total_deletions": 0,
+      "accepted_lines": 338,
+      "overriden_lines": 0
+    },
+    "e53694e3e566ca9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7d24e29-dc88-41a1-8aec-a4fe489d6e30",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 295,
+      "total_deletions": 0,
+      "accepted_lines": 295,
+      "overriden_lines": 0
+    }
+  }
+}
