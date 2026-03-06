@@ -25,7 +25,9 @@ export function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get("expired") === "1") {
-      toast.error("Your session expired. Please sign in again.");
+      toast.error("Your session expired. Please sign in again.", {
+        id: "session-expired",
+      });
     }
   }, [searchParams]);
 

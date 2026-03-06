@@ -41,7 +41,14 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isAuthRoute) {
     const url = new URL("/login", request.url);
-    url.searchParams.set("expired", "1");
+    // Only set expired=1 if user had auth cookies (returning user whose session expired).
+    // First-time visitors have no cookies and should not see the "session expired" toast.
+    const hasAuthCookies = request.cookies
+      .getAll()
+      .some((c) => c.name.startsWith("sb-"));
+    if (hasAuthCookies) {
+      url.searchParams.set("expired", "1");
+    }
     return NextResponse.redirect(url);
   }
 

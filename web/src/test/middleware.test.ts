@@ -67,17 +67,36 @@ describe("updateSession middleware", () => {
     expect((response as unknown as Record<string, unknown>)._redirectUrl).toBeUndefined();
   });
 
-  it("redirects unauthenticated users to /login with expired param", async () => {
+  it("redirects expired users to /login with expired param", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: null },
     });
 
     const request = new NextRequest("http://localhost:3000/settings");
+    // Simulate a returning user with stale Supabase auth cookies
+    request.cookies.getAll = vi.fn().mockReturnValue([
+      { name: "sb-tkvxyxwfosworwqxesnz-auth-token", value: "expired-jwt" },
+    ]);
     const response = await updateSession(request);
 
     const redirectUrl = (response as unknown as Record<string, unknown>)._redirectUrl as string;
     expect(redirectUrl).toContain("/login");
     expect(redirectUrl).toContain("expired=1");
+  });
+
+  it("redirects new visitors to /login without expired param", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const request = new NextRequest("http://localhost:3000/settings");
+    // No auth cookies — first-time visitor
+    request.cookies.getAll = vi.fn().mockReturnValue([]);
+    const response = await updateSession(request);
+
+    const redirectUrl = (response as unknown as Record<string, unknown>)._redirectUrl as string;
+    expect(redirectUrl).toContain("/login");
+    expect(redirectUrl).not.toContain("expired=1");
   });
 
   it("allows unauthenticated users to access /login", async () => {
