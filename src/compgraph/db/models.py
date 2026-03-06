@@ -358,7 +358,10 @@ class AggDailyVelocity(Base):
     closed_postings: Mapped[int] = mapped_column(Integer, default=0)
     net_change: Mapped[int] = mapped_column(Integer, default=0)
 
-    __table_args__ = (Index("ix_velocity_date_company", "date", "company_id"),)
+    __table_args__ = (
+        UniqueConstraint("date", "company_id", name="uq_velocity_date_company"),
+        Index("ix_velocity_date_company", "date", "company_id"),
+    )
 
 
 class AggBrandTimeline(Base):
@@ -375,7 +378,10 @@ class AggBrandTimeline(Base):
     peak_active_postings: Mapped[int] = mapped_column(Integer, default=0)
     peak_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    __table_args__ = (Index("ix_brand_timeline_company_brand", "company_id", "brand_id"),)
+    __table_args__ = (
+        UniqueConstraint("company_id", "brand_id", name="uq_brand_timeline_company_brand"),
+        Index("ix_brand_timeline_company_brand", "company_id", "brand_id"),
+    )
 
 
 class AggPayBenchmarks(Base):
@@ -393,7 +399,18 @@ class AggPayBenchmarks(Base):
     median_pay_max: Mapped[float | None] = mapped_column(Float, nullable=True)
     sample_size: Mapped[int] = mapped_column(Integer, default=0)
 
-    __table_args__ = (Index("ix_agg_pay_benchmarks_company_role", "company_id", "role_archetype"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "role_archetype",
+            "market_id",
+            "brand_id",
+            "period",
+            name="uq_pay_benchmarks_natural_key",
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index("ix_agg_pay_benchmarks_company_role", "company_id", "role_archetype"),
+    )
 
 
 class AggPostingLifecycle(Base):
@@ -410,7 +427,18 @@ class AggPostingLifecycle(Base):
     repost_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     avg_repost_gap_days: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    __table_args__ = (Index("ix_agg_posting_lifecycle_company_period", "company_id", "period"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "role_archetype",
+            "brand_id",
+            "market_id",
+            "period",
+            name="uq_posting_lifecycle_natural_key",
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index("ix_agg_posting_lifecycle_company_period", "company_id", "period"),
+    )
 
 
 class AggBrandChurnSignals(Base):
@@ -427,7 +455,12 @@ class AggBrandChurnSignals(Base):
     repost_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     churn_signal_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    __table_args__ = (Index("ix_churn_signals_company_brand", "company_id", "brand_id"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id", "brand_id", "period", name="uq_churn_signals_company_brand_period"
+        ),
+        Index("ix_churn_signals_company_brand", "company_id", "brand_id"),
+    )
 
 
 class AggMarketCoverageGaps(Base):
@@ -441,7 +474,12 @@ class AggMarketCoverageGaps(Base):
     brand_count: Mapped[int] = mapped_column(Integer, default=0)
     brand_names: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
 
-    __table_args__ = (Index("ix_coverage_gaps_company_market", "company_id", "market_id"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id", "market_id", "period", name="uq_coverage_gaps_company_market_period"
+        ),
+        Index("ix_coverage_gaps_company_market", "company_id", "market_id"),
+    )
 
 
 class AggBrandAgencyOverlap(Base):
@@ -460,7 +498,10 @@ class AggBrandAgencyOverlap(Base):
     is_contested: Mapped[bool] = mapped_column(Boolean, default=False)
     total_postings: Mapped[int] = mapped_column(Integer, default=0)
 
-    __table_args__ = (Index("ix_agency_overlap_brand", "brand_id"),)
+    __table_args__ = (
+        UniqueConstraint("brand_id", "period", name="uq_agency_overlap_brand_period"),
+        Index("ix_agency_overlap_brand", "brand_id"),
+    )
 
 
 # ---------------------------------------------------------------------------
