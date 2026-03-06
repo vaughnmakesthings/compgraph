@@ -9,7 +9,7 @@ import {
 } from "@/api-client/@tanstack/react-query.gen";
 import type { PostingListResponse, PostingListItem } from "@/lib/types";
 import { useCompanies } from "@/lib/hooks/use-companies";
-import { formatRoleArchetype } from "@/lib/utils";
+import { formatRoleArchetype, formatDate } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -32,15 +32,6 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "pay_asc", label: "Pay Low\u2013High" },
   { value: "title_asc", label: "Title A\u2013Z" },
 ];
-
-// TODO: consolidate with lib/utils.ts
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function formatPayRange(
   min: number | null | undefined,

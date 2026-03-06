@@ -13,6 +13,7 @@ import { KpiCard } from "@/components/data/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { SkeletonBox } from "@/components/ui/skeleton";
 import { SectionErrorBoundary } from "@/components/ui/section-error-boundary";
+import { formatTimestamp } from "@/lib/utils";
 import {
   pipelineStatusApiV1PipelineStatusGetOptions,
   getVelocityApiV1AggregationVelocityGetOptions
@@ -45,17 +46,6 @@ interface PipelineStatusResponse {
     last_completed_at: string | null;
   };
   scheduler: { enabled: boolean; next_run_at: string | null };
-}
-
-// TODO: consolidate with lib/utils.ts
-function formatTimestamp(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function pipelineCardVariant(

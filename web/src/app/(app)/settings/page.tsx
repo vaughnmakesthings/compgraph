@@ -35,6 +35,7 @@ import type {
 import { useAuth } from "@/lib/auth-context";
 import { SectionCard } from "@/components/ui/section-card";
 import { API_BASE } from "@/lib/constants";
+import { formatTimestamp } from "@/lib/utils";
 const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 
 // --- Shared primitives ---
@@ -99,16 +100,6 @@ function KvRow({ label, value }: { label: string; value: string }) {
       <span className="font-mono text-xs text-[#2D3142]">{value}</span>
     </div>
   );
-}
-
-function formatTs(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function StatusDot({ status }: { status: string }) {
@@ -470,7 +461,7 @@ function SettingsPageContent() {
               </span>
               {schedulerStatus.last_pipeline_finished_at && (
                 <span className="font-body text-xs text-[#4F5D75]">
-                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success === true ? 'text-[#1B998B]' : schedulerStatus.last_pipeline_success === false ? 'text-[#8C2C23]' : 'text-[#4F5D75]'}`}>{schedulerStatus.last_pipeline_success === true ? 'Success' : schedulerStatus.last_pipeline_success === false ? 'Failed' : '\u2014'}</span> {formatTs(schedulerStatus.last_pipeline_finished_at)}
+                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success === true ? 'text-[#1B998B]' : schedulerStatus.last_pipeline_success === false ? 'text-[#8C2C23]' : 'text-[#4F5D75]'}`}>{schedulerStatus.last_pipeline_success === true ? 'Success' : schedulerStatus.last_pipeline_success === false ? 'Failed' : '\u2014'}</span> {formatTimestamp(schedulerStatus.last_pipeline_finished_at)}
                 </span>
               )}
             </div>
@@ -501,8 +492,8 @@ function SettingsPageContent() {
                             {sched.paused ? "Paused" : "Scheduled"}
                           </span>
                         </td>
-                        <td className="px-3 py-2 font-mono text-[#4F5D75] whitespace-nowrap">{formatTs(sched.next_fire_time)}</td>
-                        <td className="px-3 py-2 font-mono text-[#4F5D75] whitespace-nowrap">{formatTs(sched.last_fire_time)}</td>
+                        <td className="px-3 py-2 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(sched.next_fire_time)}</td>
+                        <td className="px-3 py-2 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(sched.last_fire_time)}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1.5">
                             <SmallButton onClick={() => { setConfirmSchedulerJobId(sched.schedule_id); setConfirmSchedulerOpen(true); }} disabled={schedulerMutation.isPending}>Trigger</SmallButton>
@@ -546,7 +537,7 @@ function SettingsPageContent() {
                     <tr key={r.id}>
                       <td className="px-3 py-1.5 font-body text-[#2D3142]">{r.company_name}</td>
                       <td className="px-3 py-1.5 text-[#4F5D75] font-body flex items-center"><StatusDot status={r.status} />{r.status}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTs(r.started_at)}</td>
+                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
                       <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
                       <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.jobs_found}</td>
                       <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.snapshots_created}</td>
@@ -578,7 +569,7 @@ function SettingsPageContent() {
                   return (
                     <tr key={r.id}>
                       <td className="px-3 py-1.5 text-[#4F5D75] font-body flex items-center"><StatusDot status={r.status} />{r.status}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTs(r.started_at)}</td>
+                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
                       <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
                       <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.pass1_total}</td>
                       <td className="px-3 py-1.5 font-mono text-[#1B998B] font-semibold">{r.pass1_succeeded}</td>
