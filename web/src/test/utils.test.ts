@@ -20,6 +20,12 @@ describe("formatDuration", () => {
     expect(formatDuration(55194)).toBe("15h 19m");
   });
 
+  it("handles fractional seconds near boundaries", () => {
+    expect(formatDuration(59.5)).toBe("1m 0s");
+    expect(formatDuration(59.4)).toBe("59s");
+    expect(formatDuration(3599.5)).toBe("1h 0m");
+  });
+
   it("handles negative input", () => {
     expect(formatDuration(-1)).toBe("—");
   });

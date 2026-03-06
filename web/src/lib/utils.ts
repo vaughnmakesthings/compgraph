@@ -18,9 +18,10 @@ export function formatTimestamp(iso: string | null | undefined): string {
 
 export function formatDuration(totalSeconds: number): string {
   if (totalSeconds < 0) return "—";
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = Math.round(totalSeconds % 60);
+  const rounded = Math.round(totalSeconds);
+  const h = Math.floor(rounded / 3600);
+  const m = Math.floor((rounded % 3600) / 60);
+  const s = rounded % 60;
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
