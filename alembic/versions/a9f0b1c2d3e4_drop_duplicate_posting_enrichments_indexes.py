@@ -39,9 +39,11 @@ DUPLICATE_INDEXES = [
 
 def upgrade() -> None:
     for name, _table, _column in DUPLICATE_INDEXES:
-        op.execute(sa.text(f"DROP INDEX IF EXISTS {name}"))
+        op.execute(sa.text(f"DROP INDEX IF EXISTS public.{name}"))
 
 
 def downgrade() -> None:
     for name, table, column in reversed(DUPLICATE_INDEXES):
-        op.execute(sa.text(f"CREATE INDEX IF NOT EXISTS {name} ON {table} ({column})"))
+        op.execute(
+            sa.text(f"CREATE INDEX IF NOT EXISTS public.{name} ON public.{table} ({column})")
+        )
