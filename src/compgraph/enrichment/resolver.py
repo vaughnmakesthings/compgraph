@@ -6,7 +6,7 @@ import logging
 import re
 import time
 import uuid
-from typing import Protocol, cast, runtime_checkable
+from typing import NamedTuple, Protocol, cast, runtime_checkable
 
 from rapidfuzz import fuzz
 from slugify import slugify
@@ -26,22 +26,29 @@ class DimensionEntity(Protocol):
     slug: str
 
 
+class CachedEntity(NamedTuple):
+    id: uuid.UUID
+    name: str
+    slug: str
+
+
 DimensionModel = type[Brand] | type[Retailer]
 
-_entity_cache: dict[str, tuple[float, list]] = {}
+_entity_cache: dict[str, tuple[float, list[CachedEntity]]] = {}
 _CACHE_TTL = 300  # 5 minutes
 
 
-async def _get_all_entities(session: AsyncSession, model: DimensionModel, label: str) -> list:
-    """Get all entities with in-memory caching to avoid repeated full table loads."""
+async def _get_all_entities(
+    session: AsyncSession, model: DimensionModel, label: str
+) -> list[CachedEntity]:
     now = time.monotonic()
     if label in _entity_cache:
         ts, entities = _entity_cache[label]
         if now - ts < _CACHE_TTL:
             return entities
-    stmt = select(model)
+    stmt = select(model.id, model.name, model.slug)  # type: ignore[attr-defined]
     result = await session.execute(stmt)
-    entities = list(result.scalars().all())
+    entities = [CachedEntity(id=row.id, name=row.name, slug=row.slug) for row in result.all()]
     _entity_cache[label] = (now, entities)
     return entities
 
@@ -89,17 +96,16 @@ async def _find_entity(
         matched = cast(DimensionEntity, entity)
         return matched.id, 95.0
 
-    # Tier 3: Fuzzy match against all entities (cached)
+    # Tier 3: Fuzzy match against all entities (cached tuples)
     all_entities = await _get_all_entities(session, model, label)
 
     best_score = 0.0
     best_id: uuid.UUID | None = None
-    for row in all_entities:
-        candidate = cast(DimensionEntity, row)
-        score = fuzz.token_sort_ratio(normalized.lower(), candidate.name.lower())
+    for cached in all_entities:
+        score = fuzz.token_sort_ratio(normalized.lower(), cached.name.lower())
         if score > best_score:
             best_score = score
-            best_id = candidate.id
+            best_id = cached.id
 
     from compgraph.config import settings
 

@@ -26,8 +26,10 @@ vi.mock("@/lib/supabase", () => ({
 
 // next/navigation mock
 const mockPush = vi.fn();
+const mockSearchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // api-client mock

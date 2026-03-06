@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -12,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"password" | "magic-link">("password");
   const [email, setEmail] = useState("");
@@ -20,6 +22,14 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [emailSentType, setEmailSentType] = useState<"magic-link" | "reset">("magic-link");
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      toast.error("Your session expired. Please sign in again.", {
+        id: "session-expired",
+      });
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
