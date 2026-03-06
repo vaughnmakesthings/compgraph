@@ -1,0 +1,49 @@
+.github/workflows/ci.yml
+  00cbfe51fcb28861 129-130,135,137-142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "10da70c8d40bc9ab9d519ccfd0b4ecc96ba7403e",
+  "prompts": {
+    "00cbfe51fcb28861": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "17b417d5-5efc-4bdf-a161-a2263207f258",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 7,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    },
+    "208e065629c2c573": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ae1d979-5241-44c2-bd1f-0ab296195d6f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 250,
+      "total_deletions": 17,
+      "accepted_lines": 248,
+      "overriden_lines": 0
+    },
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 40,
+      "total_deletions": 2,
+      "accepted_lines": 40,
+      "overriden_lines": 0
+    }
+  }
+}
