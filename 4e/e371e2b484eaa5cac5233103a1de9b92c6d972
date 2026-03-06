@@ -1,0 +1,43 @@
+web/src/components/auth/login-form.tsx
+  d3e3826caa4ddace 3-5,16,26-31
+web/src/lib/supabase/client.ts
+  d3e3826caa4ddace 1-10
+web/src/lib/api-client.ts
+  d3e3826caa4ddace 1,48
+web/src/lib/supabase/server.ts
+  d3e3826caa4ddace 1-29
+web/src/lib/supabase.ts
+  d3e3826caa4ddace 1-2,6
+web/src/app/(auth)/login/page.tsx
+  d3e3826caa4ddace 1,73-75
+web/src/lib/supabase/middleware.ts
+  d3e3826caa4ddace 1-49
+web/src/lib/api-setup.ts
+  d3e3826caa4ddace 2,26
+web/src/test/components/auth-components.test.tsx
+  d3e3826caa4ddace 29,32
+web/src/test/middleware.test.ts
+  d3e3826caa4ddace 1-115
+web/src/middleware.ts
+  d3e3826caa4ddace 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "4ee371e2b484eaa5cac5233103a1de9b92c6d972",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 240,
+      "total_deletions": 7,
+      "accepted_lines": 238,
+      "overriden_lines": 0
+    }
+  }
+}
