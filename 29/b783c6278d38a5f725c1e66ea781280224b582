@@ -1,0 +1,25 @@
+tests/test_enrichment_advisory_lock.py
+  d3e3826caa4ddace 1-115
+src/compgraph/enrichment/orchestrator.py
+  d3e3826caa4ddace 17,118-121,1162-1163,1166-1175,1177-1189,1197-1198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "29b783c6278d38a5f725c1e66ea781280224b582",
+  "prompts": {
+    "d3e3826caa4ddace": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50698542-eb3d-4346-b46f-500f7588d78d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 197,
+      "total_deletions": 52,
+      "accepted_lines": 149,
+      "overriden_lines": 2
+    }
+  }
+}
