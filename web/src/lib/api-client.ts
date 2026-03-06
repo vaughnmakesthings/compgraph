@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { API_BASE } from './constants'
 import { getAuthToken } from './auth-token'
 import type {
@@ -44,6 +45,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   if (!res.ok) {
     if (res.status === 401) {
       try {
+        toast.error('Your session expired. Please sign in again.')
         const { supabase } = await import('./supabase')
         await supabase?.auth.signOut()
       } catch {

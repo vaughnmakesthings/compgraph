@@ -1,4 +1,5 @@
 import { client } from '../api-client/client.gen';
+import { toast } from 'sonner';
 import { getAuthToken } from './auth-token';
 import { API_BASE } from './constants';
 
@@ -22,6 +23,7 @@ export function setupApi() {
 
   client.interceptors.response.use(async (response) => {
     if (response.status === 401) {
+      toast.error('Your session expired. Please sign in again.');
       const { supabase } = await import('./supabase');
       await supabase?.auth.signOut();
     }
