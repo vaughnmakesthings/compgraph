@@ -62,8 +62,7 @@ class TestHealthEndpoint:
         body = resp.json()
         assert body["status"] == "degraded"
         assert body["version"] == "0.1.0"
-        assert "error:" in body["checks"]["database"]
-        assert "connection refused" in body["checks"]["database"]
+        assert body["checks"]["database"] == "error: unavailable"
 
     def test_degraded_when_db_times_out(self, _mock_db_timeout: None) -> None:
         with TestClient(app) as client:
@@ -72,7 +71,7 @@ class TestHealthEndpoint:
         body = resp.json()
         assert body["status"] == "degraded"
         assert body["version"] == "0.1.0"
-        assert "error:" in body["checks"]["database"]
+        assert body["checks"]["database"] == "error: unavailable"
 
     def test_scheduler_disabled_shown(self, _mock_db_success: None) -> None:
         with TestClient(app) as client:
@@ -125,4 +124,4 @@ class TestHealthEndpoint:
         assert resp.status_code == 503
         body = resp.json()
         assert body["status"] == "degraded"
-        assert body["checks"]["scheduler"] == "error: RuntimeError"
+        assert body["checks"]["scheduler"] == "error: unavailable"

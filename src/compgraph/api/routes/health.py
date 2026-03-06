@@ -30,8 +30,8 @@ async def health_check(
         await asyncio.wait_for(db.execute(text("SELECT 1")), timeout=DB_CHECK_TIMEOUT)
         checks["database"] = "connected"
     except (TimeoutError, OSError, SQLAlchemyError) as exc:
-        detail = str(exc) if str(exc) else type(exc).__name__
-        checks["database"] = f"error: {detail}"
+        logger.warning("Database health check failed: %s", exc, exc_info=exc)
+        checks["database"] = "error: unavailable"
 
     # Scheduler check
     if settings.SCHEDULER_ENABLED:
@@ -45,8 +45,8 @@ async def health_check(
                 )
                 checks["scheduler"] = f"ok ({len(schedules)} schedule(s))"
             except Exception as exc:
-                logger.warning("Scheduler health check failed: %s", exc)
-                checks["scheduler"] = f"error: {type(exc).__name__}"
+                logger.warning("Scheduler health check failed: %s", exc, exc_info=exc)
+                checks["scheduler"] = "error: unavailable"
     else:
         checks["scheduler"] = "disabled"
 
