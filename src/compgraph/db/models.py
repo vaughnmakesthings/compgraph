@@ -2,6 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     ARRAY,
     Boolean,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -205,6 +207,10 @@ class Posting(Base):
     times_reposted: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    h3_index: Mapped[str | None] = mapped_column(String(15), nullable=True, index=True)
+
     company: Mapped["Company"] = relationship(back_populates="postings")
     snapshots: Mapped[list["PostingSnapshot"]] = relationship(back_populates="posting")
     enrichments: Mapped[list["PostingEnrichment"]] = relationship(back_populates="posting")
@@ -215,6 +221,11 @@ class Posting(Base):
         Index("ix_postings_fingerprint_hash", "fingerprint_hash"),
         Index("ix_postings_brand_active", "company_id", "is_active"),
         Index("ix_postings_first_seen_at", "first_seen_at", postgresql_using="btree"),
+        Index(
+            "idx_postings_h3",
+            "h3_index",
+            postgresql_where=text("h3_index IS NOT NULL"),
+        ),
     )
 
 
@@ -285,6 +296,9 @@ class PostingEnrichment(Base):
     travel_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     employment_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     entity_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Embedding
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
 
     # Enrichment tracking
     enrichment_model: Mapped[str | None] = mapped_column(String(100), nullable=True)

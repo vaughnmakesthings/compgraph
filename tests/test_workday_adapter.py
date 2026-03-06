@@ -350,6 +350,14 @@ class TestWorkdayFetcher:
 
 
 class TestPersistPosting:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     def _make_raw_posting(
         self,
         external_job_id: str = "REQ_099113",
@@ -496,6 +504,14 @@ class TestHashText:
 
 
 class TestWorkdayAdapter:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     async def test_scrape_end_to_end(self):
         company = _make_company()
         page1 = _load_fixture("workday_search_page_1.json")

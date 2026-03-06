@@ -73,6 +73,9 @@ async def persist_posting(
     result = await session.execute(posting_stmt)
     posting_id = result.scalar_one()
 
+    if raw.location:
+        await _maybe_geocode_posting(session, posting_id, raw.location)
+
     today = now.date()
 
     # Early-return if we already wrote today's snapshot (idempotent within a day)
@@ -112,3 +115,32 @@ async def persist_posting(
     )
     snapshot_result = await session.execute(snapshot_stmt)
     return snapshot_result.rowcount > 0  # type: ignore[no-any-return, attr-defined]
+
+
+async def _maybe_geocode_posting(
+    session: AsyncSession,
+    posting_id: uuid.UUID,
+    location_str: str,
+) -> None:
+    posting_row = await session.execute(select(Posting.latitude).where(Posting.id == posting_id))
+    if posting_row.scalar_one_or_none() is not None:
+        return
+
+    try:
+        from compgraph.geocoding import compute_h3_index, geocode_location
+
+        coords = await geocode_location(location_str)
+        if coords:
+            from sqlalchemy import update
+
+            await session.execute(
+                update(Posting)
+                .where(Posting.id == posting_id)
+                .values(
+                    latitude=coords[0],
+                    longitude=coords[1],
+                    h3_index=compute_h3_index(coords[0], coords[1]),
+                )
+            )
+    except Exception:
+        logger.warning("Geocoding failed for posting %s", posting_id, exc_info=True)

@@ -305,6 +305,22 @@ async def _mark_pass2_complete(
             )
         enrichment.entity_count = entity_count
 
+        try:
+            from compgraph.enrichment.embeddings import generate_embedding
+
+            title = enrichment.title_normalized or ""
+            content = enrichment.content_role_specific or ""
+            embed_text = f"{title} {content}".strip()
+            if embed_text:
+                embedding = await generate_embedding(embed_text)
+                enrichment.embedding = embedding
+        except Exception:
+            logger.warning(
+                "Failed to generate embedding for enrichment %s",
+                enrichment_id,
+                exc_info=True,
+            )
+
 
 class EnrichmentOrchestrator:
     """Orchestrates batch enrichment with concurrency control.

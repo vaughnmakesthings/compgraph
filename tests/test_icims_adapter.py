@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -436,6 +436,14 @@ class TestBuildPostingUrl:
 
 
 class TestPersistPosting:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     def _make_raw_posting(
         self,
         external_job_id: str = "12345",
@@ -538,6 +546,14 @@ class TestPersistPosting:
 
 
 class TestICIMSAdapter:
+    @pytest.fixture(autouse=True)
+    def _patch_geocode(self):
+        with patch(
+            "compgraph.scrapers.persistence._maybe_geocode_posting",
+            new_callable=AsyncMock,
+        ):
+            yield
+
     @pytest.mark.asyncio
     async def test_scrape_returns_scrape_result(self) -> None:
         from unittest.mock import patch as _patch
