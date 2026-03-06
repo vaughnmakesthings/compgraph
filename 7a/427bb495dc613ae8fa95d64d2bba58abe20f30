@@ -1,0 +1,25 @@
+src/compgraph/scrapers/orchestrator.py
+  bc8b058e19a87975 46,247-249,258-261,314,359,371,373-376,379,383-393,399-407,415-421
+tests/test_force_stop.py
+  bc8b058e19a87975 1-315
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "7a427bb495dc613ae8fa95d64d2bba58abe20f30",
+  "prompts": {
+    "bc8b058e19a87975": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "849348f5-4a8a-45eb-8d07-47d7b48159c3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 375,
+      "total_deletions": 48,
+      "accepted_lines": 359,
+      "overriden_lines": 0
+    }
+  }
+}
