@@ -389,7 +389,7 @@ class PipelineOrchestrator:
                 result: ScrapeResult | None = None
                 try:
                     result = await self._scrape_with_retries(company)
-                except BaseException as exc:
+                except Exception as exc:
                     result = ScrapeResult(
                         company_id=company.id,
                         company_slug=company.slug,
@@ -420,6 +420,7 @@ class PipelineOrchestrator:
             if pipeline_run.company_states.get(company.slug) in (
                 CompanyState.PENDING,
                 CompanyState.RUNNING,
+                CompanyState.FAILED,  # finally block sets FAILED during cancel propagation
             ):
                 pipeline_run.company_states[company.slug] = CompanyState.CANCELLED
             raise

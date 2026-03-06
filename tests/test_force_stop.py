@@ -335,6 +335,36 @@ class TestCancelledErrorStateCleanup:
 
         assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
 
+    async def test_cancelled_during_scrape_sets_cancelled_not_failed(self):
+        """CancelledError in _scrape_with_retries must set CANCELLED, not FAILED.
+
+        Before the fix, ``except BaseException`` caught CancelledError and the
+        ``finally`` block set state to FAILED before the outer handler ran.
+        With ``except Exception``, CancelledError bypasses the inner handler.
+        """
+        company = _make_company("bds")
+        pipeline_run = PipelineRun(status=PipelineStatus.RUNNING)
+        pipeline_run.company_states[company.slug] = CompanyState.RUNNING
+
+        orch = PipelineOrchestrator(max_retries=1, retry_base_delay=0.01)
+
+        async def cancelling_scrape(*_args, **_kwargs):
+            raise asyncio.CancelledError()
+
+        with (
+            _patch_session_and_companies([company]),
+            patch.object(orch, "_scrape_with_retries", side_effect=cancelling_scrape),
+            patch.object(orch, "_create_scrape_run", return_value=MagicMock()),
+            patch.object(orch, "_finalize_scrape_run", new_callable=AsyncMock),
+        ):
+            task = asyncio.create_task(orch._scrape_company_with_isolation(company, pipeline_run))
+            orch._tasks = [task]
+
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert pipeline_run.company_states[company.slug] == CompanyState.CANCELLED
+
     async def test_post_gather_fixup_uses_cancelled_for_cancelled_tasks(self):
         companies = [_make_company("bds"), _make_company("marketsource")]
 
