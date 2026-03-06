@@ -56,6 +56,28 @@ class TestAggregationEndpoints:
             r = client.get("/api/v1/aggregation/agency-overlap")
         assert r.status_code == 200
 
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "/api/v1/aggregation/velocity",
+            "/api/v1/aggregation/brand-timeline",
+            "/api/v1/aggregation/pay-benchmarks",
+            "/api/v1/aggregation/lifecycle",
+            "/api/v1/aggregation/churn-signals",
+            "/api/v1/aggregation/coverage-gaps",
+            "/api/v1/aggregation/agency-overlap",
+        ],
+    )
+    def test_cache_control_header_on_get_endpoints(self, _mock_db: None, path: str) -> None:
+        with TestClient(app) as client:
+            r = client.get(path)
+        assert r.status_code == 200
+        assert r.headers.get("cache-control") == "public, max-age=300"
+
+    def test_trigger_no_cache_control_header(self, client) -> None:  # type: ignore[no-untyped-def]
+        r = client.post("/api/v1/aggregation/trigger")
+        assert "cache-control" not in r.headers
+
     def test_trigger_endpoint_exists(self, client) -> None:  # type: ignore[no-untyped-def]
         r = client.post("/api/v1/aggregation/trigger")
         assert r.status_code != 404
