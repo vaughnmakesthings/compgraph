@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "generate-client": "openapi-ts"
+    "generate-client": "openapi-ts",
+    "generate:check": "npm run generate-client && git diff --exit-code src/api-client/"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.18",
