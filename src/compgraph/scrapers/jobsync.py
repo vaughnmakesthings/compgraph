@@ -242,7 +242,7 @@ async def persist_posting(
     already existed (idempotent on same-day re-runs).
     """
     now = datetime.now(UTC)
-    fingerprint = _hash_text(raw.full_text) if raw.full_text else None
+    text_hash = _hash_text(raw.full_text) if raw.full_text else None
 
     posting_stmt = (
         pg_insert(Posting)
@@ -250,7 +250,7 @@ async def persist_posting(
             id=uuid.uuid4(),
             company_id=company_id,
             external_job_id=raw.external_job_id,
-            fingerprint_hash=fingerprint,
+            fingerprint_hash=text_hash,
             first_seen_at=first_seen_at or now,
             last_seen_at=now,
             is_active=True,
@@ -269,7 +269,6 @@ async def persist_posting(
     posting_id = result.scalar_one()
 
     today = now.date()
-    text_hash = _hash_text(raw.full_text) if raw.full_text else None
 
     existing = await session.execute(
         select(PostingSnapshot.id).where(
@@ -381,10 +380,6 @@ class JobSyncAdapter:
         result.pages_scraped = fetcher.pages_fetched
 
         for posting in postings:
-            if not posting.guid:
-                result.warnings.append(f"Skipping posting with no guid: {posting.title!r}")
-                continue
-
             first_seen: datetime | None = None
             if posting.date_added:
                 try:
