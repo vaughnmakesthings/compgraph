@@ -12,6 +12,7 @@ import {
 import { KpiCard } from "@/components/data/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { SkeletonBox } from "@/components/ui/skeleton";
+import { SectionErrorBoundary } from "@/components/ui/section-error-boundary";
 import {
   pipelineStatusApiV1PipelineStatusGetOptions,
   getVelocityApiV1AggregationVelocityGetOptions
@@ -208,53 +209,56 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div
-        className="grid grid-cols-4 gap-4 mb-6"
-        aria-busy={initialLoading}
-        aria-label="KPI metrics"
-      >
-        {initialLoading ? (
-          <>
-            <SkeletonBox className="h-[96px]" />
-            <SkeletonBox className="h-[96px]" />
-            <SkeletonBox className="h-[96px]" />
-            <SkeletonBox className="h-[96px]" />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="Active Postings"
-              value={derived ? derived.totalActive.toLocaleString() : kpiFallback.totalActive}
-              icon={<BriefcaseIcon className="h-4 w-4 text-[#4F5D75]" />}
-              trend={derived ? { value: 12, label: "vs last wk" } : undefined}
-            />
-            <KpiCard
-              label="New This Week"
-              value={derived ? derived.newThisWeek.toLocaleString() : kpiFallback.newThisWeek}
-              icon={<ArrowTrendingUpIcon className="h-4 w-4 text-[#4F5D75]" />}
-              trend={derived ? { value: 8, label: "vs prev wk" } : undefined}
-            />
-            <KpiCard
-              label="Enriched"
-              value={
-                derived
-                  ? derived.enrichmentPct !== null
-                    ? `${derived.enrichmentPct}%`
-                    : "—"
-                  : kpiFallback.enrichmentPct
-              }
-              icon={<CheckCircleIcon className="h-4 w-4 text-[#4F5D75]" />}
-            />
-            <KpiCard
-              label="Pipeline Status"
-              value={derived ? (derived.pipelineStatus as string) : kpiFallback.pipelineStatus}
-              icon={<SignalIcon className="h-4 w-4 text-[#4F5D75]" />}
-              variant={derived ? pipelineCardVariant(derived.pipelineStatus) : "default"}
-            />
-          </>
-        )}
-      </div>
+      <SectionErrorBoundary name="KPI metrics">
+        <div
+          className="grid grid-cols-4 gap-4 mb-6"
+          aria-busy={initialLoading}
+          aria-label="KPI metrics"
+        >
+          {initialLoading ? (
+            <>
+              <SkeletonBox className="h-[96px]" />
+              <SkeletonBox className="h-[96px]" />
+              <SkeletonBox className="h-[96px]" />
+              <SkeletonBox className="h-[96px]" />
+            </>
+          ) : (
+            <>
+              <KpiCard
+                label="Active Postings"
+                value={derived ? derived.totalActive.toLocaleString() : kpiFallback.totalActive}
+                icon={<BriefcaseIcon className="h-4 w-4 text-[#4F5D75]" />}
+                trend={derived ? { value: 12, label: "vs last wk" } : undefined}
+              />
+              <KpiCard
+                label="New This Week"
+                value={derived ? derived.newThisWeek.toLocaleString() : kpiFallback.newThisWeek}
+                icon={<ArrowTrendingUpIcon className="h-4 w-4 text-[#4F5D75]" />}
+                trend={derived ? { value: 8, label: "vs prev wk" } : undefined}
+              />
+              <KpiCard
+                label="Enriched"
+                value={
+                  derived
+                    ? derived.enrichmentPct !== null
+                      ? `${derived.enrichmentPct}%`
+                      : "—"
+                    : kpiFallback.enrichmentPct
+                }
+                icon={<CheckCircleIcon className="h-4 w-4 text-[#4F5D75]" />}
+              />
+              <KpiCard
+                label="Pipeline Status"
+                value={derived ? (derived.pipelineStatus as string) : kpiFallback.pipelineStatus}
+                icon={<SignalIcon className="h-4 w-4 text-[#4F5D75]" />}
+                variant={derived ? pipelineCardVariant(derived.pipelineStatus) : "default"}
+              />
+            </>
+          )}
+        </div>
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary name="Daily Posting Velocity">
       <div className="rounded-lg border border-[#BFC0C0] p-4 mb-4 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-[#2D3142]">
@@ -302,6 +306,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      </SectionErrorBoundary>
 
       {!initialLoading && derived && (
         <div className="flex justify-end">
