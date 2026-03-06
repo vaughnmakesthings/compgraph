@@ -1,0 +1,35 @@
+web/src/lib/api-client.ts
+  bc8b058e19a87975 3,30-31,48-50
+web/src/test/app-layout-auth.test.tsx
+  bc8b058e19a87975 3,57
+web/src/lib/auth-token.ts
+  bc8b058e19a87975 2-4,6-10,14-17,23-35
+web/src/test/auth-context.test.tsx
+  bc8b058e19a87975 4,37
+web/src/test/api-client.test.ts
+  bc8b058e19a87975 2,6,11,17,517-526,529-541,549-577
+web/src/lib/api-setup.ts
+  bc8b058e19a87975 3,25,27
+web/src/test/auth-token.test.ts
+  bc8b058e19a87975 3-6,11,29-44,46-80,82-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "02d1755b0172dcb0a3af2c7d20b4b52100d954fd",
+  "prompts": {
+    "bc8b058e19a87975": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "849348f5-4a8a-45eb-8d07-47d7b48159c3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 194,
+      "total_deletions": 38,
+      "accepted_lines": 178,
+      "overriden_lines": 0
+    }
+  }
+}

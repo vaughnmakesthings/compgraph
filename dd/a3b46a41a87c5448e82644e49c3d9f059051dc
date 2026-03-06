@@ -1,0 +1,23 @@
+web/src/lib/api-client.ts
+  bc8b058e19a87975 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "dda3b46a41a87c5448e82644e49c3d9f059051dc",
+  "prompts": {
+    "bc8b058e19a87975": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "849348f5-4a8a-45eb-8d07-47d7b48159c3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
