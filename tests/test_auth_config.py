@@ -13,14 +13,20 @@ def test_auth_disabled_blocked_in_production():
 
 
 def test_auth_disabled_allowed_in_dev():
-    """AUTH_DISABLED=true is fine in dev/test."""
+    """AUTH_DISABLED=true is fine in dev (local development)."""
     s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="dev")
+    assert s.AUTH_DISABLED is True
+
+
+def test_auth_disabled_allowed_in_test():
+    """AUTH_DISABLED=true is fine in test environment."""
+    s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="test")
     assert s.AUTH_DISABLED is True
 
 
 def test_auth_fields_default_empty():
     """New auth fields default to safe values when auth is disabled."""
-    s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True)
+    s = Settings(DATABASE_PASSWORD="x", AUTH_DISABLED=True, ENVIRONMENT="test")
     assert s.SUPABASE_JWT_SECRET.get_secret_value() == ""
     assert s.SUPABASE_SERVICE_ROLE_KEY.get_secret_value() == ""
     assert s.AUTH_DISABLED is True
@@ -50,5 +56,7 @@ def test_jwt_secret_valid_when_long_enough():
 
 def test_jwt_secret_not_checked_when_auth_disabled():
     """Short/empty JWT secret is fine when AUTH_DISABLED=True."""
-    s = Settings(DATABASE_PASSWORD="x", SUPABASE_JWT_SECRET="short", AUTH_DISABLED=True)
+    s = Settings(
+        DATABASE_PASSWORD="x", SUPABASE_JWT_SECRET="short", AUTH_DISABLED=True, ENVIRONMENT="test"
+    )
     assert s.SUPABASE_JWT_SECRET.get_secret_value() == "short"
