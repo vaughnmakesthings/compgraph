@@ -1,0 +1,29 @@
+src/compgraph/scheduler/worker.py
+  610c361b204086f3 35-40,43,45-47,51-64,66-70,82
+src/compgraph/scheduler/app.py
+  610c361b204086f3 3,5,10-15,24-47
+tests/test_scheduler.py
+  610c361b204086f3 405-419,422-423,427-429,441-473,482-508,700-815
+src/compgraph/api/routes/scheduler.py
+  610c361b204086f3 5,11-14,17-20,62-75,207-266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "8d85683379938a6bd7348707bab8a17e1d42e7d1",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 351,
+      "total_deletions": 17,
+      "accepted_lines": 345,
+      "overriden_lines": 0
+    }
+  }
+}
