@@ -1,0 +1,33 @@
+src/compgraph/enrichment/normalizers.py
+  610c361b204086f3 26-31,63-64
+src/compgraph/enrichment/orchestrator.py
+  610c361b204086f3 514,529,614,624,672,713
+tests/test_normalizers.py
+  610c361b204086f3 81-94,96-97,99-100,102-103,105-106,108-109
+src/compgraph/enrichment/queries.py
+  610c361b204086f3 73,79-80,104-105
+src/compgraph/enrichment/prompts.py
+  610c361b204086f3 176-196,200,229-240
+tests/test_prompts.py
+  610c361b204086f3 1-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "97a09ef494b6404e25a0c7c79ed409845a92105c",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 185,
+      "total_deletions": 2,
+      "accepted_lines": 174,
+      "overriden_lines": 6
+    }
+  }
+}
