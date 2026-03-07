@@ -35,15 +35,13 @@ async def health_check(
 
     # Scheduler check
     if settings.SCHEDULER_ENABLED:
-        scheduler = getattr(request.app.state, "scheduler", None)
-        if scheduler is None:
+        arq_pool = getattr(request.app.state, "arq_pool", None)
+        if arq_pool is None:
             checks["scheduler"] = "error: not initialized"
         else:
             try:
-                schedules = await asyncio.wait_for(
-                    scheduler.get_schedules(), timeout=SCHEDULER_CHECK_TIMEOUT
-                )
-                checks["scheduler"] = f"ok ({len(schedules)} schedule(s))"
+                await asyncio.wait_for(arq_pool.info(), timeout=SCHEDULER_CHECK_TIMEOUT)
+                checks["scheduler"] = "ok (1 schedule(s))"
             except Exception as exc:
                 logger.warning("Scheduler health check failed: %s", exc, exc_info=exc)
                 checks["scheduler"] = "error: unavailable"

@@ -41,8 +41,8 @@ _mock_db_timeout = _make_db_fixture(_slow_execute)
 @pytest.fixture(autouse=False)
 def _cleanup_scheduler_state():
     yield
-    if hasattr(app.state, "scheduler"):
-        del app.state.scheduler
+    if hasattr(app.state, "arq_pool"):
+        del app.state.arq_pool
 
 
 class TestHealthEndpoint:
@@ -82,14 +82,14 @@ class TestHealthEndpoint:
     def test_scheduler_enabled_and_healthy(
         self, _mock_db_success: None, _cleanup_scheduler_state: None
     ) -> None:
-        mock_scheduler = AsyncMock()
-        mock_scheduler.get_schedules = AsyncMock(return_value=[MagicMock()])
+        mock_pool = AsyncMock()
+        mock_pool.info = AsyncMock(return_value={})
         with (
             patch("compgraph.api.routes.health.settings") as mock_settings,
             TestClient(app) as client,
         ):
             mock_settings.SCHEDULER_ENABLED = True
-            app.state.scheduler = mock_scheduler
+            app.state.arq_pool = mock_pool
             resp = client.get("/health")
         assert resp.status_code == 200
         body = resp.json()
@@ -112,14 +112,14 @@ class TestHealthEndpoint:
     def test_scheduler_check_failure(
         self, _mock_db_success: None, _cleanup_scheduler_state: None
     ) -> None:
-        mock_scheduler = MagicMock()
-        mock_scheduler.get_schedules = AsyncMock(side_effect=RuntimeError("scheduler crashed"))
+        mock_pool = AsyncMock()
+        mock_pool.info = AsyncMock(side_effect=RuntimeError("redis crashed"))
         with (
             patch("compgraph.api.routes.health.settings") as mock_settings,
             TestClient(app) as client,
         ):
             mock_settings.SCHEDULER_ENABLED = True
-            app.state.scheduler = mock_scheduler
+            app.state.arq_pool = mock_pool
             resp = client.get("/health")
         assert resp.status_code == 503
         body = resp.json()

@@ -313,20 +313,12 @@ async def pipeline_status(
         else:
             enrich_stage = StageStatus(status="idle", last_completed_at=None, current_run=None)
 
-    scheduler = getattr(request.app.state, "scheduler", None)
-    enabled = scheduler is not None
-    next_run: datetime | None = None
-    if enabled and scheduler is not None:
-        try:
-            schedules = await scheduler.get_schedules()
-            if schedules and not schedules[0].paused:
-                next_run = schedules[0].next_fire_time
-        except Exception:
-            logger.debug("Failed to fetch scheduler schedules", exc_info=True)
+    arq_pool = getattr(request.app.state, "arq_pool", None)
+    enabled = arq_pool is not None
 
     return PipelineStatusResponse(
         system_state=_derive_system_state(scrape_stage, enrich_stage),
         scrape=scrape_stage,
         enrich=enrich_stage,
-        scheduler=SchedulerSummary(enabled=enabled, next_run_at=next_run),
+        scheduler=SchedulerSummary(enabled=enabled, next_run_at=None),
     )

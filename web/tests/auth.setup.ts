@@ -10,7 +10,7 @@ setup('authenticate', async ({ page }) => {
 
   await page.goto('/login');
   await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
+  await page.getByLabel(/^password$/i).fill(password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 
   // Wait for redirect to dashboard (authenticated state)
