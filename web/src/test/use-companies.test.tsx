@@ -31,7 +31,8 @@ describe("useCompanies", () => {
 
   it("returns loading state initially", () => {
     vi.mocked(listCompaniesApiV1CompaniesGetOptions).mockReturnValue({
-      queryKey: ["companies"] as unknown as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      queryKey: ["companies"] as any,
       queryFn: vi.fn().mockReturnValue(new Promise(() => {})),
     });
 
@@ -45,7 +46,8 @@ describe("useCompanies", () => {
 
   it("returns company data after query resolves", async () => {
     vi.mocked(listCompaniesApiV1CompaniesGetOptions).mockReturnValue({
-      queryKey: ["companies"] as unknown as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      queryKey: ["companies"] as any,
       queryFn: vi.fn().mockResolvedValue(mockCompanies),
     });
 
@@ -64,7 +66,8 @@ describe("useCompanies", () => {
 
   it("calls listCompaniesApiV1CompaniesGetOptions", () => {
     vi.mocked(listCompaniesApiV1CompaniesGetOptions).mockReturnValue({
-      queryKey: ["companies"] as unknown as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      queryKey: ["companies"] as any,
       queryFn: vi.fn().mockResolvedValue([]),
     });
 
@@ -75,7 +78,8 @@ describe("useCompanies", () => {
 
   it("returns empty array when API returns no data", async () => {
     vi.mocked(listCompaniesApiV1CompaniesGetOptions).mockReturnValue({
-      queryKey: ["companies"] as unknown as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      queryKey: ["companies"] as any,
       queryFn: vi.fn().mockResolvedValue([]),
     });
 
