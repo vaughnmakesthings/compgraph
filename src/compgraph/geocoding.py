@@ -14,8 +14,20 @@ def _normalize_location(location: str) -> str:
     return location.strip().lower()
 
 
+def _get_api_key() -> str | None:
+    from compgraph.config import settings
+
+    return settings.GOOGLE_MAPS_API_KEY.get_secret_value() if settings.GOOGLE_MAPS_API_KEY else None
+
+
 @lru_cache(maxsize=1)
 def _get_geolocator():
+    api_key = _get_api_key()
+    if api_key:
+        from geopy.geocoders import GoogleV3
+
+        return GoogleV3(api_key=api_key)
+
     from geopy.geocoders import Nominatim
 
     return Nominatim(user_agent="compgraph-geocoder")
