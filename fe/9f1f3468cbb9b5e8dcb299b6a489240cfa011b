@@ -1,0 +1,33 @@
+web/src/components/auth/login-form.tsx
+  65886d7d4b8abe9c 3,21,27-36,61-62,265-290
+web/src/app/(app)/hiring/page.tsx
+  65886d7d4b8abe9c 13,116-117,122-124,175,193,208,226
+web/src/lib/constants.ts
+  65886d7d4b8abe9c 2-45
+web/src/app/(app)/page.tsx
+  65886d7d4b8abe9c 91-93,95-99,101-105,109-112,114-118,120,123,131,133,138,141-144,290
+web/src/app/(app)/eval/runs/page.tsx
+  65886d7d4b8abe9c 14-15,25,111-113,176,179
+web/src/app/(app)/settings/page.tsx
+  65886d7d4b8abe9c 35,40,64-65,91-92,106-109,113,118-126,130,147-151,159,162,165,169,193-194,209-234,255-257,259,264,272-273,281,284,286,292-293,295-296,299,323-325,327,333,338-340,343,351-352,371,391,399,401,405,412,418,424-428,450,458,460,464,471,480,483-488,506-507,527-528,537-538,602,611,614,620-621,625,631,639,654,656,660,672,678,687,689,693-694,696,698,702-703,717,726,733,738-739
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "fe9f1f3468cbb9b5e8dcb299b6a489240cfa011b",
+  "prompts": {
+    "65886d7d4b8abe9c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b6e6fb7-0a53-4581-a154-98890a5e77e2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 288,
+      "total_deletions": 196,
+      "accepted_lines": 279,
+      "overriden_lines": 0
+    }
+  }
+}
