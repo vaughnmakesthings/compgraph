@@ -59,6 +59,7 @@ const STATUS_PILL: Record<AppUser["status"], { label: string; bg: string; color:
 const ROLE_PILL: Record<AppUser["role"], { label: string; bg: string; color: string }> = {
   admin: { label: "Admin", bg: "#2D31421A", color: "#2D3142" },
   user: { label: "User", bg: "#E8E8E4", color: "#4F5D75" },
+  viewer: { label: "Viewer", bg: "#E8E8E4", color: "#4F5D75" },
 };
 
 function Pill({ bg, color, label }: { bg: string; color: string; label: string }) {
@@ -249,6 +250,7 @@ function RoleSelect({ value, onChange }: { value: UserRole; onChange: (r: UserRo
       onFocus={(e) => (e.currentTarget.style.borderColor = "#2D3142")}
       onBlur={(e) => (e.currentTarget.style.borderColor = "#BFC0C0")}
     >
+      <option value="viewer">Viewer</option>
       <option value="user">User</option>
       <option value="admin">Admin</option>
     </select>

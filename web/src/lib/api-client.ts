@@ -66,7 +66,12 @@ export const api = {
 
   getPipelineStatus: () => apiFetch<PipelineStatus>('/api/v1/pipeline/status'),
 
-  getPipelineRuns: () => apiFetch<PipelineRunsResponse>('/api/v1/pipeline/runs'),
+  getPipelineRuns: (params?: { limit?: number; offset?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.limit !== undefined) q.set('limit', String(params.limit))
+    if (params?.offset !== undefined) q.set('offset', String(params.offset))
+    return apiFetch<PipelineRunsResponse>(`/api/v1/pipeline/runs${q.size ? `?${q}` : ''}`)
+  },
 
   getVelocity: (params?: { company_id?: string; days?: number }) => {
     const q = new URLSearchParams()
@@ -221,4 +226,7 @@ export const api = {
       '/api/v1/admin/invite',
       { method: 'POST', body: JSON.stringify(body) },
     ),
+
+  getAuthUsers: () =>
+    apiFetch<import('./types').AuthUser[]>('/api/v1/admin/auth-users'),
 }

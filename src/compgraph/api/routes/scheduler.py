@@ -46,6 +46,7 @@ class SchedulerStatusResponse(BaseModel):
     last_pipeline_finished_at: datetime | None
     last_pipeline_success: bool
     missed_run: bool
+    last_pipeline_error: str | None = None
 
 
 class TriggerResponse(BaseModel):
@@ -134,12 +135,15 @@ async def scheduler_status(
         hours_since = (datetime.now(UTC) - last_finished).total_seconds() / 3600
         missed = hours_since > MISSED_RUN_THRESHOLD_HOURS
 
+    from compgraph.scheduler.jobs import get_last_pipeline_error
+
     return SchedulerStatusResponse(
         enabled=enabled,
         schedules=schedules,
         last_pipeline_finished_at=last_finished,
         last_pipeline_success=last_success,
         missed_run=missed,
+        last_pipeline_error=get_last_pipeline_error(),
     )
 
 

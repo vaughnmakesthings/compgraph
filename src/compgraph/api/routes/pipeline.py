@@ -207,6 +207,7 @@ class ScrapeRunSummary(BaseModel):
     jobs_found: int
     snapshots_created: int
     postings_closed: int
+    error_message: str | None = None
 
 
 class EnrichmentRunSummary(BaseModel):
@@ -218,37 +219,68 @@ class EnrichmentRunSummary(BaseModel):
     pass1_succeeded: int
     pass2_total: int
     pass2_succeeded: int
+    error_summary: str | None = None
 
 
 class PipelineRunsResponse(BaseModel):
     scrape_runs: list[ScrapeRunSummary]
     enrichment_runs: list[EnrichmentRunSummary]
+    scrape_total: int = 0
+    enrichment_total: int = 0
 
 
 @router.get("/runs", response_model=PipelineRunsResponse)
 async def pipeline_runs(
+    limit: int = 10,
+    offset: int = 0,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
 ) -> PipelineRunsResponse:
-    from sqlalchemy import select
+    from sqlalchemy import func, select
 
     from compgraph.db.models import Company, EnrichmentRunDB, ScrapeRun
     from compgraph.db.session import async_session_factory
 
     async with async_session_factory() as session:
+        # Count totals
+        scrape_count_stmt = select(func.count()).select_from(ScrapeRun)
+        scrape_total = (await session.execute(scrape_count_stmt)).scalar_one()
+
+        enrich_count_stmt = select(func.count()).select_from(EnrichmentRunDB)
+        enrich_total = (await session.execute(enrich_count_stmt)).scalar_one()
+
         scrape_stmt = (
             select(
                 ScrapeRun, Company.name.label("company_name"), Company.slug.label("company_slug")
             )
             .join(Company, ScrapeRun.company_id == Company.id)
             .order_by(ScrapeRun.started_at.desc())
-            .limit(50)
+            .limit(limit)
+            .offset(offset)
         )
         scrape_result = await session.execute(scrape_stmt)
         scrape_rows = scrape_result.all()
 
-        enrich_stmt = select(EnrichmentRunDB).order_by(EnrichmentRunDB.started_at.desc()).limit(20)
+        enrich_stmt = (
+            select(EnrichmentRunDB)
+            .order_by(EnrichmentRunDB.started_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
         enrich_result = await session.execute(enrich_stmt)
         enrich_rows = enrich_result.scalars().all()
+
+    def _extract_error(errors: dict | None) -> str | None:
+        if not errors:
+            return None
+        if isinstance(errors, dict):
+            messages = []
+            for v in errors.values():
+                if isinstance(v, str):
+                    messages.append(v)
+                elif isinstance(v, list):
+                    messages.extend(str(e) for e in v[:2])
+            return "; ".join(messages[:3]) if messages else None
+        return None
 
     return PipelineRunsResponse(
         scrape_runs=[
@@ -262,6 +294,7 @@ async def pipeline_runs(
                 jobs_found=row.ScrapeRun.jobs_found,
                 snapshots_created=row.ScrapeRun.snapshots_created,
                 postings_closed=row.ScrapeRun.postings_closed,
+                error_message=_extract_error(row.ScrapeRun.errors),
             )
             for row in scrape_rows
         ],
@@ -275,9 +308,12 @@ async def pipeline_runs(
                 pass1_succeeded=r.pass1_succeeded,
                 pass2_total=r.pass2_total,
                 pass2_succeeded=r.pass2_succeeded,
+                error_summary=r.error_summary,
             )
             for r in enrich_rows
         ],
+        scrape_total=scrape_total,
+        enrichment_total=enrich_total,
     )
 
 
