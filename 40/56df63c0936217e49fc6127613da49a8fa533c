@@ -1,0 +1,25 @@
+src/compgraph/config.py
+  967d4556e0af6dfd 52
+src/compgraph/geocoding.py
+  967d4556e0af6dfd 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "4056df63c0936217e49fc6127613da49a8fa533c",
+  "prompts": {
+    "967d4556e0af6dfd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "672349b2-a8fa-4eea-9309-882708155584",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
