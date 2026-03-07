@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import uuid
-from datetime import UTC, datetime
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.helpers import new_row_id, safe_uuid_str, today_utc
 
 _QUERY = """\
 WITH brand_company_counts AS (
@@ -67,7 +65,7 @@ class BrandAgencyOverlapJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        today = datetime.now(UTC).date()
+        today = today_utc()
         rows: list[dict] = []
         for row in result.mappings().all():
             agency_names = row["agency_names"]
@@ -75,14 +73,12 @@ class BrandAgencyOverlapJob(AggregationJob):
                 agency_names = list(agency_names)
             rows.append(
                 {
-                    "id": str(uuid.uuid4()),
+                    "id": new_row_id(),
                     "brand_id": str(row["brand_id"]),
                     "period": today,
                     "agency_count": row["agency_count"],
                     "agency_names": agency_names,
-                    "primary_company_id": str(row["primary_company_id"])
-                    if row["primary_company_id"]
-                    else None,
+                    "primary_company_id": safe_uuid_str(row["primary_company_id"]),
                     "primary_share": row["primary_share"],
                     "is_exclusive": row["is_exclusive"],
                     "is_contested": row["is_contested"],
