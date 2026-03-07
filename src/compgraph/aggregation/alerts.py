@@ -45,8 +45,8 @@ async def _insert_alerts(session: AsyncSession, alerts: list[dict]) -> int:
     stmt = (
         pg_insert(Alert)
         .values(alerts)
-        .on_conflict_do_nothing(  # type: ignore[arg-type]
-            index_elements=["alert_type", "company_id", "brand_id", text("(triggered_at::date)")],
+        .on_conflict_do_nothing(
+            index_elements=["alert_type", "company_id", "brand_id", text("utc_date(triggered_at)")],
         )
     )
     result = await session.execute(stmt)

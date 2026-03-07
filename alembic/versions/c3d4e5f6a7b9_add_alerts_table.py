@@ -40,11 +40,21 @@ def upgrade() -> None:
     op.create_index("ix_alerts_triggered_at", "alerts", ["triggered_at"])
 
     # Unique constraint for dedup: one alert per (type, company, brand, day)
-    # Uses NULLS NOT DISTINCT so NULL brand_id values are treated as equal
+    # Uses NULLS NOT DISTINCT so NULL brand_id values are treated as equal.
+    # timestamptz::date is timezone-dependent so we need an IMMUTABLE wrapper
+    # that pins to UTC for use in the expression index.
+    op.execute(
+        sa.text("""
+        CREATE OR REPLACE FUNCTION utc_date(ts timestamptz)
+        RETURNS date
+        LANGUAGE sql IMMUTABLE PARALLEL SAFE
+        AS $$ SELECT (ts AT TIME ZONE 'UTC')::date $$
+    """)
+    )
     op.execute(
         sa.text("""
         CREATE UNIQUE INDEX uq_alert_dedup
-        ON alerts (alert_type, company_id, brand_id, (triggered_at::date))
+        ON alerts (alert_type, company_id, brand_id, utc_date(triggered_at))
         NULLS NOT DISTINCT
     """)
     )
@@ -55,3 +65,4 @@ def downgrade() -> None:
     op.drop_index("ix_alerts_triggered_at", table_name="alerts")
     op.drop_index("ix_alerts_company_type", table_name="alerts")
     op.drop_table("alerts")
+    op.execute(sa.text("DROP FUNCTION IF EXISTS utc_date(timestamptz)"))

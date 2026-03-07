@@ -356,7 +356,7 @@ export default function HiringPage() {
                     {item.role_archetype ? (
                       <Badge variant="neutral">{formatRoleArchetype(item.role_archetype)}</Badge>
                     ) : (
-                      <span className="text-[#4F5D75]">\u2014</span>
+                      <span className="text-[#4F5D75]">{"\u2014"}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
