@@ -71,7 +71,7 @@ async def run_pipeline(ctx: dict[str, Any]) -> None:
 
     from compgraph.scheduler.jobs import pipeline_job
 
-    await pipeline_job()
+    await pipeline_job(redis)
 
 
 async def run_pipeline_manual(ctx: dict[str, Any]) -> None:
@@ -91,7 +91,7 @@ async def run_pipeline_manual(ctx: dict[str, Any]) -> None:
 
     from compgraph.scheduler.jobs import pipeline_job
 
-    await pipeline_job()
+    await pipeline_job(redis)
 
 
 class WorkerSettings:

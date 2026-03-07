@@ -25,6 +25,7 @@ from compgraph.scrapers.orchestrator import (
 )
 
 if TYPE_CHECKING:
+    from arq import ArqRedis
     from sentry_sdk._types import MonitorConfig
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ async def get_last_pipeline_run_from_db() -> dict[str, datetime | bool | None]:
     monitor_slug="daily-pipeline",
     monitor_config=_MONITOR_CONFIG,  # type: ignore[arg-type]
 )
-async def pipeline_job() -> None:
+async def pipeline_job(redis_pool: ArqRedis | None = None) -> None:
     global _last_pipeline_finished_at, _last_pipeline_success, _last_pipeline_error
 
     logger.info("[PIPELINE] Scheduled pipeline job starting")
@@ -88,17 +89,16 @@ async def pipeline_job() -> None:
     from compgraph.main import shutdown_event
 
     # Record last fire time in Redis for scheduler status API
-    try:
-        from compgraph.scheduler.app import LAST_FIRE_REDIS_KEY, SCHEDULE_ID, create_arq_pool
+    if redis_pool is not None:
+        try:
+            from compgraph.scheduler.app import LAST_FIRE_REDIS_KEY, SCHEDULE_ID
 
-        pool = await create_arq_pool()
-        await pool.set(
-            f"{LAST_FIRE_REDIS_KEY}{SCHEDULE_ID}",
-            datetime.now(UTC).isoformat(),
-        )
-        await pool.aclose()
-    except Exception:
-        logger.debug("Failed to record last fire time in Redis", exc_info=True)
+            await redis_pool.set(
+                f"{LAST_FIRE_REDIS_KEY}{SCHEDULE_ID}",
+                datetime.now(UTC).isoformat(),
+            )
+        except Exception:
+            logger.debug("Failed to record last fire time in Redis", exc_info=True)
 
     # --- Cleanup stale PENDING runs before starting ---
     try:
