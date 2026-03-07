@@ -27,13 +27,12 @@ from compgraph.scrapers.jobsync import (
     JobSyncFetcher,
     JobSyncPage,
     JobSyncPosting,
-    _hash_text,
     build_location_string,
     build_posting_url,
     parse_job,
     parse_page,
-    persist_posting,
 )
+from compgraph.scrapers.persistence import _hash_text, persist_posting
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
