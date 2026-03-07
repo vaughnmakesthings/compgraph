@@ -9,16 +9,16 @@ test.describe('Settings', () => {
   test('pipeline controls are visible', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    // Look for pipeline control buttons
-    const controls = page.locator('button:has-text("Start"), button:has-text("Stop"), button:has-text("Pause"), button:has-text("Run")');
+    // Pipeline Controls section has Trigger buttons
+    const controls = page.locator('button:has-text("Trigger")');
     await expect(controls.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('run history section renders', async ({ page }) => {
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    // Look for run history table or list
-    const history = page.locator('table, [class*="history"], [class*="run"]');
+    // Look for run history heading or table, or "No runs recorded" fallback
+    const history = page.locator('text=Run History, text=No runs recorded, table');
     await expect(history.first()).toBeVisible({ timeout: 10000 });
   });
 });

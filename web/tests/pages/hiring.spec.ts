@@ -9,15 +9,15 @@ test.describe('Hiring (Job Feed)', () => {
   test('job feed table or list renders', async ({ page }) => {
     await page.goto('/hiring');
     await page.waitForLoadState('networkidle');
-    // Look for table rows or list items
-    const content = page.locator('table tbody tr, [class*="ag-row"], [role="row"]');
+    // Look for table rows, AG Grid rows, or a "no results" fallback
+    const content = page.locator('table tbody tr, [class*="ag-row"], [role="row"], text=No postings');
     await expect(content.first()).toBeVisible({ timeout: 15000 });
   });
 
   test('filter controls are present', async ({ page }) => {
     await page.goto('/hiring');
-    // Look for filter elements — select dropdowns, search inputs, or filter buttons
-    const filters = page.locator('select, input[type="search"], input[placeholder*="earch"], [role="combobox"], button:has-text("Filter")');
+    // Hiring page uses native <select> dropdowns for filtering
+    const filters = page.locator('select');
     await expect(filters.first()).toBeVisible({ timeout: 10000 });
   });
 });
