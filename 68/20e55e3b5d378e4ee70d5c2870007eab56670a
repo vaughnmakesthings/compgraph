@@ -1,0 +1,41 @@
+src/compgraph/scheduler/app.py
+  610c361b204086f3 4,6,9,11-12,19-20,22-24,26-27,29-35
+src/compgraph/main.py
+  610c361b204086f3 117,119-120,124-125
+src/compgraph/api/routes/scheduler.py
+  610c361b204086f3 10,51,54-56,59,61,77-78,82-89,130,133,138-139,155,157-158,174,176-177
+src/compgraph/scheduler/__init__.py
+  610c361b204086f3 1
+tests/test_health.py
+  610c361b204086f3 44-45,85-86,92,115-116,122
+src/compgraph/scheduler/worker.py
+  610c361b204086f3 1-59
+tests/test_scheduler.py
+  610c361b204086f3 356,359-361,363-364,366-367,369-370,372-450,457,460-461,463-465,467,469-479,483,485,497,500-501,516,518,531-532,542-551,556,558,567,569,578-582,584,592-602
+pyproject.toml
+  610c361b204086f3 19,85
+src/compgraph/api/routes/pipeline.py
+  610c361b204086f3 316-317,323
+src/compgraph/api/routes/health.py
+  610c361b204086f3 38-39,44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "6820e55e3b5d378e4ee70d5c2870007eab56670a",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 292,
+      "total_deletions": 152,
+      "accepted_lines": 281,
+      "overriden_lines": 0
+    }
+  }
+}
