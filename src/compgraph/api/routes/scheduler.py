@@ -130,9 +130,9 @@ async def scheduler_status(
         if not is_paused:
             try:
                 config = await get_schedule_config(pool)
-                weekdays = config.get("weekdays", [])
-                hour = config.get("hour", 2)
-                minute = config.get("minute", 0)
+                weekdays = config.get("weekdays", DEFAULT_SCHEDULE_CONFIG["weekdays"])
+                hour = config.get("hour", DEFAULT_SCHEDULE_CONFIG["hour"])
+                minute = config.get("minute", DEFAULT_SCHEDULE_CONFIG["minute"])
                 if weekdays:
                     next_fire = _compute_next_fire_time(weekdays, hour, minute)
             except Exception:
