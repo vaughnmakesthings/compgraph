@@ -566,6 +566,12 @@ class EnrichmentOrchestrator:
                 state.result.total_input_tokens += llm_result.input_tokens
                 state.result.total_output_tokens += llm_result.output_tokens
                 state.breaker.record_success()
+                await increment_enrichment_counter(
+                    state.run.run_id,
+                    total_input_tokens=llm_result.input_tokens,
+                    total_output_tokens=llm_result.output_tokens,
+                    total_api_calls=1,
+                )
             except EnrichmentAPIError as e:
                 state.api_calls += 1
                 state.breaker.record_api_failure(e.category)
@@ -700,6 +706,12 @@ class EnrichmentOrchestrator:
                     state.result.total_input_tokens += llm_result.input_tokens
                     state.result.total_output_tokens += llm_result.output_tokens
                     state.breaker.record_success()
+                    await increment_enrichment_counter(
+                        state.run.run_id,
+                        total_input_tokens=llm_result.input_tokens,
+                        total_output_tokens=llm_result.output_tokens,
+                        total_api_calls=1,
+                    )
                     content_cache[content_hash] = p1
                     cached_on_fallback = True
                     async with async_session_factory() as save_session:
@@ -1013,6 +1025,12 @@ class EnrichmentOrchestrator:
                 state.result.total_input_tokens += llm_result.input_tokens
                 state.result.total_output_tokens += llm_result.output_tokens
                 state.breaker.record_success()
+                await increment_enrichment_counter(
+                    state.run.run_id,
+                    total_input_tokens=llm_result.input_tokens,
+                    total_output_tokens=llm_result.output_tokens,
+                    total_api_calls=1,
+                )
             except EnrichmentAPIError as e:
                 state.api_calls += 1
                 state.breaker.record_api_failure(e.category)
@@ -1140,6 +1158,12 @@ class EnrichmentOrchestrator:
                     state.result.total_input_tokens += llm_result.input_tokens
                     state.result.total_output_tokens += llm_result.output_tokens
                     state.breaker.record_success()
+                    await increment_enrichment_counter(
+                        state.run.run_id,
+                        total_input_tokens=llm_result.input_tokens,
+                        total_output_tokens=llm_result.output_tokens,
+                        total_api_calls=1,
+                    )
                     content_cache[content_hash] = p2
                     cached_on_fallback = True
                     async with async_session_factory() as save_session:
