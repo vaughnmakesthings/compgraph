@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { Suspense } from "react";
 import { renderWithQueryClient } from "./test-utils";
 
@@ -105,6 +105,50 @@ describe("Eval Runs page", () => {
       screen.getByRole("button", { name: /new run/i }),
     ).toBeInTheDocument();
   });
+
+  it("shows loading skeletons when data is loading", () => {
+    vi.mocked(getRunsApiV1EvalRunsGetOptions).mockReturnValue({
+      queryKey: ["evalRuns"],
+      queryFn: () => new Promise(() => {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    const { container } = renderWithQueryClient(<EvalRunsPage />);
+    const pulsingRows = container.querySelectorAll(".animate-pulse");
+    expect(pulsingRows.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("displays run row with model name", async () => {
+    renderWithQueryClient(<EvalRunsPage />);
+    await waitFor(() => {
+      expect(screen.getByText("claude-haiku-4-5")).toBeInTheDocument();
+    });
+  });
+
+  it("displays run status badge with completed text", async () => {
+    renderWithQueryClient(<EvalRunsPage />);
+    await waitFor(() => {
+      expect(screen.getByText("completed")).toBeInTheDocument();
+    });
+  });
+
+  it("shows empty state when runs array is empty", async () => {
+    vi.mocked(getRunsApiV1EvalRunsGetOptions).mockReturnValue({
+      queryKey: ["evalRuns"],
+      queryFn: vi.fn().mockResolvedValue([]),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    renderWithQueryClient(<EvalRunsPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/no evaluation runs found/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows Delete button in run row", async () => {
+    renderWithQueryClient(<EvalRunsPage />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -148,6 +192,45 @@ describe("Accuracy page", () => {
   it("renders without throwing", () => {
     expect(() => renderWithQueryClient(<AccuracyPage />)).not.toThrow();
   });
+
+  it("renders the Accuracy heading", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <AccuracyPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /accuracy/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows select-a-run prompt when no run is selected", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <AccuracyPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(/select a run to begin reviewing/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("renders run selector with Choose a run option", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <AccuracyPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText(/select run/i)).toBeInTheDocument();
+    });
+    const select = screen.getByLabelText(/select run/i);
+    expect(select).toHaveDisplayValue(/choose a run/i);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -158,6 +241,44 @@ describe("Review page", () => {
   it("renders without crashing", () => {
     expect(() => renderWithQueryClient(<ReviewPage />)).not.toThrow();
   });
+
+  it("renders the Review heading", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <ReviewPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /review/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows two run selectors labeled Run A and Run B", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <ReviewPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Run A")).toBeInTheDocument();
+      expect(screen.getByLabelText("Run B")).toBeInTheDocument();
+    });
+  });
+
+  it("shows prompt to select runs when none are selected", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <ReviewPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(/select two runs above to begin/i),
+      ).toBeInTheDocument();
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -167,5 +288,43 @@ describe("Review page", () => {
 describe("Prompt Diff page", () => {
   it("renders without crashing", () => {
     expect(() => renderWithQueryClient(<PromptDiffPage />)).not.toThrow();
+  });
+
+  it("renders the Run Diff heading", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <PromptDiffPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /run diff/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows Baseline Run and Candidate Run labels", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <PromptDiffPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Baseline Run")).toBeInTheDocument();
+      expect(screen.getByLabelText("Candidate Run")).toBeInTheDocument();
+    });
+  });
+
+  it("shows prompt to select both runs when none selected", async () => {
+    renderWithQueryClient(
+      <Suspense fallback={<div>Loading...</div>}>
+        <PromptDiffPage />
+      </Suspense>,
+    );
+    await waitFor(() => {
+      expect(
+        screen.getByText(/select both a baseline and candidate run/i),
+      ).toBeInTheDocument();
+    });
   });
 });
