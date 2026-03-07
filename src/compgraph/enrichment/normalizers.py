@@ -24,8 +24,8 @@ _COMPANY_SUFFIX_PATTERNS: list[re.Pattern[str]] = [
 ]
 
 _STORE_NUMBER = re.compile(
-    r"\s*[-\u2013\u2014]\s*(?:store\s*)?#?\d{3,5}\s*$"
-    r"|\s+store\s+#?\d{3,5}\s*$",
+    r"\s*[-\u2013\u2014]\s*(?:store\s*)?#?\d{3,5}\s*$"  # "- Store #1234" or "- 1234"
+    r"|\s+store\s+#?\d{3,5}\s*$",  # "Store #1234" without dash separator
     re.IGNORECASE,
 )
 

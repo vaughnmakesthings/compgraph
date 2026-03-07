@@ -14,12 +14,11 @@ class TestPass2PromptBoilerplateExclusion:
         assert "CRITICAL" in PASS2_SYSTEM_PROMPT
 
     def test_boilerplate_rule_in_rules_section(self) -> None:
-        assert "boilerplate" in PASS2_SYSTEM_PROMPT.lower()
         assert "Do NOT include brands from company boilerplate" in PASS2_SYSTEM_PROMPT
 
     def test_osl_boilerplate_example_present(self) -> None:
         assert "OSL" in PASS2_SYSTEM_PROMPT
-        assert "AT&T" in PASS2_SYSTEM_PROMPT or "AT&amp;T" in PASS2_SYSTEM_PROMPT
+        assert "AT&T" in PASS2_SYSTEM_PROMPT
 
     def test_boilerplate_example_excludes_telco_brands(self) -> None:
         assert "Example 5" in PASS2_SYSTEM_PROMPT

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Posting, PostingEnrichment, PostingSnapshot
 from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
+from compgraph.enrichment.normalizers import normalize_title_for_grouping
 from compgraph.enrichment.schemas import Pass1Result
 
 
@@ -76,8 +77,6 @@ async def save_enrichment(
 
     Maps Pass1Result fields to PostingEnrichment columns.
     """
-    from compgraph.enrichment.normalizers import normalize_title_for_grouping
-
     enrichment = PostingEnrichment(
         posting_id=posting_id,
         # Classification
