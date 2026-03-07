@@ -43,6 +43,8 @@ fi
 # ── 1. Pull latest code ──
 echo "[1/5] Pulling latest code..."
 git config --global safe.directory "$APP_DIR"
+# Reset generated files that may differ on server (e.g. uv.lock platform markers)
+git checkout -- uv.lock 2>/dev/null || true
 git pull origin main
 
 # ── 2. Sync dependencies ──
