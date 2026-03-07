@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import uuid
-from datetime import UTC, datetime
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.helpers import new_row_id, today_utc
 from compgraph.aggregation.location_norm import _LOC_NORM_SQL
 
 _QUERY = f"""\
@@ -71,7 +69,7 @@ class MarketCoverageGapsJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        today = datetime.now(UTC).date()
+        today = today_utc()
         rows: list[dict] = []
         for row in result.mappings().all():
             brand_names = row["brand_names"]
@@ -79,7 +77,7 @@ class MarketCoverageGapsJob(AggregationJob):
                 brand_names = list(brand_names)
             rows.append(
                 {
-                    "id": str(uuid.uuid4()),
+                    "id": new_row_id(),
                     "company_id": str(row["company_id"]),
                     "market_id": str(row["market_id"]),
                     "period": today,

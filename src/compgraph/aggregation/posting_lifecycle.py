@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import uuid
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.helpers import new_row_id, safe_float
 
 _QUERY = """
 WITH latest_enrichment AS (
@@ -55,26 +54,18 @@ class PostingLifecycleJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        rows: list[dict] = []
-        for row in result:
-            rows.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "company_id": str(row.company_id),
-                    "role_archetype": row.role_archetype,
-                    "brand_id": None,
-                    "market_id": None,
-                    "period": row.period,
-                    "avg_days_open": float(row.avg_days_open)
-                    if row.avg_days_open is not None
-                    else None,
-                    "median_days_open": float(row.median_days_open)
-                    if row.median_days_open is not None
-                    else None,
-                    "repost_rate": float(row.repost_rate) if row.repost_rate is not None else None,
-                    "avg_repost_gap_days": float(row.avg_repost_gap_days)
-                    if row.avg_repost_gap_days is not None
-                    else None,
-                }
-            )
-        return rows
+        return [
+            {
+                "id": new_row_id(),
+                "company_id": str(row["company_id"]),
+                "role_archetype": row["role_archetype"],
+                "brand_id": None,
+                "market_id": None,
+                "period": row["period"],
+                "avg_days_open": safe_float(row["avg_days_open"]),
+                "median_days_open": safe_float(row["median_days_open"]),
+                "repost_rate": safe_float(row["repost_rate"]),
+                "avg_repost_gap_days": safe_float(row["avg_repost_gap_days"]),
+            }
+            for row in result.mappings().all()
+        ]

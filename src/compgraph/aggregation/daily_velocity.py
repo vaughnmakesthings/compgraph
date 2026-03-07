@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import uuid
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.helpers import new_row_id
 
 # Company-level only. brand_id/market_id are intentionally NULL — breakdown by brand/market
 # would require extending the query to join posting_brand_mentions and location_mappings.
@@ -50,19 +49,17 @@ class DailyVelocityJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        rows: list[dict] = []
-        for row in result:
-            rows.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "date": row.date,
-                    "company_id": str(row.company_id),
-                    "brand_id": None,
-                    "market_id": None,
-                    "active_postings": row.active_postings,
-                    "new_postings": row.new_postings,
-                    "closed_postings": row.closed_postings,
-                    "net_change": row.net_change,
-                }
-            )
-        return rows
+        return [
+            {
+                "id": new_row_id(),
+                "date": row["date"],
+                "company_id": str(row["company_id"]),
+                "brand_id": None,
+                "market_id": None,
+                "active_postings": row["active_postings"],
+                "new_postings": row["new_postings"],
+                "closed_postings": row["closed_postings"],
+                "net_change": row["net_change"],
+            }
+            for row in result.mappings().all()
+        ]

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import uuid
-from datetime import UTC, datetime
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.aggregation.base import AggregationJob
+from compgraph.aggregation.helpers import new_row_id, today_utc
 
 _QUERY = """\
 WITH active_postings AS (
@@ -92,21 +90,19 @@ class BrandChurnSignalsJob(AggregationJob):
 
     async def compute_rows(self, session: AsyncSession) -> list[dict]:
         result = await session.execute(text(_QUERY))
-        today = datetime.now(UTC).date()
-        rows: list[dict] = []
-        for row in result.mappings().all():
-            rows.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "company_id": str(row["company_id"]),
-                    "brand_id": str(row["brand_id"]),
-                    "period": today,
-                    "active_posting_count": row["active_posting_count"],
-                    "prior_period_count": row["prior_period_count"],
-                    "velocity_delta": row["velocity_delta"],
-                    "avg_days_active": row["avg_days_active"],
-                    "repost_rate": row["repost_rate"],
-                    "churn_signal_score": row["churn_signal_score"],
-                }
-            )
-        return rows
+        today = today_utc()
+        return [
+            {
+                "id": new_row_id(),
+                "company_id": str(row["company_id"]),
+                "brand_id": str(row["brand_id"]),
+                "period": today,
+                "active_posting_count": row["active_posting_count"],
+                "prior_period_count": row["prior_period_count"],
+                "velocity_delta": row["velocity_delta"],
+                "avg_days_active": row["avg_days_active"],
+                "repost_rate": row["repost_rate"],
+                "churn_signal_score": row["churn_signal_score"],
+            }
+            for row in result.mappings().all()
+        ]

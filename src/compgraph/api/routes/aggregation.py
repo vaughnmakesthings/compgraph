@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,78 +24,76 @@ router = APIRouter(prefix="/aggregation", tags=["aggregation"])
 CACHE_CONTROL_5MIN = "public, max-age=300"
 
 
+async def _set_cache_headers(response: Response) -> AsyncIterator[None]:
+    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
+    yield
+
+
 class TriggerResponse(BaseModel):
     message: str
 
 
-@router.get("/velocity", response_model=list[VelocityItem])
+CachedResponse = Depends(_set_cache_headers)
+
+
+@router.get("/velocity", response_model=list[VelocityItem], dependencies=[CachedResponse])
 async def get_velocity(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
     days: int = 30,
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_velocity(db, days=days)
 
 
-@router.get("/brand-timeline", response_model=list[BrandTimelineItem])
+@router.get(
+    "/brand-timeline", response_model=list[BrandTimelineItem], dependencies=[CachedResponse]
+)
 async def get_brand_timeline(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_brand_timeline(db)
 
 
-@router.get("/pay-benchmarks", response_model=list[PayBenchmarkItem])
+@router.get("/pay-benchmarks", response_model=list[PayBenchmarkItem], dependencies=[CachedResponse])
 async def get_pay_benchmarks(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_pay_benchmarks(db)
 
 
-@router.get("/lifecycle", response_model=list[LifecycleItem])
+@router.get("/lifecycle", response_model=list[LifecycleItem], dependencies=[CachedResponse])
 async def get_lifecycle(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_lifecycle(db)
 
 
-@router.get("/churn-signals", response_model=list[ChurnSignalItem])
+@router.get("/churn-signals", response_model=list[ChurnSignalItem], dependencies=[CachedResponse])
 async def get_churn_signals(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_churn_signals(db)
 
 
-@router.get("/coverage-gaps", response_model=list[CoverageGapItem])
+@router.get("/coverage-gaps", response_model=list[CoverageGapItem], dependencies=[CachedResponse])
 async def get_coverage_gaps(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_coverage_gaps(db)
 
 
-@router.get("/agency-overlap", response_model=list[AgencyOverlapItem])
+@router.get(
+    "/agency-overlap", response_model=list[AgencyOverlapItem], dependencies=[CachedResponse]
+)
 async def get_agency_overlap(
-    response: Response,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict]:
-    response.headers["Cache-Control"] = CACHE_CONTROL_5MIN
     return await AggregationService.get_agency_overlap(db)
 
 
