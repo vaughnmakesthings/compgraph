@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from compgraph.auth.dependencies import AuthUser, require_admin, require_viewer
-from compgraph.scheduler.app import SCHEDULE_ID, enqueue_pipeline_job
+from compgraph.scheduler.app import PAUSE_REDIS_KEY, SCHEDULE_ID, enqueue_pipeline_job
 from compgraph.scheduler.jobs import (
     get_last_pipeline_finished_at,
     get_last_pipeline_success,
@@ -22,9 +22,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
 MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri->Mon) + 8h grace
-
-# Redis key for persisting pause state across API + worker processes
-_PAUSE_REDIS_KEY_PREFIX = "schedule:paused:"
 
 
 class ScheduleInfo(BaseModel):
@@ -84,7 +81,7 @@ async def scheduler_status(
 
     schedules: list[ScheduleInfo] = []
     if enabled and pool is not None:
-        is_paused = bool(await pool.get(f"{_PAUSE_REDIS_KEY_PREFIX}{SCHEDULE_ID}"))
+        is_paused = bool(await pool.get(f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"))
         schedules.append(
             ScheduleInfo(
                 schedule_id=SCHEDULE_ID,
@@ -113,8 +110,6 @@ async def scheduler_status(
     if last_finished is not None:
         hours_since = (datetime.now(UTC) - last_finished).total_seconds() / 3600
         missed = hours_since > MISSED_RUN_THRESHOLD_HOURS
-    elif enabled:
-        missed = False
 
     return SchedulerStatusResponse(
         enabled=enabled,
@@ -159,7 +154,7 @@ async def pause_job(
     _validate_schedule_id(job_id)
     pool = _get_arq_pool(request)
 
-    await pool.set(f"{_PAUSE_REDIS_KEY_PREFIX}{job_id}", b"1")
+    await pool.set(f"{PAUSE_REDIS_KEY}{job_id}", b"1")
     logger.info("Schedule %s paused (stored in Redis)", job_id)
 
     return ControlResponse(
@@ -178,7 +173,7 @@ async def resume_job(
     _validate_schedule_id(job_id)
     pool = _get_arq_pool(request)
 
-    await pool.delete(f"{_PAUSE_REDIS_KEY_PREFIX}{job_id}")
+    await pool.delete(f"{PAUSE_REDIS_KEY}{job_id}")
     logger.info("Schedule %s resumed (cleared from Redis)", job_id)
 
     return ControlResponse(

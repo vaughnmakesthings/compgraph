@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 SCHEDULE_ID = "daily_pipeline"
+PAUSE_REDIS_KEY = "schedule:paused:"
 
 
 async def create_arq_pool() -> ArqRedis:

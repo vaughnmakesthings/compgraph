@@ -32,10 +32,12 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
 
 
 async def run_pipeline(ctx: dict[str, Any]) -> None:
-    redis = ctx["redis"]
-    from compgraph.scheduler.app import SCHEDULE_ID
+    # Deferred imports: app.py imports worker.py at module level (circular),
+    # and pipeline_job pulls in heavy scraper/enrichment deps.
+    from compgraph.scheduler.app import PAUSE_REDIS_KEY, SCHEDULE_ID
 
-    if await redis.get(f"schedule:paused:{SCHEDULE_ID}"):
+    redis = ctx["redis"]
+    if await redis.get(f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"):
         logger.info("Pipeline skipped — schedule is paused")
         return
 
