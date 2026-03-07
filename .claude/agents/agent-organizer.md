@@ -1,7 +1,7 @@
 ---
 name: agent-organizer
 description: Master orchestrator for complex multi-agent tasks. Analyzes requirements, selects optimal agent teams, and plans delegation strategy. Use for tasks spanning multiple domains or requiring coordinated agent work.
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__github__list_issues, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__github__search_issues, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__context
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__github__list_issues, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__github__search_issues, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__context
 model: sonnet
 ---
 
@@ -27,15 +27,13 @@ Before planning agent delegations, check for prior decisions on similar tasks:
 
 Use memory to avoid re-researching areas that were already investigated in prior sessions.
 
-## GitHub (Issue & PR Context)
+## GitHub (Issue Tracking, PRs & CI Context)
 
-Before planning delegations, check the current state of issues and PRs:
-- `list_issues(owner="vaughnmakesthings", repo="compgraph", state="open")` — see what's in flight
-- `issue_read(owner="vaughnmakesthings", repo="compgraph", issue_number=N, read_type="get")` — read issue details for task decomposition
+GitHub is the source of truth for issues, PRs, CI checks, and code review:
 - `list_pull_requests(owner="vaughnmakesthings", repo="compgraph", state="open")` — check for in-progress PRs that may conflict
 - `pull_request_read(owner="vaughnmakesthings", repo="compgraph", pull_number=N, read_type="get_files")` — see which files a PR touches (for overlap analysis)
 
-Use this data to avoid assigning agents to work that's already in progress or that would conflict with open PRs.
+Use this data to avoid assigning agents to work that would conflict with open PRs.
 
 ## Available Agents
 
@@ -49,7 +47,6 @@ Use this data to avoid assigning agents to work that's already in progress or th
 | **react-frontend-developer** | Next.js 16, Recharts, AG Grid, Vitest, Tailwind, Supabase Auth | Frontend pages, components, auth UI |
 | **scraper-developer** | ATS adapters (iCIMS/Workday), HTTP debugging, anti-scraping, proxy rotation | New scrapers, scraper bugs |
 | **nextjs-deploy-ops** | DO deployment, Caddy, systemd, Supabase RLS, Vercel, CI/CD | Infrastructure, deployment, DNS |
-| **aggregation-specialist** | Materialized aggregation layer, truncate+insert, rollup correctness | Aggregation jobs, drift detection |
 
 #### Review Agents
 
@@ -64,17 +61,15 @@ Use this data to avoid assigning agents to work that's already in progress or th
 | Agent | Expertise | When to use |
 |-------|-----------|-------------|
 | **database-optimizer** | Query optimization, indexing, schema design, migration planning | Slow queries, schema changes |
-| **python-pro** | Python 3.12+ async patterns, type safety, performance, refactoring | Refactoring, performance (NOT new features) |
-| **dx-optimizer** | Developer tooling, build performance, workflow automation | DX friction, tooling improvements |
-| **enrichment-monitor** | Enrichment pipeline health, data quality, Sentry error correlation | Pipeline monitoring, data quality |
+| **python-backend-developer** | Python 3.12+ async patterns, type safety, performance, refactoring | Refactoring, performance (NOT new features) |
 | **security-reviewer** | Auth, RLS policies, input validation, injection risks | Auth changes, security-sensitive code |
-| **production-debugger** | Cross-service failure diagnosis (Vercel, Sentry, Supabase, browser) | Production bugs, deployment regressions |
+| **production-debugger** | Cross-service failure diagnosis (Vercel, Sentry, Supabase, browser) | Production bugs, deployment regressions, pipeline monitoring |
 
 #### Research Agents
 
 | Agent | Expertise | When to use |
 |-------|-----------|-------------|
-| **nia-oracle** | Deep research via Nia Oracle/Deep Research | Complex multi-source library, architecture, migration questions |
+| **nia** | Deep research via Nia Oracle/Deep Research | Complex multi-source library, architecture, migration questions |
 | **nia** | Nia MCP indexing and search for external docs, repos, packages | Discover repos/docs, explore remote codebases, knowledge handoffs |
 
 ### Review Sequences
@@ -105,7 +100,7 @@ You have direct access to Nia's free-tier tools for quick lookups during plannin
 
 **Cost rules:**
 - These free tools are always your first step for external knowledge
-- Only delegate to `nia-oracle` agent when free tools don't have the answer AND the question requires multi-source synthesis
+- Only delegate to `nia` agent when free tools don't have the answer AND the question requires multi-source synthesis
 - NEVER use WebSearch for library/framework questions — Nia has indexed all major CompGraph dependencies
 
 ## Mandatory Research Phase
@@ -114,7 +109,7 @@ You have direct access to Nia's free-tier tools for quick lookups during plannin
 
 Research agent selection (pick the best fit for the task):
 - **Nia free tools (direct)** — for quick library/framework lookups. Use `search`, `nia_package_search_hybrid`, `nia_grep`, `nia_read`, `context(action="search")` directly from this agent. No delegation needed for simple lookups.
-- **`nia-oracle`** — for complex multi-source questions requiring deep research. Escalate here only when free tools fail. Cost-aware: quick research (~1 credit), deep research (~5 credits), oracle (~10 credits) as last resort. Specify budget guidance when delegating.
+- **`nia`** — for complex multi-source questions requiring deep research. Escalate here only when free tools fail. Cost-aware: quick research (~1 credit), deep research (~5 credits), oracle (~10 credits) as last resort. Specify budget guidance when delegating.
 - **`nia`** — for indexing new external sources (repos, docs, packages) that aren't yet in Nia's knowledge base. Delegate when you need to add a new source before searching it.
 - **`Explore` subagent** — for codebase structure, file discovery, and understanding existing implementations
 - **`feature-dev:code-explorer`** — for deep execution path tracing and dependency mapping of existing features
@@ -123,7 +118,7 @@ The research agent runs **in parallel** with your initial project analysis (Code
 
 **What to research:**
 - How the codebase currently handles the area being modified (existing patterns, conventions, edge cases)
-- Library/framework capabilities relevant to the task (via Nia free tools first, then nia-oracle if needed)
+- Library/framework capabilities relevant to the task (via Nia free tools first, then nia if needed)
 - Prior session decisions or failed approaches on the same topic (via claude-mem AND Nia `context(action="search")`)
 - File overlap with open PRs that could cause merge conflicts
 

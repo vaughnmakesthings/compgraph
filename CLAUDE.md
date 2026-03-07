@@ -14,7 +14,7 @@ CompGraph — competitive intelligence platform for Mosaic Sales Solutions. Scra
 
 ```bash
 # Setup
-uv sync                                           # Install dependencies
+uv sync --extra dev                               # Install dependencies (includes mypy, pytest, ruff)
 bash scripts/setup-hooks.sh                        # Install git hooks
 
 # Dev server
@@ -73,6 +73,8 @@ npm run typecheck        # TypeScript --noEmit
 npm test                 # Vitest run
 npm run test:coverage    # Vitest with v8 coverage (50% threshold)
 npm run build            # Production build
+npm run test:e2e         # Playwright E2E tests (requires build)
+npm run test:e2e:ui      # Playwright UI mode
 ```
 
 See `web/CLAUDE.md` for full frontend conventions.
@@ -90,18 +92,22 @@ See `web/CLAUDE.md` for full frontend conventions.
 - **python-slugify** — slug generation for brand/retailer matching
 - **httpx** + **beautifulsoup4** — HTTP client + HTML parsing for scrapers
 - **apscheduler** (v4 alpha) — scheduled pipeline jobs
+- **instructor** — structured LLM output via Pydantic models (feature-flagged)
+- **aiolimiter** — async rate limiting for scraper/API calls
+- **pgvector** + **sentence-transformers** — vector embeddings for semantic search
+- **geopy** + **h3** — geocoding and hexagonal spatial indexing
 
 ## Architecture
 
 ```
-Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (read-only)
+Scrape (5 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (read-only)
 ```
 
-- **Scrape**: 4 adapters (iCIMS×2, Workday CXS×2). Each isolated — one failing doesn't block others. Output: `postings` + `posting_snapshots` (append-only).
+- **Scrape**: 5 adapters (iCIMS×2, Workday CXS×2, JobSync×1). Each isolated — one failing doesn't block others. Output: `postings` + `posting_snapshots` (append-only).
 - **Enrich**: 2-pass — Haiku 4.5 for classification/pay extraction (Pass 1), Sonnet 4.5 for entity extraction (Pass 2). 3-tier entity resolution (exact/slug/fuzzy via rapidfuzz). Fingerprinting for repost detection. Output: `posting_enrichments` + `posting_brand_mentions`.
 - **Aggregate**: Rebuilds 4 tables (`agg_daily_velocity`, `agg_brand_timeline`, `agg_pay_benchmarks`, `agg_posting_lifecycle`) from source data via truncate+insert. `agg_daily_velocity` is company-level only (brand_id/market_id intentionally NULL).
 - **Scheduler**: APScheduler v4 cron jobs trigger scrape→enrich→aggregate pipeline. Config in `src/compgraph/scheduler/`.
-- **Frontend**: Next.js 16 at `web/` — Pipeline Health, Posting Explorer, Brand Intel, and Scheduler views. Deployed to Vercel.
+- **Frontend**: Next.js 16 at `web/` — Pipeline Health, Posting Explorer, Brand Intel, and Scheduler views. Deployed to Vercel (Pro plan).
 - **API**: Async FastAPI, read-only queries against aggregation tables. No writes from API layer.
 
 ### Database Schema (25 tables)
@@ -116,18 +122,18 @@ Scrape (4 ATS) → Enrich (2-pass LLM) → Aggregate (materialized) → API (rea
 
 ## Roadmap
 
-**Current:** M6 complete. All pipeline stages (scrape → enrich → aggregate → API), Next.js frontend, Streamlit decommissioned, DO dev server + Vercel frontend live.
-**Next:** M7 — Production UI (auth, production infra, Prompt Evaluation Tool).
+**Current:** M1-M7 complete. Product roadmap approved (2026-03-06). 25-week plan across 5 phases.
+**Next:** Phase 0 — Foundation Infrastructure (pgvector, geocoding, Instructor, arq, aiolimiter).
 
 **Do NOT build yet:**
-- arq (replace APScheduler) → M8 (needs Redis OPS-06 first)
-- LiteLLM (provider abstraction) → M7 Phase B (needs Prompt Evaluation Tool #128 first)
+- BERTopic (full topic modeling) → Phase 3+ (use HDBSCAN on embeddings first)
+- LiteLLM (provider abstraction) → after eval tool validates quality
 - Prisma / second ORM → never (frontend is pure API consumer)
 - Custom JWT → never (using Supabase Auth)
 
-**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (invite via magic link, password login, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres through M6.
+**Pre-commitments:** Aggregation = truncate+insert. API = read-only. Enrichment 2-pass stays. Entity resolution 3-tier stays. Auth = Supabase Auth (invite via magic link, password login, admin/user roles). Frontend = pure API consumer (Next.js calls FastAPI, no direct DB). Database = Supabase Postgres.
 
-See `docs/phases.md` for full roadmap with task tables. Load Pack R from `docs/context-packs.md` for planning sessions.
+See `docs/plans/2026-03-06-product-roadmap.md` for the full product roadmap. See `docs/phases.md` for milestone history. Load Pack R from `docs/context-packs.md` for planning sessions.
 
 ### Key Design Decisions
 
@@ -376,7 +382,7 @@ This is incremental (~2-4s for no changes, ~15s for many). Do it once at session
 1. **Claude-Mem** — search persistent memory for prior research and decisions: `search(query="<topic>", project="compgraph")` → `get_observations(ids=[...])` for details. If memory answers the question, stop here.
 2. **Nia** — library docs, API patterns, and indexed dependency context. Use for ANY question about external libraries or frameworks:
    - **Free (always try first):** `search` → semantic search all indexed sources; `nia_package_search_hybrid` → search 3K+ pre-indexed packages; `nia_grep`/`nia_read` → exact lookups; `context(action="search")` → check prior findings
-   - **Paid (escalate only when free tools fail):** `nia_research(mode='quick')` ~1 credit; `nia_research(mode='deep')` ~5 credits; `nia_research(mode='oracle')` ~10 credits — LAST RESORT, prefer delegating to nia-oracle agent
+   - **Paid (escalate only when free tools fail):** `nia_research(mode='quick')` ~1 credit; `nia_research(mode='deep')` ~5 credits; `nia_research(mode='oracle')` ~10 credits — LAST RESORT, prefer delegating to nia agent
    - **Context sharing:** Save findings with memory types: `fact` (permanent), `procedural` (permanent how-to), `episodic` (7 days), `scratchpad` (1 hour)
 3. **CodeSight** — semantic search across CompGraph source code and project docs: `search_code(query="<topic>", project="compgraph")` → `get_chunk_code(chunk_ids)` for source. If CodeSight locates the relevant code, read only that file.
 4. **Targeted reads** — Glob/Grep/Read for specific files identified by steps 1-3. Do NOT speculatively read files hoping to find something — that's what steps 1-3 are for.
@@ -406,23 +412,18 @@ Read `docs/changelog.md` (latest entry only) for session continuity. The Roadmap
 ## Agent Crew
 
 Project-level agents in `.claude/agents/` have deep CompGraph context:
-- `python-backend-developer` — implementation (scrapers, enrichment, aggregation, API)
+- `python-backend-developer` — implementation, optimization, refactoring (scrapers, enrichment, aggregation, API)
 - `react-frontend-developer` — Next.js pages, Recharts charts, AG Grid tables, Supabase Auth, Vitest tests
 - `nextjs-deploy-ops` — DO deployment, Caddy, systemd, Supabase RLS, CI/CD
-- `nia-oracle` — deep research specialist via Nia Oracle/Deep Research. Delegate complex multi-source library, architecture, and migration questions here.
+- `nia` — external research via Nia MCP (library docs, repos, packages, Oracle/Deep Research)
 - `code-reviewer` — quality gate (plan alignment, async patterns, append-only rules)
 - `pytest-validator` — test audit (hollow assertions, DB isolation)
 - `spec-reviewer` — scope gate (goal achievement vs product spec)
 - `database-optimizer` — query/index/schema optimization
-- `python-pro` — Python 3.12+ async patterns and idioms
-- `dx-optimizer` — developer experience and tooling improvements
-- `enrichment-monitor` — enrichment pipeline health checks
 - `agent-organizer` — multi-agent orchestration and delegation
 - `security-reviewer` — auth, RLS, input validation, injection risks
-- `aggregation-specialist` — materialized aggregation layer debugging and optimization
 - `scraper-developer` — ATS adapter implementation, HTTP debugging, anti-scraping countermeasures
-- `production-debugger` — cross-service production failure diagnosis (Vercel, Sentry, Supabase, browser)
-- `nia` — external documentation, repos, and package research via Nia MCP
+- `production-debugger` — cross-service production failure diagnosis, enrichment pipeline health (Vercel, Sentry, Supabase, browser)
 
 Review sequence: implement → `code-reviewer` → `pytest-validator` → `spec-reviewer`
 

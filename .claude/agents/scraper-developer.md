@@ -3,7 +3,7 @@ name: scraper-developer
 description: |
   Specialist for building, debugging, and extending CompGraph's job posting scrapers. Use for new ATS adapter implementations, scraper bug fixes, HTTP debugging, anti-scraping countermeasures, and data verification. Knows the ScraperAdapter protocol, iCIMS/Workday patterns, proxy rotation, and the append-only persistence model.
 model: sonnet
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__nia_deep_research_agent, mcp__nia__nia_web_search, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__search_docs, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__get_issue_details
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__context, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__supabase__execute_sql, mcp__supabase__list_tables, mcp__supabase__search_docs, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__get_issue_details
 ---
 
 # Scraper Developer
@@ -20,7 +20,7 @@ tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, 
 | Indexing | `index` | One-time per source — check `manage_resource(action='list')` before indexing |
 | Quick research | `nia_research(mode='quick')` | ~1 credit — web search fallback |
 | Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly for comparative analysis |
-| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer delegating to `Task(agent="nia-oracle")` |
+| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer delegating to `Task(agent="nia")` |
 
 **Tool reference:**
 

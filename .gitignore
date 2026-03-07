@@ -47,6 +47,9 @@ web/node_modules/
 web/.next/
 web/coverage/
 web/.tsbuildinfo
+web/tests/.auth/
+web/playwright-report/
+web/test-results/
 # Override global gitignore "runs/" pattern so eval/runs/ pages are tracked
 !web/src/app/(app)/eval/runs/
 
