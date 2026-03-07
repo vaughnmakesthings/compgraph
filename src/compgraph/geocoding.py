@@ -17,7 +17,7 @@ def _normalize_location(location: str) -> str:
 def _get_api_key() -> str | None:
     from compgraph.config import settings
 
-    return settings.GOOGLE_MAPS_API_KEY
+    return settings.GOOGLE_MAPS_API_KEY.get_secret_value() if settings.GOOGLE_MAPS_API_KEY else None
 
 
 @lru_cache(maxsize=1)

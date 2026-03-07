@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     ENTITY_REVIEW_THRESHOLD: int = 70
 
     # Google Geocoding API (optional — falls back to Nominatim if unset)
-    GOOGLE_MAPS_API_KEY: str | None = None
+    GOOGLE_MAPS_API_KEY: SecretStr | None = None
 
     # Redis (OPS-06 — caching, rate limiting, arq job queue)
     REDIS_URL: str | None = None
