@@ -1,0 +1,25 @@
+web/tests/auth.setup.ts
+  610c361b204086f3 13
+web/tests/auth/login.spec.ts
+  610c361b204086f3 7,22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "79011b841c4a6ff2ef7923d1455ea4bccf49f296",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
