@@ -21,9 +21,9 @@ from slugify import slugify
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Company
-from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.base import RawPosting, ScrapeResult, create_scraper_client
+from compgraph.scrapers.circuit_breaker import CircuitBreakerMixin, CircuitBreakerOpen
 from compgraph.scrapers.persistence import persist_posting
-from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
@@ -112,12 +112,8 @@ def build_location_string(posting: JobSyncPosting) -> str:
     return ", ".join(parts)
 
 
-class CircuitBreakerOpen(Exception):
-    """Raised when the circuit breaker trips after consecutive failures."""
-
-
 @dataclass
-class JobSyncFetcher:
+class JobSyncFetcher(CircuitBreakerMixin):
     """Fetches all pages for a single agency from the JobSync API."""
 
     api_base: str = JOBSYNC_API_BASE
@@ -126,27 +122,13 @@ class JobSyncFetcher:
     delay_min: float = DEFAULT_DELAY_MIN
     delay_max: float = DEFAULT_DELAY_MAX
     circuit_breaker_threshold: int = CIRCUIT_BREAKER_THRESHOLD
-    _consecutive_failures: int = field(default=0, init=False, repr=False)
-    _circuit_open: bool = field(default=False, init=False, repr=False)
     pages_fetched: int = field(default=0, init=False, repr=False)
 
-    def _record_success(self) -> None:
-        self._consecutive_failures = 0
-
-    def _record_failure(self) -> None:
-        self._consecutive_failures += 1
-        if self._consecutive_failures >= self.circuit_breaker_threshold:
-            self._circuit_open = True
-            logger.error(
-                "Circuit breaker OPEN after %d consecutive failures on JobSync API",
-                self._consecutive_failures,
-            )
-
-    def _check_circuit(self) -> None:
-        if self._circuit_open:
-            raise CircuitBreakerOpen(
-                f"Circuit breaker open after {self._consecutive_failures} consecutive failures"
-            )
+    def __post_init__(self) -> None:
+        self._init_circuit_breaker(
+            threshold=self.circuit_breaker_threshold,
+            label="JobSync API",
+        )
 
     async def fetch_page(
         self,
@@ -270,14 +252,8 @@ class JobSyncAdapter:
 
         from compgraph.config import settings  # local import avoids circular dep at module level
 
-        proxy_kwargs = get_proxy_client_kwargs(settings, domain="jobsyn.org")
         try:
-            async with httpx.AsyncClient(
-                timeout=30.0,
-                headers={"User-Agent": random_user_agent()},
-                follow_redirects=True,
-                **proxy_kwargs,
-            ) as client:
+            async with create_scraper_client(settings, domain="jobsyn.org") as client:
                 try:
                     postings = await fetcher.fetch_all_for_agency(
                         client,

@@ -11,9 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.config import settings
 from compgraph.db.models import Company
-from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.base import RawPosting, ScrapeResult, create_scraper_client
+from compgraph.scrapers.circuit_breaker import CircuitBreakerMixin, CircuitBreakerOpen
 from compgraph.scrapers.persistence import persist_posting
-from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
@@ -101,12 +101,8 @@ def _build_detail_url(base_url: str, tenant: str, site: str, external_path: str)
     return f"{base_url}/wday/cxs/{tenant}/{site}/job/{cleaned}"
 
 
-class CircuitBreakerOpen(Exception):
-    pass
-
-
 @dataclass
-class WorkdayFetcher:
+class WorkdayFetcher(CircuitBreakerMixin):
     base_url: str
     tenant: str
     site: str
@@ -116,30 +112,13 @@ class WorkdayFetcher:
     circuit_breaker_threshold: int = field(
         default_factory=lambda: settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD
     )
-    _consecutive_failures: int = field(default=0, init=False, repr=False)
-    _circuit_open: bool = field(default=False, init=False, repr=False)
     pages_fetched: int = field(default=0, init=False, repr=False)
 
-    def _record_success(self) -> None:
-        self._consecutive_failures = 0
-
-    def _record_failure(self) -> None:
-        self._consecutive_failures += 1
-        if self._consecutive_failures >= self.circuit_breaker_threshold:
-            self._circuit_open = True
-            logger.error(
-                "Circuit breaker OPEN after %d consecutive failures for %s/%s",
-                self._consecutive_failures,
-                self.tenant,
-                self.site,
-            )
-
-    def _check_circuit(self) -> None:
-        if self._circuit_open:
-            raise CircuitBreakerOpen(
-                f"Circuit breaker open for {self.tenant}/{self.site} "
-                f"after {self._consecutive_failures} consecutive failures"
-            )
+    def __post_init__(self) -> None:
+        self._init_circuit_breaker(
+            threshold=self.circuit_breaker_threshold,
+            label=f"{self.tenant}/{self.site}",
+        )
 
     async def fetch_search_page(self, client: httpx.AsyncClient, offset: int) -> SearchResult:
         self._check_circuit()
@@ -271,12 +250,9 @@ class WorkdayAdapter:
 
         fetcher = WorkdayFetcher(base_url=base_url, tenant=tenant, site=site)
 
-        proxy_kwargs = get_proxy_client_kwargs(settings, domain=_WORKDAY_DOMAIN)
         try:
-            async with httpx.AsyncClient(
-                timeout=30.0,
-                headers={"User-Agent": random_user_agent()},
-                **proxy_kwargs,
+            async with create_scraper_client(
+                settings, domain=_WORKDAY_DOMAIN, follow_redirects=False
             ) as client:
                 try:
                     search_postings = await fetcher.fetch_all_postings(client)

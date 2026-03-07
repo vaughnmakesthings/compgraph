@@ -164,8 +164,7 @@ class TestAdaptersUseProxy:
         from compgraph.scrapers.icims import ICIMSAdapter
 
         source = inspect.getsource(ICIMSAdapter.scrape)
-        assert "get_proxy_client_kwargs" in source
-        assert "random_user_agent" in source
+        assert "create_scraper_client" in source
 
     def test_workday_adapter_imports_proxy(self) -> None:
         """WorkdayAdapter.scrape should reference proxy utilities."""
@@ -174,8 +173,7 @@ class TestAdaptersUseProxy:
         from compgraph.scrapers.workday import WorkdayAdapter
 
         source = inspect.getsource(WorkdayAdapter.scrape)
-        assert "get_proxy_client_kwargs" in source
-        assert "random_user_agent" in source
+        assert "create_scraper_client" in source
 
     def test_icims_no_default_headers_classvar(self) -> None:
         """ICIMSAdapter should no longer have a DEFAULT_HEADERS ClassVar."""

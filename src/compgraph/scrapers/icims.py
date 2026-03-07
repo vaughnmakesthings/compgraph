@@ -14,9 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.config import settings
 from compgraph.db.models import Company
-from compgraph.scrapers.base import RawPosting, ScrapeResult
+from compgraph.scrapers.base import RawPosting, ScrapeResult, create_scraper_client
+from compgraph.scrapers.circuit_breaker import CircuitBreakerMixin
 from compgraph.scrapers.persistence import persist_posting
-from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 from compgraph.scrapers.rate_limiter import get_limiter
 
 logger = logging.getLogger(__name__)
@@ -206,9 +206,7 @@ def parse_html_fallback(html: str) -> dict[str, str | int | None] | None:
     }
 
 
-class ICIMSFetcher:
-    CIRCUIT_BREAKER_THRESHOLD = settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD
-
+class ICIMSFetcher(CircuitBreakerMixin):
     def __init__(
         self,
         client: httpx.AsyncClient,
@@ -218,9 +216,11 @@ class ICIMSFetcher:
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.search_url = search_url
-        self.consecutive_failures = 0
-        self.circuit_open = False
         self.pages_fetched = 0
+        self._init_circuit_breaker(
+            threshold=settings.ENRICHMENT_CIRCUIT_BREAKER_THRESHOLD,
+            label=base_url,
+        )
 
     async def _jitter(self) -> None:
         """Small politeness pause applied after rate-limiter token acquisition."""
@@ -290,18 +290,6 @@ class ICIMSFetcher:
             self._record_failure()
             return None
 
-    def _record_success(self) -> None:
-        self.consecutive_failures = 0
-
-    def _record_failure(self) -> None:
-        self.consecutive_failures += 1
-        if self.consecutive_failures >= self.CIRCUIT_BREAKER_THRESHOLD:
-            self.circuit_open = True
-            logger.error(
-                "Circuit breaker tripped after %d failures",
-                self.consecutive_failures,
-            )
-
 
 def _build_posting_url(
     raw: dict[str, str | int | None],
@@ -337,16 +325,8 @@ class ICIMSAdapter:
         # #278: configurable concurrency for detail fetches (default 3, clamped 1-10)
         detail_concurrency: int = max(1, min(int(config.get("detail_concurrency", 3)), 10))
 
-        proxy_kwargs = get_proxy_client_kwargs(settings, domain=_ICIMS_DOMAIN)
-        headers = {"User-Agent": random_user_agent()}
-
         try:
-            async with httpx.AsyncClient(
-                headers=headers,
-                timeout=30.0,
-                follow_redirects=True,
-                **proxy_kwargs,
-            ) as client:
+            async with create_scraper_client(settings, domain=_ICIMS_DOMAIN) as client:
                 # Collect job entries — multi-URL or single default
                 if search_urls:
                     job_entries, failed_urls, pages = await self._fetch_multi_url(

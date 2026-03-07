@@ -5,11 +5,13 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Company
+from compgraph.scrapers.proxy import get_proxy_client_kwargs, random_user_agent
 
 
 @dataclass
@@ -52,3 +54,22 @@ class ScraperAdapter(Protocol):
     """
 
     async def scrape(self, company: Company, session: AsyncSession) -> ScrapeResult: ...
+
+
+def create_scraper_client(
+    settings: Any,
+    domain: str,
+    timeout: float = 30.0,
+    follow_redirects: bool = True,
+    extra_headers: dict[str, str] | None = None,
+) -> httpx.AsyncClient:
+    proxy_kwargs = get_proxy_client_kwargs(settings, domain=domain)
+    headers = {"User-Agent": random_user_agent()}
+    if extra_headers:
+        headers.update(extra_headers)
+    return httpx.AsyncClient(
+        headers=headers,
+        timeout=timeout,
+        follow_redirects=follow_redirects,
+        **proxy_kwargs,
+    )
