@@ -1326,6 +1326,50 @@ export type RunCreate = {
 };
 
 /**
+ * ScheduleConfigResponse
+ */
+export type ScheduleConfigResponse = {
+    /**
+     * Schedule Id
+     */
+    schedule_id: string;
+    /**
+     * Weekdays
+     */
+    weekdays: Array<string>;
+    /**
+     * Hour
+     */
+    hour: number;
+    /**
+     * Minute
+     */
+    minute: number;
+    /**
+     * Timezone
+     */
+    timezone: string;
+};
+
+/**
+ * ScheduleConfigUpdate
+ */
+export type ScheduleConfigUpdate = {
+    /**
+     * Weekdays
+     */
+    weekdays?: Array<string> | null;
+    /**
+     * Hour
+     */
+    hour?: number | null;
+    /**
+     * Minute
+     */
+    minute?: number | null;
+};
+
+/**
  * ScheduleInfo
  */
 export type ScheduleInfo = {
@@ -2099,6 +2143,47 @@ export type ResumeJobApiV1SchedulerJobsJobIdResumePostResponses = {
 };
 
 export type ResumeJobApiV1SchedulerJobsJobIdResumePostResponse = ResumeJobApiV1SchedulerJobsJobIdResumePostResponses[keyof ResumeJobApiV1SchedulerJobsJobIdResumePostResponses];
+
+export type GetConfigApiV1SchedulerConfigGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/scheduler/config';
+};
+
+export type GetConfigApiV1SchedulerConfigGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScheduleConfigResponse;
+};
+
+export type GetConfigApiV1SchedulerConfigGetResponse = GetConfigApiV1SchedulerConfigGetResponses[keyof GetConfigApiV1SchedulerConfigGetResponses];
+
+export type UpdateConfigApiV1SchedulerConfigPutData = {
+    body: ScheduleConfigUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/scheduler/config';
+};
+
+export type UpdateConfigApiV1SchedulerConfigPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateConfigApiV1SchedulerConfigPutError = UpdateConfigApiV1SchedulerConfigPutErrors[keyof UpdateConfigApiV1SchedulerConfigPutErrors];
+
+export type UpdateConfigApiV1SchedulerConfigPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScheduleConfigResponse;
+};
+
+export type UpdateConfigApiV1SchedulerConfigPutResponse = UpdateConfigApiV1SchedulerConfigPutResponses[keyof UpdateConfigApiV1SchedulerConfigPutResponses];
 
 export type PipelineRunsApiV1PipelineRunsGetData = {
     body?: never;
