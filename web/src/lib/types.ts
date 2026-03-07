@@ -132,6 +132,7 @@ export interface ScrapeRunSummary {
   jobs_found: number
   snapshots_created: number
   postings_closed: number
+  error_message: string | null
 }
 
 export interface EnrichmentRunSummary {
@@ -143,11 +144,14 @@ export interface EnrichmentRunSummary {
   pass1_succeeded: number
   pass2_total: number
   pass2_succeeded: number
+  error_summary: string | null
 }
 
 export interface PipelineRunsResponse {
   scrape_runs: ScrapeRunSummary[]
   enrichment_runs: EnrichmentRunSummary[]
+  scrape_total: number
+  enrichment_total: number
 }
 
 export interface EvalRun {
@@ -254,4 +258,14 @@ export interface SchedulerStatusResponse {
   last_pipeline_finished_at: string | null
   last_pipeline_success: boolean | null
   missed_run: boolean
+  last_pipeline_error: string | null
+}
+
+export interface AuthUser {
+  id: string
+  email: string
+  role: string
+  created_at: string
+  last_sign_in_at: string | null
+  confirmed_at: string | null
 }

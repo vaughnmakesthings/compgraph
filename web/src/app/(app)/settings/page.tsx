@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { redirect } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -29,12 +29,17 @@ import type {
   ScrapeStatusResponse,
   EnrichStatusResponse,
   SchedulerStatusResponse,
-  PipelineRunsResponse
+  PipelineRunsResponse,
+  ScrapeRunSummary,
+  EnrichmentRunSummary,
 } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { SectionCard } from "@/components/ui/section-card";
 import { formatTimestamp, formatDuration } from "@/lib/utils";
+
 const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PAGE_SIZE = 10;
 
 // --- Shared primitives ---
 
@@ -91,21 +96,15 @@ function SmallButton({
   );
 }
 
-function KvRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-[#BFC0C0] last:border-0">
-      <span className="font-body text-[13px] text-[#4F5D75]">{label}</span>
-      <span className="font-mono text-xs text-[#2D3142]">{value}</span>
-    </div>
-  );
-}
+const STATUS_DOT_COLOR: Record<string, string> = {
+  completed: "bg-[#1B998B]",
+  success: "bg-[#1B998B]",
+  running: "bg-[#DCB256]",
+  failed: "bg-[#8C2C23]",
+};
 
 function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "completed" || status === "success" ? "bg-[#1B998B]"
-    : status === "running" ? "bg-[#DCB256]"
-    : status === "failed" ? "bg-[#8C2C23]"
-    : "bg-[#BFC0C0]";
+  const color = STATUS_DOT_COLOR[status] ?? "bg-[#BFC0C0]";
   return <span className={`inline-block size-[7px] rounded-full mr-1.5 align-middle ${color}`} aria-hidden="true" />;
 }
 
@@ -118,6 +117,7 @@ const SCRAPE_BADGE: Record<string, { bg: string; color: string; label: string }>
   partial:   { bg: "bg-[#DCB2561A]",   color: "text-[#DCB256]", label: "Partial" },
   failed:    { bg: "bg-[#8C2C231A]",   color: "text-[#8C2C23]", label: "Failed" },
   cancelled: { bg: "bg-[#E8E8E4]",     color: "text-[#4F5D75]", label: "Cancelled" },
+  stale:     { bg: "bg-[#DCB2561A]",   color: "text-[#DCB256]", label: "Stale" },
 };
 
 function RunBadge({ status }: { status: string }) {
@@ -144,6 +144,61 @@ const COMPANY_STATE_COLOR: Record<string, string> = {
   failed:    "text-[#8C2C23]",
   skipped:   "text-[#BFC0C0]",
 };
+
+function LastRunStatus({ success, timestamp }: { success: boolean | null; timestamp: string }) {
+  let label: string;
+  let colorClass: string;
+  if (success === true) {
+    label = "Success";
+    colorClass = "text-[#1B998B]";
+  } else if (success === false) {
+    label = "Failed";
+    colorClass = "text-[#8C2C23]";
+  } else {
+    label = "\u2014";
+    colorClass = "text-[#4F5D75]";
+  }
+
+  return (
+    <span className="font-body text-xs text-[#4F5D75]">
+      Last run: <span className={`font-medium ${colorClass}`}>{label}</span> {formatTimestamp(timestamp)}
+    </span>
+  );
+}
+
+function isStaleRun(status: string, startedAt: string | null): boolean {
+  if (status !== "running" || !startedAt) return false;
+  return Date.now() - new Date(startedAt).getTime() > STALE_THRESHOLD_MS;
+}
+
+// --- Pagination ---
+
+function PaginationControls({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E8E8E4]">
+      <span className="font-body text-xs text-[#4F5D75]">
+        Page {page} of {totalPages}
+      </span>
+      <div className="flex gap-2">
+        <SmallButton onClick={() => onPageChange(page - 1)} disabled={page <= 1}>
+          Previous
+        </SmallButton>
+        <SmallButton onClick={() => onPageChange(page + 1)} disabled={page >= totalPages}>
+          Next
+        </SmallButton>
+      </div>
+    </div>
+  );
+}
 
 // --- Panels ---
 
@@ -293,7 +348,151 @@ function LiveEnrichPanel({ status }: { status: EnrichStatusResponse }) {
   );
 }
 
+// --- Error Row ---
+
+function ErrorRow({ message }: { message: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = message.length > 60;
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="text-left text-[11px] font-body text-[#8C2C23] hover:underline underline-offset-2"
+      >
+        {isLong && !expanded ? `${message.slice(0, 60)}...` : message}
+      </button>
+    </div>
+  );
+}
+
+// --- Run History Tables ---
+
+function ScrapeRunHistoryTable({ runs, total }: { runs: ScrapeRunSummary[]; total: number }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const pagedRuns = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return runs.slice(start, start + PAGE_SIZE);
+  }, [runs, page]);
+
+  if (runs.length === 0) {
+    return <p className="text-[13px] text-[#4F5D75] font-body">No runs recorded.</p>;
+  }
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[#BFC0C0]">
+              {["Company", "Status", "Started", "Duration", "Found", "Created", "Closed"].map((col) => (
+                <th key={col} className="text-left px-3 py-2 font-body font-semibold text-[#4F5D75]/50 uppercase tracking-widest text-[10px]">{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#E8E8E4]">
+            {pagedRuns.map((r) => {
+              const dur = r.completed_at && r.started_at ? formatDuration(Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "\u2014";
+              const stale = isStaleRun(r.status, r.started_at);
+              const displayStatus = stale ? "stale" : r.status;
+              return (
+                <tr key={r.id}>
+                  <td className="px-3 py-1.5 font-body text-[#2D3142]">
+                    {r.company_name}
+                    {r.status === "failed" && r.error_message && (
+                      <ErrorRow message={r.error_message} />
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-[#4F5D75] font-body">
+                    <div className="flex items-center">
+                      <StatusDot status={r.status} />
+                      <RunBadge status={displayStatus} />
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.jobs_found}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.snapshots_created}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.postings_closed}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+    </>
+  );
+}
+
+function EnrichRunHistoryTable({ runs, total }: { runs: EnrichmentRunSummary[]; total: number }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const pagedRuns = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return runs.slice(start, start + PAGE_SIZE);
+  }, [runs, page]);
+
+  if (runs.length === 0) {
+    return <p className="text-[13px] text-[#4F5D75] font-body">No runs recorded.</p>;
+  }
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[#BFC0C0]">
+              {["Status", "Started", "Duration", "P1 Total", "P1 OK", "P2 Total", "P2 OK"].map((col) => (
+                <th key={col} className="text-left px-3 py-2 font-body font-semibold text-[#4F5D75]/50 uppercase tracking-widest text-[10px]">{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#E8E8E4]">
+            {pagedRuns.map((r) => {
+              const dur = r.finished_at && r.started_at ? formatDuration(Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "\u2014";
+              const stale = isStaleRun(r.status, r.started_at);
+              const displayStatus = stale ? "stale" : r.status;
+              return (
+                <tr key={r.id}>
+                  <td className="px-3 py-1.5 text-[#4F5D75] font-body">
+                    <div className="flex items-center">
+                      <StatusDot status={r.status} />
+                      <RunBadge status={displayStatus} />
+                    </div>
+                    {r.status === "failed" && r.error_summary && (
+                      <ErrorRow message={r.error_summary} />
+                    )}
+                    {stale && (
+                      <span className="text-[10px] text-[#DCB256] font-body mt-0.5 block">Started {formatTimestamp(r.started_at)} — likely abandoned</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.pass1_total}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#1B998B] font-semibold">{r.pass1_succeeded}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.pass2_total}</td>
+                  <td className="px-3 py-1.5 font-mono text-[#1B998B] font-semibold">{r.pass2_succeeded}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+    </>
+  );
+}
+
 // --- Main Page Content ---
+
+function is409Error(error: Error): boolean {
+  return error.message.includes("409") || error.message.includes("already running") || error.message.includes("already active");
+}
 
 function SettingsPageContent() {
   const queryClient = useQueryClient();
@@ -332,7 +531,12 @@ function SettingsPageContent() {
   // Mutations
   const aggMutation = useMutation(triggerAggregationApiV1AggregationTriggerPostMutation());
 
-  const scrapeTriggerMutation = useMutation(triggerScrapeApiV1ScrapeTriggerPostMutation());
+  const scrapeTriggerMutation = useMutation({
+    ...triggerScrapeApiV1ScrapeTriggerPostMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: scrapeStatusApiV1ScrapeStatusGetQueryKey() });
+    },
+  });
 
   const enrichTriggerMutation = useMutation(triggerFullApiV1EnrichTriggerPostMutation());
 
@@ -359,10 +563,12 @@ function SettingsPageContent() {
   // Derived state
   const scrapeRuns = runsRes?.scrape_runs ?? [];
   const enrichRuns = runsRes?.enrichment_runs ?? [];
+  const scrapeTotal = runsRes?.scrape_total ?? scrapeRuns.length;
+  const enrichTotal = runsRes?.enrichment_total ?? enrichRuns.length;
   const scrapeIsActive = scrapeStatus && !TERMINAL_STATES.has(scrapeStatus.status);
   const enrichIsActive = enrichStatus && !TERMINAL_STATES.has(enrichStatus.status);
 
-  // Build slug→display name map from run history
+  // Build slug->display name map from run history
   const companyNames: Record<string, string> = {};
   for (const r of scrapeRuns) {
     if (r.company_slug && r.company_name) companyNames[r.company_slug] = r.company_name;
@@ -390,10 +596,10 @@ function SettingsPageContent() {
             {aggMutation.isPending ? "Running..." : "Trigger Aggregation"}
           </OutlineButton>
           <OutlineButton onClick={() => setConfirmScrapeOpen(true)} disabled={scrapeTriggerMutation.isPending || scrapeIsActive}>
-            {scrapeTriggerMutation.isPending ? "Starting..." : scrapeIsActive ? "Scrape running…" : "Trigger Scrape"}
+            {scrapeTriggerMutation.isPending ? "Starting..." : scrapeIsActive ? "Scrape running\u2026" : "Trigger Scrape"}
           </OutlineButton>
           <OutlineButton onClick={() => setConfirmEnrichOpen(true)} disabled={enrichTriggerMutation.isPending || enrichIsActive}>
-            {enrichTriggerMutation.isPending ? "Starting..." : enrichIsActive ? "Enrichment running…" : "Trigger Enrichment"}
+            {enrichTriggerMutation.isPending ? "Starting..." : enrichIsActive ? "Enrichment running\u2026" : "Trigger Enrichment"}
           </OutlineButton>
         </div>
 
@@ -410,8 +616,10 @@ function SettingsPageContent() {
         )}
 
         {scrapeTriggerMutation.isError && (
-          <div className="mt-3 rounded border border-[#8C2C2333] px-3 py-2 text-[13px] bg-[#8C2C231A] text-[#8C2C23] font-body">
-            Scrape error: {scrapeTriggerMutation.error.message}
+          <div className="mt-3 rounded border border-[#DCB25633] px-3 py-2 text-[13px] bg-[#DCB2561A] text-[#2D3142] font-body" role="alert">
+            {is409Error(scrapeTriggerMutation.error)
+              ? "A scrape pipeline is already running. Wait for it to complete or force-stop it first."
+              : `Scrape error: ${scrapeTriggerMutation.error.message}`}
           </div>
         )}
 
@@ -430,18 +638,29 @@ function SettingsPageContent() {
       </SectionCard>
 
       <SectionCard title="Scheduler" className="mt-4 p-5" headingClassName="text-base">
-        {schedulerLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading…</p> : !schedulerStatus ? <p className="text-[13px] text-[#4F5D75] font-body">Error loading scheduler.</p> : (
+        {schedulerLoading ? (
+          <p className="text-[13px] text-[#4F5D75] font-body">Loading&hellip;</p>
+        ) : !schedulerStatus ? (
+          <p className="text-[13px] text-[#4F5D75] font-body">Error loading scheduler.</p>
+        ) : (
           <>
             <div className="flex items-center gap-3 mb-4">
               <span className={`rounded px-2 py-0.5 text-xs font-body font-semibold ${schedulerStatus.enabled ? 'bg-[#1B998B1A] text-[#1B998B]' : 'bg-[#E8E8E4] text-[#4F5D75]'}`}>
                 {schedulerStatus.enabled ? "Enabled" : "Disabled"}
               </span>
               {schedulerStatus.last_pipeline_finished_at && (
-                <span className="font-body text-xs text-[#4F5D75]">
-                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success === true ? 'text-[#1B998B]' : schedulerStatus.last_pipeline_success === false ? 'text-[#8C2C23]' : 'text-[#4F5D75]'}`}>{schedulerStatus.last_pipeline_success === true ? 'Success' : schedulerStatus.last_pipeline_success === false ? 'Failed' : '\u2014'}</span> {formatTimestamp(schedulerStatus.last_pipeline_finished_at)}
-                </span>
+                <LastRunStatus
+                  success={schedulerStatus.last_pipeline_success}
+                  timestamp={schedulerStatus.last_pipeline_finished_at}
+                />
               )}
             </div>
+
+            {schedulerStatus.last_pipeline_success === false && schedulerStatus.last_pipeline_error && (
+              <div className="mb-4 px-3 py-2 rounded bg-[#8C2C231A] border border-[#8C2C2333] text-[#8C2C23] text-[13px] font-body">
+                {schedulerStatus.last_pipeline_error}
+              </div>
+            )}
 
             {schedulerStatus.missed_run && (
               <div className="mb-4 px-3 py-2 rounded bg-[#8C2C231A] border border-[#8C2C2333] text-[#8C2C23] text-[13px] font-body">
@@ -489,81 +708,30 @@ function SettingsPageContent() {
         )}
       </SectionCard>
 
-      <SectionCard title="System Info" className="mt-4 p-5" headingClassName="text-base">
-        <KvRow label="Database" value="Supabase Postgres 17" />
-        <KvRow label="Platform" value="Digital Ocean" />
-      </SectionCard>
-
       <div className="mt-4"><UserManagementSection /></div>
 
       <SectionCard title="Scrape Run History" className="mt-4 p-5" headingClassName="text-base">
-        {runsLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading…</p> : scrapeRuns.length === 0 ? <p className="text-[13px] text-[#4F5D75] font-body">No runs recorded.</p> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-[#BFC0C0]">
-                  {["Company", "Status", "Started", "Duration", "Found", "Created", "Closed"].map((col) => (
-                    <th key={col} className="text-left px-3 py-2 font-body font-semibold text-[#4F5D75]/50 uppercase tracking-widest text-[10px]">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E8E8E4]">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {scrapeRuns.map((r: any) => {
-                  const dur = r.completed_at && r.started_at ? formatDuration(Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "—";
-                  return (
-                    <tr key={r.id}>
-                      <td className="px-3 py-1.5 font-body text-[#2D3142]">{r.company_name}</td>
-                      <td className="px-3 py-1.5 text-[#4F5D75] font-body flex items-center"><StatusDot status={r.status} />{r.status}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.jobs_found}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.snapshots_created}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.postings_closed}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {runsLoading
+          ? <p className="text-[13px] text-[#4F5D75] font-body">Loading\u2026</p>
+          : <ScrapeRunHistoryTable runs={scrapeRuns} total={scrapeTotal} />
+        }
       </SectionCard>
 
       <SectionCard title="Enrichment Run History" className="mt-4 p-5" headingClassName="text-base">
-        {runsLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading…</p> : enrichRuns.length === 0 ? <p className="text-[13px] text-[#4F5D75] font-body">No runs recorded.</p> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-[#BFC0C0]">
-                  {["Status", "Started", "Duration", "P1 Total", "P1 OK", "P2 Total", "P2 OK"].map((col) => (
-                    <th key={col} className="text-left px-3 py-2 font-body font-semibold text-[#4F5D75]/50 uppercase tracking-widest text-[10px]">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E8E8E4]">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {enrichRuns.map((r: any) => {
-                  const dur = r.finished_at && r.started_at ? formatDuration(Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "—";
-                  return (
-                    <tr key={r.id}>
-                      <td className="px-3 py-1.5 text-[#4F5D75] font-body flex items-center"><StatusDot status={r.status} />{r.status}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75] whitespace-nowrap">{formatTimestamp(r.started_at)}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#4F5D75]">{dur}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.pass1_total}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#1B998B] font-semibold">{r.pass1_succeeded}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#2D3142]">{r.pass2_total}</td>
-                      <td className="px-3 py-1.5 font-mono text-[#1B998B] font-semibold">{r.pass2_succeeded}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {runsLoading
+          ? <p className="text-[13px] text-[#4F5D75] font-body">Loading\u2026</p>
+          : <EnrichRunHistoryTable runs={enrichRuns} total={enrichTotal} />
+        }
       </SectionCard>
 
+      <div className="mt-4 mb-8 px-4 py-2 rounded bg-[#F4F4F0] border border-[#E8E8E4]">
+        <span className="font-body text-xs text-[#4F5D75]">
+          CompGraph v1.0 — Supabase Postgres 17 — Digital Ocean
+        </span>
+      </div>
+
       <ConfirmDialog open={confirmAggOpen} onOpenChange={setConfirmAggOpen} title="Trigger Aggregation" description="Truncate and rebuild all 4 aggregation tables. Existing data will be overwritten." confirmLabel="Confirm" confirmVariant="danger" onConfirm={async () => { await aggMutation.mutateAsync({}); }} />
-      <ConfirmDialog open={confirmScrapeOpen} onOpenChange={setConfirmScrapeOpen} title="Trigger Scrape" description="Start a full scrape across all 5 competitor platforms. Takes 5–10 minutes." confirmLabel="Confirm" onConfirm={async () => { await scrapeTriggerMutation.mutateAsync({}); }} />
+      <ConfirmDialog open={confirmScrapeOpen} onOpenChange={setConfirmScrapeOpen} title="Trigger Scrape" description="Start a full scrape across all 5 competitor platforms. Takes 5-10 minutes." confirmLabel="Confirm" onConfirm={async () => { await scrapeTriggerMutation.mutateAsync({}); }} />
       <ConfirmDialog open={confirmEnrichOpen} onOpenChange={setConfirmEnrichOpen} title="Trigger Enrichment" description="Run the LLM enrichment pipeline. Anthropic API calls will be made." confirmLabel="Confirm" onConfirm={async () => { await enrichTriggerMutation.mutateAsync({}); }} />
       <ConfirmDialog open={confirmScrapeControlOpen} onOpenChange={setConfirmScrapeControlOpen} title={confirmScrapeAction === "force-stop" ? "Force-Stop Scrape" : "Stop Scrape"} description={confirmScrapeAction === "force-stop" ? "Immediately kill the active run. In-progress company scrapes will be abandoned." : "Request a graceful stop. In-progress scrapes will complete first."} confirmLabel="Confirm" confirmVariant={confirmScrapeAction === "force-stop" ? "danger" : "default"} onConfirm={async () => { await scrapeControlMutation.mutateAsync(confirmScrapeAction); }} />
       <ConfirmDialog open={confirmSchedulerOpen} onOpenChange={(open) => { setConfirmSchedulerOpen(open); if (!open) setConfirmSchedulerJobId(null); }} title="Trigger Scheduler Job" description="Manually trigger this scheduled job outside its normal schedule." confirmLabel="Confirm" onConfirm={async () => { if (confirmSchedulerJobId) await schedulerMutation.mutateAsync({ jobId: confirmSchedulerJobId, action: "trigger" }); }} />

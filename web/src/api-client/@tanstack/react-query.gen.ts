@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createComparisonApiV1EvalComparisonsPost, createFieldReviewApiV1EvalFieldReviewsPost, createRunApiV1EvalRunsPost, deleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDelete, deleteRunApiV1EvalRunsRunIdDelete, enrichStatusApiV1EnrichStatusGet, enrichStatusByIdApiV1EnrichStatusRunIdGet, forceStopScrapeApiV1ScrapeForceStopPost, getAgencyOverlapApiV1AggregationAgencyOverlapGet, getBrandTimelineApiV1AggregationBrandTimelineGet, getChurnSignalsApiV1AggregationChurnSignalsGet, getComparisonsApiV1EvalComparisonsGet, getConfigApiV1SchedulerConfigGet, getCorpusApiV1EvalCorpusGet, getCoverageGapsApiV1AggregationCoverageGapsGet, getEloApiV1EvalEloGet, getLeaderboardDataApiV1EvalLeaderboardDataGet, getLifecycleApiV1AggregationLifecycleGet, getPayBenchmarksApiV1AggregationPayBenchmarksGet, getPostingApiV1PostingsPostingIdGet, getProgressApiV1EvalProgressTrackingIdGet, getRunApiV1EvalRunsRunIdGet, getRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGet, getRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGet, getRunProgressApiV1EvalRunsRunIdProgressGet, getRunResultsApiV1EvalRunsRunIdResultsGet, getRunsApiV1EvalRunsGet, getVelocityApiV1AggregationVelocityGet, healthCheckHealthGet, inviteUserApiV1AdminInvitePost, listAlertsApiV1AlertsGet, listCompaniesApiV1CompaniesGet, listModelsApiV1EvalModelsGet, listPostingsApiV1PostingsGet, listScrapeRunsApiV1ScrapeRunsGet, listUsersApiV1AdminUsersGet, type Options, pauseJobApiV1SchedulerJobsJobIdPausePost, pauseScrapeApiV1ScrapePausePost, pipelineRunsApiV1PipelineRunsGet, pipelineStatusApiV1PipelineStatusGet, resumeJobApiV1SchedulerJobsJobIdResumePost, resumeScrapeApiV1ScrapeResumePost, schedulerStatusApiV1SchedulerStatusGet, scrapeStatusApiV1ScrapeStatusGet, scrapeStatusByIdApiV1ScrapeStatusRunIdGet, stopScrapeApiV1ScrapeStopPost, triggerAggregationApiV1AggregationTriggerPost, triggerFullApiV1EnrichTriggerPost, triggerJobApiV1SchedulerJobsJobIdTriggerPost, triggerPass1ApiV1EnrichPass1TriggerPost, triggerPass2ApiV1EnrichPass2TriggerPost, triggerScrapeApiV1ScrapeTriggerPost, updateConfigApiV1SchedulerConfigPut } from '../sdk.gen';
-import type { CreateComparisonApiV1EvalComparisonsPostData, CreateComparisonApiV1EvalComparisonsPostError, CreateComparisonApiV1EvalComparisonsPostResponse, CreateFieldReviewApiV1EvalFieldReviewsPostData, CreateFieldReviewApiV1EvalFieldReviewsPostError, CreateFieldReviewApiV1EvalFieldReviewsPostResponse, CreateRunApiV1EvalRunsPostData, CreateRunApiV1EvalRunsPostError, CreateRunApiV1EvalRunsPostResponse, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteError, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponse, DeleteRunApiV1EvalRunsRunIdDeleteData, DeleteRunApiV1EvalRunsRunIdDeleteError, DeleteRunApiV1EvalRunsRunIdDeleteResponse, EnrichStatusApiV1EnrichStatusGetData, EnrichStatusApiV1EnrichStatusGetResponse, EnrichStatusByIdApiV1EnrichStatusRunIdGetData, EnrichStatusByIdApiV1EnrichStatusRunIdGetError, EnrichStatusByIdApiV1EnrichStatusRunIdGetResponse, ForceStopScrapeApiV1ScrapeForceStopPostData, ForceStopScrapeApiV1ScrapeForceStopPostError, ForceStopScrapeApiV1ScrapeForceStopPostResponse, GetAgencyOverlapApiV1AggregationAgencyOverlapGetData, GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponse, GetBrandTimelineApiV1AggregationBrandTimelineGetData, GetBrandTimelineApiV1AggregationBrandTimelineGetResponse, GetChurnSignalsApiV1AggregationChurnSignalsGetData, GetChurnSignalsApiV1AggregationChurnSignalsGetResponse, GetComparisonsApiV1EvalComparisonsGetData, GetComparisonsApiV1EvalComparisonsGetResponse, GetConfigApiV1SchedulerConfigGetData, GetConfigApiV1SchedulerConfigGetResponse, GetCorpusApiV1EvalCorpusGetData, GetCorpusApiV1EvalCorpusGetResponse, GetCoverageGapsApiV1AggregationCoverageGapsGetData, GetCoverageGapsApiV1AggregationCoverageGapsGetResponse, GetEloApiV1EvalEloGetData, GetEloApiV1EvalEloGetResponse, GetLeaderboardDataApiV1EvalLeaderboardDataGetData, GetLeaderboardDataApiV1EvalLeaderboardDataGetResponse, GetLifecycleApiV1AggregationLifecycleGetData, GetLifecycleApiV1AggregationLifecycleGetResponse, GetPayBenchmarksApiV1AggregationPayBenchmarksGetData, GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponse, GetPostingApiV1PostingsPostingIdGetData, GetPostingApiV1PostingsPostingIdGetError, GetPostingApiV1PostingsPostingIdGetResponse, GetProgressApiV1EvalProgressTrackingIdGetData, GetProgressApiV1EvalProgressTrackingIdGetError, GetProgressApiV1EvalProgressTrackingIdGetResponse, GetRunApiV1EvalRunsRunIdGetData, GetRunApiV1EvalRunsRunIdGetError, GetRunApiV1EvalRunsRunIdGetResponse, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetError, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponse, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetError, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponse, GetRunProgressApiV1EvalRunsRunIdProgressGetData, GetRunProgressApiV1EvalRunsRunIdProgressGetError, GetRunProgressApiV1EvalRunsRunIdProgressGetResponse, GetRunResultsApiV1EvalRunsRunIdResultsGetData, GetRunResultsApiV1EvalRunsRunIdResultsGetError, GetRunResultsApiV1EvalRunsRunIdResultsGetResponse, GetRunsApiV1EvalRunsGetData, GetRunsApiV1EvalRunsGetResponse, GetVelocityApiV1AggregationVelocityGetData, GetVelocityApiV1AggregationVelocityGetError, GetVelocityApiV1AggregationVelocityGetResponse, HealthCheckHealthGetData, InviteUserApiV1AdminInvitePostData, InviteUserApiV1AdminInvitePostError, InviteUserApiV1AdminInvitePostResponse, ListAlertsApiV1AlertsGetData, ListAlertsApiV1AlertsGetError, ListAlertsApiV1AlertsGetResponse, ListCompaniesApiV1CompaniesGetData, ListCompaniesApiV1CompaniesGetResponse, ListModelsApiV1EvalModelsGetData, ListModelsApiV1EvalModelsGetResponse, ListPostingsApiV1PostingsGetData, ListPostingsApiV1PostingsGetError, ListPostingsApiV1PostingsGetResponse, ListScrapeRunsApiV1ScrapeRunsGetData, ListScrapeRunsApiV1ScrapeRunsGetResponse, ListUsersApiV1AdminUsersGetData, ListUsersApiV1AdminUsersGetResponse, PauseJobApiV1SchedulerJobsJobIdPausePostData, PauseJobApiV1SchedulerJobsJobIdPausePostError, PauseJobApiV1SchedulerJobsJobIdPausePostResponse, PauseScrapeApiV1ScrapePausePostData, PauseScrapeApiV1ScrapePausePostError, PauseScrapeApiV1ScrapePausePostResponse, PipelineRunsApiV1PipelineRunsGetData, PipelineRunsApiV1PipelineRunsGetResponse, PipelineStatusApiV1PipelineStatusGetData, PipelineStatusApiV1PipelineStatusGetResponse, ResumeJobApiV1SchedulerJobsJobIdResumePostData, ResumeJobApiV1SchedulerJobsJobIdResumePostError, ResumeJobApiV1SchedulerJobsJobIdResumePostResponse, ResumeScrapeApiV1ScrapeResumePostData, ResumeScrapeApiV1ScrapeResumePostError, ResumeScrapeApiV1ScrapeResumePostResponse, SchedulerStatusApiV1SchedulerStatusGetData, SchedulerStatusApiV1SchedulerStatusGetResponse, ScrapeStatusApiV1ScrapeStatusGetData, ScrapeStatusApiV1ScrapeStatusGetResponse, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetData, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetError, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetResponse, StopScrapeApiV1ScrapeStopPostData, StopScrapeApiV1ScrapeStopPostError, StopScrapeApiV1ScrapeStopPostResponse, TriggerAggregationApiV1AggregationTriggerPostData, TriggerAggregationApiV1AggregationTriggerPostResponse, TriggerFullApiV1EnrichTriggerPostData, TriggerFullApiV1EnrichTriggerPostResponse, TriggerJobApiV1SchedulerJobsJobIdTriggerPostData, TriggerJobApiV1SchedulerJobsJobIdTriggerPostError, TriggerJobApiV1SchedulerJobsJobIdTriggerPostResponse, TriggerPass1ApiV1EnrichPass1TriggerPostData, TriggerPass1ApiV1EnrichPass1TriggerPostResponse, TriggerPass2ApiV1EnrichPass2TriggerPostData, TriggerPass2ApiV1EnrichPass2TriggerPostResponse, TriggerScrapeApiV1ScrapeTriggerPostData, TriggerScrapeApiV1ScrapeTriggerPostResponse, UpdateConfigApiV1SchedulerConfigPutData, UpdateConfigApiV1SchedulerConfigPutError, UpdateConfigApiV1SchedulerConfigPutResponse } from '../types.gen';
+import { createComparisonApiV1EvalComparisonsPost, createFieldReviewApiV1EvalFieldReviewsPost, createRunApiV1EvalRunsPost, deleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDelete, deleteRunApiV1EvalRunsRunIdDelete, enrichStatusApiV1EnrichStatusGet, enrichStatusByIdApiV1EnrichStatusRunIdGet, forceStopScrapeApiV1ScrapeForceStopPost, getAgencyOverlapApiV1AggregationAgencyOverlapGet, getBrandTimelineApiV1AggregationBrandTimelineGet, getChurnSignalsApiV1AggregationChurnSignalsGet, getComparisonsApiV1EvalComparisonsGet, getConfigApiV1SchedulerConfigGet, getCorpusApiV1EvalCorpusGet, getCoverageGapsApiV1AggregationCoverageGapsGet, getEloApiV1EvalEloGet, getLeaderboardDataApiV1EvalLeaderboardDataGet, getLifecycleApiV1AggregationLifecycleGet, getPayBenchmarksApiV1AggregationPayBenchmarksGet, getPostingApiV1PostingsPostingIdGet, getProgressApiV1EvalProgressTrackingIdGet, getRunApiV1EvalRunsRunIdGet, getRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGet, getRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGet, getRunProgressApiV1EvalRunsRunIdProgressGet, getRunResultsApiV1EvalRunsRunIdResultsGet, getRunsApiV1EvalRunsGet, getVelocityApiV1AggregationVelocityGet, healthCheckHealthGet, inviteUserApiV1AdminInvitePost, listAlertsApiV1AlertsGet, listAuthUsersApiV1AdminAuthUsersGet, listCompaniesApiV1CompaniesGet, listModelsApiV1EvalModelsGet, listPostingsApiV1PostingsGet, listScrapeRunsApiV1ScrapeRunsGet, listUsersApiV1AdminUsersGet, type Options, pauseJobApiV1SchedulerJobsJobIdPausePost, pauseScrapeApiV1ScrapePausePost, pipelineRunsApiV1PipelineRunsGet, pipelineStatusApiV1PipelineStatusGet, resumeJobApiV1SchedulerJobsJobIdResumePost, resumeScrapeApiV1ScrapeResumePost, schedulerStatusApiV1SchedulerStatusGet, scrapeStatusApiV1ScrapeStatusGet, scrapeStatusByIdApiV1ScrapeStatusRunIdGet, stopScrapeApiV1ScrapeStopPost, triggerAggregationApiV1AggregationTriggerPost, triggerFullApiV1EnrichTriggerPost, triggerJobApiV1SchedulerJobsJobIdTriggerPost, triggerPass1ApiV1EnrichPass1TriggerPost, triggerPass2ApiV1EnrichPass2TriggerPost, triggerScrapeApiV1ScrapeTriggerPost, updateConfigApiV1SchedulerConfigPut } from '../sdk.gen';
+import type { CreateComparisonApiV1EvalComparisonsPostData, CreateComparisonApiV1EvalComparisonsPostError, CreateComparisonApiV1EvalComparisonsPostResponse, CreateFieldReviewApiV1EvalFieldReviewsPostData, CreateFieldReviewApiV1EvalFieldReviewsPostError, CreateFieldReviewApiV1EvalFieldReviewsPostResponse, CreateRunApiV1EvalRunsPostData, CreateRunApiV1EvalRunsPostError, CreateRunApiV1EvalRunsPostResponse, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteData, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteError, DeleteFieldReviewApiV1EvalFieldReviewsResultIdFieldNameDeleteResponse, DeleteRunApiV1EvalRunsRunIdDeleteData, DeleteRunApiV1EvalRunsRunIdDeleteError, DeleteRunApiV1EvalRunsRunIdDeleteResponse, EnrichStatusApiV1EnrichStatusGetData, EnrichStatusApiV1EnrichStatusGetResponse, EnrichStatusByIdApiV1EnrichStatusRunIdGetData, EnrichStatusByIdApiV1EnrichStatusRunIdGetError, EnrichStatusByIdApiV1EnrichStatusRunIdGetResponse, ForceStopScrapeApiV1ScrapeForceStopPostData, ForceStopScrapeApiV1ScrapeForceStopPostError, ForceStopScrapeApiV1ScrapeForceStopPostResponse, GetAgencyOverlapApiV1AggregationAgencyOverlapGetData, GetAgencyOverlapApiV1AggregationAgencyOverlapGetResponse, GetBrandTimelineApiV1AggregationBrandTimelineGetData, GetBrandTimelineApiV1AggregationBrandTimelineGetResponse, GetChurnSignalsApiV1AggregationChurnSignalsGetData, GetChurnSignalsApiV1AggregationChurnSignalsGetResponse, GetComparisonsApiV1EvalComparisonsGetData, GetComparisonsApiV1EvalComparisonsGetResponse, GetConfigApiV1SchedulerConfigGetData, GetConfigApiV1SchedulerConfigGetResponse, GetCorpusApiV1EvalCorpusGetData, GetCorpusApiV1EvalCorpusGetResponse, GetCoverageGapsApiV1AggregationCoverageGapsGetData, GetCoverageGapsApiV1AggregationCoverageGapsGetResponse, GetEloApiV1EvalEloGetData, GetEloApiV1EvalEloGetResponse, GetLeaderboardDataApiV1EvalLeaderboardDataGetData, GetLeaderboardDataApiV1EvalLeaderboardDataGetResponse, GetLifecycleApiV1AggregationLifecycleGetData, GetLifecycleApiV1AggregationLifecycleGetResponse, GetPayBenchmarksApiV1AggregationPayBenchmarksGetData, GetPayBenchmarksApiV1AggregationPayBenchmarksGetResponse, GetPostingApiV1PostingsPostingIdGetData, GetPostingApiV1PostingsPostingIdGetError, GetPostingApiV1PostingsPostingIdGetResponse, GetProgressApiV1EvalProgressTrackingIdGetData, GetProgressApiV1EvalProgressTrackingIdGetError, GetProgressApiV1EvalProgressTrackingIdGetResponse, GetRunApiV1EvalRunsRunIdGetData, GetRunApiV1EvalRunsRunIdGetError, GetRunApiV1EvalRunsRunIdGetResponse, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetData, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetError, GetRunFieldAccuracyApiV1EvalRunsRunIdFieldAccuracyGetResponse, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetData, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetError, GetRunFieldReviewsApiV1EvalRunsRunIdFieldReviewsGetResponse, GetRunProgressApiV1EvalRunsRunIdProgressGetData, GetRunProgressApiV1EvalRunsRunIdProgressGetError, GetRunProgressApiV1EvalRunsRunIdProgressGetResponse, GetRunResultsApiV1EvalRunsRunIdResultsGetData, GetRunResultsApiV1EvalRunsRunIdResultsGetError, GetRunResultsApiV1EvalRunsRunIdResultsGetResponse, GetRunsApiV1EvalRunsGetData, GetRunsApiV1EvalRunsGetResponse, GetVelocityApiV1AggregationVelocityGetData, GetVelocityApiV1AggregationVelocityGetError, GetVelocityApiV1AggregationVelocityGetResponse, HealthCheckHealthGetData, InviteUserApiV1AdminInvitePostData, InviteUserApiV1AdminInvitePostError, InviteUserApiV1AdminInvitePostResponse, ListAlertsApiV1AlertsGetData, ListAlertsApiV1AlertsGetError, ListAlertsApiV1AlertsGetResponse, ListAuthUsersApiV1AdminAuthUsersGetData, ListAuthUsersApiV1AdminAuthUsersGetResponse, ListCompaniesApiV1CompaniesGetData, ListCompaniesApiV1CompaniesGetResponse, ListModelsApiV1EvalModelsGetData, ListModelsApiV1EvalModelsGetResponse, ListPostingsApiV1PostingsGetData, ListPostingsApiV1PostingsGetError, ListPostingsApiV1PostingsGetResponse, ListScrapeRunsApiV1ScrapeRunsGetData, ListScrapeRunsApiV1ScrapeRunsGetResponse, ListUsersApiV1AdminUsersGetData, ListUsersApiV1AdminUsersGetResponse, PauseJobApiV1SchedulerJobsJobIdPausePostData, PauseJobApiV1SchedulerJobsJobIdPausePostError, PauseJobApiV1SchedulerJobsJobIdPausePostResponse, PauseScrapeApiV1ScrapePausePostData, PauseScrapeApiV1ScrapePausePostError, PauseScrapeApiV1ScrapePausePostResponse, PipelineRunsApiV1PipelineRunsGetData, PipelineRunsApiV1PipelineRunsGetError, PipelineRunsApiV1PipelineRunsGetResponse, PipelineStatusApiV1PipelineStatusGetData, PipelineStatusApiV1PipelineStatusGetResponse, ResumeJobApiV1SchedulerJobsJobIdResumePostData, ResumeJobApiV1SchedulerJobsJobIdResumePostError, ResumeJobApiV1SchedulerJobsJobIdResumePostResponse, ResumeScrapeApiV1ScrapeResumePostData, ResumeScrapeApiV1ScrapeResumePostError, ResumeScrapeApiV1ScrapeResumePostResponse, SchedulerStatusApiV1SchedulerStatusGetData, SchedulerStatusApiV1SchedulerStatusGetResponse, ScrapeStatusApiV1ScrapeStatusGetData, ScrapeStatusApiV1ScrapeStatusGetResponse, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetData, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetError, ScrapeStatusByIdApiV1ScrapeStatusRunIdGetResponse, StopScrapeApiV1ScrapeStopPostData, StopScrapeApiV1ScrapeStopPostError, StopScrapeApiV1ScrapeStopPostResponse, TriggerAggregationApiV1AggregationTriggerPostData, TriggerAggregationApiV1AggregationTriggerPostResponse, TriggerFullApiV1EnrichTriggerPostData, TriggerFullApiV1EnrichTriggerPostResponse, TriggerJobApiV1SchedulerJobsJobIdTriggerPostData, TriggerJobApiV1SchedulerJobsJobIdTriggerPostError, TriggerJobApiV1SchedulerJobsJobIdTriggerPostResponse, TriggerPass1ApiV1EnrichPass1TriggerPostData, TriggerPass1ApiV1EnrichPass1TriggerPostResponse, TriggerPass2ApiV1EnrichPass2TriggerPostData, TriggerPass2ApiV1EnrichPass2TriggerPostResponse, TriggerScrapeApiV1ScrapeTriggerPostData, TriggerScrapeApiV1ScrapeTriggerPostResponse, UpdateConfigApiV1SchedulerConfigPutData, UpdateConfigApiV1SchedulerConfigPutError, UpdateConfigApiV1SchedulerConfigPutResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -416,7 +416,7 @@ export const pipelineRunsApiV1PipelineRunsGetQueryKey = (options?: Options<Pipel
 /**
  * Pipeline Runs
  */
-export const pipelineRunsApiV1PipelineRunsGetOptions = (options?: Options<PipelineRunsApiV1PipelineRunsGetData>) => queryOptions<PipelineRunsApiV1PipelineRunsGetResponse, DefaultError, PipelineRunsApiV1PipelineRunsGetResponse, ReturnType<typeof pipelineRunsApiV1PipelineRunsGetQueryKey>>({
+export const pipelineRunsApiV1PipelineRunsGetOptions = (options?: Options<PipelineRunsApiV1PipelineRunsGetData>) => queryOptions<PipelineRunsApiV1PipelineRunsGetResponse, PipelineRunsApiV1PipelineRunsGetError, PipelineRunsApiV1PipelineRunsGetResponse, ReturnType<typeof pipelineRunsApiV1PipelineRunsGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
         const { data } = await pipelineRunsApiV1PipelineRunsGet({
             ...options,
@@ -427,6 +427,62 @@ export const pipelineRunsApiV1PipelineRunsGetOptions = (options?: Options<Pipeli
         return data;
     },
     queryKey: pipelineRunsApiV1PipelineRunsGetQueryKey(options)
+});
+
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const pipelineRunsApiV1PipelineRunsGetInfiniteQueryKey = (options?: Options<PipelineRunsApiV1PipelineRunsGetData>): QueryKey<Options<PipelineRunsApiV1PipelineRunsGetData>> => createQueryKey('pipelineRunsApiV1PipelineRunsGet', options, true);
+
+/**
+ * Pipeline Runs
+ */
+export const pipelineRunsApiV1PipelineRunsGetInfiniteOptions = (options?: Options<PipelineRunsApiV1PipelineRunsGetData>) => infiniteQueryOptions<PipelineRunsApiV1PipelineRunsGetResponse, PipelineRunsApiV1PipelineRunsGetError, InfiniteData<PipelineRunsApiV1PipelineRunsGetResponse>, QueryKey<Options<PipelineRunsApiV1PipelineRunsGetData>>, number | Pick<QueryKey<Options<PipelineRunsApiV1PipelineRunsGetData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+// @ts-ignore
+{
+    queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<PipelineRunsApiV1PipelineRunsGetData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            query: {
+                offset: pageParam
+            }
+        };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await pipelineRunsApiV1PipelineRunsGet({
+            ...options,
+            ...params,
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pipelineRunsApiV1PipelineRunsGetInfiniteQueryKey(options)
 });
 
 export const pipelineStatusApiV1PipelineStatusGetQueryKey = (options?: Options<PipelineStatusApiV1PipelineStatusGetData>) => createQueryKey('pipelineStatusApiV1PipelineStatusGet', options);
@@ -625,35 +681,6 @@ export const listPostingsApiV1PostingsGetOptions = (options?: Options<ListPostin
     },
     queryKey: listPostingsApiV1PostingsGetQueryKey(options)
 });
-
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
 
 export const listPostingsApiV1PostingsGetInfiniteQueryKey = (options?: Options<ListPostingsApiV1PostingsGetData>): QueryKey<Options<ListPostingsApiV1PostingsGetData>> => createQueryKey('listPostingsApiV1PostingsGet', options, true);
 
@@ -1034,6 +1061,24 @@ export const listUsersApiV1AdminUsersGetOptions = (options?: Options<ListUsersAp
         return data;
     },
     queryKey: listUsersApiV1AdminUsersGetQueryKey(options)
+});
+
+export const listAuthUsersApiV1AdminAuthUsersGetQueryKey = (options?: Options<ListAuthUsersApiV1AdminAuthUsersGetData>) => createQueryKey('listAuthUsersApiV1AdminAuthUsersGet', options);
+
+/**
+ * List Auth Users
+ */
+export const listAuthUsersApiV1AdminAuthUsersGetOptions = (options?: Options<ListAuthUsersApiV1AdminAuthUsersGetData>) => queryOptions<ListAuthUsersApiV1AdminAuthUsersGetResponse, DefaultError, ListAuthUsersApiV1AdminAuthUsersGetResponse, ReturnType<typeof listAuthUsersApiV1AdminAuthUsersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listAuthUsersApiV1AdminAuthUsersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listAuthUsersApiV1AdminAuthUsersGetQueryKey(options)
 });
 
 export const listAlertsApiV1AlertsGetQueryKey = (options?: Options<ListAlertsApiV1AlertsGetData>) => createQueryKey('listAlertsApiV1AlertsGet', options);

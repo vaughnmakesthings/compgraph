@@ -435,19 +435,17 @@ describe("Settings page", () => {
     expect(enrichBtn).not.toBeDisabled();
   });
 
-  it("renders the System Info section", () => {
+  it("renders system info footer", () => {
     renderWithQueryClient(<SettingsPage />);
     expect(
-      screen.getByRole("heading", { name: /system info/i })
+      screen.getByText(/CompGraph v1\.0/)
     ).toBeInTheDocument();
-  });
-
-  it("renders system info key-value rows", () => {
-    renderWithQueryClient(<SettingsPage />);
-    expect(screen.getByText("Database")).toBeInTheDocument();
-    expect(screen.getByText("Supabase Postgres 17")).toBeInTheDocument();
-    expect(screen.getByText("Platform")).toBeInTheDocument();
-    expect(screen.getByText("Digital Ocean")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Supabase Postgres 17/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Digital Ocean/)
+    ).toBeInTheDocument();
   });
 
 });

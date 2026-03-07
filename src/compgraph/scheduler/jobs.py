@@ -40,6 +40,7 @@ _MONITOR_CONFIG: MonitorConfig = {
 
 _last_pipeline_finished_at: datetime | None = None
 _last_pipeline_success: bool = False
+_last_pipeline_error: str | None = None
 
 
 def get_last_pipeline_finished_at() -> datetime | None:
@@ -48,6 +49,10 @@ def get_last_pipeline_finished_at() -> datetime | None:
 
 def get_last_pipeline_success() -> bool:
     return _last_pipeline_success
+
+
+def get_last_pipeline_error() -> str | None:
+    return _last_pipeline_error
 
 
 async def get_last_pipeline_run_from_db() -> dict[str, datetime | bool | None]:
@@ -75,7 +80,7 @@ async def get_last_pipeline_run_from_db() -> dict[str, datetime | bool | None]:
     monitor_config=_MONITOR_CONFIG,  # type: ignore[arg-type]
 )
 async def pipeline_job() -> None:
-    global _last_pipeline_finished_at, _last_pipeline_success
+    global _last_pipeline_finished_at, _last_pipeline_success, _last_pipeline_error
 
     logger.info("[PIPELINE] Scheduled pipeline job starting")
 
@@ -278,4 +283,17 @@ async def pipeline_job() -> None:
     _last_pipeline_success = (
         scrape_succeeded and enrich_succeeded and agg_succeeded and alerts_succeeded
     )
+    if not _last_pipeline_success:
+        failed_phases = []
+        if not scrape_succeeded:
+            failed_phases.append("scrape")
+        if not enrich_succeeded:
+            failed_phases.append("enrich")
+        if not agg_succeeded:
+            failed_phases.append("aggregation")
+        if not alerts_succeeded:
+            failed_phases.append("alerts")
+        _last_pipeline_error = f"Failed phases: {', '.join(failed_phases)}"
+    else:
+        _last_pipeline_error = None
     logger.info("[PIPELINE] Scheduled pipeline job complete")

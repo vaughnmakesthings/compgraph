@@ -35,9 +35,11 @@ vi.mock("next/navigation", () => ({
 
 // api-client mock
 const mockInviteUser = vi.fn();
+const mockGetAuthUsers = vi.fn();
 vi.mock("@/lib/api-client", () => ({
   api: {
     inviteUser: (...args: unknown[]) => mockInviteUser(...args),
+    getAuthUsers: (...args: unknown[]) => mockGetAuthUsers(...args),
   },
 }));
 
@@ -690,13 +692,23 @@ describe("InviteUserForm", () => {
 // =========================================================================
 
 describe("UserManagementSection", () => {
+  const mockAuthUsers = [
+    { id: "u-1", email: "alice@example.com", role: "admin", created_at: "2026-01-10T00:00:00Z", last_sign_in_at: "2026-02-25T14:22:00Z", confirmed_at: "2026-01-10T00:00:00Z" },
+    { id: "u-2", email: "bob@example.com", role: "viewer", created_at: "2026-01-15T00:00:00Z", last_sign_in_at: "2026-02-24T09:10:00Z", confirmed_at: "2026-01-15T00:00:00Z" },
+    { id: "u-3", email: "carol@example.com", role: "viewer", created_at: "2026-02-01T00:00:00Z", last_sign_in_at: null, confirmed_at: null },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetAuthUsers.mockResolvedValue(mockAuthUsers);
   });
 
-  it("renders the section title", () => {
+  it("renders the section title", async () => {
     render(<UserManagementSection />);
     expect(screen.getByText("User Management")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Users")).toBeInTheDocument();
+    });
   });
 
   it("renders admin-only badge", () => {
@@ -704,22 +716,38 @@ describe("UserManagementSection", () => {
     expect(screen.getByText(/Admin only/)).toBeInTheDocument();
   });
 
-  it("renders stat cells with correct counts from MOCK_USERS", () => {
+  it("renders stat cells with correct counts from API", async () => {
     render(<UserManagementSection />);
-    // MOCK_USERS has 4 users: 3 active, 1 invite_sent, 1 admin
-    expect(screen.getByText("Total users")).toBeInTheDocument();
-    // "Active" also appears in filter dropdown and as pills — check label exists
+    await waitFor(() => {
+      expect(screen.getByText("Total users")).toBeInTheDocument();
+    });
     expect(screen.getAllByText("Active").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Pending")).toBeInTheDocument();
     expect(screen.getAllByText("Admins").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders the Users heading from UserTable", () => {
+  it("renders the Users heading from UserTable", async () => {
     render(<UserManagementSection />);
-    expect(screen.getByText("Users")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Users")).toBeInTheDocument();
+    });
     expect(
       screen.getByText(/Manage team members/),
     ).toBeInTheDocument();
+  });
+
+  it("shows loading state initially", () => {
+    mockGetAuthUsers.mockReturnValue(new Promise(() => {}));
+    render(<UserManagementSection />);
+    expect(screen.getByText("Loading users...")).toBeInTheDocument();
+  });
+
+  it("shows error state on API failure", async () => {
+    mockGetAuthUsers.mockRejectedValue(new Error("Network error"));
+    render(<UserManagementSection />);
+    await waitFor(() => {
+      expect(screen.getByText("Network error")).toBeInTheDocument();
+    });
   });
 });
 

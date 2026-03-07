@@ -42,6 +42,15 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
+class AuthUserResponse(BaseModel):
+    id: str
+    email: str
+    role: str
+    created_at: str
+    last_sign_in_at: str | None = None
+    confirmed_at: str | None = None
+
+
 @router.post("/invite", response_model=InviteResponse)
 async def invite_user(
     body: InviteRequest,
@@ -128,4 +137,46 @@ async def list_users(
             created_at=u.created_at,
         )
         for u in users
+    ]
+
+
+@router.get("/auth-users", response_model=list[AuthUserResponse])
+async def list_auth_users(
+    _admin: AuthUser = Depends(require_admin),  # noqa: B008
+    current_settings: Settings = Depends(get_settings),  # noqa: B008
+) -> list[AuthUserResponse]:
+    service_role_key = current_settings.SUPABASE_SERVICE_ROLE_KEY.get_secret_value()
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        users_url = (
+            f"https://{current_settings.SUPABASE_PROJECT_REF}.supabase.co/auth/v1/admin/users"
+        )
+        resp = await client.get(
+            users_url,
+            headers={
+                "Authorization": f"Bearer {service_role_key}",
+                "apikey": service_role_key,
+            },
+        )
+
+    if resp.status_code >= 400:
+        logger.error("Supabase list users failed: status=%d", resp.status_code)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to fetch users from Supabase Auth",
+        )
+
+    data = resp.json()
+    users_list = data.get("users", []) if isinstance(data, dict) else data
+
+    return [
+        AuthUserResponse(
+            id=u.get("id", ""),
+            email=u.get("email", ""),
+            role=u.get("app_metadata", {}).get("role", "viewer"),
+            created_at=u.get("created_at", ""),
+            last_sign_in_at=u.get("last_sign_in_at"),
+            confirmed_at=u.get("confirmed_at"),
+        )
+        for u in users_list
     ]

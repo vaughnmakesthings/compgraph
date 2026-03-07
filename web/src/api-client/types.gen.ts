@@ -97,6 +97,36 @@ export type AlertListResponse = {
 };
 
 /**
+ * AuthUserResponse
+ */
+export type AuthUserResponse = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Last Sign In At
+     */
+    last_sign_in_at?: string | null;
+    /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+};
+
+/**
  * BrandMentionDetail
  */
 export type BrandMentionDetail = {
@@ -553,6 +583,10 @@ export type EnrichmentRunSummary = {
      * Pass2 Succeeded
      */
     pass2_succeeded: number;
+    /**
+     * Error Summary
+     */
+    error_summary?: string | null;
 };
 
 /**
@@ -1154,6 +1188,14 @@ export type PipelineRunsResponse = {
      * Enrichment Runs
      */
     enrichment_runs: Array<EnrichmentRunSummary>;
+    /**
+     * Scrape Total
+     */
+    scrape_total?: number;
+    /**
+     * Enrichment Total
+     */
+    enrichment_total?: number;
 };
 
 /**
@@ -1415,6 +1457,10 @@ export type SchedulerStatusResponse = {
      * Missed Run
      */
     missed_run: boolean;
+    /**
+     * Last Pipeline Error
+     */
+    last_pipeline_error?: string | null;
 };
 
 /**
@@ -1509,6 +1555,10 @@ export type ScrapeRunSummary = {
      * Postings Closed
      */
     postings_closed: number;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
 };
 
 /**
@@ -2188,9 +2238,27 @@ export type UpdateConfigApiV1SchedulerConfigPutResponse = UpdateConfigApiV1Sched
 export type PipelineRunsApiV1PipelineRunsGetData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
     url: '/api/v1/pipeline/runs';
 };
+
+export type PipelineRunsApiV1PipelineRunsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PipelineRunsApiV1PipelineRunsGetError = PipelineRunsApiV1PipelineRunsGetErrors[keyof PipelineRunsApiV1PipelineRunsGetErrors];
 
 export type PipelineRunsApiV1PipelineRunsGetResponses = {
     /**
@@ -2954,6 +3022,24 @@ export type ListUsersApiV1AdminUsersGetResponses = {
 };
 
 export type ListUsersApiV1AdminUsersGetResponse = ListUsersApiV1AdminUsersGetResponses[keyof ListUsersApiV1AdminUsersGetResponses];
+
+export type ListAuthUsersApiV1AdminAuthUsersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/auth-users';
+};
+
+export type ListAuthUsersApiV1AdminAuthUsersGetResponses = {
+    /**
+     * Response List Auth Users Api V1 Admin Auth Users Get
+     *
+     * Successful Response
+     */
+    200: Array<AuthUserResponse>;
+};
+
+export type ListAuthUsersApiV1AdminAuthUsersGetResponse = ListAuthUsersApiV1AdminAuthUsersGetResponses[keyof ListAuthUsersApiV1AdminAuthUsersGetResponses];
 
 export type ListAlertsApiV1AlertsGetData = {
     body?: never;
