@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -13,11 +14,17 @@ from compgraph.scheduler.jobs import (
     get_last_pipeline_success,
 )
 
+if TYPE_CHECKING:
+    from arq import ArqRedis
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
 MISSED_RUN_THRESHOLD_HOURS = 80  # 72h max gap (Fri->Mon) + 8h grace
+
+# Redis key for persisting pause state across API + worker processes
+_PAUSE_REDIS_KEY_PREFIX = "schedule:paused:"
 
 
 class ScheduleInfo(BaseModel):
@@ -48,17 +55,15 @@ class ControlResponse(BaseModel):
 
 _VALID_SCHEDULE_IDS = {SCHEDULE_ID}
 
-_paused_schedules: set[str] = set()
 
-
-def _get_arq_pool(request: Request) -> object:
+def _get_arq_pool(request: Request) -> ArqRedis:
     pool = getattr(request.app.state, "arq_pool", None)
     if pool is None:
         raise HTTPException(
             status_code=503,
             detail="Scheduler is not enabled. Set SCHEDULER_ENABLED=true and configure REDIS_URL.",
         )
-    return pool
+    return pool  # type: ignore[no-any-return]
 
 
 def _validate_schedule_id(job_id: str) -> None:
@@ -74,12 +79,12 @@ async def scheduler_status(
     request: Request,
     _user: AuthUser = Depends(require_viewer),  # noqa: B008
 ) -> SchedulerStatusResponse:
-    pool = getattr(request.app.state, "arq_pool", None)
+    pool: ArqRedis | None = getattr(request.app.state, "arq_pool", None)
     enabled = pool is not None
 
     schedules: list[ScheduleInfo] = []
-    if enabled:
-        is_paused = SCHEDULE_ID in _paused_schedules
+    if enabled and pool is not None:
+        is_paused = bool(await pool.get(f"{_PAUSE_REDIS_KEY_PREFIX}{SCHEDULE_ID}"))
         schedules.append(
             ScheduleInfo(
                 schedule_id=SCHEDULE_ID,
@@ -152,10 +157,10 @@ async def pause_job(
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     _validate_schedule_id(job_id)
-    _get_arq_pool(request)
+    pool = _get_arq_pool(request)
 
-    _paused_schedules.add(job_id)
-    logger.info("Schedule %s paused (application-level)", job_id)
+    await pool.set(f"{_PAUSE_REDIS_KEY_PREFIX}{job_id}", b"1")
+    logger.info("Schedule %s paused (stored in Redis)", job_id)
 
     return ControlResponse(
         schedule_id=job_id,
@@ -171,10 +176,10 @@ async def resume_job(
     _admin: AuthUser = Depends(require_admin),  # noqa: B008
 ) -> ControlResponse:
     _validate_schedule_id(job_id)
-    _get_arq_pool(request)
+    pool = _get_arq_pool(request)
 
-    _paused_schedules.discard(job_id)
-    logger.info("Schedule %s resumed (application-level)", job_id)
+    await pool.delete(f"{_PAUSE_REDIS_KEY_PREFIX}{job_id}")
+    logger.info("Schedule %s resumed (cleared from Redis)", job_id)
 
     return ControlResponse(
         schedule_id=job_id,

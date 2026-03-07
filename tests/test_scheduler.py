@@ -377,7 +377,7 @@ class TestArqWorkerSettings:
     def test_cron_schedule_matches_expected(self):
         from compgraph.scheduler.worker import CRON_HOUR, CRON_MINUTE, CRON_WEEKDAYS
 
-        assert CRON_HOUR == 2
+        assert CRON_HOUR == 7  # 7 AM UTC = 2 AM ET
         assert CRON_MINUTE == 0
         assert CRON_WEEKDAYS == {0, 2, 4}  # Mon, Wed, Fri
 
@@ -405,12 +405,28 @@ class TestArqRunPipeline:
     async def test_run_pipeline_delegates_to_pipeline_job(self):
         from compgraph.scheduler.worker import run_pipeline
 
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)  # not paused
+
         with patch(
             "compgraph.scheduler.jobs.pipeline_job",
             new_callable=AsyncMock,
         ) as mock_pipeline:
-            await run_pipeline({})
+            await run_pipeline({"redis": mock_redis})
             mock_pipeline.assert_called_once()
+
+    async def test_run_pipeline_skips_when_paused(self):
+        from compgraph.scheduler.worker import run_pipeline
+
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=b"1")  # paused
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline({"redis": mock_redis})
+            mock_pipeline.assert_not_called()
 
 
 class TestArqPoolCreation:
@@ -459,6 +475,9 @@ def app_with_arq_pool():
 
     mock_pool = AsyncMock()
     mock_pool.info = AsyncMock(return_value={})
+    mock_pool.get = AsyncMock(side_effect=lambda k: _mock_redis_store.get(k))
+    mock_pool.set = AsyncMock(side_effect=lambda k, v: _mock_redis_store.update({k: v}))
+    mock_pool.delete = AsyncMock(side_effect=lambda k: _mock_redis_store.pop(k, None))
 
     mock_job = MagicMock()
     mock_job.job_id = str(uuid.uuid4())
@@ -470,13 +489,14 @@ def app_with_arq_pool():
         del app.state.arq_pool
 
 
-@pytest.fixture(autouse=True)
-def _reset_paused_schedules():
-    from compgraph.api.routes.scheduler import _paused_schedules
+_mock_redis_store: dict[str, bytes] = {}
 
-    _paused_schedules.clear()
+
+@pytest.fixture(autouse=True)
+def _reset_redis_store():
+    _mock_redis_store.clear()
     yield
-    _paused_schedules.clear()
+    _mock_redis_store.clear()
 
 
 class TestSchedulerStatusAPI:
@@ -576,9 +596,7 @@ class TestSchedulerPauseResumeAPI:
         assert data["paused"] is True
 
     async def test_resume_works(self, app_with_arq_pool):
-        from compgraph.api.routes.scheduler import _paused_schedules
-
-        _paused_schedules.add("daily_pipeline")
+        _mock_redis_store["schedule:paused:daily_pipeline"] = b"1"
 
         async with AsyncClient(
             transport=ASGITransport(app=app_with_arq_pool),
