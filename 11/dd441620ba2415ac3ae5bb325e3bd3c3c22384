@@ -1,0 +1,27 @@
+web/src/lib/api-client.ts
+  610c361b204086f3 69-81
+web/src/test/pages.test.tsx
+  610c361b204086f3 21-26,589-592,604,617,620-621
+web/src/app/(app)/settings/page.tsx
+  610c361b204086f3 34,38,40,97-142,341-344,347-353,427-428,431-434,622-632,680-690
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "11dd441620ba2415ac3ae5bb325e3bd3c3c22384",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 118,
+      "total_deletions": 8,
+      "accepted_lines": 115,
+      "overriden_lines": 0
+    }
+  }
+}
