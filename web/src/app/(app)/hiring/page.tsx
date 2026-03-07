@@ -10,6 +10,7 @@ import {
 import type { PostingListResponse, PostingListItem } from "@/lib/types";
 import { useCompanies } from "@/lib/hooks/use-companies";
 import { formatRoleArchetype, formatDate } from "@/lib/utils";
+import { SELECT_CHEVRON_SVG } from "@/lib/constants";
 
 const PAGE_SIZE = 50;
 
@@ -112,12 +113,15 @@ export default function HiringPage() {
   const total = postings?.total ?? 0;
   const error = queryError instanceof Error ? queryError.message : null;
 
-  const hasActiveFilters =
-    companyFilter !== "" ||
-    statusFilter !== "all" ||
-    roleFilter !== "" ||
-    sortBy !== "first_seen_desc" ||
-    searchInput !== "";
+  const hasActiveFilters = useMemo(
+    () =>
+      companyFilter !== "" ||
+      statusFilter !== "all" ||
+      roleFilter !== "" ||
+      sortBy !== "first_seen_desc" ||
+      searchInput !== "",
+    [companyFilter, statusFilter, roleFilter, sortBy, searchInput],
+  );
 
   const clearAll = useCallback(() => {
     setCompanyFilter("");
@@ -168,7 +172,7 @@ export default function HiringPage() {
             setOffset(0);
           }}
           className="border border-[#BFC0C0] rounded px-3 py-1.5 text-[13px] bg-white text-[#2D3142] font-body min-w-[10rem] appearance-none pr-8 bg-no-repeat bg-[right_10px_center]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+          style={{ backgroundImage: SELECT_CHEVRON_SVG }}
           aria-label="Filter by company"
         >
           <option value="">All Companies</option>
@@ -186,7 +190,7 @@ export default function HiringPage() {
             setOffset(0);
           }}
           className="border border-[#BFC0C0] rounded px-3 py-1.5 text-[13px] bg-white text-[#2D3142] font-body min-w-[10rem] appearance-none pr-8 bg-no-repeat bg-[right_10px_center]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+          style={{ backgroundImage: SELECT_CHEVRON_SVG }}
           aria-label="Filter by status"
         >
           <option value="all">All Statuses</option>
@@ -201,7 +205,7 @@ export default function HiringPage() {
             setOffset(0);
           }}
           className="border border-[#BFC0C0] rounded px-3 py-1.5 text-[13px] bg-white text-[#2D3142] font-body min-w-[10rem] appearance-none pr-8 bg-no-repeat bg-[right_10px_center]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+          style={{ backgroundImage: SELECT_CHEVRON_SVG }}
           aria-label="Filter by role"
         >
           <option value="">All Roles</option>
@@ -219,7 +223,7 @@ export default function HiringPage() {
             setOffset(0);
           }}
           className="border border-[#BFC0C0] rounded px-3 py-1.5 text-[13px] bg-white text-[#2D3142] font-body min-w-[10rem] appearance-none pr-8 bg-no-repeat bg-[right_10px_center]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234F5D75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+          style={{ backgroundImage: SELECT_CHEVRON_SVG }}
           aria-label="Sort by"
         >
           {SORT_OPTIONS.map(({ value, label }) => (
