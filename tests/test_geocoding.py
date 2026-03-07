@@ -133,9 +133,10 @@ def test_compute_h3_index_distant_different_cell():
     assert nyc != la
 
 
+@patch("compgraph.geocoding._get_api_key", return_value=None)
 @patch("geopy.geocoders.Nominatim")
-def test_get_geolocator_returns_nominatim(mock_nominatim):
-    """Verify _get_geolocator creates a Nominatim instance with correct user_agent."""
+def test_get_geolocator_returns_nominatim_when_no_key(mock_nominatim, _mock_key):
+    """Verify _get_geolocator falls back to Nominatim when GOOGLE_MAPS_API_KEY is unset."""
     mock_instance = MagicMock()
     mock_nominatim.return_value = mock_instance
 
@@ -145,8 +146,22 @@ def test_get_geolocator_returns_nominatim(mock_nominatim):
     mock_nominatim.assert_called_once_with(user_agent="compgraph-geocoder")
 
 
+@patch("compgraph.geocoding._get_api_key", return_value="test-api-key")
+@patch("geopy.geocoders.GoogleV3")
+def test_get_geolocator_returns_google_when_key_set(mock_google, _mock_key):
+    """Verify _get_geolocator uses GoogleV3 when GOOGLE_MAPS_API_KEY is set."""
+    mock_instance = MagicMock()
+    mock_google.return_value = mock_instance
+
+    result = _get_geolocator()
+
+    assert result is mock_instance
+    mock_google.assert_called_once_with(api_key="test-api-key")
+
+
+@patch("compgraph.geocoding._get_api_key", return_value=None)
 @patch("geopy.geocoders.Nominatim")
-def test_get_geolocator_cached_singleton(mock_nominatim):
+def test_get_geolocator_cached_singleton(mock_nominatim, _mock_key):
     """Verify _get_geolocator returns same instance on repeated calls."""
     mock_nominatim.return_value = MagicMock()
 
