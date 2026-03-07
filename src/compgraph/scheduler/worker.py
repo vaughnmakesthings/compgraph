@@ -74,8 +74,28 @@ async def run_pipeline(ctx: dict[str, Any]) -> None:
     await pipeline_job()
 
 
+async def run_pipeline_manual(ctx: dict[str, Any]) -> None:
+    """Run the pipeline immediately, bypassing schedule-time check.
+
+    Called via manual trigger (POST /scheduler/jobs/{id}/trigger).
+    Still respects pause state.
+    """
+    from compgraph.scheduler.app import PAUSE_REDIS_KEY, SCHEDULE_ID
+
+    redis = ctx["redis"]
+    if await redis.get(f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"):
+        logger.info("Manual pipeline trigger skipped — schedule is paused")
+        return
+
+    logger.info("Pipeline triggered manually — bypassing schedule check")
+
+    from compgraph.scheduler.jobs import pipeline_job
+
+    await pipeline_job()
+
+
 class WorkerSettings:
-    functions = [run_pipeline]
+    functions = [run_pipeline, run_pipeline_manual]
     cron_jobs = [
         cron(
             run_pipeline,

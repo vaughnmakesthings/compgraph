@@ -50,15 +50,14 @@ async def set_schedule_config(pool: ArqRedis, config: dict[str, Any]) -> None:
 async def create_arq_pool() -> ArqRedis:
     pool = await create_pool(get_redis_settings())
     logger.info(
-        "arq Redis pool created: redis_url=%s, scheduler_enabled=%s",
-        settings.REDIS_URL or "redis://localhost:6379",
+        "arq Redis pool created: scheduler_enabled=%s",
         settings.SCHEDULER_ENABLED,
     )
     return pool
 
 
 async def enqueue_pipeline_job(pool: ArqRedis) -> str | None:
-    job = await pool.enqueue_job("run_pipeline", _job_id="manual_pipeline_trigger")
+    job = await pool.enqueue_job("run_pipeline_manual", _job_id="manual_pipeline_trigger")
     if job is None:
         logger.warning("Pipeline job already queued (duplicate _job_id)")
         return None

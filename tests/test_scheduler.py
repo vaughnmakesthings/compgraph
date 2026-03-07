@@ -367,7 +367,7 @@ class TestArqWorkerSettings:
         from compgraph.scheduler.worker import WorkerSettings
 
         assert hasattr(WorkerSettings, "functions")
-        assert len(WorkerSettings.functions) == 1
+        assert len(WorkerSettings.functions) == 2
 
     def test_worker_max_jobs_is_one(self):
         from compgraph.scheduler.worker import WorkerSettings
@@ -508,6 +508,34 @@ class TestArqRunPipeline:
                 mock_pipeline.assert_not_called()
 
 
+class TestArqRunPipelineManual:
+    async def test_manual_trigger_runs_regardless_of_time(self):
+        from compgraph.scheduler.worker import run_pipeline_manual
+
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)  # not paused
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline_manual({"redis": mock_redis})
+            mock_pipeline.assert_called_once()
+
+    async def test_manual_trigger_respects_pause(self):
+        from compgraph.scheduler.worker import run_pipeline_manual
+
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=b"1")  # paused
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline_manual({"redis": mock_redis})
+            mock_pipeline.assert_not_called()
+
+
 class TestArqPoolCreation:
     async def test_create_arq_pool_returns_pool(self):
         from compgraph.scheduler.app import create_arq_pool
@@ -532,7 +560,7 @@ class TestArqPoolCreation:
         result = await enqueue_pipeline_job(mock_pool)
         assert result == "test-job-123"
         mock_pool.enqueue_job.assert_called_once_with(
-            "run_pipeline", _job_id="manual_pipeline_trigger"
+            "run_pipeline_manual", _job_id="manual_pipeline_trigger"
         )
 
     async def test_enqueue_pipeline_job_returns_none_on_duplicate(self):
