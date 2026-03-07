@@ -1,0 +1,27 @@
+src/compgraph/config.py
+  2423ec08c970b5eb 51-53
+src/compgraph/geocoding.py
+  2423ec08c970b5eb 17-22,25-30
+tests/test_geocoding.py
+  2423ec08c970b5eb 136,138-139,149-162,164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "643890bd2209a10e9621183ca4e3263d1f500a90",
+  "prompts": {
+    "2423ec08c970b5eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38d3570b-7658-4271-8285-c0bf802b05db",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 45,
+      "total_deletions": 15,
+      "accepted_lines": 35,
+      "overriden_lines": 0
+    }
+  }
+}
