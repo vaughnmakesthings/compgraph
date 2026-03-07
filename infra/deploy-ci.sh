@@ -43,13 +43,17 @@ fi
 # ── 1. Pull latest code ──
 echo "[1/5] Pulling latest code..."
 git config --global safe.directory "$APP_DIR"
-# Reset generated files that may differ on server (e.g. uv.lock platform markers)
-git checkout -- uv.lock 2>/dev/null || true
+# Reset any tracked files modified on the server (uv.lock platform markers,
+# migrations applied locally, etc.) to prevent merge conflicts on pull.
+git checkout -- . 2>/dev/null || true
 git pull origin main
 
 # ── 2. Sync dependencies ──
 echo "[2/5] Syncing dependencies..."
-sudo -u compgraph uv sync
+# Force Python 3.12 — server has 3.12 system-wide; .python-version may
+# request 3.13+ which uv would install to root's cache (inaccessible to
+# the compgraph service user).
+sudo -u compgraph uv sync --python 3.12
 
 # ── 3. Run Alembic migrations ──
 echo "[3/5] Running migrations..."
