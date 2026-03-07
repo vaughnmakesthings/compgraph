@@ -78,6 +78,21 @@ class ScheduleConfigUpdate(BaseModel):
 _VALID_SCHEDULE_IDS = {SCHEDULE_ID}
 
 
+def _compute_next_fire_time(weekdays: list[int], hour: int, minute: int) -> datetime | None:
+    """Compute the next fire time from schedule config (weekdays as ints, hour, minute in UTC)."""
+    from datetime import timedelta
+
+    now = datetime.now(UTC)
+    # Check today and the next 7 days
+    for delta in range(8):
+        candidate = now + timedelta(days=delta)
+        if candidate.weekday() in weekdays:
+            fire = candidate.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if fire > now:
+                return fire
+    return None
+
+
 def _get_arq_pool(request: Request) -> ArqRedis:
     pool = getattr(request.app.state, "arq_pool", None)
     if pool is None:
@@ -107,11 +122,36 @@ async def scheduler_status(
     schedules: list[ScheduleInfo] = []
     if enabled and pool is not None:
         is_paused = bool(await pool.get(f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"))
+
+        # Compute next fire time from schedule config
+        next_fire: datetime | None = None
+        last_fire: datetime | None = None
+        if not is_paused:
+            try:
+                config = await get_schedule_config(pool)
+                weekdays = config.get("weekdays", [])
+                hour = config.get("hour", 2)
+                minute = config.get("minute", 0)
+                if weekdays:
+                    next_fire = _compute_next_fire_time(weekdays, hour, minute)
+            except Exception:
+                logger.debug("Failed to compute next fire time", exc_info=True)
+
+        # Read last fire time from Redis
+        try:
+            raw_last = await pool.get(f"schedule:last_fire:{SCHEDULE_ID}")
+            if raw_last:
+                last_fire = datetime.fromisoformat(
+                    raw_last.decode() if isinstance(raw_last, bytes) else raw_last
+                )
+        except Exception:
+            logger.debug("Failed to read last fire time", exc_info=True)
+
         schedules.append(
             ScheduleInfo(
                 schedule_id=SCHEDULE_ID,
-                next_fire_time=None,
-                last_fire_time=None,
+                next_fire_time=next_fire,
+                last_fire_time=last_fire,
                 paused=is_paused,
             )
         )

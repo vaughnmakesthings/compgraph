@@ -87,6 +87,19 @@ async def pipeline_job() -> None:
     # Deferred import to avoid circular dependency (jobs -> main -> health -> ...)
     from compgraph.main import shutdown_event
 
+    # Record last fire time in Redis for scheduler status API
+    try:
+        from compgraph.scheduler.app import SCHEDULE_ID, create_arq_pool
+
+        pool = await create_arq_pool()
+        await pool.set(
+            f"schedule:last_fire:{SCHEDULE_ID}",
+            datetime.now(UTC).isoformat(),
+        )
+        await pool.aclose()
+    except Exception:
+        logger.debug("Failed to record last fire time in Redis", exc_info=True)
+
     # --- Cleanup stale PENDING runs before starting ---
     try:
         from compgraph.db.session import async_session_factory
