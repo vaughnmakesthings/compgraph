@@ -1,0 +1,29 @@
+web/tests/pages/competitors.spec.ts
+  4323b7b08e5c9ca4 7,10,13-15,17,20,22-25
+web/tests/pages/settings.spec.ts
+  4323b7b08e5c9ca4 9,12-13,19-20
+web/tests/pages/dashboard.spec.ts
+  4323b7b08e5c9ca4 4,9,11-16,19-20,26,31-35
+web/tests/pages/hiring.spec.ts
+  4323b7b08e5c9ca4 9,12-13,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "4c28fcc3096dbbfa7d79f3d63cf732c3e18949d7",
+  "prompts": {
+    "4323b7b08e5c9ca4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f77adebd-4666-4cbd-9634-963ad914b83e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 43,
+      "total_deletions": 52,
+      "accepted_lines": 36,
+      "overriden_lines": 0
+    }
+  }
+}
