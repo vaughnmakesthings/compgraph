@@ -1,41 +1,35 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-from apscheduler import AsyncScheduler, CoalescePolicy, ConflictPolicy
-from apscheduler.triggers.cron import CronTrigger
+from arq import create_pool
 
 from compgraph.config import settings
-from compgraph.scheduler.jobs import pipeline_job
+from compgraph.scheduler.worker import get_redis_settings
+
+if TYPE_CHECKING:
+    from arq import ArqRedis
 
 logger = logging.getLogger(__name__)
 
 SCHEDULE_ID = "daily_pipeline"
 
 
-async def setup_scheduler() -> AsyncScheduler:
-    scheduler = AsyncScheduler(max_concurrent_jobs=1)
-
-    trigger = CronTrigger.from_crontab(
-        settings.SCHEDULER_PIPELINE_CRON, timezone=settings.SCHEDULER_TIMEZONE
-    )
-
-    await scheduler.__aenter__()
-
-    await scheduler.add_schedule(
-        pipeline_job,
-        trigger,
-        id=SCHEDULE_ID,
-        coalesce=CoalescePolicy.latest,
-        misfire_grace_time=3600,
-        conflict_policy=ConflictPolicy.replace,
-    )
-
+async def create_arq_pool() -> ArqRedis:
+    pool = await create_pool(get_redis_settings())
     logger.info(
-        "Scheduler configured: schedule=%s, cron=%s, timezone=%s",
-        SCHEDULE_ID,
-        settings.SCHEDULER_PIPELINE_CRON,
-        settings.SCHEDULER_TIMEZONE,
+        "arq Redis pool created: redis_url=%s, scheduler_enabled=%s",
+        settings.REDIS_URL or "redis://localhost:6379",
+        settings.SCHEDULER_ENABLED,
     )
+    return pool
 
-    return scheduler
+
+async def enqueue_pipeline_job(pool: ArqRedis) -> str | None:
+    job = await pool.enqueue_job("run_pipeline", _job_id="manual_pipeline_trigger")
+    if job is None:
+        logger.warning("Pipeline job already queued (duplicate _job_id)")
+        return None
+    logger.info("Pipeline job enqueued: job_id=%s", job.job_id)
+    return job.job_id

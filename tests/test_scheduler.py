@@ -28,7 +28,6 @@ def _reset_scheduler_state():
 
 @pytest.fixture(autouse=True)
 def _mock_db_session():
-    """Mock DB session factory to avoid DB connection in unit tests."""
     mock_session = AsyncMock()
     mock_cm = AsyncMock()
     mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
@@ -354,58 +353,136 @@ class TestPipelineJobPartialEnrichSucceeds:
         assert jobs_mod._last_pipeline_success is True
 
 
-# --- Scheduler setup tests ---
+# --- arq worker configuration tests ---
 
 
-class TestSchedulerSetup:
-    async def test_registers_job_with_correct_cron(self):
-        from compgraph.scheduler.app import SCHEDULE_ID, setup_scheduler
+class TestArqWorkerSettings:
+    def test_worker_settings_has_cron_jobs(self):
+        from compgraph.scheduler.worker import WorkerSettings
 
-        scheduler = await setup_scheduler()
-        try:
-            schedules = await scheduler.get_schedules()
-            assert len(schedules) == 1
-            assert schedules[0].id == SCHEDULE_ID
+        assert hasattr(WorkerSettings, "cron_jobs")
+        assert len(WorkerSettings.cron_jobs) == 1
 
-            trigger = schedules[0].trigger
-            assert trigger.timezone.key == "America/New_York"
-            assert trigger.hour == "2"
-            assert trigger.minute == "0"
-            assert trigger.day_of_week == "1,3,5"
-        finally:
-            await scheduler.__aexit__(None, None, None)
+    def test_worker_settings_has_functions(self):
+        from compgraph.scheduler.worker import WorkerSettings
+
+        assert hasattr(WorkerSettings, "functions")
+        assert len(WorkerSettings.functions) == 1
+
+    def test_worker_max_jobs_is_one(self):
+        from compgraph.scheduler.worker import WorkerSettings
+
+        assert WorkerSettings.max_jobs == 1
+
+    def test_cron_schedule_matches_expected(self):
+        from compgraph.scheduler.worker import CRON_HOUR, CRON_MINUTE, CRON_WEEKDAYS
+
+        assert CRON_HOUR == 2
+        assert CRON_MINUTE == 0
+        assert CRON_WEEKDAYS == {0, 2, 4}  # Mon, Wed, Fri
+
+    def test_redis_settings_default(self):
+        from compgraph.scheduler.worker import get_redis_settings
+
+        with patch("compgraph.scheduler.worker.settings") as mock_settings:
+            mock_settings.REDIS_URL = None
+            rs = get_redis_settings()
+            assert rs.host == "localhost"
+            assert rs.port == 6379
+
+    def test_redis_settings_from_url(self):
+        from compgraph.scheduler.worker import get_redis_settings
+
+        with patch("compgraph.scheduler.worker.settings") as mock_settings:
+            mock_settings.REDIS_URL = "redis://myhost:6380/1"
+            rs = get_redis_settings()
+            assert rs.host == "myhost"
+            assert rs.port == 6380
+            assert rs.database == 1
+
+
+class TestArqRunPipeline:
+    async def test_run_pipeline_delegates_to_pipeline_job(self):
+        from compgraph.scheduler.worker import run_pipeline
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline({})
+            mock_pipeline.assert_called_once()
+
+
+class TestArqPoolCreation:
+    async def test_create_arq_pool_returns_pool(self):
+        from compgraph.scheduler.app import create_arq_pool
+
+        mock_pool = AsyncMock()
+        with patch(
+            "compgraph.scheduler.app.create_pool",
+            new_callable=AsyncMock,
+            return_value=mock_pool,
+        ):
+            pool = await create_arq_pool()
+            assert pool is mock_pool
+
+    async def test_enqueue_pipeline_job_returns_job_id(self):
+        from compgraph.scheduler.app import enqueue_pipeline_job
+
+        mock_job = MagicMock()
+        mock_job.job_id = "test-job-123"
+        mock_pool = AsyncMock()
+        mock_pool.enqueue_job = AsyncMock(return_value=mock_job)
+
+        result = await enqueue_pipeline_job(mock_pool)
+        assert result == "test-job-123"
+        mock_pool.enqueue_job.assert_called_once_with(
+            "run_pipeline", _job_id="manual_pipeline_trigger"
+        )
+
+    async def test_enqueue_pipeline_job_returns_none_on_duplicate(self):
+        from compgraph.scheduler.app import enqueue_pipeline_job
+
+        mock_pool = AsyncMock()
+        mock_pool.enqueue_job = AsyncMock(return_value=None)
+
+        result = await enqueue_pipeline_job(mock_pool)
+        assert result is None
 
 
 # --- API route tests ---
 
 
 @pytest.fixture
-def app_with_scheduler():
+def app_with_arq_pool():
     from compgraph.main import app
 
-    mock_scheduler = AsyncMock()
+    mock_pool = AsyncMock()
+    mock_pool.info = AsyncMock(return_value={})
 
-    mock_schedule = MagicMock()
-    mock_schedule.id = "daily_pipeline"
-    mock_schedule.next_fire_time = datetime(2026, 2, 18, 7, 0, 0, tzinfo=UTC)
-    mock_schedule.last_fire_time = datetime(2026, 2, 16, 7, 0, 0, tzinfo=UTC)
-    mock_schedule.paused = False
+    mock_job = MagicMock()
+    mock_job.job_id = str(uuid.uuid4())
+    mock_pool.enqueue_job = AsyncMock(return_value=mock_job)
 
-    mock_scheduler.get_schedules = AsyncMock(return_value=[mock_schedule])
-    mock_scheduler.add_job = AsyncMock(return_value=uuid.uuid4())
-    mock_scheduler.pause_schedule = AsyncMock()
-    mock_scheduler.unpause_schedule = AsyncMock()
-
-    app.state.scheduler = mock_scheduler
+    app.state.arq_pool = mock_pool
     yield app
-    if hasattr(app.state, "scheduler"):
-        del app.state.scheduler
+    if hasattr(app.state, "arq_pool"):
+        del app.state.arq_pool
+
+
+@pytest.fixture(autouse=True)
+def _reset_paused_schedules():
+    from compgraph.api.routes.scheduler import _paused_schedules
+
+    _paused_schedules.clear()
+    yield
+    _paused_schedules.clear()
 
 
 class TestSchedulerStatusAPI:
-    async def test_status_returns_correct_structure(self, app_with_scheduler):
+    async def test_status_returns_correct_structure(self, app_with_arq_pool):
         async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
+            transport=ASGITransport(app=app_with_arq_pool),
             base_url="http://test",
         ) as client:
             resp = await client.get("/api/v1/scheduler/status")
@@ -417,11 +494,11 @@ class TestSchedulerStatusAPI:
         assert data["schedules"][0]["schedule_id"] == "daily_pipeline"
         assert data["missed_run"] is False
 
-    async def test_status_disabled_when_no_scheduler(self):
+    async def test_status_disabled_when_no_pool(self):
         from compgraph.main import app
 
-        if hasattr(app.state, "scheduler"):
-            del app.state.scheduler
+        if hasattr(app.state, "arq_pool"):
+            del app.state.arq_pool
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -436,9 +513,9 @@ class TestSchedulerStatusAPI:
 
 
 class TestSchedulerTriggerAPI:
-    async def test_manual_trigger_works(self, app_with_scheduler):
+    async def test_manual_trigger_works(self, app_with_arq_pool):
         async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
+            transport=ASGITransport(app=app_with_arq_pool),
             base_url="http://test",
         ) as client:
             resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/trigger")
@@ -451,8 +528,8 @@ class TestSchedulerTriggerAPI:
     async def test_trigger_fails_when_disabled(self):
         from compgraph.main import app
 
-        if hasattr(app.state, "scheduler"):
-            del app.state.scheduler
+        if hasattr(app.state, "arq_pool"):
+            del app.state.arq_pool
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -462,12 +539,23 @@ class TestSchedulerTriggerAPI:
 
         assert resp.status_code == 503
 
+    async def test_trigger_returns_409_on_duplicate(self, app_with_arq_pool):
+        app_with_arq_pool.state.arq_pool.enqueue_job = AsyncMock(return_value=None)
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/trigger")
+
+        assert resp.status_code == 409
+
 
 class TestSchedulerInvalidScheduleID:
     @pytest.mark.parametrize("action", ["trigger", "pause", "resume"])
-    async def test_unknown_schedule_returns_404(self, app_with_scheduler, action):
+    async def test_unknown_schedule_returns_404(self, app_with_arq_pool, action):
         async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
+            transport=ASGITransport(app=app_with_arq_pool),
             base_url="http://test",
         ) as client:
             resp = await client.post(f"/api/v1/scheduler/jobs/nonexistent/{action}")
@@ -476,9 +564,9 @@ class TestSchedulerInvalidScheduleID:
 
 
 class TestSchedulerPauseResumeAPI:
-    async def test_pause_works(self, app_with_scheduler):
+    async def test_pause_works(self, app_with_arq_pool):
         async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
+            transport=ASGITransport(app=app_with_arq_pool),
             base_url="http://test",
         ) as client:
             resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/pause")
@@ -487,9 +575,13 @@ class TestSchedulerPauseResumeAPI:
         data = resp.json()
         assert data["paused"] is True
 
-    async def test_resume_works(self, app_with_scheduler):
+    async def test_resume_works(self, app_with_arq_pool):
+        from compgraph.api.routes.scheduler import _paused_schedules
+
+        _paused_schedules.add("daily_pipeline")
+
         async with AsyncClient(
-            transport=ASGITransport(app=app_with_scheduler),
+            transport=ASGITransport(app=app_with_arq_pool),
             base_url="http://test",
         ) as client:
             resp = await client.post("/api/v1/scheduler/jobs/daily_pipeline/resume")
@@ -497,3 +589,14 @@ class TestSchedulerPauseResumeAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["paused"] is False
+
+    async def test_pause_then_status_shows_paused(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            await client.post("/api/v1/scheduler/jobs/daily_pipeline/pause")
+            resp = await client.get("/api/v1/scheduler/status")
+
+        data = resp.json()
+        assert data["schedules"][0]["paused"] is True

@@ -114,16 +114,15 @@ async def lifespan(app: FastAPI):
     app.state.shutdown_event = shutdown_event
 
     if settings.SCHEDULER_ENABLED:
-        from compgraph.scheduler.app import setup_scheduler
+        from compgraph.scheduler.app import create_arq_pool
 
-        scheduler = await setup_scheduler()
-        await scheduler.start_in_background()
-        app.state.scheduler = scheduler
+        arq_pool = await create_arq_pool()
+        app.state.arq_pool = arq_pool
     yield
     logger.info("Lifespan cleanup starting")
     try:
-        if settings.SCHEDULER_ENABLED and hasattr(app.state, "scheduler"):
-            await app.state.scheduler.__aexit__(None, None, None)
+        if hasattr(app.state, "arq_pool"):
+            await app.state.arq_pool.aclose()
     finally:
         await engine.dispose()
     logger.info("Lifespan cleanup complete")
