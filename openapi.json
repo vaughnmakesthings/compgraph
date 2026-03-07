@@ -776,6 +776,33 @@
         ],
         "summary": "Pipeline Runs",
         "operationId": "pipeline_runs_api_v1_pipeline_runs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -786,13 +813,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/pipeline/status": {
@@ -2076,6 +2108,36 @@
         ]
       }
     },
+    "/api/v1/admin/auth-users": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Auth Users",
+        "operationId": "list_auth_users_api_v1_admin_auth_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuthUserResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Auth Users Api V1 Admin Auth Users Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "tags": [
@@ -2336,6 +2398,56 @@
           "total"
         ],
         "title": "AlertListResponse"
+      },
+      "AuthUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "last_sign_in_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sign In At"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "created_at"
+        ],
+        "title": "AuthUserResponse"
       },
       "BrandMentionDetail": {
         "properties": {
@@ -3171,6 +3283,17 @@
           "pass2_succeeded": {
             "type": "integer",
             "title": "Pass2 Succeeded"
+          },
+          "error_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Summary"
           }
         },
         "type": "object",
@@ -4254,6 +4377,16 @@
             },
             "type": "array",
             "title": "Enrichment Runs"
+          },
+          "scrape_total": {
+            "type": "integer",
+            "title": "Scrape Total",
+            "default": 0
+          },
+          "enrichment_total": {
+            "type": "integer",
+            "title": "Enrichment Total",
+            "default": 0
           }
         },
         "type": "object",
@@ -4776,6 +4909,17 @@
           "missed_run": {
             "type": "boolean",
             "title": "Missed Run"
+          },
+          "last_pipeline_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Pipeline Error"
           }
         },
         "type": "object",
@@ -4911,6 +5055,17 @@
           "postings_closed": {
             "type": "integer",
             "title": "Postings Closed"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
           }
         },
         "type": "object",
