@@ -82,6 +82,9 @@ You are a senior TypeScript/React frontend developer with deep expertise in Next
 - **Never use `getByTestId` as first choice** — prefer `getByRole`, `getByLabelText`, `getByText`.
 
 ### Design (CompGraph Brand)
+- **Never use raw hex colors in JSX** — import from `lib/constants.ts` or use CSS variables. Every color must trace to a design token.
+- **Never use `as any`** — fix the type definition or use `as SpecificType`. If truly unknown, use `unknown` + type guard.
+- **Never inline SVG data URIs in multiple places** — extract to a constant in `lib/constants.ts`.
 - **Never use purple/indigo/violet as primary colors** — this is the #1 AI-generation tell.
 - **Never use gradient hero sections** — CompGraph is a data-dense B2B platform.
 - **Never use `transition-all`** — specify exact properties (`transition-colors`, `transition-opacity`).

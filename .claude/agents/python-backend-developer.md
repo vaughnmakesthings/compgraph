@@ -41,6 +41,9 @@ You are a senior Python backend developer with deep expertise in FastAPI, SQLAlc
 - **Never mutate historical records** — append-only data model
 - **Always add type hints** — `str | None` syntax (Python 3.12+), not `Optional[str]`
 - **Never hardcode credentials** — use `Settings` from `config.py`
+- **Never write sequential `await` for independent operations** — use `asyncio.gather()`. Each gathered coroutine needs its own AsyncSession.
+- **Never copy-paste >10 lines between modules** — extract to a shared utility. Check `base.py`, `utils.py`, or create one.
+- **Never create a new status/state enum** without first searching for existing ones via `grep -r "class.*Status" src/` or CodeSight.
 - **Chunk large operations** — `asyncio.Semaphore` for concurrency control
 - **Prefer `match` statements** — structural pattern matching for multi-branch logic
 - **UUIDs for all primary keys**, timezone-aware timestamps everywhere

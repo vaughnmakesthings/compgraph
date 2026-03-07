@@ -146,7 +146,7 @@ Observed and anticipated failure modes from pipeline development, E2E runs, and 
 
 **Symptoms**: `asyncpg.exceptions.TooManyConnectionsError`, connection timeouts, "remaining connection slots are reserved" errors.
 
-**Mitigation**: SQLAlchemy pool config: `pool_size=5, max_overflow=5, pool_recycle=300, pool_pre_ping=True`. Supabase free tier: **15 connections** (not 60). Budget: Alembic=1, app=10, background jobs=share app pool. Avoid `NullPool` for app traffic (26x latency penalty). See `docs/references/supabase-alembic-migrations.md` §3.
+**Mitigation**: SQLAlchemy pool config: `pool_size=15, max_overflow=10, pool_recycle=300, pool_pre_ping=True`. Supabase Pro (Micro compute): **60 direct connections**, **200 pooler connections**. Budget: Alembic=NullPool (1), app=25, background jobs=share app pool. Avoid `NullPool` for app traffic (26x latency penalty). See `docs/references/supabase-alembic-migrations.md` §3.
 
 **Status**: Anticipated, not yet observed.
 
@@ -355,6 +355,78 @@ Observed and anticipated failure modes from pipeline development, E2E runs, and 
 **Mitigation**: Use `$ %.2f` (no comma) or implement custom string formatting on the DataFrame before display. Trade-off: string formatting breaks numeric column sorting.
 
 **Status**: **Observed and fixed.** Hit Feb 19 2026 after PR #123 followed bot review suggestion to use `$%,.2f`. Fixed in PR #124 by reverting to `$ %.2f`.
+
+---
+
+## Code Quality Failures
+
+### CQ-1: Sequential Async Operations Where Concurrency Is Safe
+
+**Trigger**: Writing multiple independent `await` calls in sequence without considering `asyncio.gather()`.
+
+**Blast radius**: Latency multiplied by number of sequential calls. For N independent DB queries at 50ms each, total = N*50ms instead of ~50ms.
+
+**Symptoms**: Endpoint response times linearly proportional to number of sub-queries. Aggregation jobs take sum-of-all-jobs time instead of max-single-job time.
+
+**Mitigation**: Before writing sequential `await` calls, ask: "Are these independent?" If yes, use `asyncio.gather()` with per-operation sessions. Each gathered coroutine must have its own session to avoid shared-session conflicts.
+
+**Status**: Observed (Mar 7 2026). Found in posting_service.py (4 sequential queries), aggregation orchestrator (7 sequential jobs), enrichment dedup saves.
+
+---
+
+### CQ-2: Copy-Paste Across Adapter Implementations
+
+**Trigger**: Implementing a new scraper/adapter by copying an existing one and modifying. Shared infrastructure (circuit breaker, HTTP client setup, retry logic) gets duplicated instead of extracted.
+
+**Blast radius**: Bug fixes must be applied to N files. Behavior diverges silently. New adapters inherit stale patterns.
+
+**Symptoms**: Identical methods (same name, same body) in 3+ files. `grep -c` for a function name returns multiple files.
+
+**Mitigation**: Before implementing shared behavior in an adapter, check if it exists in `scrapers/base.py` or a shared module. If 2+ adapters share identical logic (>10 lines), extract to a shared module immediately — do not defer. The "extract after 3 copies" rule applies.
+
+**Status**: Observed (Mar 7 2026). Circuit breaker (~40 lines) and HTTP client init (~7 lines) duplicated across all 3 scrapers.
+
+---
+
+### CQ-3: Status Enum Proliferation
+
+**Trigger**: Each subsystem (scraper, enrichment, scheduler) defines its own status enum without checking for existing ones. Similar values get different names (`SUCCESS` vs `COMPLETED`).
+
+**Blast radius**: String-to-enum mapping code proliferates in API routes. Status comparisons become fragile. Frontend must handle multiple status vocabularies.
+
+**Symptoms**: `grep -r "class.*Status.*Enum" src/` returns 3+ distinct enums with overlapping values. API routes contain `_STATUS_MAP` dicts.
+
+**Mitigation**: Before creating a new status enum, search for existing ones. If a subsystem needs additional states, extend the canonical enum or create a subsystem-specific enum that clearly documents why it differs.
+
+**Status**: Observed (Mar 7 2026). 3 separate status enums with overlapping values; `_STATUS_MAP` in enrich routes maps "completed" to SUCCESS.
+
+---
+
+### CQ-4: Frontend Design Token Drift
+
+**Trigger**: Using raw hex color values (e.g., `#8C2C23`, `#4F5D75`) directly in JSX className strings instead of referencing design tokens from `lib/constants.ts` or CSS variables.
+
+**Blast radius**: Design changes require find-and-replace across dozens of files. Inconsistencies between components using slightly different hex values for the same semantic color.
+
+**Symptoms**: `grep -r '#[0-9A-Fa-f]{6}' web/src/` returns 50+ matches. Same color used in multiple files with no shared constant.
+
+**Mitigation**: Define all brand colors in `lib/constants.ts` (for JS access) and CSS variables (for Tailwind). Reference by semantic name, never by hex value in component code.
+
+**Status**: Observed (Mar 7 2026). 6+ hex colors inlined across settings and hiring pages.
+
+---
+
+### CQ-5: Type Safety Erosion via `as any`
+
+**Trigger**: API response types from code generators don't match runtime shape. Developer casts to `any` with eslint-disable instead of fixing the type definition or adding a proper type assertion.
+
+**Blast radius**: Runtime errors not caught at compile time. TypeScript's value proposition eroded. Each `any` cast is a hole in the type system.
+
+**Symptoms**: `grep -r 'as any' web/src/` returns matches with `eslint-disable` comments. Generated API types exist but aren't used.
+
+**Mitigation**: Never use `as any`. If generated types are wrong, fix the generator input or add a proper type assertion with `as SomeSpecificType`. If the type is truly unknown, use `unknown` + type guard.
+
+**Status**: Observed (Mar 7 2026). 3 `as any` casts in settings page with eslint-disable comments.
 
 ---
 
