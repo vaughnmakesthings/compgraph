@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserManagementSection } from "@/components/auth/user-management-section";
 import {
-  healthCheckHealthGetOptions,
   triggerAggregationApiV1AggregationTriggerPostMutation,
   triggerScrapeApiV1ScrapeTriggerPostMutation,
   triggerFullApiV1EnrichTriggerPostMutation,
@@ -34,8 +33,7 @@ import type {
 } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { SectionCard } from "@/components/ui/section-card";
-import { API_BASE } from "@/lib/constants";
-import { formatTimestamp } from "@/lib/utils";
+import { formatTimestamp, formatDuration } from "@/lib/utils";
 const TERMINAL_STATES = new Set(["success", "partial", "failed", "cancelled"]);
 
 // --- Shared primitives ---
@@ -153,10 +151,12 @@ function LiveScrapePanel({
   status,
   onControl,
   controlRunning,
+  companyNames,
 }: {
   status: ScrapeStatusResponse;
   onControl: (action: string) => void;
   controlRunning: boolean;
+  companyNames: Record<string, string>;
 }) {
   const isActive = !TERMINAL_STATES.has(status.status);
   const canPause = status.status === "running";
@@ -174,10 +174,9 @@ function LiveScrapePanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 divide-x divide-[#BFC0C0] border-b border-[#BFC0C0]">
+      <div className="grid grid-cols-4 divide-x divide-[#BFC0C0] border-b border-[#BFC0C0]">
         {[
           { label: "Postings", value: status.total_postings_found },
-          { label: "Snapshots", value: status.total_snapshots_created },
           { label: "Errors", value: status.total_errors },
           { label: "Succeeded", value: status.companies_succeeded },
           { label: "Failed", value: status.companies_failed },
@@ -196,7 +195,7 @@ function LiveScrapePanel({
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-[#FAFAF7]">
-                {["Company", "State", "Postings", "Snapshots"].map((col) => (
+                {["Company", "State", "Postings"].map((col) => (
                   <th key={col} className="text-left px-3 py-1.5 font-body font-semibold text-[#4F5D75] uppercase tracking-wider text-[10px]">
                     {col}
                   </th>
@@ -207,15 +206,12 @@ function LiveScrapePanel({
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {Object.entries(status.company_states).map(([slug, cs]: [string, any]) => (
                 <tr key={slug}>
-                  <td className="px-3 py-1.5 font-mono text-[#2D3142]">{slug}</td>
+                  <td className="px-3 py-1.5 font-body text-[#2D3142]">{companyNames[slug] ?? slug}</td>
                   <td className={`px-3 py-1.5 font-body ${COMPANY_STATE_COLOR[cs] ?? 'text-[#4F5D75]'}`}>
                     {COMPANY_STATE_LABEL[cs] ?? cs}
                   </td>
                   <td className="px-3 py-1.5 font-mono text-[#4F5D75]">
                     {status.company_results[slug]?.postings_found ?? 0}
-                  </td>
-                  <td className="px-3 py-1.5 font-mono text-[#4F5D75]">
-                    {status.company_results[slug]?.snapshots_created ?? 0}
                   </td>
                 </tr>
               ))}
@@ -303,11 +299,6 @@ function SettingsPageContent() {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: health, isFetching: healthChecking, refetch: refetchHealth } = useQuery({
-    ...healthCheckHealthGetOptions(),
-    enabled: false,
-  });
-
   const { data: runsRes, isLoading: runsLoading } = useQuery({
     ...pipelineRunsApiV1PipelineRunsGetOptions(),
     select: (data) => data as unknown as PipelineRunsResponse,
@@ -368,11 +359,14 @@ function SettingsPageContent() {
   // Derived state
   const scrapeRuns = runsRes?.scrape_runs ?? [];
   const enrichRuns = runsRes?.enrichment_runs ?? [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const apiVersion = (health as any)?.version;
-
   const scrapeIsActive = scrapeStatus && !TERMINAL_STATES.has(scrapeStatus.status);
   const enrichIsActive = enrichStatus && !TERMINAL_STATES.has(enrichStatus.status);
+
+  // Build slug→display name map from run history
+  const companyNames: Record<string, string> = {};
+  for (const r of scrapeRuns) {
+    if (r.company_slug && r.company_name) companyNames[r.company_slug] = r.company_name;
+  }
 
   // Confirm states
   const [confirmAggOpen, setConfirmAggOpen] = useState(false);
@@ -390,22 +384,7 @@ function SettingsPageContent() {
         <p className="mt-1 text-sm font-body text-muted-foreground">Pipeline controls, scheduler status, and system configuration</p>
       </div>
 
-      <SectionCard title="API Health" className="p-5" headingClassName="text-base">
-        <div className="flex items-center gap-4 mb-3">
-          <span className="font-mono text-xs text-[#4F5D75] bg-[#E8E8E4] rounded px-2 py-0.5">{API_BASE}</span>
-          {!!health && (
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-[#1B998B]" aria-hidden="true" />
-              <span className="font-body text-[13px] text-[#1B998B]">OK</span>
-            </span>
-          )}
-        </div>
-        <OutlineButton onClick={() => void refetchHealth()} disabled={healthChecking}>
-          {healthChecking ? "Checking..." : "Check Health"}
-        </OutlineButton>
-      </SectionCard>
-
-      <SectionCard title="Pipeline Controls" className="mt-4 p-5" headingClassName="text-base">
+      <SectionCard title="Pipeline Controls" className="p-5" headingClassName="text-base">
         <div className="flex flex-row flex-wrap gap-3">
           <OutlineButton onClick={() => setConfirmAggOpen(true)} disabled={aggMutation.isPending}>
             {aggMutation.isPending ? "Running..." : "Trigger Aggregation"}
@@ -442,15 +421,13 @@ function SettingsPageContent() {
           </div>
         )}
 
-        {scrapeStatus && <LiveScrapePanel status={scrapeStatus} onControl={(a) => {
+        {scrapeStatus && <LiveScrapePanel status={scrapeStatus} companyNames={companyNames} onControl={(a) => {
           if (a === "stop" || a === "force-stop") { setConfirmScrapeAction(a); setConfirmScrapeControlOpen(true); }
           else scrapeControlMutation.mutate(a);
         }} controlRunning={scrapeControlMutation.isPending} />}
 
         {enrichStatus && <LiveEnrichPanel status={enrichStatus} />}
       </SectionCard>
-
-      <div className="mt-4"><UserManagementSection /></div>
 
       <SectionCard title="Scheduler" className="mt-4 p-5" headingClassName="text-base">
         {schedulerLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading…</p> : !schedulerStatus ? <p className="text-[13px] text-[#4F5D75] font-body">Error loading scheduler.</p> : (
@@ -513,10 +490,11 @@ function SettingsPageContent() {
       </SectionCard>
 
       <SectionCard title="System Info" className="mt-4 p-5" headingClassName="text-base">
-        <KvRow label="API Version" value={apiVersion ?? "—"} />
         <KvRow label="Database" value="Supabase Postgres 17" />
         <KvRow label="Platform" value="Digital Ocean" />
       </SectionCard>
+
+      <div className="mt-4"><UserManagementSection /></div>
 
       <SectionCard title="Scrape Run History" className="mt-4 p-5" headingClassName="text-base">
         {runsLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading…</p> : scrapeRuns.length === 0 ? <p className="text-[13px] text-[#4F5D75] font-body">No runs recorded.</p> : (
@@ -532,7 +510,7 @@ function SettingsPageContent() {
               <tbody className="divide-y divide-[#E8E8E4]">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {scrapeRuns.map((r: any) => {
-                  const dur = r.completed_at && r.started_at ? Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s" : "—";
+                  const dur = r.completed_at && r.started_at ? formatDuration(Math.round((new Date(r.completed_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "—";
                   return (
                     <tr key={r.id}>
                       <td className="px-3 py-1.5 font-body text-[#2D3142]">{r.company_name}</td>
@@ -565,7 +543,7 @@ function SettingsPageContent() {
               <tbody className="divide-y divide-[#E8E8E4]">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {enrichRuns.map((r: any) => {
-                  const dur = r.finished_at && r.started_at ? Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000) + "s" : "—";
+                  const dur = r.finished_at && r.started_at ? formatDuration(Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000)) : "—";
                   return (
                     <tr key={r.id}>
                       <td className="px-3 py-1.5 text-[#4F5D75] font-body flex items-center"><StatusDot status={r.status} />{r.status}</td>

@@ -70,7 +70,6 @@ import {
   getCoverageGapsApiV1AggregationCoverageGapsGetOptions,
   listPostingsApiV1PostingsGetOptions,
   listCompaniesApiV1CompaniesGetOptions,
-  healthCheckHealthGetOptions,
   pipelineRunsApiV1PipelineRunsGetOptions,
   schedulerStatusApiV1SchedulerStatusGetOptions,
   scrapeStatusApiV1ScrapeStatusGetOptions,
@@ -164,7 +163,6 @@ beforeEach(() => {
     } as any;
   });
   overrideQuery(listCompaniesApiV1CompaniesGetOptions, "companies", []);
-  overrideQuery(healthCheckHealthGetOptions, "health", { status: "ok", version: "0.1.0" });
   overrideQuery(pipelineRunsApiV1PipelineRunsGetOptions, "pipelineRuns", { scrape_runs: [], enrichment_runs: [] });
   overrideQuery(schedulerStatusApiV1SchedulerStatusGetOptions, "schedulerStatus", {
     enabled: true,
@@ -415,20 +413,6 @@ describe("Settings page", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the API Health section", () => {
-    renderWithQueryClient(<SettingsPage />);
-    expect(
-      screen.getByRole("heading", { name: /api health/i })
-    ).toBeInTheDocument();
-  });
-
-  it("renders the Check Health button", () => {
-    renderWithQueryClient(<SettingsPage />);
-    expect(
-      screen.getByRole("button", { name: /check health/i })
-    ).toBeInTheDocument();
-  });
-
   it("renders the Pipeline Controls section", () => {
     renderWithQueryClient(<SettingsPage />);
     expect(
@@ -466,16 +450,6 @@ describe("Settings page", () => {
     expect(screen.getByText("Digital Ocean")).toBeInTheDocument();
   });
 
-  it("shows OK status after health check succeeds", async () => {
-    const user = userEvent.setup();
-    renderWithQueryClient(<SettingsPage />);
-
-    await user.click(screen.getByRole("button", { name: /check health/i }));
-
-    await waitFor(() =>
-      expect(screen.getByText("OK")).toBeInTheDocument()
-    );
-  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
