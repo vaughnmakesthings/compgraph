@@ -1,0 +1,27 @@
+scripts/generate_eval_corpus.py
+  65886d7d4b8abe9c 16,20,25,28-31,44,46-52,54-55,63,68-93,99-111
+tests/test_eval_corpus.py
+  65886d7d4b8abe9c 1-148
+tests/test_retailer_intel.py
+  65886d7d4b8abe9c 1-673
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "a6b19f143f1baf6afd97eeae2e0dd9efef76b209",
+  "prompts": {
+    "65886d7d4b8abe9c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b6e6fb7-0a53-4581-a154-98890a5e77e2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 889,
+      "total_deletions": 32,
+      "accepted_lines": 879,
+      "overriden_lines": 0
+    }
+  }
+}
