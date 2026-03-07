@@ -56,8 +56,6 @@ class Settings(BaseSettings):
 
     # Scheduler
     SCHEDULER_ENABLED: bool = False
-    SCHEDULER_PIPELINE_CRON: str = "0 2 * * 1,3,5"  # Mon/Wed/Fri 2am
-    SCHEDULER_TIMEZONE: str = "America/New_York"
 
     # Connection pool
     DB_POOL_SIZE: int = 15
