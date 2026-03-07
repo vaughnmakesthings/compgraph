@@ -5,14 +5,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getRunsApiV1EvalRunsGetOptions,
   getRunsApiV1EvalRunsGetQueryKey,
-  listModelsApiV1EvalModelsGetOptions,
   createRunApiV1EvalRunsPostMutation,
   deleteRunApiV1EvalRunsRunIdDeleteMutation
 } from "@/api-client/@tanstack/react-query.gen";
 import { Badge } from "@/components/data/badge";
 import type { BadgeVariant } from "@/components/data/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import type { EvalRun, EvalModel } from "@/lib/types";
+import { EVAL_MODELS } from "@/lib/constants";
+import type { EvalRun } from "@/lib/types";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -22,8 +22,7 @@ function formatDate(iso: string): string {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatProgress(run: any): string {
+function formatProgress(run: EvalRun): string {
   if (run.total_items === 0) return "\u2014";
   return `${run.completed_items} / ${run.total_items}`;
 }
@@ -103,20 +102,15 @@ function NewRunForm({ onCancel }: { onCancel: () => void }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmStartOpen, setConfirmStartOpen] = useState(false);
 
-  const { data: models = [], isLoading: modelsLoading } = useQuery({
-    ...listModelsApiV1EvalModelsGetOptions(),
-    select: (data) => data as unknown as EvalModel[],
-  });
-
   const createMutation = useMutation({
     ...createRunApiV1EvalRunsPostMutation(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getRunsApiV1EvalRunsGetQueryKey() });
       onCancel();
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (err: any) => {
-      setFormError(err.message || "Failed to create run");
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : "Failed to create run";
+      setFormError(message);
     }
   });
 
@@ -179,11 +173,10 @@ function NewRunForm({ onCancel }: { onCancel: () => void }) {
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            disabled={modelsLoading}
-            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354] disabled:opacity-50"
+            className="border border-[#BFC0C0] rounded px-3 py-2 text-sm bg-white text-[#2D3142] font-body focus:outline-none focus:ring-1 focus:ring-[#EF8354]"
           >
             <option value="">Select a model...</option>
-            {models.map((m: EvalModel) => (
+            {EVAL_MODELS.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
               </option>

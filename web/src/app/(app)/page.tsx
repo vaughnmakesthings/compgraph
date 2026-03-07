@@ -88,24 +88,39 @@ export default function DashboardPage() {
   const derived = useMemo(() => {
     if (!status || !velocity) return null;
 
-    const latestByCompany: Record<string, { date: string; active: number }> = {};
-    for (const row of velocity) {
-      if (!row.company_id || !row.date) continue;
-      const existing = latestByCompany[row.company_id];
-      if (!existing || row.date > existing.date) {
-        latestByCompany[row.company_id] = {
-          date: row.date,
-          active: row.active_postings ?? 0
-        };
-      }
-    }
-    const totalActive = Object.values(latestByCompany).reduce((s, e) => s + e.active, 0);
-
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
-    const newThisWeek = velocity
-      .filter((r) => r.date && new Date(r.date) >= cutoff)
-      .reduce((s, r) => s + (r.new_postings ?? 0), 0);
+
+    const latestByCompany: Record<string, { date: string; active: number }> = {};
+    const companyNameMap: Record<string, string> = {};
+    const companySet = new Set<string>();
+    const dateMap = new Map<string, Record<string, number>>();
+    let newThisWeek = 0;
+
+    for (const row of velocity) {
+      if (!row.date || !row.company_id) continue;
+
+      companySet.add(row.company_id);
+      if (row.company_name) companyNameMap[row.company_id] = row.company_name;
+
+      const existing = latestByCompany[row.company_id];
+      if (!existing || row.date > existing.date) {
+        latestByCompany[row.company_id] = { date: row.date, active: row.active_postings ?? 0 };
+      }
+
+      if (new Date(row.date) >= cutoff) {
+        newThisWeek += row.new_postings ?? 0;
+      }
+
+      let dateEntry = dateMap.get(row.date);
+      if (!dateEntry) {
+        dateEntry = {};
+        dateMap.set(row.date, dateEntry);
+      }
+      dateEntry[row.company_id] = row.new_postings ?? 0;
+    }
+
+    const totalActive = Object.values(latestByCompany).reduce((s, e) => s + e.active, 0);
 
     let enrichmentPct: number | null = null;
     const enrichRun = status.enrich?.current_run;
@@ -113,33 +128,20 @@ export default function DashboardPage() {
       enrichmentPct = Math.round((enrichRun.pass2_succeeded / enrichRun.pass1_succeeded) * 100);
     }
 
-    const companies = [...new Set(velocity.map((r) => r.company_id!).filter(Boolean))].sort();
-
-    const chartRows: Record<string, unknown>[] = [];
-    const dateMap = new Map<string, Record<string, number>>();
-    for (const row of velocity) {
-      if (!row.date || !row.company_id) continue;
-      if (!dateMap.has(row.date)) {
-        dateMap.set(row.date, {});
-      }
-      dateMap.get(row.date)![row.company_id] = row.new_postings ?? 0;
-    }
+    const companies = [...companySet].sort();
     const sortedDates = [...dateMap.keys()].sort();
-    for (const date of sortedDates) {
+    const chartRows: Record<string, unknown>[] = sortedDates.map((date) => {
       const entry: Record<string, unknown> = { date };
       for (const co of companies) {
         entry[co] = dateMap.get(date)?.[co] ?? 0;
       }
-      chartRows.push(entry);
-    }
-
-    const bars = companies.map((co) => {
-      const sample = velocity.find((r) => r.company_id === co);
-      return {
-        dataKey: co,
-        name: sample?.company_name ?? co,
-      };
+      return entry;
     });
+
+    const bars = companies.map((co) => ({
+      dataKey: co,
+      name: companyNameMap[co] ?? co,
+    }));
 
     return {
       totalActive,
@@ -285,8 +287,7 @@ export default function DashboardPage() {
         ) : derived && derived.chartRows.length > 0 ? (
           <BarChart
             data={derived.chartRows}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            bars={derived.bars as any}
+            bars={derived.bars}
             xDataKey="date"
             height={280}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -18,10 +18,21 @@ export function LoginForm() {
   const [mode, setMode] = useState<"password" | "magic-link">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [emailSentType, setEmailSentType] = useState<"magic-link" | "reset">("magic-link");
+
+  const handleBeforeUnload = useCallback(() => {
+    supabase?.auth.signOut();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [handleBeforeUnload]);
 
   useEffect(() => {
     if (searchParams.get("expired") === "1") {
@@ -46,6 +57,9 @@ export function LoginForm() {
         if (authError) {
           setError(authError.message);
           return;
+        }
+        if (!rememberMe) {
+          window.addEventListener("beforeunload", handleBeforeUnload);
         }
         router.push("/");
       } else {
@@ -248,7 +262,32 @@ export function LoginForm() {
                 </button>
               }
             />
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  fontFamily: "var(--font-body, 'DM Sans Variable', sans-serif)",
+                  color: "var(--color-muted-foreground, #4F5D75)",
+                  cursor: "pointer",
+                  userSelect: "none",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    accentColor: "var(--color-primary, #EF8354)",
+                    cursor: "pointer",
+                  }}
+                />
+                Remember me
+              </label>
               <button
                 type="button"
                 onClick={() => void handleForgotPassword()}
