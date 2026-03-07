@@ -1,0 +1,23 @@
+web/src/test/use-companies.test.tsx
+  659f7f4be3ac23ed 34-35,49-50,69-70,81-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "9e2ccdf74921b39a7b47c3a84601e69a546fc1a6",
+  "prompts": {
+    "659f7f4be3ac23ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7370232a-2292-4a91-a092-be67ac9ce218",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 4,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    }
+  }
+}
