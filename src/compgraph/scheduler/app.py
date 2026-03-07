@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 SCHEDULE_ID = "daily_pipeline"
 PAUSE_REDIS_KEY = "schedule:paused:"
 SCHEDULE_CONFIG_KEY = "schedule:config:"
+LAST_FIRE_REDIS_KEY = "schedule:last_fire:"
 
 # Day name mapping for API readability
 _DAY_NAMES = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}

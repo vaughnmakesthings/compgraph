@@ -12,6 +12,7 @@ from compgraph.scheduler.app import (
     _DAY_NAMES,
     _DAY_NUMBERS,
     DEFAULT_SCHEDULE_CONFIG,
+    LAST_FIRE_REDIS_KEY,
     PAUSE_REDIS_KEY,
     SCHEDULE_ID,
     enqueue_pipeline_job,
@@ -139,7 +140,7 @@ async def scheduler_status(
 
         # Read last fire time from Redis
         try:
-            raw_last = await pool.get(f"schedule:last_fire:{SCHEDULE_ID}")
+            raw_last = await pool.get(f"{LAST_FIRE_REDIS_KEY}{SCHEDULE_ID}")
             if raw_last:
                 last_fire = datetime.fromisoformat(
                     raw_last.decode() if isinstance(raw_last, bytes) else raw_last

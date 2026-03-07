@@ -89,11 +89,11 @@ async def pipeline_job() -> None:
 
     # Record last fire time in Redis for scheduler status API
     try:
-        from compgraph.scheduler.app import SCHEDULE_ID, create_arq_pool
+        from compgraph.scheduler.app import LAST_FIRE_REDIS_KEY, SCHEDULE_ID, create_arq_pool
 
         pool = await create_arq_pool()
         await pool.set(
-            f"schedule:last_fire:{SCHEDULE_ID}",
+            f"{LAST_FIRE_REDIS_KEY}{SCHEDULE_ID}",
             datetime.now(UTC).isoformat(),
         )
         await pool.aclose()
