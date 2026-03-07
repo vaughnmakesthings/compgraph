@@ -1,0 +1,25 @@
+tests/test_enrichment_token_counters.py
+  65886d7d4b8abe9c 1-214,216-321
+src/compgraph/enrichment/orchestrator.py
+  65886d7d4b8abe9c 569-574,709-714,1028-1033,1161-1166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "521c8cd2435129280ebb38c00458314f6c2d115e",
+  "prompts": {
+    "65886d7d4b8abe9c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b6e6fb7-0a53-4581-a154-98890a5e77e2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 348,
+      "total_deletions": 2,
+      "accepted_lines": 344,
+      "overriden_lines": 2
+    }
+  }
+}
