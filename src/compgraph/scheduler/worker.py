@@ -32,14 +32,42 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
 
 
 async def run_pipeline(ctx: dict[str, Any]) -> None:
+    """Check Redis schedule config and run pipeline if current time matches.
+
+    Called every minute by arq cron. Checks:
+    1. Is the schedule paused? → skip
+    2. Does current UTC time match the configured weekdays/hour/minute? → run
+    """
     # Deferred imports: app.py imports worker.py at module level (circular),
     # and pipeline_job pulls in heavy scraper/enrichment deps.
-    from compgraph.scheduler.app import PAUSE_REDIS_KEY, SCHEDULE_ID
+    from compgraph.scheduler.app import (
+        PAUSE_REDIS_KEY,
+        SCHEDULE_ID,
+        get_schedule_config,
+    )
 
     redis = ctx["redis"]
     if await redis.get(f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"):
-        logger.info("Pipeline skipped — schedule is paused")
-        return
+        return  # paused — silent skip (fires every minute)
+
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    config = await get_schedule_config(redis)
+
+    if (
+        now.weekday() not in config["weekdays"]
+        or now.hour != config["hour"]
+        or now.minute != config["minute"]
+    ):
+        return  # not scheduled — silent skip
+
+    logger.info(
+        "Schedule matched: weekday=%d hour=%d minute=%d — running pipeline",
+        now.weekday(),
+        now.hour,
+        now.minute,
+    )
 
     from compgraph.scheduler.jobs import pipeline_job
 
@@ -51,9 +79,7 @@ class WorkerSettings:
     cron_jobs = [
         cron(
             run_pipeline,
-            hour={CRON_HOUR},
-            minute={CRON_MINUTE},
-            weekday=CRON_WEEKDAYS,
+            minute=set(range(60)),  # every minute — schedule logic in run_pipeline
             unique=True,
             timeout=CRON_TIMEOUT_SECONDS,
             run_at_startup=False,

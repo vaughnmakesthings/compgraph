@@ -402,11 +402,31 @@ class TestArqWorkerSettings:
 
 
 class TestArqRunPipeline:
-    async def test_run_pipeline_delegates_to_pipeline_job(self):
-        from compgraph.scheduler.worker import run_pipeline
+    def _make_mock_redis(self, *, paused: bool = False, config: dict | None = None) -> AsyncMock:
+        """Build a mock Redis that returns pause state and schedule config."""
+        import json
+
+        from compgraph.scheduler.app import PAUSE_REDIS_KEY, SCHEDULE_CONFIG_KEY, SCHEDULE_ID
+
+        store: dict[str, bytes | None] = {}
+        if paused:
+            store[f"{PAUSE_REDIS_KEY}{SCHEDULE_ID}"] = b"1"
+        if config is not None:
+            store[f"{SCHEDULE_CONFIG_KEY}{SCHEDULE_ID}"] = json.dumps(config).encode()
 
         mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=None)  # not paused
+        mock_redis.get = AsyncMock(side_effect=lambda k: store.get(k))
+        return mock_redis
+
+    async def test_run_pipeline_delegates_to_pipeline_job(self):
+        # Config matches "now" so pipeline runs
+        from datetime import UTC, datetime
+
+        from compgraph.scheduler.worker import run_pipeline
+
+        now = datetime.now(UTC)
+        config = {"weekdays": [now.weekday()], "hour": now.hour, "minute": now.minute}
+        mock_redis = self._make_mock_redis(config=config)
 
         with patch(
             "compgraph.scheduler.jobs.pipeline_job",
@@ -418,8 +438,7 @@ class TestArqRunPipeline:
     async def test_run_pipeline_skips_when_paused(self):
         from compgraph.scheduler.worker import run_pipeline
 
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=b"1")  # paused
+        mock_redis = self._make_mock_redis(paused=True)
 
         with patch(
             "compgraph.scheduler.jobs.pipeline_job",
@@ -427,6 +446,66 @@ class TestArqRunPipeline:
         ) as mock_pipeline:
             await run_pipeline({"redis": mock_redis})
             mock_pipeline.assert_not_called()
+
+    async def test_run_pipeline_skips_when_time_doesnt_match(self):
+        from compgraph.scheduler.worker import run_pipeline
+
+        # Config for hour=99 — will never match
+        config = {"weekdays": [0, 1, 2, 3, 4, 5, 6], "hour": 99, "minute": 0}
+        mock_redis = self._make_mock_redis(config=config)
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline({"redis": mock_redis})
+            mock_pipeline.assert_not_called()
+
+    async def test_run_pipeline_skips_wrong_weekday(self):
+        from datetime import UTC, datetime
+
+        from compgraph.scheduler.worker import run_pipeline
+
+        now = datetime.now(UTC)
+        # Schedule for a different weekday
+        wrong_day = (now.weekday() + 1) % 7
+        config = {"weekdays": [wrong_day], "hour": now.hour, "minute": now.minute}
+        mock_redis = self._make_mock_redis(config=config)
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline({"redis": mock_redis})
+            mock_pipeline.assert_not_called()
+
+    async def test_run_pipeline_uses_defaults_when_no_config_in_redis(self):
+        """When no config stored in Redis, uses DEFAULT_SCHEDULE_CONFIG."""
+        from datetime import UTC, datetime
+
+        from compgraph.scheduler.app import DEFAULT_SCHEDULE_CONFIG
+        from compgraph.scheduler.worker import run_pipeline
+
+        now = datetime.now(UTC)
+        defaults = DEFAULT_SCHEDULE_CONFIG
+        mock_redis = self._make_mock_redis()  # no config in Redis
+
+        with patch(
+            "compgraph.scheduler.jobs.pipeline_job",
+            new_callable=AsyncMock,
+        ) as mock_pipeline:
+            await run_pipeline({"redis": mock_redis})
+
+            # Should run only if current time matches defaults
+            should_run = (
+                now.weekday() in defaults["weekdays"]
+                and now.hour == defaults["hour"]
+                and now.minute == defaults["minute"]
+            )
+            if should_run:
+                mock_pipeline.assert_called_once()
+            else:
+                mock_pipeline.assert_not_called()
 
 
 class TestArqPoolCreation:
@@ -618,3 +697,119 @@ class TestSchedulerPauseResumeAPI:
 
         data = resp.json()
         assert data["schedules"][0]["paused"] is True
+
+
+class TestScheduleConfigAPI:
+    async def test_get_config_returns_defaults(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.get("/api/v1/scheduler/config")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["schedule_id"] == "daily_pipeline"
+        assert data["weekdays"] == ["mon", "wed", "fri"]
+        assert data["hour"] == 7
+        assert data["minute"] == 0
+        assert data["timezone"] == "UTC"
+
+    async def test_get_config_works_without_pool(self):
+        from compgraph.main import app
+
+        if hasattr(app.state, "arq_pool"):
+            del app.state.arq_pool
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
+            resp = await client.get("/api/v1/scheduler/config")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["weekdays"] == ["mon", "wed", "fri"]
+
+    async def test_update_config_changes_weekdays(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.put(
+                "/api/v1/scheduler/config",
+                json={"weekdays": ["mon", "tue", "wed", "thu", "fri"]},
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["weekdays"] == ["mon", "tue", "wed", "thu", "fri"]
+
+    async def test_update_config_changes_hour(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.put(
+                "/api/v1/scheduler/config",
+                json={"hour": 14, "minute": 30},
+            )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["hour"] == 14
+        assert data["minute"] == 30
+
+    async def test_update_config_persists(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            await client.put(
+                "/api/v1/scheduler/config",
+                json={"hour": 9},
+            )
+            resp = await client.get("/api/v1/scheduler/config")
+
+        assert resp.json()["hour"] == 9
+
+    async def test_update_config_rejects_invalid_weekday(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.put(
+                "/api/v1/scheduler/config",
+                json={"weekdays": ["monday"]},
+            )
+
+        assert resp.status_code == 422
+
+    async def test_update_config_rejects_invalid_hour(self, app_with_arq_pool):
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_arq_pool),
+            base_url="http://test",
+        ) as client:
+            resp = await client.put(
+                "/api/v1/scheduler/config",
+                json={"hour": 25},
+            )
+
+        assert resp.status_code == 422
+
+    async def test_update_config_fails_without_pool(self):
+        from compgraph.main import app
+
+        if hasattr(app.state, "arq_pool"):
+            del app.state.arq_pool
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
+            resp = await client.put(
+                "/api/v1/scheduler/config",
+                json={"hour": 9},
+            )
+
+        assert resp.status_code == 503
