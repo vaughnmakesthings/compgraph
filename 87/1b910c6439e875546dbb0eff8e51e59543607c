@@ -1,0 +1,64 @@
+src/compgraph/scheduler/jobs.py
+  68cff59a9fc2c85e 28,83,92,95-96
+src/compgraph/scheduler/worker.py
+  68cff59a9fc2c85e 74,94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "871b910c6439e875546dbb0eff8e51e59543607c",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "659f7f4be3ac23ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7370232a-2292-4a91-a092-be67ac9ce218",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    },
+    "68cff59a9fc2c85e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b64368ef-1322-4930-925d-1a193f7373f2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 14,
+      "total_deletions": 14,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    },
+    "866be786e23888cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5f0ef35d-aa24-459c-b3fa-9502eef01926",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0
+    }
+  }
+}
