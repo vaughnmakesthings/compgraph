@@ -1,0 +1,29 @@
+src/compgraph/api/routes/admin.py
+  610c361b204086f3 132-195
+web/src/test/components/auth-components.test.tsx
+  610c361b204086f3 41-66,70-79,743,745-748,754,756-758
+web/src/lib/api-client.ts
+  610c361b204086f3 236-245
+web/src/components/auth/user-management-section.tsx
+  610c361b204086f3 3,6-7,24-30,32-44,46-62,74-78,80-95,113-119,134-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "68f2e0ad77c62fadae41e02610ef00d29beaf7ae",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 208,
+      "total_deletions": 33,
+      "accepted_lines": 192,
+      "overriden_lines": 0
+    }
+  }
+}
