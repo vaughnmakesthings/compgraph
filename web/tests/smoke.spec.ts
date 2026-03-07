@@ -10,8 +10,7 @@ test.describe('Smoke', () => {
   });
 
   test('frontend loads', async ({ page }) => {
-    const url = process.env.SMOKE_FRONTEND_URL || 'https://compgraph.app';
-    const res = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const res = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 20000 });
     expect(res?.status()).toBe(200);
   });
 });

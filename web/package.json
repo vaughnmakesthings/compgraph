@@ -12,7 +12,9 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "generate-client": "openapi-ts",
-    "generate:check": "npm run generate-client && git diff --exit-code src/api-client/"
+    "generate:check": "npm run generate-client && git diff --exit-code src/api-client/",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.18",
@@ -65,6 +67,7 @@
     "tailwindcss": "^4",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
+    "@playwright/test": "^1.52.0",
     "vitest": "^4.0.18"
   }
 }

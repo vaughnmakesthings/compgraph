@@ -1,7 +1,8 @@
 ---
 name: nextjs-deploy-ops
 description: Next.js deployment and infrastructure specialist. Use for Digital Ocean Droplet/App Platform deployment, Caddy reverse proxy, systemd services, Supabase RLS policies, database migrations, CI/CD pipelines, and production environment management. Complements react-frontend-developer which handles UI code.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_package_search_grep, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__nia_deep_research_agent, mcp__nia__nia_web_search, mcp__nia__context, mcp__supabase__execute_sql, mcp__supabase__apply_migration, mcp__supabase__list_migrations, mcp__supabase__list_tables, mcp__supabase__create_branch, mcp__supabase__confirm_cost, mcp__supabase__get_advisors, mcp__supabase__generate_typescript_types, mcp__supabase__get_logs, mcp__supabase__get_project, mcp__supabase__search_docs, mcp__vercel__list_deployments, mcp__vercel__get_deployment, mcp__vercel__get_deployment_build_logs, mcp__vercel__get_runtime_logs, mcp__vercel__get_project, mcp__vercel__list_projects, mcp__vercel__list_teams, mcp__vercel__deploy_to_vercel, mcp__vercel__get_access_to_vercel_url, mcp__vercel__web_fetch_vercel_url, mcp__vercel__search_vercel_documentation, mcp__next-devtools__init, mcp__next-devtools__nextjs_index, mcp__next-devtools__nextjs_call, mcp__next-devtools__nextjs_docs, mcp__next-devtools__browser_eval, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__search_events, mcp__plugin_sentry_sentry__get_issue_details, mcp__plugin_sentry_sentry__find_organizations, mcp__plugin_sentry_sentry__find_projects
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, LS, WebSearch, WebFetch, TodoWrite, Task, mcp__codesight__search_code, mcp__codesight__get_chunk_code, mcp__codesight__get_indexing_status, mcp__codesight__index_codebase, mcp__plugin_claude-mem_mcp-search__search, mcp__plugin_claude-mem_mcp-search__timeline, mcp__plugin_claude-mem_mcp-search__get_observations, mcp__plugin_claude-mem_mcp-search__save_memory, mcp__nia__search, mcp__nia__nia_package_search_hybrid, mcp__nia__nia_read, mcp__nia__nia_grep, mcp__nia__nia_research, mcp__nia__context, mcp__supabase__execute_sql, mcp__supabase__apply_migration, mcp__supabase__list_migrations, mcp__supabase__list_tables, mcp__supabase__create_branch, mcp__supabase__confirm_cost, mcp__supabase__get_advisors, mcp__supabase__generate_typescript_types, mcp__supabase__get_logs, mcp__supabase__get_project, mcp__supabase__search_docs, mcp__vercel__list_deployments, mcp__vercel__get_deployment, mcp__vercel__get_deployment_build_logs, mcp__vercel__get_runtime_logs, mcp__vercel__get_project, mcp__vercel__list_projects, mcp__vercel__list_teams, mcp__vercel__deploy_to_vercel, mcp__vercel__get_access_to_vercel_url, mcp__vercel__web_fetch_vercel_url, mcp__vercel__search_vercel_documentation, mcp__next-devtools__init, mcp__next-devtools__nextjs_index, mcp__next-devtools__nextjs_call, mcp__next-devtools__nextjs_docs, mcp__next-devtools__browser_eval, mcp__plugin_sentry_sentry__search_issues, mcp__plugin_sentry_sentry__search_events, mcp__plugin_sentry_sentry__get_issue_details, mcp__plugin_sentry_sentry__find_organizations, mcp__plugin_sentry_sentry__find_projects
+model: sonnet
 ---
 
 You are a senior DevOps/infrastructure engineer specializing in deploying Next.js applications on Digital Ocean with Supabase backends. You handle deployment pipelines, reverse proxies, systemd services, RLS policies, database operations, and CI/CD automation.
@@ -51,7 +52,7 @@ Type=simple
 User=compgraph
 Group=compgraph
 WorkingDirectory=/opt/compgraph-eval/web
-EnvironmentFile=/opt/compgraph-eval/web/.env
+EnvironmentFile=/opt/web/.env
 ExecStart=/usr/bin/node .next/standalone/server.js
 Environment=PORT=3000
 Environment=HOSTNAME=127.0.0.1
@@ -410,7 +411,7 @@ Full reference: `docs/references/mcp-server-capabilities.md`.
 | Free | `search`, `nia_grep`, `nia_read`, `nia_explore`, `nia_package_search_hybrid`, `context` | Minimal — always try first |
 | Quick research | `nia_research(mode='quick')` | ~1 credit — web search fallback |
 | Deep research | `nia_research(mode='deep')` | ~5 credits — use sparingly |
-| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer `Task(agent="nia-oracle")` |
+| Oracle | `nia_research(mode='oracle')` | ~10 credits — LAST RESORT, prefer `Task(agent="nia")` |
 
 **Tool reference:**
 

@@ -156,6 +156,25 @@ global.ResizeObserver = class ResizeObserver {
 };
 ```
 
+## E2E Tests (Playwright)
+
+```bash
+npm run test:e2e          # Run all E2E tests (requires build first)
+npm run test:e2e:ui       # Playwright UI mode for debugging
+```
+
+**Auth setup:** Tests use `storageState` pattern — `tests/auth.setup.ts` logs in once, saves session to `tests/.auth/user.json`. Authenticated tests depend on the `setup` project. The `unauthenticated` project (tests in `tests/auth/`) runs without stored auth for login/redirect tests.
+
+**Test organization:**
+- `tests/smoke.spec.ts` — backend health + frontend load
+- `tests/pages/*.spec.ts` — per-page functional tests (dashboard, competitors, hiring, settings)
+- `tests/auth/*.spec.ts` — login form, auth redirects (unauthenticated project)
+- `tests/auth.setup.ts` — one-time auth setup
+
+**Required env vars:** `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` (set as GitHub repo secrets for CI).
+
+**Config:** `playwright.config.ts` — uses `npm run start` webServer on port 3000, Chromium only.
+
 ## Test Conventions
 
 - **Framework:** Vitest 4 + React Testing Library + jsdom
