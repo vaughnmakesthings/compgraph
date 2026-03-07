@@ -23,6 +23,12 @@ _COMPANY_SUFFIX_PATTERNS: list[re.Pattern[str]] = [
     for name in _COMPANY_NAMES
 ]
 
+_STORE_NUMBER = re.compile(
+    r"\s*[-\u2013\u2014]\s*(?:store\s*)?#?\d{3,5}\s*$"
+    r"|\s+store\s+#?\d{3,5}\s*$",
+    re.IGNORECASE,
+)
+
 _CA_PROVINCES = frozenset(
     {
         "AB",
@@ -53,6 +59,8 @@ def normalize_title_for_grouping(title: str | None) -> str | None:
     result = title.strip().lower()
 
     result = _LOCATION_SUFFIX.sub("", result)
+
+    result = _STORE_NUMBER.sub("", result)
 
     for pattern in _COMPANY_SUFFIX_PATTERNS:
         result = pattern.sub("", result)

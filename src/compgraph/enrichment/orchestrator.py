@@ -511,7 +511,7 @@ class EnrichmentOrchestrator:
 
         if content_hash in content_cache:
             cached = content_cache[content_hash]
-            for posting_id, snapshot_id, *_ in group:
+            for posting_id, snapshot_id, title, *_ in group:
                 try:
                     logger.info(
                         "Pass 1 cache hit: posting %s reusing result (hash=%s...)",
@@ -526,6 +526,7 @@ class EnrichmentOrchestrator:
                             cached,
                             model=settings.ENRICHMENT_MODEL_PASS1,
                             version="pass1-v1",
+                            title_raw=title,
                         )
                         await save_session.commit()
                     state.result.succeeded += 1
@@ -610,7 +611,7 @@ class EnrichmentOrchestrator:
 
         content_cache[content_hash] = pass1_result
 
-        for i, (posting_id, snapshot_id, *_) in enumerate(group):
+        for i, (posting_id, snapshot_id, title, *_) in enumerate(group):
             try:
                 async with async_session_factory() as save_session:
                     await save_enrichment(
@@ -620,6 +621,7 @@ class EnrichmentOrchestrator:
                         pass1_result,
                         model=settings.ENRICHMENT_MODEL_PASS1,
                         version="pass1-v1",
+                        title_raw=title,
                     )
                     await save_session.commit()
                 if i > 0:
@@ -667,6 +669,7 @@ class EnrichmentOrchestrator:
                             content_cache[content_hash],
                             model=settings.ENRICHMENT_MODEL_PASS1,
                             version="pass1-v1",
+                            title_raw=title,
                         )
                         await save_session.commit()
                     state.result.succeeded += 1
@@ -707,6 +710,7 @@ class EnrichmentOrchestrator:
                             p1,
                             model=settings.ENRICHMENT_MODEL_PASS1,
                             version="pass1-v1",
+                            title_raw=title,
                         )
                         await save_session.commit()
                     state.result.succeeded += 1

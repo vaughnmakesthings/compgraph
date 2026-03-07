@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from compgraph.db.models import Posting, PostingEnrichment, PostingSnapshot
 from compgraph.enrichment.constants import ENRICHMENT_VERSION_PASS2
+from compgraph.enrichment.normalizers import normalize_title_for_grouping
 from compgraph.enrichment.schemas import Pass1Result
 
 
@@ -70,6 +71,7 @@ async def save_enrichment(
     result: Pass1Result,
     model: str,
     version: str,
+    title_raw: str | None = None,
 ) -> PostingEnrichment:
     """Create a new PostingEnrichment row (append-only, never update).
 
@@ -98,6 +100,8 @@ async def save_enrichment(
         tools_mentioned=result.tools_mentioned or [],
         kpis_mentioned=result.kpis_mentioned or [],
         store_count_mentioned=result.store_count,
+        # Title normalization
+        title_normalized=normalize_title_for_grouping(title_raw),
         # Tracking
         enrichment_model=model,
         enrichment_version=version,

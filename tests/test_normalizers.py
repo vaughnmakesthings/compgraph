@@ -78,6 +78,41 @@ class TestNormalizeTitleEdgeCases:
         )
 
 
+class TestStoreNumberStripping:
+    def test_store_hash_number(self) -> None:
+        assert (
+            normalize_title_for_grouping("Retail Sales Associate - Store #1234")
+            == "retail sales associate"
+        )
+
+    def test_store_number_no_hash(self) -> None:
+        assert (
+            normalize_title_for_grouping("Retail Sales Associate - Store 1234")
+            == "retail sales associate"
+        )
+
+    def test_bare_hash_number(self) -> None:
+        assert normalize_title_for_grouping("Sales Associate - #4567") == "sales associate"
+
+    def test_bare_number_suffix(self) -> None:
+        assert normalize_title_for_grouping("Merchandiser - 12345") == "merchandiser"
+
+    def test_store_number_with_location(self) -> None:
+        assert normalize_title_for_grouping("Sales Rep - Store #789 - Dallas, TX") == "sales rep"
+
+    def test_store_number_trailing_space(self) -> None:
+        assert normalize_title_for_grouping("Field Rep Store #5678  ") == "field rep"
+
+    def test_five_digit_store_number(self) -> None:
+        assert normalize_title_for_grouping("Brand Ambassador - 99012") == "brand ambassador"
+
+    def test_short_number_not_stripped(self) -> None:
+        assert normalize_title_for_grouping("Field Rep - 12") == "field rep - 12"
+
+    def test_en_dash_store_number(self) -> None:
+        assert normalize_title_for_grouping("Sales Associate \u2013 #4567") == "sales associate"
+
+
 @pytest.mark.parametrize(
     "raw,expected_city,expected_state,expected_country",
     [

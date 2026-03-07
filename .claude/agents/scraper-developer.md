@@ -136,6 +136,8 @@ When building a new adapter:
 - **Proxy rotation**: `get_proxy_client_kwargs()` returns proxy config for httpx
 - **Rate limiting**: add delays between requests (`asyncio.sleep`), use `asyncio.Semaphore` for concurrency control
 - **Circuit breaker**: track consecutive failures, abort after threshold (see `CIRCUIT_BREAKER_THRESHOLD` in workday.py)
+- **Shared infrastructure goes in shared modules**: Circuit breakers in `scrapers/circuit_breaker.py`, HTTP client factory in `scrapers/base.py`. Never duplicate infrastructure code across adapters.
+- **New adapter checklist addition**: Before implementing, check which shared modules exist. Reuse `CircuitBreakerMixin`, `create_scraper_client()`, and `persist_posting()` from shared modules.
 - **Redirect validation**: verify final domain matches expected domain — ATS platforms redirect to login pages or CDN errors silently
 - **Retry with backoff**: max 2 retries, exponential backoff [5s, 15s]
 

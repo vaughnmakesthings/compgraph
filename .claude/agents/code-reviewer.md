@@ -76,13 +76,20 @@ When reviewing completed work, you will:
    - Alembic migration generated for any schema changes
    - No premature implementation of deferred features: arq → M8 (needs Redis), LiteLLM → M7 Phase B (needs Eval Tool #128), Prisma/second ORM → never
 
-5. **Issue Identification and Recommendations**:
+5. **Code Simplification Assessment**:
+   - **CRITICAL: Flag sequential `await` for independent operations** — must use `asyncio.gather()` with per-operation sessions
+   - **CRITICAL: Flag copy-pasted logic across 2+ files** — must be extracted to shared module
+   - **Flag new enum definitions** that overlap with existing ones — check for `class.*Status` patterns
+   - **Flag raw hex colors in frontend JSX** — must reference design tokens
+   - **Flag `as any` casts** — must use proper types
+
+6. **Issue Identification and Recommendations**:
    - Clearly categorize issues as: Critical (must fix), Important (should fix), or Suggestions (nice to have)
    - For each issue, provide specific examples and actionable recommendations
    - When you identify plan deviations, explain whether they're problematic or beneficial
    - Suggest specific improvements with code examples when helpful
 
-6. **Communication Protocol**:
+7. **Communication Protocol**:
    - If you find significant deviations from the plan, ask the coding agent to review and confirm
    - If you identify issues with the original plan itself, recommend plan updates
    - For implementation problems, delegate to `python-backend-developer` for fixes

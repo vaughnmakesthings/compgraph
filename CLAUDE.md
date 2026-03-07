@@ -188,6 +188,9 @@ Reference: `docs/references/ai-generated-design-complaints.md` for the full rese
 - Entity resolution uses savepoints (`begin_nested()`) for concurrent-safe creation.
 - Anthropic SDK types (`MessageParam`) imported under `TYPE_CHECKING` guard, used via `cast()` at runtime.
 - SQL `string_agg()` subqueries must include `ORDER BY` for deterministic results.
+- Independent async operations MUST use `asyncio.gather()`, not sequential `await`. Each gathered coroutine needs its own session — never share a session across gathered tasks.
+- When 2+ modules share identical logic (>10 lines), extract to a shared module immediately. Don't copy-paste adapter implementations.
+- Before creating a new enum, search for existing ones. Prefer extending over duplicating.
 
 ## Tests
 
