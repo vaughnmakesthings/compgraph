@@ -42,13 +42,7 @@ async def _insert_alerts(session: AsyncSession, alerts: list[dict]) -> int:
     """
     if not alerts:
         return 0
-    stmt = (
-        pg_insert(Alert)
-        .values(alerts)
-        .on_conflict_do_nothing(  # type: ignore[arg-type]
-            index_elements=["alert_type", "company_id", "brand_id", text("(triggered_at::date)")],
-        )
-    )
+    stmt = pg_insert(Alert).values(alerts).on_conflict_do_nothing(constraint="uq_alert_dedup")
     result = await session.execute(stmt)
     return result.rowcount  # type: ignore[attr-defined,no-any-return]
 
