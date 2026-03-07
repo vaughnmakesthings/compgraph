@@ -19,6 +19,7 @@ import type {
   ScrapeStatusResponse,
   EnrichStatusResponse,
   SchedulerStatusResponse,
+  AuthUser,
 } from './types'
 
 /** Strip HTML/script tags from API error detail to prevent XSS if ever rendered as HTML. */
@@ -228,5 +229,5 @@ export const api = {
     ),
 
   getAuthUsers: () =>
-    apiFetch<import('./types').AuthUser[]>('/api/v1/admin/auth-users'),
+    apiFetch<AuthUser[]>('/api/v1/admin/auth-users'),
 }

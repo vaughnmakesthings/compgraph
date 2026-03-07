@@ -19,6 +19,7 @@ from compgraph.scheduler.app import (
     set_schedule_config,
 )
 from compgraph.scheduler.jobs import (
+    get_last_pipeline_error,
     get_last_pipeline_finished_at,
     get_last_pipeline_success,
 )
@@ -134,8 +135,6 @@ async def scheduler_status(
     if last_finished is not None:
         hours_since = (datetime.now(UTC) - last_finished).total_seconds() / 3600
         missed = hours_since > MISSED_RUN_THRESHOLD_HOURS
-
-    from compgraph.scheduler.jobs import get_last_pipeline_error
 
     return SchedulerStatusResponse(
         enabled=enabled,

@@ -96,12 +96,15 @@ function SmallButton({
   );
 }
 
+const STATUS_DOT_COLOR: Record<string, string> = {
+  completed: "bg-[#1B998B]",
+  success: "bg-[#1B998B]",
+  running: "bg-[#DCB256]",
+  failed: "bg-[#8C2C23]",
+};
+
 function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "completed" || status === "success" ? "bg-[#1B998B]"
-    : status === "running" ? "bg-[#DCB256]"
-    : status === "failed" ? "bg-[#8C2C23]"
-    : "bg-[#BFC0C0]";
+  const color = STATUS_DOT_COLOR[status] ?? "bg-[#BFC0C0]";
   return <span className={`inline-block size-[7px] rounded-full mr-1.5 align-middle ${color}`} aria-hidden="true" />;
 }
 
@@ -141,6 +144,27 @@ const COMPANY_STATE_COLOR: Record<string, string> = {
   failed:    "text-[#8C2C23]",
   skipped:   "text-[#BFC0C0]",
 };
+
+function LastRunStatus({ success, timestamp }: { success: boolean | null; timestamp: string }) {
+  let label: string;
+  let colorClass: string;
+  if (success === true) {
+    label = "Success";
+    colorClass = "text-[#1B998B]";
+  } else if (success === false) {
+    label = "Failed";
+    colorClass = "text-[#8C2C23]";
+  } else {
+    label = "\u2014";
+    colorClass = "text-[#4F5D75]";
+  }
+
+  return (
+    <span className="font-body text-xs text-[#4F5D75]">
+      Last run: <span className={`font-medium ${colorClass}`}>{label}</span> {formatTimestamp(timestamp)}
+    </span>
+  );
+}
 
 function isStaleRun(status: string, startedAt: string | null): boolean {
   if (status !== "running" || !startedAt) return false;
@@ -614,16 +638,21 @@ function SettingsPageContent() {
       </SectionCard>
 
       <SectionCard title="Scheduler" className="mt-4 p-5" headingClassName="text-base">
-        {schedulerLoading ? <p className="text-[13px] text-[#4F5D75] font-body">Loading\u2026</p> : !schedulerStatus ? <p className="text-[13px] text-[#4F5D75] font-body">Error loading scheduler.</p> : (
+        {schedulerLoading ? (
+          <p className="text-[13px] text-[#4F5D75] font-body">Loading&hellip;</p>
+        ) : !schedulerStatus ? (
+          <p className="text-[13px] text-[#4F5D75] font-body">Error loading scheduler.</p>
+        ) : (
           <>
             <div className="flex items-center gap-3 mb-4">
               <span className={`rounded px-2 py-0.5 text-xs font-body font-semibold ${schedulerStatus.enabled ? 'bg-[#1B998B1A] text-[#1B998B]' : 'bg-[#E8E8E4] text-[#4F5D75]'}`}>
                 {schedulerStatus.enabled ? "Enabled" : "Disabled"}
               </span>
               {schedulerStatus.last_pipeline_finished_at && (
-                <span className="font-body text-xs text-[#4F5D75]">
-                  Last run: <span className={`font-medium ${schedulerStatus.last_pipeline_success === true ? 'text-[#1B998B]' : schedulerStatus.last_pipeline_success === false ? 'text-[#8C2C23]' : 'text-[#4F5D75]'}`}>{schedulerStatus.last_pipeline_success === true ? 'Success' : schedulerStatus.last_pipeline_success === false ? 'Failed' : '\u2014'}</span> {formatTimestamp(schedulerStatus.last_pipeline_finished_at)}
-                </span>
+                <LastRunStatus
+                  success={schedulerStatus.last_pipeline_success}
+                  timestamp={schedulerStatus.last_pipeline_finished_at}
+                />
               )}
             </div>
 

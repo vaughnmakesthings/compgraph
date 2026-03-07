@@ -821,7 +821,7 @@ function DangerRow({
         border: `1px solid ${hov ? color + "55" : "#E8E8E4"}`,
         backgroundColor: hov ? hoverBg : "transparent",
         cursor: "pointer",
-        transition: "all 140ms",
+        transition: "background-color 140ms, border-color 140ms",
       }}
     >
       <div>

@@ -272,15 +272,13 @@ async def pipeline_runs(
     def _extract_error(errors: dict | None) -> str | None:
         if not errors:
             return None
-        if isinstance(errors, dict):
-            messages = []
-            for v in errors.values():
-                if isinstance(v, str):
-                    messages.append(v)
-                elif isinstance(v, list):
-                    messages.extend(str(e) for e in v[:2])
-            return "; ".join(messages[:3]) if messages else None
-        return None
+        messages = []
+        for v in errors.values():
+            if isinstance(v, str):
+                messages.append(v)
+            elif isinstance(v, list):
+                messages.extend(str(e) for e in v[:2])
+        return "; ".join(messages[:3]) if messages else None
 
     return PipelineRunsResponse(
         scrape_runs=[
