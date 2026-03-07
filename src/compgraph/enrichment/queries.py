@@ -70,11 +70,14 @@ async def save_enrichment(
     result: Pass1Result,
     model: str,
     version: str,
+    title_raw: str | None = None,
 ) -> PostingEnrichment:
     """Create a new PostingEnrichment row (append-only, never update).
 
     Maps Pass1Result fields to PostingEnrichment columns.
     """
+    from compgraph.enrichment.normalizers import normalize_title_for_grouping
+
     enrichment = PostingEnrichment(
         posting_id=posting_id,
         # Classification
@@ -98,6 +101,8 @@ async def save_enrichment(
         tools_mentioned=result.tools_mentioned or [],
         kpis_mentioned=result.kpis_mentioned or [],
         store_count_mentioned=result.store_count,
+        # Title normalization
+        title_normalized=normalize_title_for_grouping(title_raw),
         # Tracking
         enrichment_model=model,
         enrichment_version=version,

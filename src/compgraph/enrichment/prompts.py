@@ -173,9 +173,31 @@ Return a JSON object with a single key "entities" containing an array of objects
 - Below 0.5: Do not include — too uncertain to be useful.
 </confidence_scoring>
 
+<boilerplate_exclusion>
+CRITICAL: Ignore brands mentioned ONLY in company boilerplate, "About Us" sections, or general company \
+descriptions. These are past/example clients, NOT the brand this specific posting is hiring for.
+
+Common boilerplate patterns to IGNORE:
+- "We have worked with brands such as AT&T, Verizon, T-Mobile..."
+- "Our clients include Samsung, LG, Sony..."
+- "We partner with leading brands including..."
+- Lists of brand names in company overview paragraphs that describe the agency's general capabilities
+
+ONLY extract brands that appear in:
+- The job TITLE (e.g., "Samsung Brand Ambassador")
+- The RESPONSIBILITIES section (e.g., "represent LG products at Best Buy")
+- The REQUIREMENTS section (e.g., "experience selling Bose audio products")
+- Specific account or territory references (e.g., "cover the Sony account")
+
+If a brand appears BOTH in boilerplate AND in role-specific sections, include it — the role-specific \
+mention takes priority. But if a brand ONLY appears in an "About Us" or company description paragraph, \
+exclude it entirely.
+</boilerplate_exclusion>
+
 <rules>
 - Return ONLY a JSON object. No markdown, no explanation.
 - Do NOT include the posting company (the agency itself) as an entity.
+- Do NOT include brands from company boilerplate or "About Us" sections (see boilerplate_exclusion above).
 - Normalize entity names: use canonical form (e.g., "Best Buy" not "BestBuy" or "best buy").
 - Remove possessives: "Walmart's" → "Walmart".
 - If no entities are found, return {"entities": []}.
@@ -204,6 +226,18 @@ Output: {"entities":[]}
 Example 4 — Ambiguous:
 Input: "Work with major consumer electronics brands at leading retail locations."
 Output: {"entities":[]}
+
+Example 5 — Boilerplate brand list (EXCLUDE):
+Input: "Retail Sales Associate at Walmart. About OSL: OSL is a leading field marketing agency. \
+We have partnered with Fortune 500 brands including AT&T, Verizon, T-Mobile, Samsung, and Cricket \
+to deliver exceptional retail experiences across North America."
+Output: {"entities":[{"entity_name":"Walmart","entity_type":"retailer","confidence":0.9}]}
+
+Example 6 — Brand in both boilerplate AND role-specific (INCLUDE):
+Input: "Samsung Brand Ambassador at Best Buy. Represent Samsung products and drive sales in the \
+mobile department. About Us: Our agency partners with top brands including Samsung, LG, and Sony."
+Output: {"entities":[{"entity_name":"Samsung","entity_type":"client_brand","confidence":0.95},\
+{"entity_name":"Best Buy","entity_type":"retailer","confidence":0.95}]}
 </examples>"""
 
 
