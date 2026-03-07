@@ -1,0 +1,31 @@
+web/src/lib/api-client.ts
+  610c361b204086f3 22,232
+web/src/app/(app)/settings/page.tsx
+  610c361b204086f3 99-105,107,148-168,641-643,645,652-654
+src/compgraph/api/routes/scheduler.py
+  610c361b204086f3 12
+src/compgraph/api/routes/pipeline.py
+  610c361b204086f3 281
+web/src/components/auth/user-table.tsx
+  610c361b204086f3 824
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "f2cd5b3fc38e1b7b769152126acaea7228301a49",
+  "prompts": {
+    "610c361b204086f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "139b3d71-c17b-43e0-b6b2-ddcdd69b4729",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Vaughn Mudrick <60765828+vmud@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 49,
+      "total_deletions": 22,
+      "accepted_lines": 41,
+      "overriden_lines": 0
+    }
+  }
+}
